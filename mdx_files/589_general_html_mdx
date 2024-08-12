@@ -1,0 +1,409 @@
+https://code.kx.com/insights/api/stream-processor/q/general.html
+
+# General - kdb products
+
+Original URL: https://code.kx.com/insights/api/stream-processor/q/general.html
+
+# General
+
+Stream Processor metadata is exposed across many APIs, such as state and
+pushing data further in a pipeline within asynchronous nodes. A pipeline
+operator's metadata is a dictionary containing the following keys.
+
+Metadata Keys
+
+These keys will be extended as new capabilities are added to the Stream
+Processor engine.
+
+key
+
+    
+
+An optional partition key for the events in this message. This is used to
+group related collections of data based on a common attribute. Events that do
+not share the same key are considered independent and may be processed
+independently of other keys. (any type)
+
+window
+
+    
+
+Indicates the start time or index of a window of data (temporal)
+
+offset
+
+    
+
+An event offset is a number or time that represents the current message offset
+to the stream reader. (int or temporal)
+
+This value will be used to recover data if messages are lost downstream. If
+messages need to be replayed, the message offset will be used to indicate the
+last successfully processed message.
+
+## `.qsp.getSchema`
+
+Loads a schema from a mounted Assembly returning a schema object.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+name | symbol | string | The table name to read from the assembly.  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+#.qsp.schema |   
+  
+## `.qsp.track`
+
+_Maintain state for a list of in-memory q objects_
+
+**Parameters:**
+
+name | q type | description | default  
+---|---|---|---  
+objects | symbol or symbol[] | The object name(s) to be tracked as state. | Required  
+  
+When tracking is enabled, at each checkpoint the Stream Processor will persist
+a copy of the tracked objects. On recovery these objects will be re-
+initialised before the pipeline begins again at the value corresponding to the
+last checkpoint.
+
+Track a single variable:
+
+    
+    
+    .qsp.track[`iters]
+    
+    iters:0
+    
+    .qsp.run
+      .qsp.read.fromCallback[`publish]
+      .qsp.map[{iters+:1;x}]
+      .qsp.write.toConsole[]
+    
+
+Track multiple variables:
+
+    
+    
+    .qsp.track[`iters`last]
+    
+    iters:0
+    last:()
+    
+    .qsp.run
+      .qsp.read.fromCallback[`publish]
+      .qsp.map[{iters+:1;last::x;x}]
+      .qsp.write.toConsole[]
+    
+
+Track a namespace:
+
+    
+    
+    .qsp.track[`.info]  // Track anything in the .info namespace
+    
+    .info.iters:0
+    .info.last:()
+    
+    .qsp.run
+      .qsp.read.fromCallback[`publish]
+      .qsp.map[{.info.iters+:1;.info.last::x;x}]
+      .qsp.write.toConsole[]
+    
+
+## `.qsp.push`
+
+_Publish data to all downstream operators in the pipeline_
+
+**Parameters:**
+
+publishes data to all downstream operators in the pipeline, and returns
+`data`.
+
+Should be used from asynchronous operators in a pipeline to continue the flow
+of data in the pipeline. It is only required for `.qsp.apply`. Other operators
+are synchronous and any data returned will flow to the next operator.
+
+## `.qsp.run`
+
+_Install and run a pipeline_
+
+**Parameters:**
+
+name | q type | description  
+---|---|---  
+pipe | #.qsp.pipe | The pipeline to install and run in the current stream processor.  
+  
+Returns generic null.
+
+Depending on the deployment configuration, this function can run a pipeline in
+the current worker process or distribute work across several workers.
+
+## `.qsp.teardown`
+
+_Tear down a pipeline_
+
+Tears down a pipeline, removing all state and timers; returns generic null.
+
+Any `onTeardown` (using [`.qsp.onTeardown`](lifecycle.html#qsponteardown))
+handlers or subscribers to `teardown` will be called.
+
+## `.qsp.getPartitions`
+
+_Get assigned partitions_
+
+Return a list of the partitions assigned to this worker. This can be used for
+subsetting a stream.
+
+## `.qsp.getPartitionCount`
+
+_Get count of all partitions_
+
+Return the count of all partitions in the current stream. This can be combined
+with `getPartitions[]` to subset a stream.
+
+## `.qsp.configPath`
+
+_Returns the location of user mounted configurations_
+
+    
+    
+    .qsp.configPath[]
+    .qsp.configPath[object]
+    
+
+**Parameters:**
+
+name | q type | description | default  
+---|---|---|---  
+object | string | The configuration object to get the path of. | The KXI_SP_CONFIG_PATH environment variable  
+  
+This is mostly useful in Kubernetes deployments to access the path of
+ConfigMaps and Secrets. Passing the name of the ConfigMap or Secret to this
+function will return the path where it was mounted.
+
+The mount path can be changed by setting `KXI_SP_CONFIG_PATH` to a directory
+on the target deployment.
+
+## `.qsp.setTrace`
+
+_Enables program tracing logs_
+
+**Parameters:**
+
+name | q type | description | default  
+---|---|---|---  
+level | long | Level of trace logging to display. | Required  
+  
+Level of verbosity of trace logging. The following levels are available:
+
+  1. Clears trace logging.
+  2. Log data that is passed through readers and writers.
+  3. Log data pushed through buffers.
+  4. Log operator inputs.
+  5. Log state operations.
+
+The default is level 0.
+
+## `.qsp.clearTrace`
+
+_Disable program tracing logs_
+
+Clears trace logging and sets the log level to its previous level
+
+## `.qsp.enableDataTracing`
+
+_Capture data outputs as they flow though a pipeline_
+
+Data tracing captures data that is flowing in the streaming pipeline. This
+inserts probes that cache the last value emitted by each operator in the
+pipeline. Writer operators capture the input presented to the writer. If a
+given operator has an error, the error is also captured and where the input is
+synchronous, the data is the input to the operator.
+
+Performance implications
+
+Adding data capture to a pipeline may have an impact on the pipeline
+performance. Data tracing should be reserved for debugging purposes and not
+used in production deployments where possible.
+
+Enable data tracing:
+
+    
+    
+    .qsp.run
+      .qsp.read.fromCallback[`publish]
+      .qsp.map[{ select max price from x }]
+      .qsp.write.toVariable[`output]
+    
+    .qsp.enableDataTracing[];
+    publish ([] date: .z.d; sym: 10?3?`3; price:10?100f);
+    .qsp.getDataTrace[]
+    
+    
+    
+                    | error metadata data
+    ----------------| ------------------------------------------------------------------..
+    callback_publish| ""    (,`)!,:: +`date`sym`price!(2022.06.06 2022.06.06 2022.06.06 ..
+    map             | ""    (,`)!,:: +(,`price)!,,95.97684
+    variable_output | ""    (,`)!,:: +(,`price)!,,95.97684
+    
+
+See `.qsp.getDataTrace` for more details
+
+## `.qsp.disableDataTracing`
+
+_Disables data tracing in the current pipeline_
+
+    
+    
+    .qsp.disableDataTracing[]
+    
+
+Disables data tracing from the current pipeline. This does not clear any
+captured trace data. Data captured during tracing can still be accessed via
+`.qsp.getDataTrace`.
+
+See `.qsp.enableDataTracing` for more details
+
+## `.qsp.resetDataTrace`
+
+_Resets the current data cache state_
+
+Clears any data that has been captured during a data tracing session.
+
+See `.qsp.getDataTrace` for more details
+
+## `.qsp.clearDataTrace`
+
+Deprecated function that will be removed in a future release. Refer to the
+documentation for `.qsp.resetDataTrace` instead.
+
+## `.qsp.getDataTrace`
+
+_Returns the data from data trace_
+
+When data tracing is enabled, `getDataTrace` returns a point in time snapshot
+of the last data values emitted by each node in the pipeline. The return is a
+dictionary of operator IDs to their respective data or errors. If a node has
+an error message, any data that is captured is the last input to that operator
+that caused the error.
+
+See `.qsp.enableDataTracing` for more details
+
+## `.qsp.setRecordCounting`
+
+    
+    
+    .qsp.setRecordCounting[level]
+    
+
+**Parameters:**
+
+name | q type | description | default  
+---|---|---|---  
+level | long | Level of record counting. | Required  
+  
+Record counting tracks the amount of data flowing through the pipeline. This
+count stores the sum of the counts of each record for each operator, divided
+by the records' keys. The operators chosen to perform record counting depends
+on the record counting level, described below.
+
+The level of record counting determines which nodes in the pipeline to count
+data flow for. The following levels are available:
+
+  1. Record counting is disabled for all operators.
+  2. Count records flowing through readers and writers.
+  3. Count records flowing through all operators.
+
+The default is level 1.
+
+Note: Changing levels resets the RecordCounts cache.
+
+Counting records with the default level:
+
+    
+    
+    .qsp.run
+      .qsp.read.fromCallback[`publish]
+      .qsp.map[{ select max price from x }]
+      .qsp.write.toVariable[`output]
+    
+    publish ([] date: .z.d; sym: 10?3?`3; price:10?100f);
+    .qsp.getRecordCounts[]
+    
+    
+    
+                    |
+    ---             | --
+    callback_publish| 10
+    variable_output | 1
+    
+
+Setting record counting to level 2:
+
+    
+    
+    .qsp.run
+      .qsp.read.fromCallback[`publish]
+      .qsp.map[{ select max price from x }]
+      .qsp.write.toVariable[`output]
+    
+    .qsp.setRecordCounting 2;
+    publish ([] date: .z.d; sym: 10?3?`3; price:10?100f);
+    .qsp.getRecordCounts[]
+    
+    
+    
+                    |
+    ---             | --
+    map             | 10
+    callback_publish| 10
+    variable_output | 1
+    
+
+Counting keyed data using the default count level:
+
+    
+    
+    streamA: .qsp.read.fromCallback[`publish1; .qsp.use enlist[`key]!enlist `key]
+    streamB: .qsp.read.fromCallback[`publish2; .qsp.use enlist[`key]!enlist `key]
+    
+    .qsp.run
+        streamA .qsp.union[streamB]
+        .qsp.write.toConsole[]
+    
+    publish1 `key`data!(`key1;42)
+    publish2 `key`data!(`key2;42)
+    
+    .qsp.getRecordCounts[]
+    
+    
+    
+    callback_publish1| (,`key1)!,2
+    callback_publish2| (,`key2)!,2
+    console          | `key1`key2!2 2
+    
+
+## `.qsp.resetRecordCounts`
+
+Resets the current record counts cache, so subsequent data counts begin from
+zero.
+
+See `.qsp.getRecordCounts` for more details
+
+## `.qsp.getRecordCounts`
+
+When record counting is enabled, `getRecordCounts` returns information on the
+total amount of data that has flowed through the pipeline since enabled or
+since the cache was last reset. The return is a dictionary of operator IDs to
+their respective counts, where counts are partitioned into stream keys. The
+operators tracked depends on the record counting level.
+
+See `.qsp.enableRecordCounting` for more details
+

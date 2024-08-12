@@ -1,0 +1,68 @@
+https://code.kx.com/insights/microservices/rt/rest/index.html
+
+# Reliable Transport (RT) REST API Guide - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/rt/rest/index.html
+
+# Reliable Transport (RT) REST API Guide
+
+The kdb Insights Reliable Transport (RT) provides a REST API for interacting
+with it.
+
+## REST querying methods
+
+There are several ways to call a REST API from inside or outside a cluster.
+
+**Rest proxy**
+
+The rest_proxy is provided as a binary in the replicator qpk. You can think of
+it as a different type of push_client. It connects to the push_server, but
+rather than set up the file streaming, it forwards the `--target
+<rest_endpoint>` over gRPC to the push_server. The push_server then calls the
+RT REST service running locally at its end (similar to running `curl
+0:6000/rest_endpoint` on the RT node). It gets the RT REST response back,
+wraps in up it a gRPC response and sends it back to the rest_proxy. Finally,
+the rest_proxy echoes the response body to the console.
+
+The rest_proxy is not running on the RT nodes. So you can run it from:
+
+  * inside the k8s cluster but on a different pod (without SSL)
+  * outside the k8s cluster via a load balancer (with SSL).
+
+The rest_proxy supports SSL and non-SSL modes.
+
+Supported options:
+
+string option | description  
+---|---  
+\--endpoint | The network endpoint that the client should connect to as 'name:port' or 'address:port'.  
+\--target | GET target for tunnelled REST request.  
+  
+Additional options when `--use-ssl` is set:
+
+string option | description  
+---|---  
+\--ssl-pem-cert-chain-file | File containing the PEM encoding of the client's certificate chain.  
+\--ssl-pem-private-key-file | File containing the PEM encoding of the client's private key.  
+\--ssl-pem-root-certs-file | File containing the PEM encoding of the server root certificates.  
+\--ssl-target-name-override | Target name override for SSL host name checking.  
+  
+Supported ports for the endpoint:
+
+port | type | notes  
+---|---|---  
+5001 | TCP | Internal rest-proxy replicator.  
+5002 | TCP | Internal rest-proxy replicator.  
+5000 | TCP | External rest-proxy replicator with SSL.  
+  
+**Port forwarding**
+
+The port forwarding acts like a rest_proxy. The REST server runs on the RT
+nodes and is not available directly from inside the k8s cluster, for different
+pods like subscribers/publishers, or outside of the k8s cluster. In order to
+use the REST API, you must port-forward to port 6000 on the localhost of any
+applicable RT pods.
+
+External publishers that typically run outside the cluster, require client
+enrollment and SSL.
+

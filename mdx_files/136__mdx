@@ -1,0 +1,400 @@
+https://code.kx.com/dashboards/helper-string/
+
+# Strings - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/helper-string/
+
+# String helpers
+
+## `camelcase`
+
+_camelCase the characters in the given`string`._
+
+Parameters:
+
+  * `string` {String}: The string to camelcase.
+
+Returns {String}
+
+Example:
+
+    
+    
+    {{camelcase "foo bar baz"}};
+    <!-- results in:  'fooBarBaz' -->
+    
+
+## `capitalize`
+
+_Capitalize the first word in a sentence._
+
+Parameters:
+
+Returns {String}
+
+Example:
+
+    
+    
+    {{capitalize "foo bar baz"}}
+    <!-- results in:  "Foo bar baz" -->
+    
+
+## `capitalizeAll`
+
+_Capitalize all words in a`string.`_
+
+Parameters:
+
+Returns {String}
+
+Example:
+
+    
+    
+    {{capitalizeAll "foo bar baz"}}
+    <!-- results in:  "Foo Bar Baz" -->
+    
+
+## `center`
+
+_Center a`string` using non-breaking spaces_
+
+Parameters:
+
+  * `str` {String}
+  * `spaces` {String}
+
+Returns {String}
+
+## `chop`
+
+_Like trim, but removes both extraneous whitespace and non-word characters
+from the beginning and end of a`string`._
+
+Parameters:
+
+Returns {String}
+
+Example:
+
+    
+    
+    {{chop "_ABC_"}}
+    <!-- results in:  'ABC' -->
+    
+    {{chop "-ABC-"}}
+    <!-- results in:  'ABC' -->
+    
+    {{chop " ABC "}}
+    <!-- results in:  'ABC' -->
+    
+
+## `dashcase`
+
+Parameters:
+
+Returns {String}
+
+Example:
+
+    
+    
+    {{dashcase "a-b-c d_e"}}
+    <!-- results in:  'a-b-c-d-e' -->
+    
+
+## `dotcase`
+
+_dot.case the characters in string._
+
+Parameters:
+
+Returns {String}
+
+Example:
+
+    
+    
+    {{dotcase "a-b-c d_e"}}
+    <!-- results in:  'a.b.c.d.e' -->
+    
+
+## `hyphenate`
+
+_Replace spaces in a string with hyphens._
+
+Parameters:
+
+Returns {String}
+
+Example:
+
+    
+    
+    {{hyphenate "foo bar baz qux"}}
+    <!-- results in:  "foo-bar-baz-qux" -->
+    
+
+## `isString`
+
+_Return true if`value` is a string._
+
+Parameters:
+
+Returns {Boolean}
+
+Example:
+
+    
+    
+    {{isString "foo"}}
+    <!-- results in:  'true' -->
+    
+
+## `lowercase`
+
+_Lowercase all characters in the given string._
+
+Parameters:
+
+Returns {String}
+
+Example:
+
+    
+    
+    {{lowercase "Foo BAR baZ"}}
+    <!-- results in:  'foo bar baz' -->
+    
+
+## `occurrences`
+
+_Return the number of occurrences of`substring` within the given `string`._
+
+Parameters:
+
+  * `str` {String}
+  * `substring` {String}
+  * `returns` {Number}: Number of occurrences
+
+Example:
+
+    
+    
+    {{occurrences "foo bar foo bar baz" "foo"}}
+    <!-- results in:  2 -->
+    
+
+## `pascalcase`
+
+_PascalCase the characters in`string`._
+
+Parameters:
+
+Returns {String}
+
+Example:
+
+    
+    
+    {{pascalcase "foo bar baz"}}
+    <!-- results in:  'FooBarBaz' -->
+    
+
+## `pathcase`
+
+_path/case the characters in`string`_
+
+Parameters:
+
+  * `string` {String}
+  * `returns` {String}
+
+Example:
+
+    
+    
+    {{pathcase "a-b-c d_e"}}
+    <!-- results in:  'a/b/c/d/e' -->
+    
+
+## `plusify`
+
+_Replace spaces in the given`string` with pluses._
+
+Parameters:
+
+  * `str` {String}: The input string
+
+Returns {String}: Input string with spaces replaced by plus signs
+
+Example:
+
+    
+    
+    {{plusify "foo bar baz"}}
+    <!-- results in:  'foo+bar+baz' -->
+    
+
+## `replace`
+
+_Replace all occurrences of substring`a` with substring `b`._
+
+Parameters:
+
+  * `str` {String}
+  * `a` {String}
+  * `b` {String}
+
+Returns {String}
+
+Example:
+
+    
+    
+    {{replace "a b a b a b" "a" "z"}}
+    <!-- results in:  'z b z b z b' -->
+    
+
+## `reverse`
+
+_Reverse a string._
+
+Parameters:
+
+Returns {String}
+
+Example:
+
+    
+    
+    {{reverse "abcde"}}
+    <!-- results in:  'edcba' -->
+    
+
+## `sentence`
+
+Sentence case the given string
+
+Parameters:
+
+Returns {String}
+
+Example:
+
+    
+    
+    {{sentence "hello world. goodbye world."}}
+    <!-- results in:  'Hello world. Goodbye world.' -->
+    
+
+## `snakecase`
+
+_Snake_case the characters in the given`string`._
+
+Parameters:
+
+Returns {String}
+
+Example:
+
+    
+    
+    {{snakecase "a-b-c d_e"}}
+    <!-- results in:  'a_b_c_d_e' -->
+    
+
+## `split`
+
+Split `string` by the given `character`.
+
+Parameters:
+
+  * `string` {String}: The string to be split
+
+Returns {String} `character` : Default is an empty string.
+
+Example:
+
+    
+    
+    {{split "a,b,c" ","}}
+    <!-- results in:  ['a', 'b', 'c'] -->
+    
+
+## `startsWith`
+
+_Tests whether a string begins with the given prefix._
+
+Parameters:
+
+  * `prefix` {String}
+  * `testString` {String}
+  * `options` {String}
+
+Returns {String}
+
+Example:
+
+    
+    
+    {{#startsWith "Goodbye" "Hello, world!"}}
+      Whoops
+    {{else}}
+      Bro, do you even hello world?
+    {{/startsWith}}
+    
+
+## `titleize`
+
+  * `str` {String}
+  * `returns` {String}
+
+Example:
+
+    
+    
+    {{titleize "this is title case"}}
+    <!-- results in:  'This Is Title Case' -->
+    
+
+## `trim`
+
+_Removes extraneous whitespace from the beginning and end of a`string`._
+
+Parameters:
+
+  * `string` {String}: The string to trim.
+
+Returns {String}
+
+Example:
+
+    
+    
+    {{trim " ABC "}}
+    <!-- results in:  'ABC ' -->
+    
+
+## `uppercase`
+
+_Uppercase all of the characters in the given string. If used as a block
+helper it will uppercase the entire block. This helper does not support
+inverse blocks._
+
+Parameters:
+
+  * `str` {String}: The string to uppercase
+  * `options` {Object}: Handlebars options object
+
+Returns {String}
+
+Example:
+
+    
+    
+    {{uppercase "aBcDeF"}}
+    <!-- results in:  'ABCDEF' -->
+    
+

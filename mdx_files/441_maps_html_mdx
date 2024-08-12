@@ -1,0 +1,96 @@
+https://code.kx.com/insights/enterprise/walkthrough/report/maps.html
+
+# kdb Insights Enterprise maps - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/walkthrough/report/maps.html
+
+# Maps
+
+_This section describes how to visualize data in a Map component using the *_
+weather** data ingested using [the object storage
+walkthrough](../weather.html)
+
+## 1\. Add Map Component
+
+To add a Map to a View:
+
+  1. Search for the **Map** component in the left-hand list of components and drag into the workspace.
+
+![Find the map component in the list of dashboard components.](img/map1.jpg)  
+
+  2. With the map component selected, (it has a light blue border when active), update the properties of the **Map** section:
+
+     * Click **"set Google Maps JavaScript API Key in`Map Key` Property"**. This allows you to save the map key as a View State inside your Map component.
+
+![The Map Key is saved as a view state inside your
+view.](img/clicktosetmapkey.jpg)  
+
+     * Provide a [Google Maps API Map Key](https://developers.google.com/maps/documentation/javascript/get-api-key#creating-api-keys). This is saved as a View State parameter in your view.
+
+![The Map Key is saved as a view state inside your view.](img/mapkey.jpg)  
+
+     * Centralize the map on New York with the following **Map** properties:
+
+setting | value  
+---|---  
+**CenterX** | 40.75  
+**CenterY** | -73.98  
+  
+![Define Map properties.](img/map2.jpg)  
+
+Sign up for Google Maps API Key
+
+You need a Google Maps API Map Key to use the Maps component. Learn more about
+[Google Map
+Keys](https://developers.google.com/maps/documentation/javascript/get-api-
+key).
+
+## 2\. Set Data Source
+
+Expand the **Points** properties and click **Data Source**.
+
+  1. Create a **New** data source.
+  2. Click **API** in the data editor, and set:
+
+setting | value  
+---|---  
+**table** | weather  
+**startTS** | midnight of deployment date  
+**endTS** | 23:59 of deployment date  
+**groupBy** | **name** , **sensor** , **borough**. **GroupBy** must be of type **List**  
+**agg** | see next step to create a View State  
+    1. Within **agg** , create a View State by rolling over the text input and clicking on the small, blue eye icon to the right.
+
+![Create a view state for the agg property.](img/createviewstate.jpg)  
+
+    2. In the view state dialog, create a **New** view state and set type to **List**.
+
+    3. Set **Default** to `lastlat;last;latitude` and `lastlon;last;longitude`; tab across to add the second filter.
+
+    4. Click the refresh icon next to **Value** to copy the default values to the **Value** property.
+
+![Create a view state and assign the latitude and longitude variables to
+default. Click the refresh icon to copy the list from default to
+value.](img/map3.jpg)  
+
+    5. Click **Select Item** to apply the View State.
+
+  3. Click **Apply** and **Select Item** to apply the data source change to the map.
+
+## 3\. Configure Map Component
+
+  1. In the **Points** properties set:
+
+setting | value  
+---|---  
+**Latitude Data** | lastlat  
+**Longitude Data** | lastlong  
+  
+The following Map showing sensor locations in New York is displayed.
+
+![Map of sensor locations in New York.](img/map5.jpg)  
+
+## Further Reading
+
+Click a link below to learn more about the following:
+

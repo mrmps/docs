@@ -1,0 +1,174 @@
+https://code.kx.com/platform/deployment/saml_configuration/
+
+# SAML - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/deployment/saml_configuration/
+
+# SAML authentication
+
+As of 4.1.0, the _KX Delta Platform_ supports Single Sign On (SSO) in the form
+of SAML. This allows the _KX Delta Platform_ to offload authorization to a
+third party Identity Provider (IDP).
+
+### Enabling SAML - install
+
+As of KX Delta Platform version 4.6.0, SAML can be automatically configured
+using Install Options. See [SAML Install
+Options](../install_config_options/#saml-install-options) for more details.
+
+Example configuration
+
+    
+    
+    enable-saml=1
+    saml-sp-metadata-entity-id=<unique entity id>
+    saml-idp-metadata-file=<path to metadata xml file>
+    saml-keystore-file=<path to keystore file>
+    saml-keystore-pass=<keystore password>
+    saml-keystore-alias=<keystore alias>
+    
+    SPRING_PROFILES_ACTIVE=saml
+    APPSERVER_SPLASHPAGE=saml/index.jsp
+    
+    
+
+### Enabling SAML - post deploy
+
+SAML can be enabled post deploy. It requires requires a number of ENV
+variables to be set before starting up the environment.
+
+Env | Example | Description  
+---|---|---  
+SPRING_PROFILES_ACTIVE | saml | To enable SAML SSO, the ENV must be set to **saml**  
+SAML_SP_METADATA_ENTITY_ID | hostPortUID | A unique ID required to identify the KX Delta Platform (Service Provider) to the Identity Provider (IDP). See IDP documentation for specific limitations  
+SAML_IDP_METADATA_FILE |  | SAML IDPs provide a metadata file used by the SP to allow trusted communication between the SP and IDP. This should be downloaded and available to KX Delta Platform  
+SAML_KEYSTORE_FILE |  | Encrypted TLS communication between an SP and IDP. Any valid keystore can be used. Default alias is **serverkeystore**. See securityContext.xml to modify  
+SAML_KEYSTORE_PASS |  | Password for the SAML_KEYSTORE_FILE file above  
+APPSERVER_SPLASHPAGE | saml/index.jsp | SAML requires a specific entry point. This must be defined as in the example column  
+  
+#### Update delta.profile
+
+To enable SAML the delta.profile must be updated. If you are running a multi-
+node deploy then the profile should be changed on any appserver node.
+
+  * Set ENV `SPRING_PROFILES_ACTIVE` to saml.
+  * Provide unique `SAML_SP_METADATA_ENTITY_ID`.
+  * Set the location of the `SAML_IDP_METADATA_FILE`. The IDP metadata file can be retrieved from the IDP in use.
+  * Set the `APPSERVER_SPLASHPAGE` to saml/index.jsp.
+
+**Note** : The `APPSERVER_SPLASHPAGE` can be used to redirect SAML users to a
+default dashboard once logged in.
+
+    
+    
+    export APPSERVER_SPLASHPAGE=dashboards/?auth=saml#b417c690-e82d-375a-ed74-484286ccfce0
+    
+
+#### SAML keystore
+
+Create a `SAML_KEYSTORE_FILE` and `SAML_KEYSTORE_PASS`. Provided are
+instructions for generating a self-signed keystore.
+
+    
+    
+    $JAVA_HOME/bin/keytool -genkey -alias serverkeystore -keyalg RSA -keystore ./keystore
+    
+
+Copy keystore to `SAML_KEYSTORE_FILE` location and set `SAML_KEYSTORE_PASS`
+appropriately.
+
+If using alternative certification rather than a self signed keystore, review
+the appropriate SSL documentation on how to create a keystore.
+
+Ensure the alias in use is `serverkeystore` which matches the alias defined
+within the securityContext.xml file
+
+#### web.xml
+
+Modify the web.xml to enable Spring security filters. Located at
+~/kxinstall/delta-bin/software/Tomcat_X_Y_Z/apache-
+tomcat-X.Y.Z/webapps/ROOT/WEB-INF/web.xml.
+
+Uncomment the section titled ‘Added for SAML; uncomment’.
+
+    
+    
+    <!-- Added for SAML; uncomment
+    <filter>
+        <filter-name>springSecurityFilterChain</filter-name>
+        <filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
+        <async-supported>true</async-supported>
+    </filter>
+    <filter-mapping>
+        <filter-name>springSecurityFilterChain</filter-name>
+        <url-pattern>/*</url-pattern>
+        <async-supported>true</async-supported>
+    </filter-mapping>
+    
+    End added for SAML -->
+    
+
+You should now be ready to start the environment.
+
+It is necessary to update your IDP with the SP (the KX Delta Platform)
+metadata details to allow the SP to authorize through the IDP. This includes
+information include the EntityID of the SP; message encryption details and
+various URLs for redirection. Depending on the IDP; this may be possible by
+uploading the SP metadata file; available at
+`https://<hostOfEnv>:<portOfEnv>/saml/metadata.`
+
+This provides an XML describing the SP which your IDP may accept. If the IDP
+does not accept an XML, it may be necessary to populate the SP configuration
+manually on the IDP. This data will be available in the downloaded XML. See
+your IDP for further details on how to configure an SP.
+
+### Login
+
+Once setup, navigate to the base URL `https://<hostOfEnv>:<portOfEnv>` to
+login to the environment through SAML
+
+### Additional configuration
+
+There are number of other ENV configuration values which can be set to change
+the SAML setup
+
+Env | Default | Description  
+---|---|---  
+SAML_BASEURL | `http://${DELTAAPPSERVER_HOST}:${TOMCAT_PORT}` | Used for the base redirect URL post authorization with the IDP if **$TOMCAT_USES_SSL** is **‘0’**  
+SAML_SECURE_BASEURL | `https://${DELTAAPPSERVER_HOST}:${TOMCAT_SECURE_PORT}` | Used for the base redirect URL post authorization with the IDP if **$TOMCAT_USES_SSL** is **‘1’**  
+SAML_MAX_AUTH_AGE | 28800 | Max age in seconds a SAML Authorized Assertion can live  
+SAML_USERID_FIELDS | principal | The fields (csv) used by KX Delta Platform to identify the user being authorized. It can be any field provided by the IDP upon authorization  
+SAML_USE_EMAIL | false | If true then SAML principal email will be used to reverse lookup userid in Control for login. Requires unique email address for users in Control.  
+  
+### Netscaler
+
+If the deployment lives behind a proxy/load balancer such as a Netscaler and
+offers a public interface facing URL; it will be necessary to update the
+`SAML_BASEURL/SAML_SECURE_BASEURL`.
+
+These are used by the IDP to redirect an authorization response to the correct
+location; in this case the public facing access URL.
+
+Further advanced configuration of KX Delta Platform SAML configuration can be
+achieved by modification of the spring saml configuration file at
+`webapps/ROOT/WEB-INF/classes/saml/securityContext.xml`.
+
+See Spring documentation on how to do so
+[here](https://docs.spring.io/autorepo/docs/spring-security-
+saml/1.0.x-SNAPSHOT/reference/htmlsingle/).
+
+### SAML user management
+
+Upon authorization by the IDP, a user may or may not exist within KX Delta
+Platform. KX Delta Platform offers four modes of authorization with respect to
+user creation and group assignment.
+
+  * KX Delta Platform controlled user creation and group management
+  * KX Delta Platform controlled user creation; IDP controlled group management
+  * IDP controlled user creation; KX Delta Platform controlled group management
+  * IDP controlled user creation and group management.
+
+This is configured via the **CONTROL_SSO:DEFAULT** configuration parameter and
+IDP controlled **groups** assertion key. See _KX Control_ documentation for
+full details.
+

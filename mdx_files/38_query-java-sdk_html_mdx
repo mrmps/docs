@@ -1,0 +1,222 @@
+https://code.kx.com/insights/microservices/rt/sdks/query-java-sdk.html
+
+# Java interface - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/rt/sdks/query-java-sdk.html
+
+# Java interface Query API
+
+The Java interface includes a Query API that allows you to extract data from
+_kdb Insights Enterprise_ over IPC. You can download it from the kdb Insights
+[Nexus](https://nexus.dl.kx.com/#browse/browse:kxi-package-public) registry.
+
+The primary class used for querying data from the _kdb Insights Enterprise_ is
+the DataAccessClient class.
+
+Below is a description of the methods available in the DataAccessClient class:
+
+## Constructors
+
+**DataAccessClient()**
+
+If you use this constructor, the components are built using data from
+environment variables that must be supplied to the process that is using the
+interface.
+
+_Sample_
+
+    
+    
+    import kx.insights.dataaccess.DataAccessClient;
+    ...
+    DataAccessClient dac = new DataAccessClient();
+    
+
+**DataAccessClient(ConfigRequestor configRequestor, String authUrl)**
+
+This constructor allows you to override just the ConfigRequestor and the URL
+that requests are made to for authorization. If no Authorization is needed,
+just set the authUrl to null. If you need to determine the authorization URL
+from the information services URL, the
+DataAccessClient.getAutUrlFromConfigUrl() static method can use used to do
+this.
+
+    
+    
+    import kx.insights.dataaccess.DataAccessClient;
+    ...
+    FileConfigRequestor fcr = new FileConfigRequestor("/path/to/config.json", new ConfigParser());
+    DataAccessClient dac = new DataAccessClient(fcr, null);
+    
+
+**DataAccessClient(HttpsConfigRequestor configRequestor, SSLContextManager
+sslManager, QConnectionFactory qConnectionFactory, DataAccessTokenFactory
+credentialsFactory)**
+
+With this constructor you must supply all of the dependencies of the
+DataAccessClient.
+
+_Sample_
+
+    
+    
+    import kx.insights.dataaccess.DataAccessClient;
+    import kx.insights.dataaccess.DataAccessTokenFactory;
+    ...
+    String configUrl = "$KXI_CONFIG_URL";
+    HttpsConfigRequestor configRequestor = new HttpsConfigRequestor(configUrl);
+    SSLContextManager sslManager = new SSLContextManager();
+    QConnectionFactory qConnectionFactory = new QConnectionFactory();
+    InsightsDataAccessTokenFactory credFactory = new InsightsDataAccessTokenFactory(configUrl);
+    credFactory.setClientIdAndSecret(clientId, clientSecret);
+    DataAccessClient dac = new DataAccessClient(configRequestor, sslManager, qConnectionFactory, credFactory);
+    
+
+## connect
+
+**DataAccessClient.connect()**
+
+This is called to establish a connection to the kdb Insights Enterprise.
+
+Note
+
+It must be called before any requests can be called. Calling these methods
+before calling connect() results in an exception being thrown.
+
+_Sample_
+
+    
+    
+    DataAccessClient dac = new DataAccessClient();
+    dac.connect();
+    
+
+**DataAccessClient.getMeta()**
+
+This returns the result of the getMeta() call. This is returned as an object,
+and will need to be parsed by the caller. More information can be found
+[here](../../../api/database/query/get-meta.html).
+
+_Sample_
+
+    
+    
+    DataAccessClient dac = new DataAccessClient();
+    dac.connect();
+    dac.getMeta();
+    
+
+## getData
+
+**DataAccessClient.getData(String table, Timestamp startTS, Timestamp endTS)**
+
+Returns the result of the getData call on the specified table for the
+specified time range. More information can be found
+[here](../../../api/database/query/get-data.html).
+
+_Sample_
+
+    
+    
+    DataAccessClient dac = new DataAccessClient();
+    dac.connect();
+    Timestamp oneHourAgo = new Timestamp(System.currenttimemillis() - 3600000);
+    Timestamp now = new Timestamp(System.currenttimemillis());
+    Object result = dac.getData("trace", oneHourAgo, now);
+    
+
+**DataAccessClient.getData(Map argsMap)**
+
+Returns the result of the getData call on the specified parameters. More
+information can be found [here](../../../api/database/query/get-data.html).
+
+_Sample_
+
+    
+    
+    DataAccessClient dac = new DataAccessClient();
+    dac.connect();
+    HashMap<String, Object> getDataArgs = new HashMap();
+    getDataArgs.put("startTS", startTime);
+    getDataArgs.put("endTS", endTime);
+    getDataArgs.put("table", "trace");
+    Object result = dac.getData(getDataArgs);
+    
+
+## ping
+
+**DataAccessClient.ping()**
+
+Runs the ping command. More information can be found
+[here](../../../api/database/query/ping.html).
+
+_Sample_
+
+    
+    
+    DataAccessClient dac = new DataAccessClient();
+    dac.connect();
+    boolean pingResult = dac.ping(); //Should always be true
+    
+
+## isConnected
+
+**DataAccessClient.isConnected()**
+
+Returns true if the client is connected. Otherwise returns false.
+
+_Sample_
+
+    
+    
+    DataAccessClient dac = new DataAccessClient();
+    ...
+    if(!dac.isConnected())
+    {
+     dac.connect();
+    }
+    
+
+## Making queries from within a Kubernetes cluster
+
+If you want to make queries from within a Kubernetes cluster, directly to the
+Service Gateway without SSL and with authorization disabled, do the following:
+
+  1. Make a custom config.json, The "query" element needs to be a single element array that contains the host name and port of the pod you which to connect to. "useSslQuery" needs to be set to false so that SSL is disabled. The result should look like this.
+
+    
+    
+    {"name":"dgm-service","query":[":sg-hostname:5050"],"useSslQuery":false}
+    
+
+  1. Constuct the DataAccessClient in your java code, as follows
+
+    
+    
+    FileConfigRequestor fcr = new FileConfigRequestor("/path/to/config.json", new ConfigParser());
+    DataAccessClient dac = new DataAccessClient(fcr, null);
+    
+
+You can now use the DataAccessClient as before.
+
+### ADVANCED: What if I am unable to create a config.json ahead of time, but I
+can get the hostname I want to connect to at runtime
+
+In this case you will need to create your own implementation of the
+ConfigRequestor interface, that will generate configs with the hostname of the
+host you want to query in the "queries" member variable. This will need to be
+passed into the DataAccessClient instead of the FileConfigRequestor that is
+passed in the example above.
+
+## Environment variables
+
+These are the environment variables that are used by the basic form of the
+DataAccessClient() constructor.
+
+variable | required | details  
+---|---|---  
+`KXI_CONFIG_URL` | Mandatory | [Authenticated client URL](getting-started-sdks.html#authentication)  
+`KXI_QUERY_USER` | Conditional | The Keycloak client that is used to generate bearer tokens to log in for query. Must be set if KXI_QUERY_TOKEN is not.  
+`KXI_QUERY_SECRET` | Conditional | The Keycloak client secret that is used to generate bearer tokens for query. Must be set if KXI_QUERY_TOKEN is not.  
+`KXI_QUERY_TOKEN` | Conditional | A bearer token used for authentication when making queries. If this is set, then KXI_QUERY_USER and KXI_QUERY_SECRET are ignored.
+

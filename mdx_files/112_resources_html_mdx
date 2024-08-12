@@ -1,0 +1,219 @@
+https://code.kx.com/insights/enterprise/configuration/resources.html
+
+# Resources - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/configuration/resources.html
+
+# Resources
+
+Each component of the application is assigned a default set of resources.
+These resources dictate how _Kubernetes_ schedules the application pods by
+setting `requests` and `limits`. This ensures the application components are
+given a minimum amount of resources while protecting against any rogue
+workloads over-consuming. These resource requests and limits can be tuned
+according to the size of your workload.
+
+[Kubernetes container
+resources](https://kubernetes.io/docs/concepts/configuration/manage-resources-
+containers/)
+
+The install _values_ file snippet below shows an example of resources for the
+`keycloak` component.
+
+It is configured to request a minimum CPU of 100m (0.1 CPUs) and a limit of
+500m (0.5 CPUs). Similarly it's configured with a memory request of 1024 Mib
+and a limit of 3072Mib.
+
+    
+    
+    keycloak:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 1024Mi
+        limits:
+          cpu: 500m
+          memory: 3072Mi
+    
+
+The _kdb Insights Enterprise_ application consists of a base deployment, and
+dynamic assemblies.
+
+The **base components** can be configured as above by copying the structure
+above and using the chart name instead of `keycloak`.
+
+Each **assembly** can define the resources for its components, however you may
+want to configure the defaults across all assemblies. These would be used if
+an assembly is deployed without any. _kdb Insights Enterprise_ is delivered
+with a set of indicative install sizes (`starter`, `small`, `medium`,
+`large`). Configuring the default assembly resources is applied by setting the
+default install size. The appropriate resources will then be picked from that
+install size.
+
+## Sidecar resources
+
+Some components are deployed with a `sidecar` container for discovery or
+metrics integrations. If you need to configure the sidecar resources, you can
+set them globally using the snippet below.
+
+    
+    
+    global:
+      sidecar:
+        resources:
+          requests:
+            cpu: 0.1
+            memory: 128Mi
+          limits:
+            cpu: 0.1
+            memory: 128Mi
+    
+
+## Scratchpad resources
+
+The scratchpad CPU and memory can be configured with the following snippet
+within your `values.yaml`:
+
+    
+    
+    kxi-scratchpad:
+      resources:
+        limits:
+          cpu: 0.1
+          memory: 8Gi
+        requests:
+          cpu: 1
+          memory: 8Gi
+    
+
+## Query resources
+
+Illustrative purposes
+
+The numbers for limits used on this page are not suggestions, and are meant to
+demonstrate how to use these settings, not recommend values.
+
+The default values for components related to the query path are:
+
+component | cpu requests | cpu limits | memory requests | memory limits  
+---|---|---|---|---  
+resource-coordinator | 100m | 1000m | 128Mi | 256Mi  
+aggregator | 500m | 2000m | 1024Mi | 2048Mi  
+sg-gateway | 250m | 1000m | 512Mi | 4096Mi  
+dap | 100m | 100m | 128Mi | 128Mi  
+sm | 1000m | 1000m | 4000Mi | 4000Mi  
+  
+To set resource limits for the resource-coordinator, aggregators, and service
+gateway, set `resources` in your install configuration.
+
+    
+    
+    service-gateway:
+      aggregator:
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+      sg-gateway:
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+      resource-coordinator:
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+    
+
+### Storage manager and data access processes
+
+To set requests and limits for your databases set a k8sPolicy for the SM and
+DAP elements of your assemblies.
+
+    
+    
+    spec:
+      elements:
+        sm:
+          eoi:
+            resources:
+              requests:
+                memory: "64Mi"
+                cpu: "100m"
+              limits:
+                memory: "2Gi"
+                cpu: "200m"
+          eod:
+            resources:
+              requests:
+                memory: "64Mi"
+                cpu: "100m"
+              limits:
+                memory: "2Gi"
+                cpu: "200m"
+          dbm:
+            resources:
+              requests:
+                memory: "64Mi"
+                cpu: "100m"
+              limits:
+                memory: "500Mi"
+                cpu: "200m"
+          k8sPolicy:
+            resources:
+              requests:
+                memory: "64Mi"
+                cpu: "100m"
+              limits:
+                memory: "500Mi"
+                cpu: "200m"
+        dap:
+          instances:
+            hdb:
+              k8sPolicy:
+                resources:
+                  requests:
+                    memory: "64Mi"
+                    cpu: "250m"
+                  limits:
+                    memory: "128Mi"
+                    cpu: "500m"
+    
+
+### Query environments
+
+Resources for query environments are set to match the resource limits of the
+DAP instances.
+
+For example, the query environment hdb pod `hdb-qe` will get the same limits
+as the `hdb` pod.
+
+    
+    
+    spec:
+      queryEnvironment:
+        enabled: true
+        size: 1
+      dap:
+        instances:
+          hdb:
+            k8sPolicy:
+              resources:
+                requests:
+                  memory: "64Mi"
+                  cpu: "250m"
+                limits:
+                  memory: "128Mi"
+                  cpu: "500m"
+    
+

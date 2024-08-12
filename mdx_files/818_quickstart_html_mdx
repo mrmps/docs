@@ -1,0 +1,553 @@
+https://code.kx.com/insights/enterprise/packaging/quickstart.html
+
+# Quickstart - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/packaging/quickstart.html
+
+# Packaging quickstart
+
+By the end of this quickstart section you will be able to:
+
+  1. Create a package locally that contains a pipeline and a database
+  2. Upload and deploy the package to _kdb Insights Enterprise_
+  3. Manage the package in the _kdb Insights Enterprise_ UI
+  4. Add a UDF to the package and use it in the _kdb Insights Enterprise_ UI
+  5. Add a Custom API to the package and use it in the _kdb Insights Enterprise_ UI
+
+## Deploy a database and pipeline
+
+### Create the package locally
+
+To create a local package that contains a pipeline to inject 100 random floats
+between 0 and 100 and writes them to the database follow the steps below:
+
+  1. Set your package path:
+    
+        export KX_PACKAGE_PATH=docs-packages/packages
+    export KX_ARTIFACT_PATH=docs-packages/artifacts
+    mkdir -p $KX_PACKAGE_PATH
+    mkdir -p $KX_ARTIFACT_PATH
+    
+
+  2. Create a package that contains a database and a single table:
+    
+        export PKG=mypackage
+    kxi package init ${PKG} --version 1.0.0
+    kxi package add --to mypackage database --name mydb
+    kxi package add --to mypackage table --name mytab
+    
+    
+        Creating package at location: mypackage
+    Writing mypackage/manifest.yaml
+    Writing mypackage/manifest.yaml
+    Writing mypackage/manifest.yaml
+    
+
+Default table definition.
+
+By default when a table is added to a package it is defined as a partitioned
+table with 2 columns: `t1` :timestamp and `x1`:float.
+
+This is all that is required for the quickstart, but if you wish to update the
+table you can edit the `tables/mytab.yaml` file.
+
+  3. Add query components, which are required to allow you to query the data ingested into the database:
+    
+        kxi package add --to $PKG router
+    kxi package add --to $PKG agg
+    kxi package add --to $PKG rc
+    
+    
+        Writing mypackage/manifest.yaml
+    Writing mypackage/manifest.yaml
+    Writing mypackage/manifest.yaml
+    
+
+  4. Add a pipeline to inject 100 random floats between 0 and 100:
+    
+        kxi package add --to ${PKG} pipeline --name mypipeline
+    cat << EOF > ${PKG}/src/mypipeline.q
+    demodata: ([] t1: 100#2024.03.15D00:00:00; x1: 100?100.0)
+    .qsp.run
+            .qsp.read.fromExpr["demodata"]
+            .qsp.write.toStream["mytab";"mypackage-mydb"]
+    EOF
+    
+    
+        Writing mypackage/manifest.yaml
+    
+
+Pipeline source file
+
+To change the source file of the pipeline you can modify the `spec` field in
+`pipelines/mypipeline.yaml` in your package.
+
+  5. Check your package contains all the expected components:
+    
+        ==PATH==
+    /builds/kxdev/documentation/insights/mypackage
+    
+    ==OBJECT==
+    Package
+    
+    ==Manifest==
+    uuid: f22cc902-2632-4ffa-9519-378eec699737
+    name: mypackage
+    version: 1.0.0
+    metadata:
+      description: ''
+      authors:
+      - {}
+    entrypoints:
+      default: init.q
+    tables:
+      mytab:
+        file: tables/mytab.yaml
+    databases:
+      mydb:
+        dir: databases/mydb
+        shards:
+        - mydb-shard
+        tables: []
+    pipelines:
+      mypipeline:
+        file: pipelines/mypipeline.yaml
+    router: router/router.yaml
+    
+
+### Upload and deploy the package
+
+To upload the package to _kdb Insights Enterprise_ follow the steps below:
+
+  1. Pack the package. Making sure to define the version of the package on the command line. 
+    
+        kxi package packit ${PKG} --version 1.0.0 --tag
+    
+    
+        Refreshing package before packing...
+    Writing mypackage/manifest.yaml
+    Creating package from mypackage
+    Package created: /tmp/artifact_store/mypackage-1.0.0.kxi
+    mypackage-1.0.0.kxi
+    
+
+`packit` creates `.kxi` package and writes it to `KX_ARTIFACT_PATH`.
+
+  2. List the current `.kxi` packages available locally in `KX_ARTIFACT_PATH`.
+    
+        kxi package list --artifacts
+    
+    
+        {
+        "mypackage": [
+            {
+                "fields": {},
+                "version": "1.0.0"
+            }
+        ]
+    }
+    
+
+  3. List the currently available packages on _kdb Insights Enterprise_ :
+
+Currently there are no packages available.
+
+  4. Push your package to _kdb Insights Enterprise_ :
+    
+        kxi package push ${PKG}/1.0.0
+    
+    
+        {
+      "mypackage": [
+        {
+          "version": "1.0.0",
+          "_status": "InstallationStatus.SUCCESS"
+        }
+      ]
+    }
+    
+
+  5. Re-run the `remote-list` command. Your new package now appears in this list:
+    
+        {
+      "mypackage": [
+        "1.0.0"
+      ]
+    }
+    
+
+At this stage, your package is uploaded to _kdb Insights Enterprise_ and the
+database and pipeline will be visible in the UI.
+
+  6. Deploy the package to ingest the data into the database:
+    
+        kxi package deploy $PKG/1.0.0
+    
+
+### Manage the package in the UI
+
+If you log into your _kdb Insights Enterprise_ instance you can:
+
+  * See `mypackage` and `mypipeline` are displayed in the left-hand menu as shown below.
+
+![](images/package-deployed.png)
+
+  * View the database details, make modifications and redeploy via the UI.
+
+![](images/package-database.png)
+
+  * View the pipeline details, make modifications to the pipeline settings and redeploy via the UI.
+
+![](images/package-pipeline.png)
+
+Managing pipelines that are defined using q or Python via the CLI.
+
+Currently if a pipeline specification is defined via the CLI using q or Python
+code, rather than using the Pipeline Editor in the UI, you cannot edit the
+code in the UI only the pipeline settings."
+
+  * Query the data in the database using the Query Window.
+
+![](images/package-query.png)
+
+## Add a UDF
+
+In this quickstart section, you will add a UDF to the package that only
+returns the values where the columns `x` is less than 10.
+
+### Update the local package
+
+To add a UDF to the package take the following steps:
+
+  1. Create a file `src/myudf.q` within the `mypackage` directory that will contain the UDF. 
+
+This file contains a [UDF](package-udfs.html).
+
+    
+        cd ${PKG}
+    mkdir -p src/
+    
+    cat << EOF > src/myudf.q
+    // @udf.name("sp_map")
+    // @udf.tag("sp")
+    // @udf.category("map")
+    .test.sp.map:{[table;params]
+        select from table where x1<10
+     }
+    EOF
+    cd ..
+    
+
+The decorators `@udf.*` ensure that it will be listed as one of the UDFs
+available for use in the Map function of the Pipeline Editor and named
+`sp_map`.
+
+  2. Modify the `init.q` file which is your default [entrypoint](package-entrypoints.html) in order to ensure that your new file gets loaded by default.
+    
+        cd ${PKG}
+    cat << EOF > init.q
+    // Load the src/myudf.q file relative to package root
+    .kxi.packages.file.load["src/myudf.q"]
+    EOF
+    cd ..
+    
+
+  3. Check your package:
+    
+        ==PATH==
+    /builds/kxdev/documentation/insights/mypackage
+    
+    ==OBJECT==
+    Package
+    
+    ==Manifest==
+    uuid: f22cc902-2632-4ffa-9519-378eec699737
+    name: mypackage
+    version: 1.0.0
+    metadata:
+      description: ''
+      authors:
+      - {}
+    entrypoints:
+      default: init.q
+    tables:
+      mytab:
+        file: tables/mytab.yaml
+    databases:
+      mydb:
+        dir: databases/mydb
+        shards:
+        - mydb-shard
+        tables: []
+    pipelines:
+      mypipeline:
+        file: pipelines/mypipeline.yaml
+    router: router/router.yaml
+    
+
+The local package now includes a new udf `myudf`.
+
+### Update and deploy the package
+
+To update the package created in the previous section in _kdb Insights
+Enterprise_ follow the steps below:
+
+  1. Teardown the currently deployed package.
+    
+        kxi package teardown ${PKG}
+    
+
+  2. Deploy the updated package:
+    
+        kxi package packit $PKG --version 1.0.0 --tag
+    kxi package push $PKG/1.0.0 --force
+    kxi package deploy $PKG/1.0.0
+    
+
+### Use the UDF
+
+If you log into your _kdb Insights Enterprise_ instance you can now leverage
+your code in the UI in the following ways:
+
+  * List and load the content of a package within a Query session. 
+    
+        // List all packages
+    .kxi.packages.list.all[]
+    
+    // Load the package
+    .kxi.packages.load["mypackage";"1.0.0"]
+    
+    // View the populated context from the package
+    .test
+    
+    // List all available UDFs
+    .kxi.udfs.list.all[]
+    
+
+![ScratchpadListLoad](images/scratchpad_list_load.png)
+
+  * Using the UDF within a scratchpad.
+
+![ScratchpadSPUDF](images/scratchpad_sp_udf.png)
+
+  * Use the UDF in a Function node within a Pipeline Editor.
+
+![PipelineUDF](images/pipeline_udf.png)
+
+## Use a Custom API
+
+In this quickstart section, you will add a Custom API to the package that
+multiplies a selected column by a multiplier and returns the original data and
+a running average of the multiplied column.
+
+### Update the local package
+
+To add a Custom API to the package defined in the previous section, take the
+following steps:
+
+  1. Add an entrypoint and the custom code to be used when querying the database (this is done by the Data Access processes). The code multiplies the selected column by the specified multiplier and registers the API:
+    
+        kxi package add --to $PKG entrypoint --name data-access --path src/da.q
+    cat << 'EOF' > $PKG/src/da.q
+    .example.daAPI:{[table;column;multiplier;startTS;endTS]
+        data:.kxi.selectTable[table;(startTS;endTS);();0b;enlist column;()!()];
+        res:?[data;();0b;`original_col`multiplied_col!(column;(*;column;multiplier))];
+        (multiplier;res)
+        };
+    .da.registerAPI[`.example.daAPI;
+        .sapi.metaDescription["Example API"],
+        .sapi.metaParam[`name`type`isReq`description!(`table;-11h;1b;"Table to query")],
+        .sapi.metaParam[`name`type`isReq`description!(`column;-11h;1b;"Column to multiply")],
+        .sapi.metaParam[`name`type`isReq`description!(`multiplier;-7h;1b;"Multiplier")],
+        .sapi.metaParam[`name`type`isReq`description!(`scope;-99h;0b;"Workaround")],
+        .sapi.metaReturn[`type`description!(98h;"Result of the select.")],
+        .sapi.metaMisc[enlist[`safe]!enlist 1b]
+        ];
+    EOF
+    
+    
+        Writing mypackage/manifest.yaml
+    
+
+See other examples of registering an API
+[here](../../api/database/custom/metadata.html#examples)
+
+  2. Add an entrypoint and the custom code to be used when aggregating the data (this is done by the Aggregator). The code calculates the running average of the multiplied column returned when querying the database and registers the API:
+    
+        kxi package add --to $PKG entrypoint --name aggregator --path src/agg.q
+    cat << 'EOF' > mypackage/src/agg.q
+    .example.aggAPI:{[tbls]
+        razed:raze last each tbls;
+        res:select original_col, multiplied_col_avg: avgs multiplied_col from razed;
+        .sapi.ok res
+        };
+    .sgagg.registerAggFn[`.example.aggAPI;
+        .sapi.metaDescription["Average aggregator"],
+        .sapi.metaParam[`name`type`description!(`tbls;0h;"Tables received from DAPs")],
+        .sapi.metaReturn`type`description!(98h;"Running average of multiplied column");
+        `.example.daAPI
+        ];
+    EOF
+    
+    
+        Writing mypackage/manifest.yaml
+    
+
+When registering your aggregation function, you can define the APIs for which
+this aggregation function should be the default. Here `.example.daAPI` from
+step 1 has been specified. See other examples of registering an API
+[here](../../api/database/custom/metadata.html#examples)
+
+  3. Add the environment flags to the package specification to ensure the entrypoints are loaded:
+    
+        kxi package add --to $PKG deployment-config
+    echo "env: [{name: KXI_PACKAGES, value: mypackage:1.0.0}]" > $PKG/deployment_config/deployment_config.yaml
+    
+    
+        Writing mypackage/manifest.yaml
+    
+
+The local package now includes a new Custom API `daAPI`.
+
+### Upload and deploy the package
+
+To update the package follow the steps below:
+
+  1. Teardown the currently deployed package.
+    
+        kxi package teardown ${PKG}
+    
+
+  2. Deploy the package:
+    
+        kxi package packit $PKG --version 1.0.0 --tag
+    kxi package push $PKG/1.0.0 --force
+    kxi package deploy $PKG/1.0.0
+    
+
+### Create a View
+
+To create a View that uses the Custom API, follow the instructions below:
+
+  1. Log into your _kdb Insights Enterprise_ instance.
+  2. Create a new View by selecting the plus icon at the top toolbar and select View.
+  3. Upload the ready-made View:
+
+    1. Click on the link [here](mypackage-view.json) to display a JSON representation of the ready-made View in a new browser window.
+    2. Select all the text in the new browser window and copy it into an empty text file using the editor of your choice.
+    3. Save the file on your local machine. You must use a .json extension for this file.
+    4. Drag the file over the View. When the workspace is highlighted in blue and **Drop Dashboards to Import** is displayed in the center of the workspace, release the file. The ready-made View `mypackage-view` is now displayed in a new tab. This View displays a grid that includes two columns, the original value from the demo data and a running average of the column multiplied by 7.
+
+![](images/mypackage-view.png)
+
+  4. To modify the multiplier that is used to select the values:
+
+    1. With the Data Grid selected in the new View, open the Data Source and choose the `mypackage-node` Data Source from the list on the left-hand side.
+    2. Expand the `.example` node to display the `daAPI` API.
+
+![](images/mypackage-view-datasource.png)
+
+    1. Update the multiplier value from 7 to any value you wish.
+    2. Select **Apply** and then **Select Item** to update the Data Grid with the new multiplier. 
+
+### Querying over HTTPS
+
+You can also call your Custom API via REST by supplying the API parameters.
+
+  1. Authenticate to your _kdb Insights Enterprise_ :
+    
+        INSIGHTS_TOKEN=`curl -s --header "Content-Type: application/x-www-form-urlencoded" \
+        -d "grant_type=client_credentials&client_id=$INSIGHTS_CLIENT_ID&client_secret=$INSIGHTS_CLIENT_SECRET" \
+        "${INSIGHTS_URL}/auth/realms/insights/protocol/openid-connect/token" | jq -cr ".access_token"`
+    
+
+This example requires the following parameters: `INSIGHTS_URL`,
+`INSIGHTS_CLIENT_ID` and `INSIGHTS_CLIENT_SECRET`
+
+  2. Run the REST request calling your `daAPI` Custom API and storing the returned data:
+    
+        DATA=`curl -s -X POST "${INSIGHTS_URL}/servicegateway/example/daAPI" \
+        -H "Content-Type: application/json" \
+        -H "Accept: application/json" \
+        -H "Authorization: Bearer $INSIGHTS_TOKEN" \
+        -d "$(jq -n \
+            '{
+                table       : "mytab",
+                column      : "x1",
+                multiplier  : "3",
+                startTS     : "2024.03.14D00:00:00",
+                endTS       : "2024.03.16D00:00:00",
+                scope       : { "assembly" : "mypackage" }
+            }' | jq -cr .)"`
+    
+
+  3. Display the resulting data:
+    
+        echo $DATA | jq -cr '.payload'
+    [{"original_col":17.80839,"multiplied_col_avg":53.42516},{"original_col":30.17723,"multiplied_col_avg":71.97842},...
+    
+
+## Remove a package
+
+To remove the package created in this quickstart from _kdb Insights
+Enterprise_ , run the following command:
+
+    
+    
+    kxi package remote-remove $PKG/1.0.0 --force
+    
+    
+    
+    {
+      "mypackage": [
+        {
+          "_status": "DELETED",
+          "version": "1.0.0"
+        }
+      ]
+    }
+    
+
+remote-remove
+
+`remote-remove` by default removes the packages but not the `.kxi` package
+file.
+
+To clear the `.kxi` files run:
+
+    
+    
+    kxi package remote-remove --artifacts ${PKG}/1.0.0 --force
+    
+    
+    
+    {
+      "mypackage": [
+        {
+          "_status": "DELETED",
+          "version": "1.0.0"
+        }
+      ]
+    }
+    
+
+You can also remove your locally stored packages and `.kxi` files in a similar
+way:
+
+    
+    
+    kxi package uninstall $PKG/1.0.0 --force && kxi package uninstall --artifacts $PKG/1.0.0 --force
+    
+    
+    
+    {}
+    {
+        "mypackage": [
+            {
+                "_status": "DELETED",
+                "version": "1.0.0"
+            }
+        ]
+    }
+    
+

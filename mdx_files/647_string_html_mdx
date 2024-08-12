@@ -1,0 +1,100 @@
+https://code.kx.com/insights/enterprise/ingest/pipeline/operators/string.html
+
+# String Utilities - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/ingest/pipeline/operators/string.html
+
+# String Utilities
+
+_Apply string operations on an external or internal data source into the
+Stream Processor_
+
+String operators allows for both streaming and batch data to be operated on in
+kdb Insights Enterprise.
+
+See APIs for more details
+
+A q interface can be used to build pipelines programatically. See [the q
+API](../../../../api/stream-processor/q/string.html) for API details.
+
+A Python interface is included along side the q interface and can be used if
+PyKX is enabled. See [the Python API](../../../../api/stream-
+processor/python/string.html) for API details.
+
+The pipeline builder uses a drag-and-drop interface to link together
+operations within a pipeline. For details on how to wire together a
+transformation, see the [building a pipeline guide](../index.html#building-a-
+pipeline).
+
+## To Uppercase
+
+_Receives data from a field and converts string data to uppercase_
+
+![To Uppercase properties](images/ui/string/toUppercase-config.png)
+
+**Required Parameters:**
+
+name | description | default  
+---|---|---  
+fields | A list of column names or indices indicating the columns to act on. |   
+  
+**Example: Publishing from a read expression node**
+
+A read expression node is a node in which data can be manually placed in the
+form of a Python or q expression. In this example, we will apply an uppercase
+transform for an incoming q table's y column.
+
+First, drag out an expression reader and enter a q table with a column `y` you
+would like to perform the string transformation on.
+
+![Expression reader with Q code](images/ui/string/expression-reader-
+example.png)
+
+Second, drag out a string operator `toUppercase` and set the column name to be
+`y`.
+
+![Uppercase operator with column y](images/ui/string/uppercase-operator-
+example.png)
+
+Finally, setup some writer to write the newly transformed data. In this
+example, we will use a console writer.
+
+![Writer set up to string operator](images/ui/string/writer-operator-
+example.png)
+
+## To Lowercase
+
+_Receives data from a field and converts string data to lowercase_
+
+![To Lowercase properties](images/ui/string/toLowercase-config.png)
+
+**Required Parameters:**
+
+name | description | default  
+---|---|---  
+fields | A list of column names or indices indicating the columns to act on. |   
+  
+**Example: Publishing from a read expression node**
+
+A read expression node is a node in which data can be manually placed in the
+form of a Python or q expression. In this example, we will apply an lowercase
+transform for an incoming q table's y column.
+
+First, drag out an expression reader and enter a q table with a column `y` you
+would like to perform the string transformation on.
+
+![Expression reader with Q code](images/ui/string/expression-reader-
+example.png)
+
+Second, drag out a string operator `toLowercase` and set the column name to be
+`y`.
+
+![Lowercase operator with column y](images/ui/string/lowercase-operator-
+example.png)
+
+Finally, setup some writer to write the newly transformed data. In this
+example, we will use a console writer.
+
+![Writer set up to string operator](images/ui/string/writer-operator-
+example.png)
+

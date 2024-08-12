@@ -1,0 +1,153 @@
+https://code.kx.com/platform/stream/release_430/
+
+# 4.3.0 - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/stream/release_430/
+
+# Changes in 4.3.0
+
+## Messaging
+
+### Publish to channels
+
+Existing messaging APIs (`.dm.pub*`) publish to all channels. New copies of
+each have been added to publish to a specific channel instead of all.
+
+  * `.dm.pubc`
+  * `.dm.pubnoreplyc`
+  * `.dm.pubflushc`
+  * `.dm.pubdatac`
+  * `.dm.pubmultc`
+
+    
+    
+    data:flip `time`sym`src!(.z.p; `$("EUR/USD";"EUR/GBP"); `DB);
+    .dm.pub[`trade; data]
+    .dm.pubc[`channel; `trade; data]
+    
+
+See the _Template API Guide_ for full details.
+
+### Multi-publish
+
+**Ordering**
+
+Fixed issue with ordering of multi-table publish APIs. Previously tables could
+be published with different order than specified, e.g. ``dfxQuote`dfxTrade`
+could become ``dfxTrade`dfxQuote`. The APIs will always obey the input table
+order.
+
+**Tickerplant**
+
+Previously, multi-publish messages would be broken into individual updates
+tables when written to the transaction log. The message `(`updM; `tab1`tab2;
+..)` would be split into two;
+
+    
+    
+    (`upd; `tab1; ..)
+    (`upd; `tab2; ..)
+    
+
+The message is now stored grouped as published without splitting `(`updM;
+`tab1`tab2; ..)`.
+
+### Event callbacks
+
+The parameter to the disconnect callback _.dm.cb.disconnect_ has changed from
+a integer list of length one to an atomic integer. For details of messaging
+event callbacks see
+
+[Event callbacks](../messaging/#event-callbacks)
+
+## Action tracker
+
+Warning
+
+This release contained considerable changes to the _Action Tracker_ analytics.
+It is advised for solution teams to re-examine any of the Stream analytics
+that have been forked into other packages. These should be reverted to the
+Stream versions or the new changes should be incorporated into the forked
+ones.
+
+### Reopen transition
+
+The _reopen_ operation has been enhanced to behave as a normal transition.
+This includes;
+
+  * Being configurable from the Control UI - including transition analytics, notifications, assignments etc
+  * Can be permissioned by role
+  * Appears as a normal transition in the user dashboard
+
+The main difference with the _Reopen_ transition isn't tied to a specific
+queue. Normal transitions go between two specific queues, whereas _Reopen_
+goes between any final queue and the initial one. This means it's opened and
+configured from the _Action Tracker_ editor in the _Control UI_ and not from a
+specific queue.
+
+![Screenshot](../img/action-tracker-reopen.jpg)
+
+Warning
+
+Since the reopen permissions are managed differently, solutions may need to
+re-apply the desired role permissions for it on upgrade.
+
+### Reopening items
+
+Previously when items were reopened, the UI did not display their attachments.
+This has been fixed.
+
+### Queue timeout
+
+Bug fixed where if an item timed out on one queue, the timeout action wouldn't
+run on subsequent queues.
+
+### Reissue data
+
+A new mode has been added for action trackers with reissues enabled. This
+allows for the item data, such as tag columns, transaction time etc, to come
+from either the first or latest alert. The field is available in the Action
+Tracker editor in the _KX Control UI_. If enabled, the dashboard will display
+the data from the last reissue.
+
+### Bulk attachments
+
+It is now possible to attach a file to several action tracker items at once.
+This can be achieved by selecting them all in the current items panel,
+clicking upload and checking the _Apply to all selected items_ box.
+
+## Reporting
+
+### Report client
+
+New API added to run a report and optionally overwrite the target and timeout
+of at runtime. This removes the need to have many duplicate report instances.
+
+    
+    
+    params:`startDate`symList`endDate!("today";"ALL";"tomorrow")
+    actions:([]action:`dxReportSaveToCSV`dxReportSaveToCSV;pname:`csvfilename`csvpath;param:("DAILYDATA_TODAY_$STARTDATE$";"ENV=DELTADATA_HOME=/DeltaFxEvalData/reports"))
+    callback:{.log.out[.z.h; "ran report instance"; ()]}
+    
+    // use defaults
+    .rpt.client.runDict[`DS_FX_DAILY_DATA_TODAY; `params`actions!(params; actions); ()!(); callback]
+    
+    // overwrite defaults
+    .rpt.client.runDict[`DS_FX_DAILY_DATA_TODAY; `params`actions`target`timeout!(params; actions; `ds_gw_fx_eval; 30i); ()!(); callback]
+    
+
+See the _Template API Guide_ for full details.
+
+## Optional parameters now available to DeltaAPIService
+
+_KX Stream_ Java API now exposes the same optional parameters interface
+available in C# API
+
+[Public API Servive](../java_stream_api/#public-query-api)
+
+## Connections removed from _KX Stream_
+
+All connections have been removed from _KX Stream_. Any connections that were
+in connection groups have been replaced with the corresponding process
+instances.
+

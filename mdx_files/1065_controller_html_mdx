@@ -1,0 +1,148 @@
+https://code.kx.com/insights/api/stream-processor/rest/controller.html
+
+# Controller - kdb products
+
+Original URL: https://code.kx.com/insights/api/stream-processor/rest/controller.html
+
+#  OpenAPI
+
+## Get workers
+
+Return all workers registered with this Controller, and their associated
+metadata. The metadata includes information about which partitions have been
+assigned to each worker, and the container host:port of each worker that can
+be used if attached to the same network as the worker container.
+
+    
+    
+    curl controller:6000/workers | jq
+    
+    
+    
+    [
+      {
+        "id": null,
+        "name": "spworker-9428137c94ae",
+        "address": "9428137c94ae:5000",
+        "partitions": [
+          0
+        ],
+        "startTime": "2021-06-28T16:19:54.913Z"
+      },
+      ..
+      {
+        "id": null,
+        "name": "spworker-edd10351a609",
+        "address": "edd10351a609:5000",
+        "partitions": [
+          2
+        ],
+        "startTime": "2021-06-28T16:19:56.353Z"
+      }
+    ]
+    
+
+This can also be called over q IPC using:
+
+    
+    
+    `:controller:6000 (`.spctl.api.getWorkers; ::)
+    
+
+## Get metrics
+
+Each worker periodically reports health and performance metrics to its
+Controller. This API returns select metrics along with an aggregation of
+metrics representing total latency (in milliseconds) and throughput (in bytes
+and number of events) for the pipeline as a whole.
+
+The number of events reported reflects the sum of `count` applied to each
+received batch, normalized to 'events per second'. In cases where the data
+payload does not directly reflect a batch of events (such as a kdb+ tick tuple
+of table name and table data), the 'events' metric would be inaccurate. In the
+kdb+ tick tuple example, each message would be seen as containing two events
+(the table name, and the table data).
+
+Future versions of the Stream Processor will allow configuration around what
+in the stream constitutes an ‘event’ for this metric to accommodate for cases
+such as this.
+
+    
+    
+    curl controller:6000/metrics | jq
+    
+    
+    
+    [
+      {
+        "name": "spworker-9428137c94ae",
+        "ts": "2021-06-28T16:20:45.672Z",
+        "eventRate": 98003.095,
+        "bytesRate": 127402.123,
+        "latency": 3.255
+      },
+      {
+        "name": "spworker-5bb998dee952",
+        "ts": "2021-06-28T16:20:41.678Z",
+        "eventRate": 7313.19965,
+        "bytesRate": 74493.9964,
+        "latency": 16.4393
+      },
+      ..
+      {
+        "name": "_total",
+        "ts": "2021-06-28T16:21:23.637Z",
+        "eventRate": 119400.708,
+        "bytesRate": 311912.823,
+        "latency": 18.0915
+      }
+    ]
+    
+
+This can also be called over q IPC using:
+
+    
+    
+    `:controller:6000 (`.spctl.api.getMetrics; ::)
+    
+
+## Get pipeline description
+
+A textual representation of the running pipeline can be obtained with the
+following:
+
+    
+    
+    # digraph pipeline {
+    #     node [fontname = "menlo", margin=.1, fontsize=8, style="rounded,filled,setlinewidth(0)"];
+    #
+    #
+    #     "callback-publish-dd6a24c1" [shape=box, fillcolor="#cce0ff"];
+    #     "expr-270d7db3" [shape=box, fillcolor="#cce0ff"];
+    #     "ipc-d2a49aa1" [shape=box, fillcolor="#cce0ff"];
+    #     "ipc-d2a49aa1-1" [shape=box, fillcolor="#cce0ff"];
+    #
+    #     "callback-publish-dd6a24c1" -> "tumblingWindow-04826017";
+    #     "expr-270d7db3" -> "map-36be3506";
+    #     "tumblingWindow-04826017" -> "merge-5f92ebe7";
+    #     "map-36be3506" -> "merge-5f92ebe7";
+    #     "merge-5f92ebe7" -> "map-c8547844";
+    #     "map-c8547844" -> "map-27f549af";
+    #     "map-27f549af" -> "ipc-d2a49aa1";
+    #     "merge-5f92ebe7" -> "map-fa2492d9";
+    #     "merge-5f92ebe7" -> "map-29eb2d7d";
+    #     "map-fa2492d9" -> "union-068a9526";
+    #     "map-29eb2d7d" -> "union-068a9526";
+    #     "union-068a9526" -> "map-0bdd6c9e";
+    #     "map-0bdd6c9e" -> "ipc-d2a49aa1-1";
+    # }
+    
+
+## Get status
+
+Return the status of this pipeline.
+
+## Get pipeline specification
+
+Return the pipeline specification.
+

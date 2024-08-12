@@ -1,0 +1,65 @@
+https://code.kx.com/insights/accelerators/fsi/ice-fi-introduction.html
+
+# ICE Fixed Income FI Screener Overview - kdb products
+
+Original URL: https://code.kx.com/insights/accelerators/fsi/ice-fi-introduction.html
+
+# KX Fixed Income Bond Screener for ICE® Data Accelerator Overview
+
+## Introduction
+
+The KX Fixed Income Bond Screener Accelerator ingests realtime, historic, and
+reference data from ICE® (The Intercontinental Exchange, Inc.®) Fixed Income
+and Data Services and persists them in kdb Insights Enterprise. Tick-level
+data can be streamed directly into custom Realtime streaming analytic
+pipelines, queried using SQL, or analyzed using enhanced Accelerator APIs via
+Python or any downstream application using REST.
+
+The entire Accelerator can be configured and launched on an existing kdb IE
+installation in minutes. Quants, business users, and developers can get
+instant access to high quality ICE data, paired with the power and performance
+of kdb Insights Enterprise, all without a lengthy implementation project.
+
+kdb Insights Enterprise with KX Fixed Income Bond Screener Accelerator can
+power use cases such as:
+
+  * **Portfolio construction** – Narrow down on bonds to incorporate into a portfolio. Simple filters are demonstrated in the Accelerator, but the approach can be used to build out more complex analyses incorporating a full range of aggregated and tick level data.
+  * **Backtesting** – Faster historical data ingest, enabling quicker algorithm development iteration
+
+### Accelerator architecture
+
+The KX Accelerator delivers a scalable, performant architecture including:
+
+  * The ICE Realtime Feed Handler
+  * A pipeline for realtime Quote data ingest `icerealtimefi`
+  * A pipeline for replay (historical) Quote data ingest `icehistoricreplayfixedincome`
+  * A pipeline COREREF and CROSSREF data ingest `icecorereference` and `icecrossreference`
+  * A pipeline for APEX GSM data (ratings and sector information) `iceratings`
+  * Schemas for `Quote` and `Instrument` data for the above
+  * Analytic and query APIs via the [FSI Library](fsi-lib-overview.html)
+  * Two example Insights Views that combine realtime, historic, and reference data
+    * An overview screen 
+    * A drilldown screen 
+  * Example Jupyter notebooks, demonstrating Python and REST API access
+
+![ICE FI Screener Accelerator Architecture](images/kdbie-accel-fi-
+screener.png)
+
+### Further detail
+
+For more information, refer to the following documentation:
+
+## About ICE®
+
+[ICE](https://www.ice.com/) is a Fortune 500 company that designs, builds, and
+operates digital networks that combine data, technology, and expertise to
+connect people to opportunity. They operate exchanges, including the New York
+Stock Exchange, clearing houses, and mortgage technology that help people
+invest, raise capital and manage risk across asset classes. By aligning global
+price discovery data, comprehensive reference, alternative data, events data
+(corporate actions), analytics and benchmark solutions with proprietary fixed
+income & OTC capabilities, ICE is uniquely positioned to support the
+investment community. In addition to continuous investments in technology,
+what sets ICE apart is the human capital investment of professionals to
+monitor both liquid and illiquid markets.
+

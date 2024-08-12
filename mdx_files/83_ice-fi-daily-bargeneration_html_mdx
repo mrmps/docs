@@ -1,0 +1,237 @@
+https://code.kx.com/insights/accelerators/fsi/ice-fi-daily-bargeneration.html
+
+# Scheduled Bar Generation configuration - kdb products
+
+Original URL: https://code.kx.com/insights/accelerators/fsi/ice-fi-daily-bargeneration.html
+
+# Setting up Bar Generation
+
+You must have downloaded and installed the IceFixedIncome package before
+setting up bargeneration. The general bar generation documentation is
+[here](generateGetBarsData.html).
+
+## 1\. Create the daily bargen directory
+
+Create a new directory to contain all of the files needed to set up daily
+bargeneration. In this example, we'll call ours `ice-fi-daily-bargen`
+
+    
+    
+    mkdir ice-fi-daily-bargen
+    
+
+Move the necessary files to setup the cronjob to your `ice-fi-daily-bargen`
+directory. The files are: \- bargeneration.q \- bargen-inspect-pod.yaml \-
+bargen-pvc.yaml \- bargeneration-cronjob.yaml
+
+    
+    
+    cp  IceFixedIncome/pipeline-spec/bargeneration.q IceFixedIncome/config/bargen-inspect-pod.yaml IceFixedIncome/config/bargen-pvc.yaml IceFixedIncome/config/bargeneration-cronjob.yaml ice-fi-daily-bargen
+    
+
+### Edit bargeneration.q
+
+Edit the `assemblyName` variable on line 6 of `bargeneration.q` file to be the
+name of your already running fsi-app-ice-fi assembly.
+
+    
+    
+    // TODO Update the name of your assembly below within the quotation marks instead of the placeholder `$"ENTER_YOUR_ASSEMBLY_NAME_HERE"
+    assemblyName:`$"ENTER_YOUR_ASSEMBLY_NAME_HERE"
+    
+
+Note, you will need the `bargeneration.q` again if you are setting up manual
+bargeneration.
+
+## 2\. Create run-bargeneration-cronjob.sh
+
+We need to create a bash script called `run-bargeneration-cronjob.sh` that
+will run within the cronjob process. The script will submit a POST REST
+request to bring up a bargeneration pipeline using the `bargeneration.q`
+pipeline spec.
+
+    
+    
+    vi run-bargeneration-cronjob.sh
+    
+
+And insert the below code
+
+    
+    
+    #!/bin/bash
+    
+    ## Env variables needed before running script with
+    ## TODO: Review, and if necessary change ASM_NAME variable to the name of your ice fixed income assembly
+    ASM_NAME="fsi-app-ice-fi"
+    
+    ## Install the libraries needed to run the POST request
+    apt-get update -o=dir::cache=/mnt/bargen/packages/
+    apt-get install -f -y -o=dir::cache=/mnt/bargen/packages/ git vim jq curl
+    echo "alias aws='/mnt/bargen/packages/bin/aws'" >> ~/.bashrc
+    cd /mnt/bargen/
+    
+    ################ FUNCTIONS ######################
+    
+    logMsg(){
+      if [ -z "$*" ]; then
+        echo "No message provided"
+        return 1
+      fi
+      echo "$(date -u +'%Y-%m-%dT%H:%M:%S.%3NZ') ## $*"
+    }
+    
+    renewToken(){
+        logMsg "Renewing keycloak token"
+        curl -s --header "Content-Type: application/x-www-form-urlencoded" \
+             -d "grant_type=client_credentials&client_id=$CLIENT_NAME&client_secret=$CLIENT_SECRET" \
+             "$INSIGHTS_HOSTNAME/auth/realms/insights/protocol/openid-connect/token" \
+             | jq -r .access_token > token
+    }
+    
+    getPipelineStatus(){
+        ## arg1 pipeline name
+        renewToken
+        curl -s -S -X GET -H  "Authorization: Bearer $(cat token)"  $INSIGHTS_HOSTNAME/streamprocessor/pipeline/status/insights-bargeneration
+    }
+    
+    teardown(){
+        # arg1- pipeline name
+        renewToken
+        curl -s -S -X POST -H "Authorization: Bearer $(cat token)" $INSIGHTS_HOSTNAME/streamprocessor/pipeline/teardown/insights-bargeneration?clearCheckpoints=true
+    
+    }
+    
+    runPipeline(){
+        export PIPELINE_NAME="bargeneration"
+        export SPEC_FILE="/mnt/bargen/bargeneration.q"
+    
+        echo $SPEC_FILE  $PIPELINE_NAME
+    
+        # Token needs renewed before running pipeline
+        renewToken
+    
+        ## Teardown pipeline if it already exists
+        teardown $PIPELINE_NAME
+        logMsg "Waiting for pipeline to teardown"
+        sleep 10
+    
+        # run request
+        curl -s -S -X POST $INSIGHTS_HOSTNAME/streamprocessor/pipeline/create\
+            -H "Authorization: Bearer $(cat token)" \
+            -d "$(jq -n  --arg spec "$(cat $SPEC_FILE)" --arg aws_access_key_id $AWS_ACCESS_KEY_ID \
+            --arg aws_secret_access_key $AWS_SECRET_ACCESS_KEY \
+            --arg pipeline_name $PIPELINE_NAME \
+            --arg asm_name $ASM_NAME \
+            --arg configmap_name $ASM_NAME-assembly-configmap \
+            '{
+                name     : $pipeline_name,
+                type     : "spec",
+                config   : { content: $spec },
+                settings : {
+                    minWorkers: "1",
+                    maxWorkers: "1"
+                },
+                env      : {
+                    KXI_SP_BETA_FEATURES: "true",
+                    ASM_NAME: $asm_name,
+                    AWS_REGION: "eu-west-1",
+                    AWS_ACCESS_KEY_ID: $aws_access_key_id,
+                    AWS_SECRET_ACCESS_KEY: $aws_secret_access_key,
+                    KX_KURL_DEBUG_LOG: "1",
+                    KXI_SP_DIRECT_WRITE_ASSEMBLY: $asm_name,
+                    KX_TRACE_S3: "1"
+                },
+                kubeConfig  : {
+                    configMaps: $configmap_name
+                }
+            }' | jq -asR .)"
+    
+    }
+    
+    runPipeline
+    
+
+Edit the variable `ASM_NAME` on line 5 of the `run-bargeneration-cronjob.sh`
+to be the name of your already running ice-fixed-income assembly. (This should
+be the same name that you set `assemblyName` to within `bargeneration.q`)
+
+    
+    
+    ## TODO: Review, and if necessary change ASM_NAME variable to the name of your ice fixed income assembly
+    ASM_NAME="fsi-app-ice-fi"
+    
+
+## 3\. Create PVC to mount your volume and move files to the volume
+
+Create a PVC that you will mount to your bargeneration process.
+
+    
+    
+    kubectl create -f bargen-pvc.yaml
+    
+
+Create the pod that mounts to the volume so that you can move files into the
+mount file path
+
+    
+    
+    kubectl apply -f bargen-inspect-pod.yaml
+    
+
+Then copy the `run-bargeneration-cronjob.sh` script, and the `bargeneration.q`
+pipeline spec file to your volume which should be at the path `/mnt/bargen`.
+Replace {your-namespace} with the name of your namespace within your
+kubernetes cluster.
+
+    
+    
+    kubectl cp run-bargeneration-cronjob.sh {your-namespace}/pod-inspect-bargen-pvc:/mnt/bargen
+    kubectl cp bargeneration.q {your-namespace}/pod-inspect-bargen-pvc:/mnt/bargen
+    
+
+Note, you may have to update the permissions of the `run-bargeneration-
+cronjob.sh` script once it is mounted on the volume. You can do this by
+running a chmod command on the pvc pod using `kubectl exec`. For example:
+
+    
+    
+    kubectl exec -it pod-inspect-bargen-pvc -- chmod 777 /mnt/bargen/run-bargeneration-cronjob.sh
+    
+
+Once you have copied your files over, you can delete the pod which you used to
+mount your pvc (Your cronjob does not run if the volume is mounted by another
+process).
+
+    
+    
+    kubectl delete pod pod-inspect-bargen-pvc
+    
+
+## 4\. Set up cronjob to have bargeneration run daily
+
+Review the cronjob file `bargeneration-cronjob.yaml`. The time it is due to
+run can be found within the schedule section of the spec section of the file.
+
+By default it is defined as `schedule: "00 02 * * *"` which means it runs at
+2am UTC every day. See https://crontab.guru/ to see how you can configure the
+time to run at different times of the day.
+
+Review the secrets that are used within the `bargeneration-cronjob.yaml` file.
+The fields that you will need are \- AWS_ACCESS_KEY_ID \-
+AWS_SECRET_ACCESS_KEY \- CLIENT_ID \- INSIGHTS_HOSTNAME \- CLIENT_SECRET \-
+CLIENT_NAME
+
+To set the cronjob up to run, you need to run the command
+
+    
+    
+    kubectl apply -f bargeneration-cronjob.yaml
+    
+
+This runs the `run-bargeneration-cronjob.sh` script within a pod. The script
+installs the necessary libraries to run a POST command to bring up the bar
+generation pipeline.
+
+The pipeline will be prefixed with `insights-` eg. `insights-bargeneration`
+

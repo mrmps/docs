@@ -1,0 +1,349 @@
+https://code.kx.com/insights/enterprise/azure-marketplace/security.html
+
+# Security - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/azure-marketplace/security.html
+
+# Azure Security
+
+The KX Managed Application kdb Insights Enterprise Azure Marketplace bundle is
+secure by design and follows the [Azure security baseline for Azure Managed
+Applications](https://learn.microsoft.com/en-
+us/security/benchmark/azure/baselines/managed-applications-security-
+baseline?toc=/azure/azure-resource-manager/managed-applications/toc.json).
+
+You can access the standard Azure security features like:
+
+## Activity log
+
+Activity log events are automatically generated and collected for viewing in
+the Azure portal. This covers subscription-level events that track operations
+for each Azure resource, for example, creating a new resource or starting a
+virtual machine.
+
+![Activity log](images/activity-log.png)
+
+Activity log events are retained in Azure for _90 days_ and then deleted.
+There's no charge for entries during this time regardless of volume.
+
+![Timespan](images/timespan.png)
+
+For more information, refer to [Azure Monitor activity
+log](https://learn.microsoft.com/en-us/azure/azure-
+monitor/essentials/activity-log).
+
+## Access control
+
+Azure role-based access control ([Azure RBAC](https://learn.microsoft.com/en-
+us/azure/role-based-access-control/overview)) is the authorization system you
+use to manage access to Azure resources.
+
+The below blade allows you to examine the current Role assignments, modify or
+delete them or create new assignments.
+
+![Access control](images/access-control.png)
+
+For more information, refer to [What is identity and access management
+(IAM)?](https://www.microsoft.com/en-us/security/business/security-101/what-
+is-identity-access-management-iam).
+
+Application level role-based access control is implemented through
+[Keycloak](https://www.keycloak.org/):
+
+![Keycloak menu](images/keycloak-menu.png)
+
+## Security
+
+The Security blade gives you access to the [Microsoft Defender for
+Cloud](https://learn.microsoft.com/en-us/azure/defender-for-cloud/defender-
+for-cloud-introduction). It is a Cloud Security Posture Management (CSPM) and
+Cloud Workload Protection Platform (CWPP) for Azure resources.
+
+![Security](images/security.png)
+
+To get the full power of Microsoft Defender for Cloud you need to enable it on
+your Subscription. You can check the [Microsoft Defender for Cloud
+pricing](https://azure.microsoft.com/en-us/pricing/details/defender-for-
+cloud/) to understand how it is billed.
+
+## Policies
+
+[Azure Policies](https://learn.microsoft.com/en-
+us/azure/governance/policy/overview) help to enforce organizational standards
+and to assess compliance at scale. Through its compliance dashboard, it
+provides an aggregated view to evaluate the overall state of the environment,
+with the ability to drill down to the per-resource, per-policy granularity.
+
+### Custom Policies
+
+The kdb Insights Enterprise Azure Marketplace bundle deploys the following
+custom policies into the main Resource group of each deployment:
+
+  * kx-block-default-namespace
+
+> Prevent usage of the default namespace in Kubernetes clusters to protect
+> against unauthorized access for ConfigMap, Pod, Secret, Service, and
+> ServiceAccount resource types.
+
+> ClusterRole/system:aggregate-to-edit should not allow endpoint edit
+> permissions due to CVE-2021-25740, Endpoint & EndpointSlice permissions
+> allow cross-Namespace forwarding,
+> <https://github.com/kubernetes/kubernetes/issues/103675>. This policy is
+> generally available for Kubernetes Service (AKS), and preview for Azure Arc
+> enabled Kubernetes.
+
+  * kx-no-privilege-escalation
+
+> Do not allow containers to run with privilege escalation to root in a
+> Kubernetes cluster. This recommendation is part of CIS 5.2.5 which is
+> intended to improve the security of your Kubernetes environments. This
+> policy is generally available for Kubernetes Service (AKS), and preview for
+> Azure Arc enabled Kubernetes.
+
+> Run containers with a read only root file system to protect from changes at
+> run-time with malicious binaries being added to PATH in a Kubernetes
+> cluster. This policy is generally available for Kubernetes Service (AKS),
+> and preview for Azure Arc enabled Kubernetes.
+
+  * kx-trusted-container-images
+
+> Use images from trusted registries to reduce the Kubernetes cluster's
+> exposure risk to unknown vulnerabilities, security issues and malicious
+> images. This policy is generally available for Kubernetes Service (AKS), and
+> preview for Azure Arc enabled Kubernetes.
+
+  * kx-upgrade-version-kubernetes
+
+> Upgrade your Kubernetes service cluster to a later Kubernetes version to
+> protect against known vulnerabilities in your current Kubernetes version.
+
+  * kx-aks-resource-logs-enabled
+
+> Azure Kubernetes Service's resource logs can help recreate activity trails
+> when investigating security incidents. Enable it to make sure the logs will
+> exist when needed
+
+  * kx-gate-vulnerable-images
+
+> Protect your Kubernetes clusters and container workloads from potential
+> threats by restricting deployment of container images with vulnerable
+> software components.
+
+  * kx-vulnerability-findings-resolved
+
+> Container image vulnerability assessment scans container images running on
+> your Kubernetes clusters for security vulnerabilities and exposes detailed
+> findings for each image. Resolving the vulnerabilities can greatly improve
+> your containers' security posture and protect them from attacks.
+
+For more information about Azure policy for Kubernetes clusters, refer to
+<https://aka.ms/kubepolicydoc>.
+
+### Compliance states
+
+When a deployment is healthy all of the KX deployed policies should be in a
+Compliant state:
+
+![KX Policies](images/kx-policies.png)
+
+Note
+
+Some of the policies take a while to become compliant as they rely on data
+collected from containers.
+
+### Additional policies
+
+If [Microsoft Defender for Cloud](https://learn.microsoft.com/en-
+us/azure/defender-for-cloud/defender-for-cloud-introduction) is enabled on
+your _subscription_ then additional policies will be available. In order to
+comply with some of these policies you need to enable [Microsoft Defender for
+Containers](https://learn.microsoft.com/en-us/azure/defender-for-
+cloud/defender-for-containers-introduction) either by following this
+[procedure](https://learn.microsoft.com/en-us/azure/defender-for-
+cloud/defender-for-containers-enable) or selecting the below checkbox during
+the deployment:
+
+![Enforcement Modes](images/deffender-for-containers.png)
+
+Note
+
+A few of these policies will take some time to become `Compliant` and you may
+need to take some actions:
+
+  * Endpoint protection solution should be installed on virtual machine scale sets
+
+  * Vulnerabilities in security configuration on your virtual machine scale sets should be remediated
+
+  * System updates on virtual machine scale sets should be installed
+
+  * Log Analytics agent should be installed on your virtual machine scale sets for Azure Security Center monitoring
+
+  * Running container images should have vulnerability findings resolved
+
+  * Azure DDoS Protection Standard should be enabled
+
+  * Vulnerabilities in container security configurations should be remediated
+
+Note
+
+Some policies may stay in a `Non-compliant` state for an extended time:
+
+  * Authorized IP ranges should be defined on Kubernetes Services
+
+> In order for IMS to manage the AKS cluster on your behalf, they need to
+> connect through the Internet.
+
+  * Secure transfer to storage accounts should be enabled
+
+> The Storage Account providing ReadWriteMany volumes cannot be forced to use
+> HTTPS only as the NFS protocol does not support it.
+
+  * All Internet traffic should be routed via your deployed Azure Firewall
+
+> Azure Firewall is not a free service and it needs to be configured according
+> to your needs.
+
+![KX Policies](images/asc-policies.png)
+
+This is the default set of policies monitored by [Microsoft Defender for
+Cloud](https://learn.microsoft.com/en-us/azure/defender-for-cloud/defender-
+for-cloud-introduction). It is automatically assigned as part of your
+onboarding to [Microsoft Defender for Cloud](https://learn.microsoft.com/en-
+us/azure/defender-for-cloud/defender-for-cloud-introduction). The default
+assignment contains only audit policies. For more information please visit
+<https://aka.ms/ascpolicies>
+
+## Alerts
+
+Alerts help you detect and address issues before users notice them by
+proactively notifying you when Azure Monitor data indicates there might be a
+problem with your infrastructure or application.
+
+The kdb Insights Enterprise Azure Marketplace bundle deploys two types of
+Alert rules to allow early detection of various problems:
+
+![Metric alerts](images/metric-alerts.png)
+
+![Log search alerts](images/log-search-alerts.png)
+
+An Alert rule combines:
+
+  * The resources to be monitored,
+  * The signal or telemetry from the resource,
+  * And Conditions.
+
+Please read more on this topic here: [Azure Monitor
+alerts](https://learn.microsoft.com/en-us/azure/azure-monitor/alerts/alerts-
+overview)
+
+During normal operating conditions there should be no Alerts present on the
+Azure Portal:
+
+![Monitoring Alerts](images/monitoring-alerts.png)
+
+You can opt-in to receive Alert notifications whenever an Alert is created by
+a rule. For this you only need to specify a recipient in the Advanced Settings
+section:
+
+![Alert Notifications](images/alert-notifications.png)
+
+In case of KX Managed Application the Insights Managed Service
+([IMS@kx.com](mailto:IMS@kx.com)) is automatically notified about the default
+Alerts.
+
+## Networking
+
+The deployment consists of a single _Virtual network_ that has two _Subnets_ :
+
+![Subnet](images/subnets.png)
+
+The default deployment includes a [Network Security
+Group](https://learn.microsoft.com/en-us/azure/virtual-network/network-
+security-groups-overview) managed by AKS which is associated with the Network
+interfaces of the cluster node VMs:
+
+![Network Security Group](images/nsg-nics.png)
+
+To harden the network and increase your security you can use various Azure
+services and solutions:
+
+![Vnet Hardening](images/vnet-hardening.png)
+
+  * Configure the above [Network Security Group](https://learn.microsoft.com/en-us/azure/virtual-network/network-security-groups-overview) and associate it with the whole Subnet instead.
+  * Deploy an [Azure Bastion](https://learn.microsoft.com/en-us/azure/bastion/bastion-overview) into your Vnet.
+  * Enable [Azure DDoS Protection](https://learn.microsoft.com/en-us/azure/ddos-protection/ddos-protection-overview) on the Vnet.
+  * Enable [Azure Firewall](https://learn.microsoft.com/en-us/azure/firewall/overview) on the Vnet.
+  * You can create [Service endpoints](https://learn.microsoft.com/en-us/azure/virtual-network/virtual-network-service-endpoints-overview) in the Vnet to have secure and direct connectivity to other Azure services.
+  * You can set up [Virtual network peering ](https://learn.microsoft.com/en-us/azure/virtual-network/virtual-network-peering-overview) to seamlessly connect it to your other Vnet(s).
+    * Please note that the default _Address space_ of the deployed Vnet is `10.0.0.0/16` and make sure that there is no overlap between the Address spaces of the peered Vnets.
+    * You can change the _Address space_ during the deployment but it must be a valid CIDR Address space of this format: `*.*.0.0/16`
+
+![Address space](images/address-space.png)
+
+You can read more on this topic at the [Azure network security
+overview](https://learn.microsoft.com/en-
+us/azure/security/fundamentals/network-overview) documentation.
+
+## IP address configuration
+
+During deployment the following IP addresses are created:
+
+  * kdb Insights Enterprise User Interface (UI)
+  * REST API endpoints (2 are created)
+  * Every _Stream_ that accepts data from outside the cluster and is deployed as part of a database or assembly, creates 3 IP addresses (to enable this in the UI you select `ingest data from external sources` for the appropriate stream, in the Stream tab of the Database properties).
+
+The kdb Insights Enterprise can be deployed with one of the following IP
+address options:
+
+Connectivity
+
+Private IP address is the default option during deployment.
+
+## Private IP address
+
+The [Private IP address](https://learn.microsoft.com/en-us/azure/virtual-
+network/virtual-network-peering-overview) requires additional actions to allow
+users to connect to the UI or the REST endpoints. You need to either:
+
+IP address resolution to the UI
+
+Both of the options require you to [link](https://learn.microsoft.com/en-
+us/azure/dns/private-dns-virtual-network-links) the virtual network of your
+choice to a [Private DNS zone](https://learn.microsoft.com/en-
+us/azure/dns/private-dns-privatednszone) so that it can resolve the hostname
+of the cluster to the private IP of the UI.
+
+If you require assistance please contact [KX Support](support.html).
+
+## Public IP address
+
+The [Public IP address](https://learn.microsoft.com/en-us/azure/virtual-
+network/ip-services/public-ip-addresses) option allows **encrypted** user
+access over the public internet. This Public IP address is associated with a
+_DNS name_ of the format:
+
+    
+    
+    https://kdbinsightsent<someUniqueString>.<azureRegionSelected>.cloudapp.azure.com/
+    
+
+Note
+
+These addresses are publicly accessible so your users can conveniently connect
+to it over a secure channel from anywhere on the Internet and allows Streams
+to receive data from outside of your virtual network.
+
+## Storage
+
+Two _Storage accounts_ are created for the deployment. One to store the
+diagnostic logs of the cluster and another one to provide NFS service to the
+cluster:
+
+![Storage Accounts](images/storage-accounts.png)
+
+Public network access to these storage accounts has been disabled during the
+deployment to protect your data. The application uses private endpoint
+connections to access them:
+
+![Private Endpoints](images/private-endpoints.png)
+

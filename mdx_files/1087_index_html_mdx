@@ -1,0 +1,49 @@
+https://code.kx.com/insights/core/qpexample-c/index.html
+
+# Hello C - kdb products
+
+Original URL: https://code.kx.com/insights/core/qpexample-c/index.html
+
+# Hello C
+
+_Demonstrates how a C shared object (and its kdb+ interface) can be included
+as a dependency of a QP kdb+ project_
+
+## Building under qp
+
+Download the `qpacker-examples.tgz` package via
+[Nexus](https://nexus.dl.kx.com/#browse/browse:kx-insights-packages:qpacker):
+
+## Build with qp
+
+    
+    
+    tar -xvzf qpacker-examples.tgz
+    cd qpacker-examples/cloud-c-sample
+    qp build
+    ....
+     => exporting to image                                                                                                      0.1s
+     => => exporting layers                                                                                                     0.1s
+     => => writing image sha256:bceee4ddc2d2b0227192b3ead9963e0a6abb93ce0cad13c425306757e558ee9d                                0.0s
+    INFO  | Image   | default [230MB]
+    INFO  | Main    | (60944-2) Finished.
+    
+
+## Build and run
+
+    
+    
+    tar -xvzf qpacker-examples.tgz
+    cd qpacker-examples/cloud-c-sample
+    qp run
+    ....
+    INFO  | Run     | docker run   --rm --env-file /home/ddempsey/examples/qpacker-examples/cloud-c-sample/qpbuild/.env  -v /home/ddempsey/.config/gcloud/:/root/.config/gcloud:ro -v /home/ddempsey/.aws:/root/.aws:ro -v /home/ddempsey/.azure:/root/.azure:ro -it -e KX_ACCT=/tmp 3abcbfdb85bd43b5da0cd1d69117c66da3ddd4126ad2b210b7fa226d6972ba52 
+    INFO: Parse kdb+ license [kc.lic] from KDB_LICENSE_B64 environment variable
+    KDB+ 4.0 Cloud Edition 2022.09.30 Copyright (C) 1993-2022 Kx Systems
+    l64/ 4(24)core 7949MB nobody 9ba4239a0091 172.17.0.3 EXPIRE 2023.02.25 kxdev@kx.com KOD KXCE #???????
+    
+    hello from q test
+    hello from C!
+    INFO  | Main    | (60325-2) Finished.
+    
+

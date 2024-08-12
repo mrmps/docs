@@ -1,0 +1,556 @@
+https://code.kx.com/analyst/libraries/regular-expression-pcre/
+
+# PCRE - KX Analyst
+
+Original URL: https://code.kx.com/analyst/libraries/regular-expression-pcre/
+
+# PCRE regular expressions (`.pcre`)
+
+An API for PCRE in q.
+
+This library has been deprecated in favour of .pcre2. It provides access to
+PCRE (<http://pcre.org/>), with a library for PCRE2 also available.
+
+## PCRE options
+
+Multiple options can be used when compiling a pattern either via the defined
+bitmaps or by passing in the appropriate symbol(s):
+
+    
+    
+    .pcre.compile2["pattern"; .pcre.PCRE_CASELESS | .pcre.PCRE_MULTILINE]
+    
+
+Below is a list of available options. For more information about these
+options, please visit the PCRE website or read the PCRE manual.
+
+  * .pcre.PCRE_CASELESS
+  * .pcre.PCRE_MULTILINE
+  * .pcre.PCRE_DOTALL
+  * .pcre.PCRE_EXTENDED
+  * .pcre.PCRE_ANCHORED
+  * .pcre.PCRE_DOLLAR_ENDONLY
+  * .pcre.PCRE_EXTRA
+  * .pcre.PCRE_NOTBOL
+  * .pcre.PCRE_NOTEOL
+  * .pcre.PCRE_UNGREEDY
+  * .pcre.PCRE_NOTEMPTY
+  * .pcre.PCRE_UTF8
+  * .pcre.PCRE_NO_AUTO_CAPTURE
+  * .pcre.PCRE_NO_UTF8_CHECK
+  * .pcre.PCRE_AUTO_CALLOUT
+  * .pcre.PCRE_PARTIAL_SOFT
+  * .pcre.PCRE_PARTIAL
+  * .pcre.PCRE_DFA_SHORTEST
+  * .pcre.PCRE_DFA_RESTART
+  * .pcre.PCRE_FIRSTLINE
+  * .pcre.PCRE_DUPNAMES
+  * .pcre.PCRE_NEWLINE_CR
+  * .pcre.PCRE_NEWLINE_LF
+  * .pcre.PCRE_NEWLINE_CRLF
+  * .pcre.PCRE_NEWLINE_ANY
+  * .pcre.PCRE_NEWLINE_ANYCRLF
+  * .pcre.PCRE_BSR_ANYCRLF
+  * .pcre.PCRE_BSR_UNICODE
+  * .pcre.PCRE_JAVASCRIPT_COMPAT
+  * .pcre.PCRE_NO_START_OPTIMIZE
+  * .pcre.PCRE_NO_START_OPTIMISE
+  * .pcre.PCRE_PARTIAL_HARD
+  * .pcre.PCRE_NOTEMPTY_ATSTART
+  * .pcre.PCRE_UCP
+
+## PCRE examples
+
+### Example 1: simple input strings
+
+Here is an example of creating a pattern, using the pattern to check for a
+match, and freeing the pattern.
+
+    
+    
+    index: 0;
+    options: 0;
+    
+    pattern: .pcre.compile2["a*b"; 0];
+    result: .pcre.execute[pattern; 0Ni; "abc"; index; options];
+    .pcre.free[pattern];
+    show result;
+    
+    /=> 1i
+    /=> 0 2i
+    
+
+For dfa_exec, one would need to pass two additional parameters (oVector and
+workspace). If either is insufficiently large, dfa_exec will return an
+appropriate error. For most cases, vectors of 1000 elements should be
+sufficient.
+
+    
+    
+    index: 0;
+    options: 0;
+    oVector: 1000#0Ni;
+    workspace: 1000#0Ni;
+    
+    pattern: .pcre.compile2["a*b"; 0];
+    result: .pcre.dfa_exec[pattern; 0Ni; "abc"; index; options; oVector; workspace];
+    .pcre.free[pattern];
+    show result;
+    
+    /=> 1i
+    /=> 0 2i
+    
+    
+
+### Example 2: vector input strings
+
+Here is an example of creating a pattern and saving it as a variable, using
+the pattern to check for a match, and freeing the pattern.
+
+    
+    
+    index: 0;
+    options: 0;
+    
+    pattern: .pcre.compile2["a*c"; 0];
+    result: .pcre.execute[pattern; 0Ni; ("abc"; "def"; "ghi"); index; options];
+    .pcre.free[pattern];
+    show result;
+    
+    /=> 1    -1      -1
+    /=> 2 3i `int$() `int$()
+    
+    
+
+For dfa_exec, one would need to pass two additional parameters (oVector and
+workspace). If either is insufficiently large, dfa_exec will return an
+appropriate error. For most cases, vectors of 1000 elements should be
+sufficient.
+
+    
+    
+    index: 0;
+    options: 0;
+    oVector: 1000#0Ni;
+    workspace: 1000#0Ni;
+    
+    pattern: .pcre.compile2["a*c"; 0];
+    result: .pcre.dfa_exec[pattern; 0Ni; ("abc"; "def"; "ghi"); index; options; oVector; workspace];
+    .pcre.free[pattern];
+    show result;
+    
+    /=> 1    -1      -1
+    /=> 2 3i `int$() `int$()
+    
+    
+
+### Example 3: helper function example
+
+The regex helper function simplifies the compile, execute, and free tasks into
+a single function call. For repeated executions, this may be much slower than
+pre-compiling and re-using the compiled information.
+
+    
+    
+    show .pcre.regex["a*b"; 0; "aab"];
+    
+    /=> "aab"
+    
+
+### Example 4: using options
+
+Options can be passed to the appropriate PCRE function. If multiple options
+are required, they are simply or-ed together and passed into the function.
+
+    
+    
+    index: 0;
+    
+    options: .pcre.PCRE_CASELESS | .pcre.PCRE_NEWLINE_ANY;
+    pattern: .pcre.compile2["a*c"; options];
+    result: .pcre.execute[pattern; 0Ni; "abc"; index; options];
+    .pcre.free[pattern];
+    show result;
+    
+    /=> -3i
+    /=> `int$()
+    
+    
+
+You can also include the options as a parameter to the function call:
+
+    
+    
+    index: 0;
+    
+    pattern: .pcre.compile2["a*c"; .pcre.PCRE_CASELESS | .pcre.PCRE_NEWLINE_ANY];
+    result: .pcre.execute[pattern; 0Ni; "abc"; index; 0];
+    
+    .pcre.free[pattern];
+    
+    show result;
+    
+    /=> 1i
+    /=> 2 3i
+    
+
+### Example 5: using the JIT
+
+Support is provided for JIT optimizations. To use the JIT, one must compile
+the function using `pcre.compile2` and then pass the compilation to
+`pcre.study` to generate an optimized structure. This structure is then passed
+as an extra parameter to either `.pcre.execute` or `.pcre.dfa\_exec`.
+
+    
+    
+    compiled: .pcre.compile2["s*g"; 0];
+    extra: .pcre.study [compiled; .pcre.PCRE_STUDY_JIT_COMPILE];
+    result: .pcre.execute [compiled; extra; "some string to search"; 0; 0];
+    
+    show result;
+    
+    /=> 1i
+    /=> 10 11i
+    
+
+### Example 6: compiling with an error
+
+Compiling with an error from unmatched parentheses:
+
+    
+    
+    show .pcre.compile2["(a*b"; 0];
+    
+    /=> 0x0000000000000000
+    /=> 14i
+    /=> "missing )"
+    /=> 4i
+    
+
+## PCRE links
+
+For more information on PCRE, please visit the following resources
+
+## .pcre.ERRORS
+
+ERROR CODES. These are returned from various PCRE calls
+
+## .pcre.compile
+
+**Deprecated** : .pcre is deprecated, use .pcre2 instead
+
+pre-compile a pattern so it can be more efficiently used multiple times
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+pattern | String | A regex pattern  
+options | Boolean[] | Long | A bitmask of options, or 0 for no options  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+String | (byte[]; int; string; int) | A string containing the error message, if there is one. Otherwise, A pointer to the compiled pattern, the error code (0 if there is no error), the error message ("" if there is no error), the error position (0 if there is no error)  
+  
+## .pcre.compile2
+
+**Deprecated** : .pcre is deprecated, use .pcre2 instead
+
+pre-compile a pattern so it can be more efficiently used multiple times
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+pattern | String | A regex pattern  
+options | Boolean[] | Long | A bitmask of options, or 0 for no options  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+(byte[]; int; string; int) | A pointer to the compiled pattern, the error code (0 if there is no error), the error message ("" if there is no error), the error position (0 if there is no error)  
+  
+## .pcre.constants
+
+Constants used by PCRE
+
+## .pcre.dfa_exec
+
+**Deprecated** : .pcre is deprecated, use .pcre2 instead
+
+Runs a compiled pattern against a string, or list of strings
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+compiled | *[] | The result of running .pcre2.compiled2  
+extra | Boolean | Int | The result of running .pcre.study, or 0Ni otherwise  
+input | String | String[] | The string(s) to search for the pattern  
+index | Long | The offset to start searching from  
+options | Boolean[] | Int | A bitmask of options, or 0 for no options  
+outputVector | Int[] | A list where each element is 0Ni, for most cases, 1000 elements should be sufficient  
+workspace | Int[] | A list where each element is 0Ni, for most cases, 1000 elements should be sufficient  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+(int; int[]) | (int[]; int[][]) | When the input is a string, the first value is the number of pairs in the second element, and the second element is a vector of start/end pairs for the whole regex, followed by the captured groups. -1 -1 indicates a capture group that did not match. When the input is a list of strings, each element becomes a vector holding the results for each string in the input  
+  
+## .pcre.dfa_regex
+
+**Deprecated** : .pcre is deprecated, use .pcre2 instead
+
+Find the first substring that matches the regex
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+pattern | String | A regex pattern  
+compileOptions | Boolean[] | Long | A bitmask of options, or 0 for no options  
+input | String | String[] | The string(s) to search for the pattern  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+String | The first substring that matches the regex  
+  
+## .pcre.dfa_regex_g
+
+**Deprecated** : .pcre is deprecated, use .pcre2 instead
+
+Return the first substring that matches the regex
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+pattern | String | A regex pattern  
+compileOptions | Boolean[] | Long | A bitmask of options, or 0 for no options  
+input | String | String[] | The string(s) to search for the pattern  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+String[] | String[][] | For each input, an enlisted string where the first is the substring matching the regex. Inputs with no matches return ().  
+  
+## .pcre.execute
+
+**Deprecated** : .pcre is deprecated, use .pcre2 instead
+
+Runs a compiled pattern against a string, or list of strings
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+compiled | *[] | The result of running .pcre2.compiled2  
+extra | Byte[] | The result of running .pcre.study, or 0Ni otherwise  
+input | String | String[] | The string(s) to search for the pattern  
+index | Long | The offset to start searching from  
+options | Boolean[] | Long | A bitmask of options, or 0 for no options  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+(int; int[]) | (int[]; int[][]) | When the input is a string, the first value is the number of pairs in the second element, and the second element is a vector of start/end pairs for the whole regex, followed by the capture groups. -1 -1 indicates a capture group that did not match. When the input is a list of strings, each element becomes a vector holding the results for each string in the input  
+  
+## .pcre.free
+
+**Deprecated** : .pcre is deprecated, use .pcre2 instead
+
+Frees the memory used by compiling a pattern
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+compiled | *[] | The result of .pcre.compile2  
+  
+**Returns:**
+
+## .pcre.freeMatches
+
+**Deprecated** : .pcre is deprecated, use .pcre2 instead
+
+Pulls the compiled regex out of the "matches" projection and frees it
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+projection | fn | A projection returned by the matches function  
+  
+**Returns:**
+
+## .pcre.free_study
+
+**Deprecated** : .pcre is deprecated, use .pcre2 instead
+
+Frees the memory used by studying a pattern
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+extra | *[] | The result of .pcre.study  
+  
+**Returns:**
+
+## .pcre.fullinfo
+
+**Deprecated** : .pcre is deprecated, use .pcre2 instead
+
+Get info on a compiled pattern
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+compiled | *[] | The result of running .pcre2.compiled2  
+info | int | The property to query  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+(int; *) | The error code (0 for success), and the value of the property  
+  
+## .pcre.jitOptions
+
+JIT specific options
+
+## .pcre.match
+
+**Deprecated** : .pcre is deprecated, use .pcre2 instead
+
+Find substrings matching the regex
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+compiled | *[] | A compiled regex  
+input | char | string | Text to find matches inside it  
+index | int | Start index to look for match in input  
+options | Boolean[] | () | A value defined in matchOptions constants, or () for the defaults  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+(int; int[]) | (int[]; int[][]) | When the input is a string, the first value is the number of pairs in the second element, and the second element is a vector of start/end pairs for the whole regex, followed by the capture groups. -1 -1 indicates a capture group that did not match. When the input is a list of strings, each element becomes a vector holding the results for each string in the input  
+  
+## .pcre.matches
+
+**Deprecated** : .pcre is deprecated, use .pcre2 instead
+
+Find all matching substrings for a given pattern
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+pattern | String | A regex pattern  
+compileOptions | Boolean[] | Long | A bitmask of options, or 0 for no options  
+runOptions | Boolean[] | () | A bitmask of options, or the empty list () for no options  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+fn | A function that takes a string, and returns a list of (string; long; long) triples holding the matching substring, start position, and end position  
+  
+## .pcre.onLoad
+
+**Deprecated** : .pcre is deprecated, use .pcre2 instead
+
+Bindings to the PCRE C functions
+
+**Returns:**
+
+## .pcre.regex
+
+**Deprecated** : .pcre is deprecated, use .pcre2 instead
+
+Find the first substring in each input matching the pattern
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+pattern | String | A regex pattern  
+compileOptions | Boolean[] | Long | A bitmask of options, or 0 for no options  
+input | String | String[] | The string(s) to search for the pattern  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+String | String[] | () | The matching substring, () if there is no match, or a vector of these if the input is a list of strings  
+  
+## .pcre.regex_g
+
+**Deprecated** : .pcre is deprecated, use .pcre2 instead
+
+Return the first substring that matches the regex, and the matches for the
+capture groups
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+pattern | String | A regex pattern  
+compileOptions | Boolean[] | Long | A bitmask of options, or 0 for no options  
+input | String | String[] | The string(s) to search for the pattern  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+String[] | String[][] | For each input, a list of strings where the first is the substring matching the regex, and the following strings match the capture groups. Inputs with no matches return ()  
+  
+## .pcre.study
+
+**Deprecated** : .pcre is deprecated, use .pcre2 instead
+
+This does a JIT study of the pattern, and returns a pattern to use as the
+“extra” parameter to .pcre.exec or .pcre.dfa_exec.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+compiled | String | The result of compiling a pattern with .pcre.compile2  
+options | Boolean[] | Long | A bitmask of options, or 0 for no options  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+Byte[] | A pointer to the JIT compiled pattern  
+  
+## .pcre.types
+
+Requested types for .pcre.fullinfo
+
+## .pcre.version
+
+**Deprecated** : .pcre is deprecated, use .pcre2 instead
+
+Returns the current PCRCE version
+
+**Returns:**
+
+Type | Description  
+---|---  
+String | The current PCRE version
+

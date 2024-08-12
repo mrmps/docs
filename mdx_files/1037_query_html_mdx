@@ -1,0 +1,74 @@
+https://code.kx.com/pykx/api/query.html
+
+# Querying - PyKX
+
+Original URL: https://code.kx.com/pykx/api/query.html
+
+Apply a q style exec statement on tables defined within the process.
+
+This implementation follows the q functional exec syntax with limitations on
+structures supported for the various clauses a result of this.
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`table` |  `[Union](https://docs.python.org/3/library/typing.html#typing.Union "typing.Union")[[k](pykx-q-data/wrappers.html#pykx.wrappers "pykx.wrappers").[Table](pykx-q-data/wrappers.html#pykx.wrappers.Table "pykx.wrappers.Table"), [str](https://docs.python.org/3/library/stdtypes.html#str)]` | The q table or name of the table (provided the table is named within the q memory space) on which the exec statement is to be applied. |  _required_  
+`columns` |  `[Optional](https://docs.python.org/3/library/typing.html#typing.Optional "typing.Optional")[[Union](https://docs.python.org/3/library/typing.html#typing.Union "typing.Union")[[Dict](https://docs.python.org/3/library/typing.html#typing.Dict "typing.Dict")[[str](https://docs.python.org/3/library/stdtypes.html#str), [str](https://docs.python.org/3/library/stdtypes.html#str)], [k](pykx-q-data/wrappers.html#pykx.wrappers "pykx.wrappers").[Dictionary](pykx-q-data/wrappers.html#pykx.wrappers.Dictionary "pykx.wrappers.Dictionary")]]` | A dictionary mapping the name to be given to a column and the logic to be applied in aggregation to that column both as strings. A string defining a single column to be retrieved from the table as a list. |  `None`  
+`where` |  `[Optional](https://docs.python.org/3/library/typing.html#typing.Optional "typing.Optional")[[Union](https://docs.python.org/3/library/typing.html#typing.Union "typing.Union")[[List](https://docs.python.org/3/library/typing.html#typing.List "typing.List")[[str](https://docs.python.org/3/library/stdtypes.html#str)], [str](https://docs.python.org/3/library/stdtypes.html#str), [k](pykx-q-data/wrappers.html#pykx.wrappers "pykx.wrappers").[SymbolAtom](pykx-q-data/wrappers.html#pykx.wrappers.SymbolAtom "pykx.wrappers.SymbolAtom"), [k](pykx-q-data/wrappers.html#pykx.wrappers "pykx.wrappers").[SymbolVector](pykx-q-data/wrappers.html#pykx.wrappers.SymbolVector "pykx.wrappers.SymbolVector")]]` | Conditional filtering used to select subsets of the data on which by clauses and appropriate aggregations are to be applied. |  `None`  
+`by` |  `[Optional](https://docs.python.org/3/library/typing.html#typing.Optional "typing.Optional")[[Union](https://docs.python.org/3/library/typing.html#typing.Union "typing.Union")[[Dict](https://docs.python.org/3/library/typing.html#typing.Dict "typing.Dict")[[str](https://docs.python.org/3/library/stdtypes.html#str), [str](https://docs.python.org/3/library/stdtypes.html#str)], [k](pykx-q-data/wrappers.html#pykx.wrappers "pykx.wrappers").[Dictionary](pykx-q-data/wrappers.html#pykx.wrappers.Dictionary "pykx.wrappers.Dictionary")]]` | A dictionary mapping the names to be assigned to the produced columns and the the columns whose results are used to construct the groups of the by clause. |  `None`  
+  
+**Examples:**
+
+Define a q table in python and named in q memory
+
+    
+    
+    pykx.q['qtab'] = pd.DataFrame.from_dict({
+        'col1': [['a', 'b', 'c'][randint(0, 2)] for _ in range(100)],
+        'col2': [random() for _ in range(100)],
+        'col3': [randint(0, 1) == 1 for _ in range(100)],
+        'col4': [random() * 10 for _ in range(100)]
+    })
+
+Select last item of the table
+
+    
+    
+    pykx.q.qsql.exec(qtab)
+    pykx.q.qsql.exec('qtab')
+
+Retrieve a column from the table as a list
+
+    
+    
+    pykx.q.qsql.exec(qtab, 'col3')
+
+Retrieve a set of columns from a table as a dictionary
+
+    
+    
+    pykx.q.qsql.exec(qtab, {'symcol': 'col1'})
+    pykx.q.qsql.exec(qtab, {'symcol': 'col1', 'boolcol': 'col3'})
+
+Filter columns from a table based on various where conditions
+
+    
+    
+    pykx.q.qsql.exec(qtab, 'col3', where='col1=`a')
+    pykx.q.qsql.exec(qtab, {'symcol': 'col1', 'maxcol4': 'max col4'}, where=['col1=`a', 'col2<0.3'])
+
+Retrieve data grouping by data on symbol columns
+
+    
+    
+    pykx.q.qsql.exec(qtab, 'col2', by={'col1': 'col1'})
+    pykx.q.qsql.exec(qtab, columns={'maxCol2': 'max col2'}, by={'col1': 'col1'})
+    pykx.q.qsql.exec(qtab, columns={'avgCol2': 'avg col2', 'minCol4': 'min col4'}, by={'col1': 'col1'})
+
+Retrieve grouped statistics with restrictive where condition
+
+    
+    
+    pykx.q.qsql.exec(qtab, columns={'avgCol2': 'avg col2', 'minCol4': 'min col4'}, by={'col1': 'col1'}, where='col3=0b')
+

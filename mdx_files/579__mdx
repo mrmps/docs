@@ -1,0 +1,137 @@
+https://code.kx.com/platform/command_line_interface/
+
+# Command-line interface - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/command_line_interface/
+
+# Command-line interface
+
+## run_command.q
+
+It is possible to connect to and run certain allowed commands on _KX Control_
+using the run_command.q script which is located in the
+`${DELTACONTROL_HOME}/shared/q` directory.
+
+A host and port to connect to must be supplied, along with the command to run.
+The script is used as follows
+
+    
+    
+    q run_command.q_ :hostname:port command arguments
+    
+
+Additional optional arguments for this script are
+
+argument | description  
+---|---  
+user | Use this argument with a user to connect to _KX Control_ as. If no user argument is supplied, the connection will be opened as _deltacomponent_  
+password | Supply this argument along with a password for the specified user, not required if no user argument is supplied  
+timeout | Use this argument with a timeout value in ms for opening the handle to _KX Control_  
+nolog | If this argument is present nothing will be logged to standard out, only the result of the command will be returned  
+nologdc | If this argument is present the command will not be logged in DeltaControl.log  
+  
+Examples:
+
+Connection opened as deltacomponent
+
+    
+    
+    q run_command.q_ :server1.com:9999 .r.isLeader[]
+    
+
+Nothing logged to standard out, command not logged in DeltaControl.log
+
+    
+    
+    q run_command.q_ :server1.com:9999 .r.isLeader[] -nolog -nologdc
+    
+
+With a 10 second timeout to open the connection to _KX Control_
+
+    
+    
+    q run_command.q_ :server1.com:9999 .r.isLeader[] -timeout 10000 -nolog -nologdc
+    
+
+Connection opened as specified user
+
+    
+    
+    q run_command.q_ :server1.com:9999 .r.isLeader[] -user jdoe1 -password secret123 -timeout 10000 -nolog -nologdc
+    
+
+## control_cli.q
+
+To connect to _KX Control_ and run a command from a specific list of allowed
+commands use the control_cli.q script. It is located in the
+`${DELTACONTROL_HOME}/shared/q` directory. control_cli.q is used by the
+scripts in `${DELTABIN_HOME}/bin/`
+
+A host and port to connect to must be supplied, along with one argument from
+the following list of allowed commands
+
+argument | example | description  
+---|---|---  
+isLeader | n/a | returns true if this _KX Control_ is the leader  
+getcommand | ds_ms_a 1 | starts a named process, takes a debug flag  
+runWF | DS_launch_APPSERVER_A | runs the named workflows  
+runAllWF | n/a | runs all workflows  
+killWF | DS_launch_ALERT_A | stops the named workflows  
+killAllWF | n/a | stops all workflows  
+getWF | n/a | returns all workflow names  
+shutdownEnv | n/a | stops all processes in the environment including _KX Control_  
+shutdownLocal | n/a | stops _KX Control_  
+shutdown | n/a | stops _KX Control_ and any followers  
+shutdownAll | n/a | stops all processes in the environment apart from _KX Control_  
+shutdownProc | ds_ms_a | stops the named process  
+stopClass | TestClass1 | stops all services of a named class  
+stop | TestClass1_250 | stops a named service  
+setenv | TEST_ENVVAR EUR | updates an environment variable on _KX Control_  
+  
+Additional optional arguments for this script are
+
+argument | description  
+---|---  
+user | Use this argument with a user to connect to _KX Control_ as. If no user argument is supplied, the connection will be opened as _deltacomponent_  
+password | Supply this argument along with a password for the specified user, not required if no user argument is supplied  
+timeout | Use this argument with a timeout value in ms for opening the handle to _KX Control_  
+nolog | If this argument is present nothing will be logged to standard out, only the result of the command will be returned  
+  
+Examples:
+
+    
+    
+    q control_cli.q_ -hostport :server1.com:9999 -isLeader
+    
+
+Starting ds_ms_a.1 task not in debug mode
+
+    
+    
+    q control_cli.q_ -hostport :server1.com:9999 -getcommand ds_ms_a.1 0 -nolog
+    
+    
+    
+    q control_cli.q_ -hostport :server1.com:9999 -runWF DS_launch_APPSERVER_A,DS_launch_MS_A,DS_launch_OPS_A -timeout 10000 -nolog
+    
+    
+    
+    q control_cli.q_ -hostport :server1.com:9999 -killWF DS_launch_MS_A,DS_launch_OPS_A
+    
+    
+    
+    q control_cli.q_ -hostport :server1.com:9999 -shutdownProc ds_ms_a.1
+    
+    
+    
+    q control_cli.q_ -hostport :server1.com:9999 -stopClass TestClass1
+    
+    
+    
+    q control_cli.q_ -hostport :server1.com:9999 -stop TestClass1_250
+    
+    
+    
+    q control_cli.q_ -hostport :server1.com:9999 -setenv TEST_ENVVAR EUR
+    
+

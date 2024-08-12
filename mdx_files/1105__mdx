@@ -1,0 +1,157 @@
+https://code.kx.com/analyst/workflows/
+
+# Workflows - KX Analyst
+
+Original URL: https://code.kx.com/analyst/workflows/
+
+# Workflows
+
+Analyst uses git repositories for version control of items under development.
+There are two primary development workflows, making slightly different use of
+the underlying git repositories. Both workflows have their own advantages and
+disadvantages.
+
+## Files and folders
+
+Analyst will work with any existing repositories of q code. Simply clone the
+repository into Analyst with `New > Clone Repository...` from the sidebar
+context menu. The repository will appear as expected as a collection of files
+within collapsible folders.
+
+Regular repositories can also be created in Analyst with `New > Repository...`
+from the sidebar context menu.
+
+![](../img/workflows/folders.png)
+
+Within this workflow, a user can enjoy the regular benefits of development
+within Analyst including interactive development of q scripts through either
+[selecting code to execute](../editor/#interactive-editing) or running each
+script entirely with `Run Script` from the q editor context menu.
+
+![](../img/workflows/run-script.png)
+
+Operations are version controlled on the underlying repository, and can be
+pushed back with `Git > Push...` from the sidebar context menu.
+
+## Modules
+
+In addition to files and folders, Analyst supports a concept of `modules`
+within the UI. Using modules does not require a new repository type: adding a
+module to a repository will create a `kxscm/` directory in the underlying
+repository to store the module contents. This way, files and folders can be
+used _with_ modules in a single repository if desired.
+
+A module is essentially a granular view of a single q script. Each function
+and data assignment that would exist within a q script file are instead stored
+as separate elements within the UI. For example, a script with the follow q
+contents:
+
+    
+    
+    \d .module
+    f1: { f2[] }
+    f2: { x }
+    data: (::)
+    \d .
+    
+
+Could be represented as a module in Analyst as the following configuration:
+
+![](../img/workflows/module-layout.png)
+
+> These modules, functions, and data artifacts can be created with `New >
+> Module`, `New > Function`, etc from the context menu under any repository in
+> the sidebar.
+
+Notice that the definitions within the editors do not contain an assignment.
+The assignment is implicit from the name of the artifact (`.module.f1` for
+example).
+
+### Advantages
+
+Using modules rather than scripts has some advantages:
+
+**Live**
+
+Changes made to a function or data item are live on the process as soon as
+they are saved. This is not true for scripts which need to be run (using `Run
+Script` from the context menu).
+
+**Contextual editing**
+
+Artifacts in modules with names that begin with a `.`, such as `.module` are
+defined within the namespace of the corresponding name , and can thus be
+written as if they were wrapped in `\d .module`. Additionally, any code
+executed using `Display`, `Evaluate`, or `Inspect` from an editor within a
+module will be executed within the namespace as well, so names do not need to
+be qualified for interactive editing.
+
+Artifacts in modules with names that _do not_ begin with a `.` are defined
+globally.
+
+**Granular`uses` search**
+
+Since functions and data items are _stored_ separately, there are UI elements
+aiding in exploring q code. From any module artifact's editor or sidebar
+(_function_ or _data_) right-clicking and selecting `Code > Uses`, or `Uses
+(File)` will display all other functions and data items from any modules that
+make use of the selection. Additionally, a search of `u:.module.f1` will do
+the same: search for all artifacts that use the function `.module.f1`.
+
+![](../img/workflows/uses-search.png)
+
+**Granular version control**
+
+In addition, each function and data item are versioned separately. Seeing all
+of the changes for a single function, or reverting only a single function is
+simple.
+
+**Test discovery**
+
+When using modules, if a convention is followed, right-clicking a _function_
+editor and selecting `Test` will run tests relating to the function. The
+convention required for this is each module to be accompanied by a module of
+the same name with `.test` appended which contains the _qcumber_ tests for the
+module. Within the `*.test` module, files should be named with the name of the
+function that they test.
+
+    
+    
+    .module
+        f1
+    .module.test
+        f1.quke
+    
+
+As shown in the repository below.
+
+![](../img/workflows/test-discovery.png)
+
+**Mix q scripts and modules**
+
+Modules can contain q scripts, and can co-exist in repositories that use
+regular folders and files as well.
+
+### Conversion
+
+It is possible to convert between the two workflows (scripts and modules)
+within Analyst.
+
+#### Script to module
+
+If using regular q scripts, the scripts can be converted to modules by either:
+
+  * Right-clicking the q script within Analyst and selecting `New > Module From Q File`, or
+  * Right-clicking a repository, selecting `New`, choosing to upload either a local or remote q script, and clicking the `Import q scripts as modules ...` checkbox.
+
+#### Module to script
+
+If using modules, it is possible to convert to regular scripts, potentially
+for use outside of Analyst:
+
+  * Right-click a module and select `New > Q File From Module`
+
+Additionally, this transformation can be done from a command line script for
+use as part of an automated build process (`axrepo.q_`). See the [build
+utilities](../libraries-scripts/) for more information and examples.
+

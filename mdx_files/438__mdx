@@ -1,0 +1,1591 @@
+https://code.kx.com/q4m3/13_Commands_and_System_Variables/
+
+# 13. Commands and System Variables - Q for Mortals
+
+Original URL: https://code.kx.com/q4m3/13_Commands_and_System_Variables/
+
+# 13\. Commands and System Variables
+
+[System commands](https://code.kx.com/q/basics/syscmds)
+
+## 13.1 Command Format
+
+Commands control aspects of the q run-time environment. A command begins with
+a backslash `\` followed by the command name. Many commands have optional
+parameter(s) separated from the command name by a blank (multiple blanks or
+other whitespace characters are not permitted). Case is significant in the
+command name.
+
+Notes on optional parameters:
+
+  * Commands whose optional parameter sets an environmental value will display the current value when the parameter is omitted
+  * Commands whose parameter refers to a namespace apply to the current working context if the parameter is omitted.
+
+You could execute a command programmatically by placing it in a string as an
+argument to `value`. Observe that you must escape the `\` in the string.
+
+    
+    
+    q)value "**Error! Hyperlink reference not valid.**" / bad practice!
+
+Never do this in production – it exposes your system to all manner of attacks!
+
+Instead use the built-in [`system`](https://code.kx.com/q/ref/system/) that at
+least checks for a valid command. Note that it also eliminates the backslash
+and hence the need to escape it.
+
+    
+    
+    q)system "p 5042"
+
+### 13.1.1 List Tables `\a`
+
+The command [`\a`
+[_namespace_]](https://code.kx.com/q/basics/syscmds/#a-tables), where
+_namespace_ is an optional namespace, returns a sorted list of symbolic names
+of all tables in a context. When used without a parameter, it returns the
+tables in the current working context. For example, in a fresh q session,
+
+    
+    
+    q)\a
+    `symbol$()
+    q)t:([] c1:`a`b`c; c2:10 20 30)
+    q)\a
+    ,`t
+    q).jab.t:([] c1:`a`b`c; c2:10 20 30)
+    q)\a .jab
+    ,`t
+
+### 13.1.2 Views/Aliases `\b`
+
+The command [`\b`
+[_namespace_]](https://code.kx.com/q/basics/syscmds/#b-views) returns a sorted
+list of the symbolic names of the aliases (a.k.a. views, dependencies) in a
+context. In a fresh q session,
+
+    
+    
+    q)\b
+    `symbol$()
+    q)a:42
+    q)b::a+1
+    q)c::b*b
+    q)\b
+    `s#`b`c
+
+See §13.3.3 for the related [`.z.b`](https://code.kx.com/q/ref/dotz/#zb-
+dependencies).
+
+### 13.1.3 Pending Views/Aliases `\B`
+
+The command
+[`\B`[_namespace_]](https://code.kx.com/q/basics/syscmds/#b-pending-views)
+(note upper case) returns a sorted list of the symbolic names of the aliases
+(a.k.a. views, dependencies) in a context that are stale – i.e., there is a
+pending update that will be realized on the next reference. In a fresh q
+session,
+
+    
+    
+    q)x:42
+    q)a::x+1
+    q)\B
+    ,`a
+    q)a
+    43
+    q)\B
+    `symbol$()
+
+See §13.3.3 for the related [`.z.b`](https://code.kx.com/q/ref/dotz/#zb-
+dependencies).
+
+### 13.1.4 Console `\c`
+
+The command [`\c` [h w]](https://code.kx.com/q/basics/syscmds/#c-console-size)
+displays (no arguments) or sets (pair of height and width as integers) the
+size of the virtual q console display. The default is `25 80i`. In a fresh q
+session,
+
+    
+    
+    q)\c
+    25 80i
+    q)\c 10 20
+    q)2#enlist "abcdefghijkmlnopqrstuvwxyz"
+    "abcdefghijkmlnop..
+    "abcdefghijkmlnop..
+
+### 13.1.5 Web Console `\C`
+
+The command [`\C` [h w]](https://code.kx.com/q/basics/syscmds/#c-http-size)
+(note upper case) displays (no arguments) or sets (pair of height and width as
+integers) the size of the virtual q console display for HTTP requests. The
+default is `25 80i`. In a fresh q session, open port 5042 and point the
+browser to
+
+    
+    
+    http://localhost:5042/?10 cut til 20
+
+The browser page will display,
+
+    
+    
+    0  1  2  3  4  5  6  7  8  9
+    10 11 12 13 14 15 16 17 18 19
+
+Now issue the q command,
+
+    
+    
+    q)\C 10 20
+
+and refresh the browser page. The page will now display,
+
+    
+    
+    0  1  2  3  4  5 ..
+    10 11 12 13 14 15 ..
+
+### 13.1.6 Change OS Directory `\cd`
+
+The [`\cd` [_path_]](https://code.kx.com/q/basics/syscmds/#cd-change-
+directory) command is passed directly through to the OS. To display the
+current directory, issue `\cd` with no argument.
+
+    
+    
+    q)\cd
+    "/Users/jeffry"
+
+To change the current working directory, issue `\cd` followed by the path of
+the desired directory. If the specified directory does not exist, q displays
+the error message from the OS.
+
+The `\cd` command creates the directory if it does not exist. For example, the
+directory `/data` is initially empty.
+
+    
+    
+    q)\ls /data
+    q)\cd /data/new
+    q)\ls /data
+    "new"
+
+Windows users will know to write `\dir \data` and so on.
+
+### 13.1.7 Context `\d`
+
+The [`\d` [_namespace_]](https://code.kx.com/q/basics/syscmds/#d-directory)
+command displays or changes the current context (a.k.a. _directory_ in early
+versions of k). To determine the current context, issue `\d` with no
+parameter. In a fresh q session this will be the root. To change the current
+working context, include its namespace with the `\d` command. If the specified
+context does not exist, it will be created.
+
+    
+    
+    q)\d
+    `.
+    q)\d .jab
+    q.jab)\d .
+    q)\d .jab
+    q.jab)\d
+    `.jab
+    q.jab)\d .
+    q)\d
+    `.
+
+See our recommendations against using `\d` in
+[§12.7](../12_Workspace_Organization/#127-working-in-a-context).
+
+### 13.1.8 Error Trap `\e`
+
+The [`\e` [0|1]](https://code.kx.com/q/basics/syscmds/#e-error-trap-clients)
+command displays or changes the behavior of a q process when an exception
+occurs during processing a client (i.e., remote) IPC request.
+
+In a fresh q session the default is 0, meaning that when an exception occurs
+the stack of the failing function is cleared and execution continues. This is
+the desired behavior for a production server, as you do not want wayward
+client requests to disable the process.
+
+In a development or testing scenario you can set this value to 1 to enable the
+familiar stack trace from the interactive console.
+
+### 13.1.9 Functions `\f`
+
+The [`\f` [_namespace_]](https://code.kx.com/q/basics/syscmds/#f-functions)
+command displays a sorted list of symbolic names of functions in the current,
+or specified, working context. In a fresh q session,
+
+    
+    
+    q)\f
+    `symbol$()
+    q)f:{x*x}
+    q)g:{x*x*x}
+    q)\f
+    `s#`f`g
+    q).jab.f:{[] 42}
+    q)\f .jab
+    ,`f
+
+### 13.1.10 Garbage Collection `\g`
+
+[`\g` command](https://code.kx.com/q/basics/syscmds/#g-garbage-collection-
+mode)
+
+Following is a description of q/kdb+ memory management provided by Charles
+Skelton, the KX CTO.
+
+  * Q/Kdb+ manages its own thread-local heap.
+  * Vectors always have a capacity and a used size (the count).
+  * There is no garbage since q/kdb+ uses reference counting. As soon as there are no references to an object, its memory is returned to the heap.
+  * During that return of memory, q/kdb+ checks if the capacity of the object is ≥64MB. If it is and `\g` is 1, the memory is returned immediately to the OS; otherwise, the memory is returned to the thread-local heap for reuse.
+  * Executing [`.Q.gc[]`](https://code.kx.com/q/ref/dotq/#qgc-garbage-collect) additionally attempts to coalesce pieces of the heap into their original allocation units and returns any units >=64MB to the OS.
+  * Beginning with 3.3 2015.08.23 – Linux only – unused pages in the heap are dropped from RSS during `.Q.gc[]`.
+  * When q/kdb+ is denied additional address space from the OS, it will invoke `.Q.gc[]` and retry the request to the OS. Should that fail, it will exit with `'wsfull`.
+  * When slave threads are configured and `.Q.gc[]` is invoked in the main thread it will automatically invoke `.Q.gc[]` in each slave thread. If the call is instigated in a slave thread – i.e., not the main thread – it will affect that thread’s local heap only.
+
+See §13.2.5 for the related command line parameter
+[`-g`](https://code.kx.com/q/basics/cmdline/#-g-garbage-collection).
+
+### 13.1.11 Load `\l`
+
+The [`\l` _path_](https://code.kx.com/q/basics/syscmds/#l-load-file-or-
+directory) command loads a q resource from persistent storage – here “load” is
+used in a generic sense. The _path_ parameter can be a directory or a file.
+Loosely speaking, the rules for loading are,
+
+  * When something is recognized as a q resource, the loading routine does what is appropriate to make that resource available in the workspace.
+  * When something is not a recognized q resource, it fails.
+
+The loading process recognizes two types of files:
+
+  * A file can be a q (or k) script, which is executed as if the individual lines were entered from the console
+  * A file can be a serialized q entity – e.g., the sym file for a splayed or partitioned table. In this case, the entity is deserialized into memory into a variable having the name of the file.
+
+The situation for a directory is more complicated.
+
+  * The directory of a splayed table is mapped into memory with the name of the directory as the table name. None of the actual table data is actually loaded into memory at this time.
+  * For a directory name that is the value of one of the permitted partition types, the most recent partition directory is inspected for splayed directories and each such directory is mapped into memory with the name of the splayed directory.
+  * The root of a kdb+ database can contain: serialized q entities (e.g., the sym file), scripts (e.g., a start-up script), splayed table directories, partition directories or a par.txt file. In this case, the loading routine simply “does” each entity that it finds, as outlined above. The scripts are executed last.
+
+For example, to load the distribution script `sp.q` from the `/mypath`
+directory,
+
+    
+    
+    q)\l /mypath/sp.q
+    _
+
+To map a database whose root is `/mypath/db`,
+
+    
+    
+    q)\l /mypath/db
+    _
+
+When a directory is mapped, the current working directory in the OS is set to
+that directory. This allows relative paths to subordinate items in the
+database and also helps to avoid wayward operations.
+
+Tip
+
+Once you have mapped a database into memory, you can issue the command `\l .`
+to remap the data without executing any start-up script(s) in the root.
+
+### 13.1.12 GMT Offset `\o`
+
+The [`\o` [_offset_]](https://code.kx.com/q/basics/syscmds/#o-offset-from-utc)
+command displays or changes the offset from GMT for q date/time values in the
+current q session. When the absolute value of the integer _offset_ is strictly
+less than 24 it is interpreted as hours; if it is 24 or greater it is
+interpreted as minutes.
+
+In a fresh q session, the value is `0Ni`, meaning that the underlying OS time
+zone offset is used.
+
+    
+    
+    q).z.t / GMT
+    15:20:10.892
+    q).z.T / I live in NY
+    11:20:07.700
+    q)\o / Using OS offset
+    0Ni
+    q).z.t-.z.T / No daylight savings in UK yet
+    04:00:00.000
+    q)\o -10 / Think about moving to Hawaii
+    q).z.T / Much better
+    05:21:23.155
+    q).z.t-.z.T / Hawaii doesn’t use daylight saving
+    10:00:00.000
+
+See §13.2.7 for the related command line parameter
+[`-o`](https://code.kx.com/q/basics/cmdline/#-o-utc-offset).
+
+### 13.1.13 Port `\p`
+
+The [`\p` [_port_]](https://code.kx.com/q/basics/syscmds/#p-listening-port)
+command displays or changes the port on which the q process is listening. In a
+fresh q session the value is `0i`, meaning that no port is open and connection
+attempts are rejected. To close the open port, use `0i` as _port_. In a fresh
+q session
+
+    
+    
+    q)\p
+    0i
+    q)\p 5042
+    q)\p
+    5042i
+    q)\p 0
+
+When you issue the `\p` command, q attempts to open the port but the security
+settings of your machine must allow it.
+
+Important
+
+Once you open a port, that q session is wide open to all connections,
+including to HTTP traffic. We strongly recommend that you implement
+appropriate security around any process with an open port in a production
+environment.
+
+See §13.2.8 for the related command line parameter
+[`-p`](https://code.kx.com/q/basics/cmdline/#-p-listening-port).
+
+### 13.1.14 Display Precision (\P)
+
+The command [`\P`
+[_precision_]](https://code.kx.com/q/basics/syscmds/#p-precision) (note upper
+case) shows or sets the display precision for floating point numbers – i.e.,
+float and real types – to the specified number of digits.
+
+Only the display of the floating point values is affected. The internal
+representation remains unchanged.
+
+The permissible values are 0-17, with 0 meaning maximum. The default precision
+is 7, meaning that the display of float or real values is rounded to the
+seventh significant digit. In a fresh q session,
+
+    
+    
+    q)\P
+    7i
+    q)1%3
+    0.3333333
+    q)2%3
+    0.6666667
+    q)\P 0
+    q)1%3
+    0.33333333333333331
+    q)2%3
+    0.66666666666666663
+
+Notice the schmutz in the 17th significant digit. This is part of the dark
+mystery of binary floating point that is not mentioned in polite company.
+
+You can use the semi-official functions
+[`.Q.f`](https://code.kx.com/q/ref/dotq/#qf-format) and
+[`.Q.fmt`](https://code.kx.com/q/ref/dotq/#qfmt-format) for controlled
+formatting of floating point values as strings.
+
+See §13.2.10 for the related command line parameter
+[`-P`](https://code.kx.com/q/basics/cmdline/#-p-display-precision).
+
+### 13.1.15 Replication `\r`
+
+The replication command
+[`\r`](https://code.kx.com/q/basics/syscmds/#r-replication-master) is reserved
+for system use when using replicating servers. Do **not** use manually.
+
+See §13.2.12 for the related command line parameter
+[`-r`](https://code.kx.com/q/basics/cmdline/#-r-replicate).
+
+### 13.1.16 Slaves `\s`
+
+The [`\s`](https://code.kx.com/q/basics/syscmds/#s-number-of-slaves) command
+displays the number of slaves available to the current q process. Read only.
+See §13.2.13 for setting this value with the command line parameter
+[`-s`](https://code.kx.com/q/basics/cmdline/#-s-slaves).
+
+### 13.1.17 Seed `\S`
+
+The [`\S` [_seed_]](https://code.kx.com/q/basics/syscmds/#s-random-seed)
+command (note upper case) displays or sets the initial seed for pseudo-random
+number generation to the integer value _seed_. This is useful for obtaining
+repeatable results from randomized testing. The default value is -314159.
+
+In a simple q session without slaves and multi-threaded input, the behavior is
+simple. Resetting the seed to the default value allows the pseudo-random
+values to be reproduced.
+
+    
+    
+    q)\S
+    -314159i
+    q)5?10
+    8 1 9 5 4
+    q)5?10
+    6 6 1 8 5
+    q)\S -314159i
+    q)5?10
+    8 1 9 5 4
+
+When the q process is not started in single-threaded mode, things are more
+complicated.
+
+  * When the q process is started with a positive number of slaves, each slave gets its own seed (set internally) based on the slave number.
+  * When the process is started in multi-threaded input mode, each thread gets a seed based on the socket descriptor.
+  * When the process is started with negative slaves, each process on a specified range of ports gets its own seed based on the port number.
+
+### 13.1.18 Set Timer `\t`
+
+The [`\t`](https://code.kx.com/q/basics/syscmds/#t-timer) command has two
+interpretations, depending the type of its parameter. When `\t` [_millis_] is
+issued with a positive integer argument, it sets the number of milliseconds
+between timer ticks. The default value is `0i`, meaning that the timer does
+not fire. Setting to a non-zero value starts the timer, which will fire after
+the specified number of milliseconds Reset to `0i` to turn it off.
+
+    
+    
+    q).z.ts:{show .z.P}
+    q)\t 2000
+    q).z.ts:{show .z.P}
+    q)2015.03.24D10:59:34.993826000
+    2015.03.24D10:59:36.993888000
+    2015.03.24D10:59:38.992911000
+    \t 0
+    q)
+
+Warning
+
+The actual timer tick frequency is determined by the timing granularity
+supported by the underlying operating system. This can be considerably
+different from a millisecond.
+
+See §13.2.14 for the related command line parameter
+[`-t`](https://code.kx.com/q/basics/cmdline/#-t-timer-ticks).
+
+### 13.1.19 Elapsed Time `\t _expr_`
+
+When [`\t` _expr_](https://code.kx.com/q/basics/syscmds/#t-timer) is issued
+with a valid q expression, the expression is evaluated and the execution
+duration in milliseconds is reported. This can be used to profile code
+execution when tuning an application.
+
+Some expressions execute so quickly in q that the result is less than the
+timer granularity. Fortunately `\t:_x_` obviates what was formerly the only
+valid use of `do` in q – namely, repeating the expression evaluation to raise
+its execution time above the timer floor.
+
+    
+    
+    q)\t sum til 100000
+    0
+    q)\t:1000 sum til 100000
+    453
+
+We conclude that adding the first 100,000 integers once requires approximately
+453 milliseconds.
+
+Of course you would never evaluate this exact expression in practice; instead,
+use the insight of the young Gauss.
+
+### 13.1.20 Elapsed Time and Space (\ts _expr_)
+
+The [`\ts` _expr_](https://code.kx.com/q/basics/syscmds/#ts-time-and-space)
+command is an enhancement of the version of `\t` that times an expression. It
+provides both the time and the number of bytes used in evaluating the
+expression.
+
+    
+    
+    q)\ts log til 100000
+    4 3145856
+
+You can also specify the number of repetitions, as with `\t`.
+
+    
+    
+    q)\ts:100 log til 100000
+    248 3145824
+
+### 13.1.21 Timeout `\T`
+
+The [`\T` _secs_](https://code.kx.com/q/basics/syscmds/#t-timeout) command
+(note upper case) sets the number of **seconds** a remotely initiated
+execution will run before timing out. The default value is 0, meaning that
+such execution will not timeout. This is useful to protect against runaway
+client calls when the q process is acting as a server.
+
+See §13.2.15 for the related command line parameter
+[`-T`](https://code.kx.com/q/basics/cmdline/#-t-timeout).
+
+### 13.1.22 User Password `\u`
+
+When the q process has been started with the –u command to load a password
+file, the [`\u`](https://code.kx.com/q/basics/syscmds/#u-reload-user-password-
+file) command reloads the password file. This allows the password to be
+changed while the process is running.
+
+See §13.2.17 for the related command line parameter
+[`-u`](https://code.kx.com/q/basics/cmdline/#-u-usr-pwd-local).
+
+### 13.1.23 Variables `\v`
+
+The [`\v` [_namespace_]](https://code.kx.com/q/basics/syscmds/#v-variables)
+command displays a sorted list of symbolic names of all variables in the
+specified context when the _namespace_ parameter is present, or the current
+working context if it is not. In a fresh q session,
+
+    
+    
+    q)\v
+    `symbol$()
+    q)a:b:c:42
+    q)\v
+    `a`b`c
+    q)\v .
+    `a`b`c
+    q).jab.a:43
+    q)\v .jab
+    ,`a
+
+### 13.1.24 Workspace `\w`
+
+The workspace command [`\w`
+[0]](https://code.kx.com/q/basics/syscmds/#w-workspace) displays information
+about resource utilization in the current q session. When the parameter is not
+present, it returns a list of six integers:
+
+  * Number of bytes allocated
+  * Number bytes available in heap
+  * Maximum heap size used heretofore in session
+  * Maximum bytes available as specified at startup in [`-w`](https://code.kx.com/q/basics/cmdline/#-w-workspace)
+  * Number of bytes for mapped entities
+  * Number of bytes of physical (i.e. machine) memory
+
+For example, in a fresh q session on the author’s laptop:
+
+    
+    
+    q)\w
+    118256 67108864 67108864 0 0 17179869184
+    q)bigdata:til 200000000
+    q)\w
+    2147601952 2214592512 2214592512 0 0 17179869184
+
+When the parameter is present, `\w 0` returns a list with two items relating
+to symbol usage: the number of symbols and the corresponding number of bytes
+of memory used. For example, in a fresh q session on the author’s laptop:
+
+    
+    
+    q)\w 0
+    566 18470
+    q)lottasyms:1000000?`5
+    q)\w
+    4312768 67108864 67108864 0 0 17179869184
+
+### 13.1.25 Week Offset `\W`
+
+The week offset command [`\W`
+[_offset_]](https://code.kx.com/q/basics/syscmds/#w-week-offset) (note upper
+case) displays or sets the week offset. An offset of 0 corresponds to
+Saturday. The default is 2, which is Monday. This is useful in controlling
+weekends when aggregating weekly data. In a fresh q session,
+
+    
+    
+    q)\W
+    2i
+    q)group `week$2015.01.01+til 10
+    2014.12.29| 0 1 2 3
+    2015.01.05| 4 5 6 7 8 9
+    q)\W 0
+    q)group `week$2015.01.01+til 10
+    2014.12.27| 0 1
+    2015.01.03| 2 3 4 5 6 7 8
+    2015.01.10| ,9
+    q)\W 1
+    q)group `week$2015.01.01+til 10
+    _
+
+### 13.1.26 Expunge Handler `\x`
+
+The expunge handler command [`\x`
+_handler_](https://code.kx.com/q/basics/syscmds/#x-expunge) un-assigns a user
+specified event handler for one of the `.z.*` event handlers and restores the
+default system behavior. For example, here is how you can customize the
+console response and then restore the original behavior.
+
+    
+    
+    q).z.pi:{"==>",.Q.s value x}
+    q)42
+    ==>42
+    q)43
+    ==>43
+    q)\x .z.pi
+    ==>q)43
+    43
+    q)44
+    44
+
+There is no default handler for [`.z.ph`](https://code.kx.com/q/ref/dotz/#zph-
+http-get) so expunge does not work there.
+
+### 13.1.27 Date Format `\z`
+
+The date parsing format command [`\z`
+[0|1]](https://code.kx.com/q/basics/syscmds/#z-date-parsing) displays or
+specifies the format for date parsing. A value of 0 corresponds to month-then-
+day – as in _mm_ /_dd_ /_yyyy_ – and a value of 1 corresponds to day-then
+month – as in _dd_ /_mm_ /_yyyy_. The default value is `0i`. In a fresh q
+session,
+
+    
+    
+    q)\z
+    0i
+    q)"D"$"12/31/2015"
+    2015.12.31
+    q)"D"$"31/12/2015"
+    0Nd
+    q)\z 1
+    q)"D"$"12/31/2015"
+    0Nd
+    q)"D"$"31/12/2015"
+    2015.12.31
+
+See §13.2.21 for the related command line parameter
+[`-z`](https://code.kx.com/q/basics/cmdline/#-z-date-format).
+
+### 13.1.28 Lock Script `\_`
+
+The [`\_`](https://code.kx.com/q/basics/syscmds/#_-hide-q-code) command with
+no parameter checks to see if client write access is blocked. See the
+description of `–b` in §13.2.1.
+
+The `_ _script.q_` command transforms the specified script file into an
+equivalent one in `script.q\_` that can be loaded and executed with `\l` but
+whose contents are scrambled for human eyes. The resulting file cannot be
+viewed, serialized or modified.
+
+For example, suppose we have saved the following script as
+`/scripts/sensitive.q`.
+
+    
+    
+    secret:42
+    reveal:{[] 42}
+
+Then we can lock it as follows.
+
+    
+    
+    q)\_ sensitive.q
+    `sensitive.q_
+    q)\l sensitive.q_
+    q)secret
+    q)reveal[]
+    42
+    q)reveal / ignored
+    q)-8!reveal / ignored
+    q)read1`:sensitive.q_ / scrambled
+    _
+
+### 13.1.29 Redirect `\1` and `\2`
+
+These commands[ `\1` and
+`\2`](https://code.kx.com/q/basics/syscmds/#1-2-redirect) allow you to
+redirect the OS stdout and stderr from within a q session. Follow the command
+with a file name for the redirected output. In a fresh q session,
+
+    
+    
+    q)\1 /data/out.txt
+    q)1+2*til 5
+    q)\2 /data/err.txt
+    6*`7
+    \\
+    >cat /data/out.txt
+    1 3 5 7 9
+    >cat /data/err.txt
+    q)'type
+
+### 13.1.30 Operating System `\_text_`
+
+The command [`\_oscmd_`](https://code.kx.com/q/basics/syscmds/#os-commands),
+in which _oscmd_ is any text not recognized as a q command, is assumed to be
+an operating system command and is passed to the OS for execution. Any output
+to stdout will be returned to q as strings. This is handy to avoid having to
+exit the q session and can be done programmatically with the
+[`system`](https://code.kx.com/q/ref/system/) function. For example, on the
+author’s laptop,
+
+    
+    
+    q)\pwd
+    "/q4m"
+    q)\ls /pages
+    "c.js"
+    "sample0.html"
+    "sample1.html"
+    "sample2.html"
+    "ws101.html"
+    "ws101.q"
+    q)pages:system "ls /pages"
+    q)pages
+    _
+
+Tip
+
+If oscmd results in an operating system error, an exception will be thrown in
+q. For safe programmatic execution, you can trap the exception by executing
+oscmd with system wrapped in protected evaluation.
+
+### 13.1.31 Interrupt (Ctl-c and Ctl-z)
+
+You can interrupt a long-running q function with Ctl-c. Note that some q
+functions are so tight that the interrupt may not be registered. You can
+terminate any q console session with extreme prejudice using Ctl-z, which will
+result in all contents of the workspace being lost.
+
+### 13.1.32 Terminate `\`
+
+Use [`\`](https://code.kx.com/q/basics/syscmds/#terminate) to terminate one
+level of suspended execution arrived at via an exception.
+
+    
+    
+    q)f:{x*y}
+    q)f[2;`3]
+    {x*y}
+    'type
+    *
+    2
+    `3
+    q))\
+    q)☐
+
+Do not have an itchy trigger finger when exiting multiple levels of suspended
+evaluation, as `\\` will exit the q session immediately.
+
+If you are adventuresome, you can also issue `\` at the normal q console
+prompt to toggle between the q interpreter and the k interpreter.
+
+    
+    
+    q)\
+    a:42
+    -a
+    -42
+    \
+    q)-a
+    '-
+
+### 13.1.33 Exit `\\`
+
+To exit the q process, enter a double backslash
+[`\\`](https://code.kx.com/q/basics/syscmds/#quit) at any console prompt.
+
+    
+    
+    q)\\
+    $
+
+There is no confirmation prompt for `\\`. The q session is terminated with
+extreme prejudice.
+
+For programmatic q shutdown, use [`exit`](https://code.kx.com/q/ref/exit/)
+with a return value, which can be piped into other processes.
+
+## 13.2 Command Line Parameters
+
+[Command line options](https://code.kx.com/q/basics/cmdline/)
+
+When you start q from the command line, you can optionally follow the q
+executable immediately with a file or directory to be “loaded” upon startup.
+This is effectively the same as issuing the `\l` command with that file or
+directory as the first action in the q session.
+
+Following the q executable and the file name, you can include one or more
+command-line options. Each is prefaced with `-` and followed by whitespace and
+an optional parameter value. Many of the command-line parameters have
+equivalent q commands that can be issued within the session.
+
+### 13.2.1 Block Database Modification `-b`
+
+The [`–b`](https://code.kx.com/q/basics/cmdline/#-b-blocked) command line
+parameter disallows connected clients to modify data. This includes setting
+global variables or modifying files.
+
+This behavior is only in effect for operations initiated via remote (i.e.,
+client) connection, so you will not see the effects in a console session on
+the server process.
+
+### 13.2.2 Console Size `-c`
+
+The [`–c _r c_`](https://code.kx.com/q/basics/cmdline/#-c-console-size)
+parameter specifies a pair of integers for the size of the q virtual console
+display as rows and columns. The default size is `25 80i`.
+
+### 13.2.3 HTTP Console `-C`
+
+The [`–C _r c_`](https://code.kx.com/q/basics/cmdline/#-c-http-size) parameter
+(note upper case) specifies a pair of integers for the size of the HTTP
+virtual console display as rows and columns. The default setting is 36 by
+2000.
+
+### 13.2.4 Client Error Trapping `-e`
+
+The [`-e` 0|1](https://code.kx.com/q/basics/cmdline/#-e-error-traps) parameter
+enables or disables trapping exceptions arising during processing IPC
+requests. The default is 0.
+
+### 13.2.5 Garbage Collection (-g)
+
+The [`-g` 0|1](https://code.kx.com/q/basics/cmdline/#-g-garbage-collection)
+parameter sets the garbage collection behavior. See §13.1.10 for an
+explanation.
+
+### 13.2.6 Logging `-l` and `-L`
+
+The [`-l`](https://code.kx.com/q/basics/cmdline/#-l-log-updates) parameter
+starts q with logging of remote requests enabled. Following is a brief
+description of how logging works; see [the KX
+site](https://code.kx.com/q/kb/logging/) for more information. The
+[`–L`](https://code.kx.com/q/basics/cmdline/#-l-log-sync) parameter (note
+upper case) forces disk write on each remote execution.
+
+A logging server uses files with `.log` and `.qdb` extensions and name
+specified immediately after the q executable on the command line that starts
+q. For example, starting q with
+
+    
+    
+    $q /data/logdemo -l
+    will use files /data/logdemo.log and /data/logdemo.qdb.
+
+The idea of logging is that each time a remote request is executed, it is
+logged. Periodically the application issues the `\l` command to checkpoint the
+current state of the workspace (more specifically, to serialize and persist
+the root context) and clear the log.
+
+Should a logging process terminate abruptly, restarting it with the same `–l`
+command causes the most recently persisted state to be restored. Specifically,
+the serialized root context is restored from the `.qdb` file and requests that
+were processed after the state was persisted are replayed from the `.log`
+file.
+
+Note that although only remote requests are logged, the process can ensure
+that its own activity is logged by sending requests to itself with the
+reserved handle 0.
+
+Here is a simple session that demonstrates the logging scenario using local
+activity. Remote activity works the same.
+
+    
+    
+    >q /data/logdemo -l
+    q)0 "a:42"
+    q)0 "b:43"
+    q)\l
+    q)\\
+    >q /data/logdemo -l
+    q)a
+    42
+    q)b
+    4
+
+### 13.2.7 Offset `-o`
+
+The [`–o` _offset_](https://code.kx.com/q/basics/cmdline/#-o-utc-offset)
+parameter specifies the offset from GMT for q time values. See §13.1.10 for an
+explanation.
+
+### 13.2.8 Port `-p`
+
+The [`–p` _portnum_](https://code.kx.com/q/basics/cmdline/#-p-listening-port)
+parameter opens _portnum_ for TCP/IP and HTTP traffic. The default is 0
+meaning that no port is open.
+
+Only one port can be open in a given q session.
+
+### 13.2.9 Multithreaded Session `-p`
+
+The `–p` -_portnum_ parameter starts the q session in multithreaded mode. See
+[the KX site](https://code.kx.com/q/kb/multithreaded-input/) for information
+on how this works.
+
+### 13.2.10 Display Precision `-P`
+
+The [`–P` _digits_](https://code.kx.com/q/basics/cmdline/#-p-display-
+precision) parameter (note upper case) specifies the number of digits for
+floating-point display. See §13.1.14 for an explanation.
+
+### 13.2.11 Quiet `-q`
+
+The [`–q`](https://code.kx.com/q/basics/cmdline/#-q-quiet-mode) parameter
+starts q quietly, meaning that no start-up banner is displayed and there is no
+q prompt at the console.
+
+### 13.2.12 Replicate `-r`
+
+The [`–r`](https://code.kx.com/q/basics/cmdline/#-r-replicate) parameter
+starts a replicating q server. See the KX web site for information on
+replication.
+
+### 13.2.13 Slaves `-s`
+
+The [`–s` _N_](https://code.kx.com/q/basics/cmdline/#-s-slaves) parameter
+starts the q process with _N_ slaves for concurrent execution. See [the KX web
+site](https://code.kx.com/q/basics/peach/) for information on slaves.
+
+### 13.2.14 Timer `-t`
+
+The [`–t` _millis_](https://code.kx.com/q/basics/cmdline/#-t-timer-ticks)
+command specifies the number of milliseconds between timer ticks. See §13.1.17
+for an explanation.
+
+### 13.2.15 Timeout `-T`
+
+The [`–T` _secs_](https://code.kx.com/q/basics/cmdline/#-t-timeout) parameter
+specifies the number of seconds for timeout of remote requests. See §13.1.20
+for an explanation.
+
+### 13.2.16 Exit (-u)
+
+The [`–u 1`](https://code.kx.com/q/basics/cmdline/#-u-disable-syscmds)
+parameter disables calling out to the OS via `system`.
+
+### 13.2.17 User Validation `-u`
+
+The [`–u` _filename_](https://code.kx.com/q/basics/cmdline/#-u-usr-pwd-local)
+parameter starts a q session with a file of user names and passwords that will
+be checked when a remote connection requests is received. The remote
+connection has **no access** outside the database root directory.
+
+### 13.2.18 User Validation `-U`
+
+The [`–U` _filename_](https://code.kx.com/q/basics/cmdline/#-u-usr-pwd)
+parameter (note upper case) starts a q session with a file of user names and
+passwords that will be checked when a remote connection requests is received.
+**No restriction** is placed on file system access by remote connections.
+
+### 13.2.19 Workspace Size `-w`
+
+The [`–w` _bytes_](https://code.kx.com/q/basics/cmdline/#-w-workspace)
+parameter specifies the maximum virtual size of the workspace in bytes. Any
+attempt to allocate more than this amount of memory will result in a `'wsfull`
+exception and immediate termination of the q process. The default is twice the
+amount of physical machine memory.
+
+### 13.2.20 Week Offset `-W`
+
+The [`–W` _offset_](https://code.kx.com/q/basics/cmdline/#-w-start-week)
+parameter (note upper case) sets the offset of the beginning of the week
+relative to Saturday. See §13.1.24 for the related
+[`\W`](https://code.kx.com/q/basics/syscmds/#w-week-offset) command.
+
+### 13.2.21 Date Parsing Format `-z`
+
+The [`–z` 0|1](https://code.kx.com/q/basics/cmdline/#-z-date-format) parameter
+specifies the date parsing format. See §13.1.25 for details in the related
+`\W` command.
+
+## 13.3 System Variables
+
+Variables in the [`.z` namespace](https://code.kx.com/q/ref/dotz/) reflect q
+environmental information and behavior.
+
+### 13.3.1 IP Address `.z.a`
+
+The system variable [`.z.a`](https://code.kx.com/q/ref/dotz/#za-ip-address) is
+an encoded int representing the IP address of the current running q instance.
+To see the usual four-integer IP address, decode the int using base 256. For
+example, on the author’s laptop,
+
+    
+    
+    q).z.a
+    -1407972861i
+    q)`int$0x0 vs .z.a
+    172 20 10 3i
+
+### 13.3.2 Access Control (.z.ac)
+
+Assign a function to the system variable
+[`.z.ac`](https://code.kx.com/q/ref/dotz/#zac-http-auth-from-cookie) to
+process Single Sign On (SSO) token cookies from the HTTP header. Your handler
+is passed a two-item list comprising the request text and a dictionary
+containing the elements of the request header. Your custom code should process
+the `Authorization` value of the dictionary and should return a list in one of
+the following forms:
+
+  * `(0; "")` to indicate 401 page not found
+  * `(1; "`_username_`")` to indicate that _username_ has been validated and to assign this value to `.z.u`
+  * `(2; "`_raw text_`")` to send raw response text to the client
+
+Note that `.z.ac` supersedes `.z.pw` when defined.
+
+### 13.3.3 Dependencies `.z.b`
+
+The system variable [`.z.b`][https://code.kx.com/q/ref/dotz/#zb-dependencies)
+is a dictionary that represents the (direct) dependencies of all aliases. The
+keys are symbolic names of entities in the workspace and the associated values
+are lists of symbolic names of entities that depend directly on the entity
+named by the key.
+
+In a fresh q session,
+
+    
+    
+    q)a::x+y
+    q)b::x*x
+    q)c::a+b
+    q).z.b
+    x| `a`b
+    y| ,`a
+    a| ,`c
+    b| ,`c
+
+It is a nice exercise to write a q expression that recursively finds all
+dependencies, not just direct ones. Another nice exercise is to invert the
+dictionary to relate the name of an entity to everything it depends on.
+
+### 13.3.4 Cores `.z.c`
+
+The system variable [`.z.c`](https://code.kx.com/q/ref/dotz/#zc-cores)
+represents the number of cores on the physical machine hosting the q process.
+Hardware with hyper-threading reports the number of virtual cores.
+
+### 13.3.5 Exit Routine `.z.exit`
+
+The system variable [`.z.exit`](https://code.kx.com/q/ref/dotz/#zexit-action-
+on-exit) specifies a handler to be called just before the q process exits in
+order to clean up resources.
+
+The handler cannot cancel the exit.
+
+The parameter passed to the handler is `0i` if the exit was invoked manually
+with `\\` or it is the argument to the
+[`exit`](https://code.kx.com/q/ref/exit/) function when that was called
+programmatically.
+
+In a fresh q session,
+
+    
+    
+    q).z.exit:{show x}
+    q)\\
+    0i
+
+Or in another fresh q session,
+
+    
+    
+    q).z.exit:{show x}
+    q)exit 43
+    43i
+
+Note that if the handler itself throws an exception – deliberate or otherwise
+– the session will be suspended at that error.
+
+    
+    
+    q).z.exit:{'bad}
+    q)exit 0
+    {'bad}
+    'bad
+    q))
+
+The default exit behavior can be restored by expunging with `\x`.
+
+### 13.3.6 Global Date `.z.d`
+
+The system variable [`.z.d`](https://code.kx.com/q/ref/dotz/#zt-zt-zd-zd-
+timedate-shortcuts) retrieves the date component of Greenwich Mean Time (GMT)
+and is equivalent to ``date$.z.p`.
+
+### 13.3.7 Local Date `.z.D`
+
+The system variable [`.z.D`](https://code.kx.com/q/ref/dotz/#zt-zt-zd-zd-
+timedate-shortcuts) retrieves the local date component according to the time
+zone offset from GMT and is equivalent to ``date$.z.P`.
+
+### 13.3.8 Startup File `.z.f`
+
+The system variable [`.z.f`](https://code.kx.com/q/ref/dotz/#zf-file) is a
+symbol representing the file parameter entered on the q start-up command line.
+For example,
+
+    
+    
+    $ q /scripts/answer.q
+    
+    
+    q).z.f
+    `/scripts/answer.q
+
+### 13.3.9 Host `.z.h`
+
+The variable [`.z.h`](https://code.kx.com/q/ref/dotz/#zh-host) is a symbol
+representing the network name of the host running the q instance, which is the
+same as the OS command hostname on Unix. For example, on the author’s laptop,
+
+    
+    
+    q).z.h
+    `aerowing.local
+
+### 13.3.10 Process ID `.z.i`
+
+The variable [`.z.i`](https://code.kx.com/q/ref/dotz/#zi-pid) is an int
+representing the process ID of the running q instance. For example, on the
+author’s laptop,
+
+    
+    
+    q).z.i
+    4903i
+
+As of this writing (Sep 2015), `.z.i` is not implemented on Windows.
+
+### 13.3.11 Release Date `.z.k`
+
+The system variable [`.z.k`](https://code.kx.com/q/ref/dotz/#zk-release-date)
+is a date value representing the release date of the running q instance. For
+example, on the author’s laptop,
+
+    
+    
+    q).z.k
+    2014.11.01
+
+### 13.3.12 Release Version `.z.K`
+
+The system variable [`.z.K`](https://code.kx.com/q/ref/dotz/#zk-version) is a
+float value representing the major version of the running q instance. For
+example, on the author’s laptop,
+
+    
+    
+    q).z.K
+    3.2
+
+### 13.3.13 License Information `.z.l`
+
+The system variable [`.z.l`](https://code.kx.com/q/ref/dotz/#zl-license) is a
+list of strings containing information about the license of the running kdb+
+instance. The most useful are the items in positions 1 and 2, which represent
+the expiry date and update date, respectively. For example, on a system long,
+long ago,
+
+    
+    
+    q).z.l
+    ("";"2007.07.01";"2007.07.01";,"1";,"1";,"0";,"0")
+
+The value of `.z.l` is `()` for 32–bit non-production versions of q.
+
+### 13.3.14 GMT Timespan `.z.n`
+
+The system variable [`.z.n`](https://code.kx.com/q/ref/dotz/#zn-utc-timespan)
+retrieves the timespan component of Greenwich Mean Time (GMT) and is
+equivalent to ``timespan$.z.p`.
+
+### 13.3.15 Local Timespan `.z.N`
+
+The system variable [`.z.N`](https://code.kx.com/q/ref/dotz/#zn-local-
+timespan) retrieves the local timespan component according to the time zone
+offset from GMT and is equivalent to ``timespan$.z.P`.
+
+### 13.3.16 OS `.z.o`
+
+The system variable [`.z.o`](https://code.kx.com/q/ref/dotz/#zo-os-version) is
+a symbol representing the operating system hosting the current q process. For
+example, this text is being written on a 32-bit Mac system.
+
+    
+    
+    q).z.o
+    `m32
+
+### 13.3.17 GMT Timestamp `.z.p`
+
+The system variable [`.z.p`](https://code.kx.com/q/ref/dotz/#zp-utc-timestamp)
+retrieves the current Greenwich Mean Time (GMT) with nanosecond resolution. It
+is the basis for all other date and time values in the .z namepsace.
+
+For example, at the exact time of this writing we find,
+
+    
+    
+    q).z.p
+    2015.03.26D17:40:21.997067000
+
+### 13.3.18 Local Timestamp `.z.P`
+
+The system variable [`.z.P`](https://code.kx.com/q/ref/dotz/#zp-local-
+timestamp) displays the current local nanosecond resolution from `.z.p`
+according to the time zone offset.
+
+For example, at the exact time of this writing in the Hawaii time zone we
+find,
+
+    
+    
+    q).z.P
+    2015.03.26D07:41:11.269534000
+
+### 13.3.19 On Close `.z.pc`
+
+Assign a q function to the system variable
+[`.z.pc`](https://code.kx.com/q/ref/dotz/#zpc-close) to be invoked **after** a
+connection is closed – a.k.a. “process close.” At the point your handler is
+invoked, the other variables associated with the connection – e.g.,
+[`.z.w`](https://code.kx.com/q/ref/dotz/#zw-handle) – have already been wiped.
+The handle of the connection that has just been closed is passed as the lone
+parameter to your handler so that you can clean up any resources associated
+with it in your application.
+
+To reset to the default setting, expunge the handler with `\x .z.pc`.
+
+### 13.3.20 Peach Distribution `.z.pd`
+
+Assign an int list or q function representing an event handler to the system
+variable [`.z.pd`](https://code.kx.com/q/ref/dotz/#zpd-peach-handles) for use
+by [`peach`](https://code.kx.com/q/ref/each/#peach) for a q process that has
+been started with the `–s` command line parameter with a negative value. Your
+handler supplies a list of ints representing open handles to other processes
+and will be called by `peach` when it distributes work to those processes.
+These handles must not be used for other processing as `peach` will close any
+handle that presents data it is not accepting. See [§A.68.2](../A_Built-
+in_Functions/#a682-distributed-peach) on distributed processing with `peach`.
+
+The int return list of your handler must have the ``u#` attribute applied.
+
+Here is a simple example that opens and returns five handles on the local
+machine starting at port 20000. It assumes that worker processes have already
+been started with these ports open. See the [KX
+site](https://code.kx.com/q/basics/ipc/) for more comprehensive examples.
+
+    
+    
+    q).z.pd:{`u#hopen each 20000+til 5}
+
+### 13.3.21 On Synchronous Message `.z.pg`
+
+Assign a function to the system variable
+[`.z.pg`](https://code.kx.com/q/ref/dotz/#zpg-get) to be invoked whenever a
+remote client q process makes a synchronous call over an open connection –
+a.k.a. “process get.” The name derives from the fact that a synchronous call
+has get semantics. The default behavior applies
+[`value`](https://code.kx.com/q/ref/value/) to the incoming message.
+
+To reset to the default setting, expunge the handler with `\x .z.pg`.
+
+### 13.3.22 On HTTP Get `.z.ph`
+
+Assign a function to the system variable
+[`.z.ph`](https://code.kx.com/q/ref/dotz/#zph-http-get) to be evaluated
+whenever a synchronous HTTP request is routed to the current q process –
+a.k.a. “process http.” See [§11.7.1](../11_IO/#1171-http-connections) for a
+discussion.
+
+To reset to the default setting, expunge the handler with `\x .z.ph`.
+
+### 13.3.23 On Input `.z.pi`
+
+Assign a function to the system variable
+[`.z.pi`](https://code.kx.com/q/ref/dotz/#zpi-input) to be evaluated when q
+echoes the result of user input to the console – a.k.a. “process input.” For
+example, the following mimics the console display of pre-2.4 q versions.
+
+    
+    
+    q).z.pi:{-1 .Q.s1 value x}
+
+To reset to the default behavior, expunge the handler with `\x .z.pi`.
+
+### 13.3.24 HTTP Options method `.z.pm`
+
+Assign a function to the system variable
+[`.z.pm`](https://code.kx.com/q/ref/dotz/#zpm-http-options) to receive HTTP
+OPTIONS as,
+
+    
+    
+    (`OPTIONS;requestText;requestHeaderDict)
+
+### 13.3.25 On Open `.z.po`
+
+Assign a function to the system variable
+[`.z.po`](https://code.kx.com/q/ref/dotz/#zpo-open) to be evaluated after a
+connection to the current q process has been successfully opened – a.k.a.
+“process open.” See [§11.6](../11_IO/#116-interprocess-communication) for a
+discussion. The local handle of the connecting process is passed in the second
+parameter.
+
+To reset to the default setting, expunge the handler with `\x .z.po`.
+
+### 13.3.26 On HTTP Post `.z.pp`
+
+Assign a function to the system variable
+[`.z.pp`](https://code.kx.com/q/ref/dotz/#zpp-http-post) to be evaluated
+whenever an HTTP post is routed to the current q process – a.k.a. “process
+post.” See [§11.7](../11_IO/#117-http-and-web-sockets) for a discussion of
+`.z.pg`, whose parameters are the same.
+
+To reset the `.z.pp` to the default setting, expunge the handler with `\x
+.z.pp`.
+
+### 13.3.27 On Set `.z.ps`
+
+Assign a function to the system variable
+[`.z.ps`](https://code.kx.com/q/ref/dotz/#zps-set) to be evaluated whenever a
+client process sends an asynchronous message to the current q process – a.k.a.
+“process set.” The name derives from the fact that an asynchronous call has
+set semantics. The parameter passed to your handler is the message content.
+The default behavior is to invoke `value`.
+
+To reset the to the default setting, expunge the handler with `\x .z.ps`.
+
+### 13.3.28 On Password `.z.pw`
+
+Assign a function to the system variable
+[`.z.pw`](https://code.kx.com/q/ref/dotz/#zpw-validate-user) to be evaluated
+after the command line [`–u`](https://code.kx.com/q/basics/cmdline/#-u-usr-
+pwd-local) and [`–U`](https://code.kx.com/q/basics/cmdline/#-u-usr-pwd) checks
+but before the `.z.po` handler – a.k.a. “**p** ass**w** ord.” This can be used
+to implement authorization – i.e., who is allowed to do what. Your handler
+should accept two parameters: a symbolic user name and a password string. It
+should return a boolean pass/fail indicator.
+
+To reset to the default setting, expunge the handler with `\x .z.pw`.
+
+### 13.3.29 Quiet Mode `.z.q`
+
+The system variable [`.z.q`](https://code.kx.com/q/ref/dotz/#zq-quiet-mode) is
+a read-only boolean indicating whether q was started in quiet mode using the
+`–q 1` command line parameter.
+
+### 13.3.30 Self `.z.s`
+
+The system variable [`.z.s`](https://code.kx.com/q/ref/dotz/#zs-self)
+represents the current function during function evaluation. This can be useful
+when writing recursive functions but there is often a better way to do this
+using iterators. For example, here is a stack-eating recursive factorial.
+
+    
+    
+    q){$[x=1;x;x*.z.s x-1]} 10
+    3628800
+
+### 13.3.31 GMT Date `.z.t`
+
+The system variable [`.z.t`](https://code.kx.com/q/ref/dotz/#zt-zt-zd-zd-
+timedate-shortcuts) retrieves the time component of Greenwich Mean Time (GMT)
+and is equivalent to ``time$.z.p`.
+
+### 13.3.32 Local Date `.z.T`
+
+The system variable [`.z.T`](https://code.kx.com/q/ref/dotz/#zt-zt-zd-zd-
+timedate-shortcuts) retrieves the local date component according to the time
+zone offset from GMT and is equivalent to ``time$.z.P`.
+
+### 13.3.33 On Timer `.z.ts`
+
+Assign a function to the system variable
+[`.z.ts`](https://code.kx.com/q/ref/dotz/#zts-timer) to be evaluated on every
+timer tick – see §13.1.18 for the command
+[`\t`](https://code.kx.com/q/basics/syscmds/#t-timer) to start/stop the timer.
+For example, the following assigns a handler to display local time to the
+console, turns on the timer to fire (approximately) every two seconds and
+turns it off after a few ticks.
+
+    
+    
+    q).z.ts:{show .z.P}
+    q)\t 2000
+    q)2015.03.26D12:48:24.487145000
+    2015.03.26D12:48:26.488286000
+    2015.03.26D12:48:28.488237000
+    2015.03.26D12:48:30.488372000
+    q)2015.03.26D12:48:32.488206000
+    2015.03.26D12:48:34.488370000
+    \t 0
+    q)
+
+To restore the default behavior, expunge the handler with `\x .z.ts`.
+
+### 13.3.34 User `.z.u`
+
+The system variable [`.z.u`](https://code.kx.com/q/ref/dotz/#zu-user-id) is a
+symbol that represents the user ID of the q session.
+
+Inside the processing of a remote message on a server, `.z.u` represents the
+user ID of the remote session.
+
+### 13.3.35 On Value Set `.z.vs`
+
+Assign a function to the system variable
+[`.z.vs`](https://code.kx.com/q/ref/dotz/#zvs-value-set) to be evaluated
+**after** a global variable in the root context is set. The parameters for
+your handler are the symbolic name of the global being set and the subdomain
+of the assignment. For example, in a fresh q session,
+
+    
+    
+    q)a:42
+    q)m:(1 2; 3 4)
+    q).z.vs:{0N!(x;y;value x)}
+    q)a:43
+    (`a;();43)
+    q)m[0;0]:42
+    (`m;0 0;(42 2;3 4))
+
+To restore the default behavior, expunge the handler with `\x .z.vs`.
+
+### 13.3.36 Who `.z.w`
+
+The system variable [`.z.w`](https://code.kx.com/q/ref/dotz/#zw-handle)
+represents the handle of “who” is in communication during the current remote
+call. At the console prompt, the value is `0i`, representing the interactive
+user. In the midst of processing a remote message, it is the (local) open
+handle associated with that remote client on this process.
+
+### 13.3.37 Handle Queues `.z.W`
+
+The system variable [`.z.W`](https://code.kx.com/q/ref/dotz/#zw-handles) (note
+upper case) returns a list of dictionaries whose keys are open handles and
+whose values are lists of bytes in the corresponding output queue. See the [KX
+site](https://code.kx.com/q/ref/dotz/#zw-handles) for more details.
+
+### 13.3.38 On WebSocket Close `.z.wc`
+
+Introduced in q3.3, the system variable
+[`.z.wc`](https://code.kx.com/q/ref/dotz/#zwc-websocket-close) can be assigned
+a handler that is called when a WebSocket connection is closed. Prior to q3.3
+this was handled in `.z.pc`.
+
+Your handler is executed immediately **after** a WebSocket connection has been
+closed. Since the connection has been closed by the time the handler is
+called, there are no valid remote values for
+[`.z.a`](https://code.kx.com/q/ref/dotz/#za-ip-address),
+[`.z.u`](https://code.kx.com/q/ref/dotz/#zu-user-id) or
+[`.z.w`](https://code.kx.com/q/ref/dotz/#zw-handle). Consequently the local
+values are returned.
+
+This is useful to clean up things like a table of users keyed by handle, in
+which case you use the just-closed handle that is passed as a parameter to
+`.z.wc`.
+
+### 13.3.39 On WebSocket Open `.z.wo`
+
+Introduced in q3.3, the system variable
+[`.z.wo`](https://code.kx.com/q/ref/dotz/#zwo-websocket-open) can be assigned
+a handler that is called when a WebSocket connection is opened. Prior to q3.3
+this was handled in [`.z.po`](https://code.kx.com/q/ref/dotz/#zpo-open).
+
+Your handler is executed just **after** a WebSocket connection to a kdb+
+session has been initialized – i.e., once it has been validated against a
+[`-u`](https://code.kx.com/q/basics/cmdline/#-u-usr-pwd-
+local)/[`-U`](https://code.kx.com/q/basics/cmdline/#-u-usr-pwd) file (if
+specified) and [`.z.pw`](https://code.kx.com/q/ref/dotz/#zpw-validate-user)
+checks. The argument is the just-opened handle.
+
+This handler is typically used to build a dictionary of handles associated
+with session information such as `.z.a` or `.z.u`.
+
+### 13.3.40 On WebSocket Message `.z.ws`
+
+Assign a function to the system variable
+[`.z.ws`](https://code.kx.com/q/ref/dotz/#zws-websockets) to be evaluated
+whenever a message arrives over a WebSocket. See [§11.7](../11_IO/#117-http-
+and-web-sockets) for examples.
+
+### 13.3.41 Command-Line Parameters `.z.x`
+
+The system variable [`.z.x`](https://code.kx.com/q/ref/dotz/#zx-argv) is a
+list of strings representing the command-line parameters provided after the
+name of the file or directory on the command-line invocation of the q process.
+For example, if q is invoked from the OS console with,
+
+    
+    
+    q convertargs.q 42 forty 2.0
+
+we find,
+
+    
+    
+    q).z.f
+    `convertargs.q
+    q).z.x
+    ("42";"forty";"2.0")
+
+### 13.3.42 Raw Command Line `.z.X`
+
+The system variable [`.z.X`](https://code.kx.com/q/ref/dotz/#zx-raw-command-
+line) was introduced in q3.3. It is a string representing the unprocessed
+command line that invoked the q process, beginning with the invocation of q.
+For example,
+
+    
+    
+    $rlwrap m32/q trade.q -p 12345 -u 1 -b -MyParam foo
+    KDB+ 3.3 2015.09.02 Copyright (C) 1993-2015 Kx Systems
+    ...
+    
+    
+    q).z.X
+    "m32/q"
+    "trade.q"
+    "-p"
+    "12345"
+    "-u"
+    ,"1"
+    "-b"
+    "-MyParam"
+    "foo"
+    q).z.x
+    "-MyParam"
+    "foo"
+
+### 13.3.43 GMT Datetime `.z.z`
+
+The system variable [`.z.z`](https://code.kx.com/q/ref/dotz/#zz-utc-datetime)
+retrieves the GMT date component and is equivalent to ``datetime$.z.p`.
+
+This is deprecated in favor of `.z.p`.
+
+### 13.3.44 Local Datetime `.z.Z`
+
+The system variable [`.z.Z`](https://code.kx.com/q/ref/dotz/#zz-local-
+datetime) retrieves the local date component according to the timezone offset
+from GMT and is equivalent to ``datetime$.z.P`.
+
+This is deprecated in favor of `.z.P`.
+
+### 13.3.45 Zip Defaults `.z.zd`
+
+The system variable [`.z.zd`](https://code.kx.com/q/ref/dotz/#zzd-zip-
+defaults) displays or sets a list of parameters for data compression: logical
+block size, compression algorithm and compression level. For example, the
+following are reasonable settings.
+
+    
+    
+    q).z.zd:17 2 6
+
+See [the KX site](https://code.kx.com/q/kb/file-compression/) for more details
+on the implementation of data compression.
+

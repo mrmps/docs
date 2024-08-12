@@ -1,0 +1,91 @@
+https://code.kx.com/insights/microservices/database/glossary.html
+
+# Glossary - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/database/glossary.html
+
+# Glossary
+
+This page contains definitions for key concepts and commonly used terms.
+
+## Agg
+
+Aggregator.
+
+## Available (DAP)
+
+A DAP is _available_ if:
+
+  1. The RC has not dispatched a request to the DAP. Upon dispatching a request to it, the RC marks the DAP as unavailable until the DAP notifies the RC of completion.
+  2. The DAP has reported itself as available to the RC. A DAP may be registered with the RC, but explicitly mark itself unavailable while it is busy performing other tasks, which include:
+     * Log replay: on initialization, the DAP marks itself unavailable until log replay has completed.
+     * End-of-day or end-of-interval reload: the DAP marks itself unavailable on receipt of a reload signal from the storage manager. Once the reload is complete, it marks itself as available again.
+
+## DAP
+
+Data Access Process.
+
+## Feasible (DAP)
+
+A DAP is _feasible_ if it is both available and up to date. If a DAP is
+feasible, the RC can select it to service requests. If a DAP is not feasible,
+the RC ignores it when selecting DAPs.
+
+## GW
+
+Gateway.
+
+## Purview
+
+DAP metadata provided to the RC to determine data locality. See
+[Purviews](query/purviews.html).
+
+## Primary RC and secondary RCs
+
+A running system may have multiple RC replicas. Each DAP is owned by a unique
+RC. That is, the DAP's unique RC has unilateral authority to assign work to
+it. In this way, each RC owns a set of DAPs, and no two sets intersect. The
+RC-DAP association rules are described in .
+
+When a client makes an API request to the Gateway (GW), the GW sends the
+request to one RC. That RC is called the _primary RC_ of the request. The
+primary RC may or may not have all the required DAPs necessary to serve the
+request, and thus may enlist one or more other RCs to assist; these are called
+_secondary RCs_. The secondary RCs distribute the request to their DAPs on the
+primary RC's behalf, since the primary RC has no right to assign work to a
+secondary RC's DAPs directly.
+
+## RC
+
+Resource Coordinator.
+
+## Reference vintage
+
+Each DAP reports to the RC the stream position of the last reference data
+update it received . This stream position is the DAP's _reference vintage_
+(often denoted `refVintage`). The RC maintains the maximum reference vintage
+for each distinct label set. A DAP is _up-to-date_ if its reference vintage is
+equal to the maximum reference vintage for its label set. This ensures that
+requests are not sent to DAPs with outdated date.
+
+> **_Note_ :** The reference vintage check is done _across_ RCs. See [Routing
+> - Example 13](query/routing.html#example-13).
+
+## Logical database
+
+A logical database is a collection of
+[assemblies](configuration/assembly/database.html#assembly) that use matching
+[labels](configuration/assembly/database.html#labels) to shard data. These
+assemblies are all deployed and managed independently from a resource and
+management point of view. However, from a query point of view, these
+assemblies appear as a single database. A query that references a table that
+is common to all assemblies in a logical database will be distributed across
+all instances and aggregated into a single result.
+
+## Virtual Columns
+
+A virtual column is a column in a table that is manifested dynamically in
+memory and is not stored physically on disk. For example, the `i` column in a
+kdb+ table is the index of a row in the table which only exists when querying
+the table with qSQL.
+

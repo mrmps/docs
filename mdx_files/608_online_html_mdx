@@ -1,0 +1,291 @@
+https://code.kx.com/insights/api/machine-learning/q/analytics/api/variadic/online.html
+
+# Online models - kdb products
+
+Original URL: https://code.kx.com/insights/api/machine-learning/q/analytics/api/variadic/online.html
+
+# Online Models
+
+The following outlines the variadic function definitions provided with the kdb
+Insights ML Analytics library for the online and out-of-core models provided
+within the ML Analytics library. Full breakdowns of the algorithms represented
+can be found [here](../online/). This abstraction is provided as a novice
+users entry point to these models with the full interface provided as a
+callable function in order to facilitate greater control for users who require
+broader control over model fitting.
+
+Note
+
+All arguments marked with an asterisk are optional and can be input using the
+notation defined in the [function calls section](function-calls.html) of the
+ML Analytics documentation.
+
+## Sequential K Means
+
+### `.ml.kxi.online.clust.sequentialKMeans.fit`
+
+_Fit a Sequential K Means model_
+
+    
+    
+    .ml.kxi.online.clust.sequentialKMeans.fit[X]
+    
+
+**Parameters:**
+
+name | type | description  
+---|---|---  
+`X` | `any` | Input/training data of N dimensions.  
+  
+_options:_
+
+name | type | description | default  
+---|---|---|---  
+`df` | `symbol` | Distance function used in clustering. | `edist`  
+`k` | `long` | The number of clusters. | `8`  
+`centers` | `dictionary|null` | Initial cluster centers. If null, initial centers are calculated using k++/random initialization. If dictionary, must contain `num` and `centroids` which define the number of points in a cluster and the cluster location often calculated from a previous 'fit' phase. | `::`  
+`config` | `dictionary` | Any additional configuration required for application of clustering, supported options defined [here](https://code.kx.com/q/ml/toolkit/clustering/algos/#mlclustkmeansfit). | `::`  
+  
+**Returns:**
+
+type | description  
+---|---  
+`dictionary` | All information collected during the fitting of a model, along with prediction and update functionality.  
+  
+**Examples:**
+
+**Example 1:** Fit a model in default configuration using only required
+arguments
+
+    
+    
+    // Generate feature data
+    q)data:([]100?1f;100?1f)
+    
+    // Fit model
+    q)show mdl1:.ml.kxi.online.clust.sequentialKMeans.fit data
+    modelInfo| `num`centroids`inputs!(12 12 17 16 9 10 18 6;(0.7707787 0.3010448 ..
+    predict  | {[returnInfo;data]
+      modelInfo:returnInfo`modelInfo;
+      data:clust...
+    update   | {[returnInfo;data]
+      modelInfo:returnInfo`modelInfo;
+      inputs:mode..
+    q)mdl1`modelInfo
+    num      | 12 12 17 16 9 10 18 6
+    centroids| (0.7707787 0.3010448 0.9010772 0.8386579 0.2017322 0.2366765 0.375..
+    inputs   | `df`k`config!(`e2dist;8;`init`a`forgetful!(1b;0.1;1b))
+    
+
+**Example 2:** Fit a model modifying the default behavior and additional
+arguments
+
+    
+    
+    // Generate feature data
+    q)data:([]100?1f;100?1f)
+    
+    // Fit model
+    q)show mdl2:.ml.kxi.online.clust.sequentialKMeans.fit[data;.var.kwargs`df`k!(`edist;3)]
+    modelInfo| `num`centroids`inputs!(36 20 44;(0.6453533 0.8516896 0.3043771;0.8..
+    predict  | {[returnInfo;data]
+      modelInfo:returnInfo`modelInfo;
+      data:clust...
+    update   | {[returnInfo;data]
+      modelInfo:returnInfo`modelInfo;
+      inputs:mode..
+    q)mdl2`modelInfo
+    num      | 36 20 44
+    centroids| (0.6453533 0.8516896 0.3043771;0.8094041 0.2191981 0.4397323)
+    inputs   | `df`k`config!(`edist;3;`init`a`forgetful!(1b;0.1;1b))
+    
+
+## Online Linear Regression (Stochastic Gradient Descent)
+
+### `.ml.kxi.online.sgd.linearRegression.fit`
+
+_Fit an Online Linear Regression model_
+
+    
+    
+    .ml.kxi.online.sgd.linearRegression.fit[X;y]
+    
+
+**Parameters:**
+
+name | type | description  
+---|---|---  
+`X` | `any` | Input/training data of N dimensions.  
+`y` | `any` | Output/target regression data.  
+  
+_options:_
+
+name | type | description | default  
+---|---|---|---  
+`trend` | `boolean` | Is a trend to be accounted for. | `1b`  
+`paramDict` | `dictionary` | Any modifications to be applied during the fitting process of SGD (See here for more details). | `::`  
+  
+**Returns:**
+
+type | description  
+---|---  
+`dictionary` | All information collected during the fitting of a model, along with prediction and update functionality. `updateSecure` has also been included to allow new data to be used to update the model where additional checks are applied to the data to ensure that it is in the correct format to ensure no 'model pollution' occurs.  
+  
+**Examples:**
+
+**Example 1:** Fit a model in default configuration using only required
+arguments
+
+    
+    
+    // Generate feature data
+    q)data:([]100?1f;asc 100?1f)
+    
+    // Generate target data
+    q)target:asc 100?1f
+    
+    // Fit model
+    q)show mdl1:.ml.kxi.online.sgd.linearRegression.fit[data;target]
+    modelInfo   | `theta`iter`diff`trend`paramDict`inputType!(0.2696617 0.0185797..
+    predict     | {[config;features]
+      config:config`modelInfo;
+      if[config`trend..
+    update      | {[config;secure;features;target]
+      modelInfo:config`modelInfo;
+    ..
+    updateSecure| {[config;secure;features;target]
+      modelInfo:config`modelInfo;
+    ..
+    
+
+**Example 2:** Fit a model modifying the default behavior using a mix of
+positional and keyword arguments
+
+    
+    
+    // Generate feature data
+    q)data:([]100?1f;asc 100?1f)
+    
+    // Generate target data
+    q)target:asc 100?1f
+    
+    // Fit model
+    q)paramDict:`alpha`l1Ratio`verbose!(.02;.4;1b)
+    q)show mdl2:.ml.kxi.online.sgd.linearRegression.fit[data;target;.var.kw[`paramDict;paramDict]]
+    modelInfo   | `theta`iter`diff`trend`paramDict`inputType!(0.2186998 0.0084106..
+    predict     | {[config;features]
+      config:config`modelInfo;
+      if[config`trend..
+    update      | {[config;secure;features;target]
+      modelInfo:config`modelInfo;
+    ..
+    updateSecure| {[config;secure;features;target]
+      modelInfo:config`modelInfo;
+    ..
+    q)mdl2`modelInfo
+    theta    | 0.2186998 0.008410636 0.7844071
+    iter     | 37
+    diff     | 7.442356e-06 -7.282613e-06 -8.801685e-06
+    trend    | 1b
+    paramDict| `alpha`maxIter`gTol`theta`k`seed`batchType`gradArgs`penalty`lambda..
+    inputType| (+(,`c)!,`x`x1)!+`t`f`a!("ff";``;``s)
+    
+
+## Online Logistic Classification (Stochastic Gradient Descent)
+
+### `.ml.kxi.online.sgd.logClassifier.fit`
+
+_Fit an Online Logistic Classification model_
+
+    
+    
+    .ml.kxi.online.sgd.logClassifier.fit[X;y]
+    
+
+**Parameters:**
+
+name | type | description  
+---|---|---  
+`X` | `any` | Input/training data of N dimensions.  
+`y` | `any` | Output/target classification data.  
+  
+_options:_
+
+name | type | description | default  
+---|---|---|---  
+`trend` | `boolean` | Is a trend to be accounted for. | `1b`  
+`paramDict` | `dictionary` | Any modifications to be applied during the fitting process of SGD (See here for more details). | `::`  
+  
+**Returns:**
+
+type | description  
+---|---  
+`dictionary` | All information collected during the fitting of a model, along with prediction and update functionality. `updateSecure` has also been included to allow new data to be used to update the model where additional checks are applied to the data to ensure that it is in the correct format to ensure no 'model pollution' occurs.  
+  
+**Examples:**
+
+**Example 1:** Fit a model in default configuration using only required
+arguments
+
+    
+    
+    // Generate feature data
+    q)data:([]100?1f;asc 100?1f)
+    
+    // Generate target data
+    q)target:asc 100?7
+    
+    // Fit model
+    q)show mdl1:.ml.kxi.online.sgd.logClassifier.fit[data;target]
+    modelInfo   | `theta`iter`diff`trend`paramDict`inputType!((-1.713844 -1.71962..
+    predict     | {[config;features]
+      yhat:.sgd.linearRegression.predict[c..
+    update      | {[config;secure;features;target]
+      modelInfo:config`modelInfo;
+    ..
+    updateSecure| {[config;secure;features;target]
+      modelInfo:config`modelInfo;
+    ..
+    q)mdl1`modelInfo
+    theta    | (-1.713844 -1.719627 -1.711246 -1.712292 -1.722998 -1.719939 -1.71..
+    iter     | 100
+    diff     | (0.006921089 0.006989055 0.006892948 0.006904046 0.00702937 0.0069..
+    trend    | 1b
+    paramDict| `alpha`maxIter`gTol`theta`k`seed`batchType`gradArgs`penalty`lambda..
+    inputType| (+(,`c)!,`x`x1)!+`t`f`a!("ff";``;``s)
+    
+
+**Example 2:** Fit a model modifying the default behavior and additional
+arguments
+
+    
+    
+    // Generate feature data
+    q)data:([]100?1f;asc 100?1f)
+    
+    // Generate target data
+    q)target:asc 100?7
+    
+    // Fit model
+    q)paramDict:`alpha`seed!(0.02;42)
+    q)extraArgs:`trend`paramDict!(1b;paramDict)
+    q)show mdl2:.ml.kxi.online.sgd.logClassifier.fit[data;target;.var.kwargs extraArgs]
+    modelInfo   | `theta`iter`diff`trend`paramDict`inputType!(0.2186998 0.0084106..
+    predict     | {[config;features]
+      config:config`modelInfo;
+      if[config`trend..
+    update      | {[config;secure;features;target]
+      modelInfo:config`modelInfo;
+    ..
+    updateSecure| {[config;secure;features;target]
+      modelInfo:config`modelInfo;
+    ..
+    q)mdl2`modelInfo
+    theta    | (0.604462 -0.488939 -1.442066 -2.16019 -2.174752 -2.893451 -4.3947..
+    iter     | 100
+    diff     | (-0.006845301 -0.003737216 0.0005487501 0.003565864 0.004461997 0...
+    trend    | 1b
+    paramDict| `alpha`maxIter`gTol`theta`k`seed`batchType`gradArgs`penalty`lambda..
+    inputType| (+(,`c)!,`x`x1)!+`t`f`a!("ff";``;``s)
+    
+

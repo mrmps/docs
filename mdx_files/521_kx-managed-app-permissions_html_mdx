@@ -1,0 +1,229 @@
+https://code.kx.com/insights/enterprise/azure-marketplace/kx-managed-app-permissions.html
+
+# Permissions for KX Managed App Plan - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/azure-marketplace/kx-managed-app-permissions.html
+
+# Permissions required to deploy KX Managed App Plan
+
+The KX Managed App Plan on Azure Marketplace can be deployed by **3 main
+roles** within your Company, each with different subscription-level
+permissions. You need to ask the Administrator of your selected subscription
+to grant you one of the 3 options.
+
+Note
+
+By default, the Insights Managed Service (IMS) team will have the required
+level of access to be able to provide support, as per the KX Managed App
+deployment. There is no requirement to arrange access for the Operational
+Support IMS team.
+
+## 1\. Owner role
+
+### Allows
+
+  * Creation of new Resource Groups
+  * Creation of new Role Assignments
+  * Registration of the required Resource Providers
+
+Managed resource group inherits the required permissions.
+
+## 2\. Contributor role
+
+### Allows
+
+  * Creation of new Resource Groups
+  * Registration of the required Resource Providers
+
+Managed resource group inherits the required permissions.
+
+### Requires **one** of the below changes:
+
+Ask your Azure Subscription administrator to either:
+
+  * Assign _User Access Administrator_ role to you at Subscription level.
+  * Create a new resource group and assign _User Access Administrator_ role to you on that new resource group.
+
+## 3\. Reader role
+
+### Allows
+
+Managed resource group inherits the required permissions.
+
+### Requires **one** of the below Options:
+
+Ask your Azure Subscription administrator to follow either:
+
+#### Option 1
+
+This method requires only one _Custom Role_ but it provides slightly wider
+permission to you on the entire Subscription.
+
+  1. Create the below custom role definition. You can achieve using **Azure Portal** or the **Azure CLI**.
+
+    1. Using the Azure Portal:
+        
+                {
+          "properties": {
+            "roleName": "Managed application installer",
+            "description": "Allows user to install Managed Applications in the Subscription",
+            "assignableScopes": [
+              "/subscriptions/{your-subscription-id}"
+            ],
+            "permissions": [
+              {
+                "actions": [
+                  "Microsoft.Resources/deployments/cancel/action",
+                  "Microsoft.Resources/deployments/validate/action",
+                  "Microsoft.Resources/deployments/write",
+                  "Microsoft.Resources/subscriptions/resourceGroups/delete",
+                  "Microsoft.Resources/subscriptions/resourceGroups/write",
+                  "Microsoft.Solutions/applications/delete",
+                  "Microsoft.Solutions/applications/write",
+                  "Microsoft.Solutions/register/action"
+                ],
+                "notActions": [],
+                "dataActions": [],
+                "notDataActions": []
+              }
+            ]
+          }
+        }
+        
+
+    2. Using the Azure CLI: **`az role definition create --role-definition role.json`** command:
+        
+                {
+          "Name": "Managed application installer",
+          "IsCustom": true,
+          "Description": "Allows user to install Managed Applications in the Subscription",
+          "Actions": [
+            "Microsoft.Resources/deployments/cancel/action",
+            "Microsoft.Resources/deployments/validate/action",
+            "Microsoft.Resources/deployments/write",
+            "Microsoft.Resources/subscriptions/resourceGroups/delete",
+            "Microsoft.Resources/subscriptions/resourceGroups/write",
+            "Microsoft.Solutions/applications/delete",
+            "Microsoft.Solutions/applications/write",
+            "Microsoft.Solutions/register/action"
+          ],
+          "NotActions": [],
+          "DataActions": [],
+          "NotDataActions": [],
+          "AssignableScopes": [
+            "/subscriptions/{your-subscription-id}"
+          ]
+        }
+        
+
+  2. Assign the _Managed application installer_ role to you on the Subscription.
+
+#### Option 2
+
+This method requires several steps and multiple _Custom Roles_ however it only
+provides the least amount of permissions to you in the Subscription.
+
+For every subsequent KX Managed App Plan deployment the _Managed application
+admin_ role will have to be assigned to you on a new Resource Group again
+before the installation can begin (steps 3 to 5).
+
+  1. Create the below custom role definition. You can achieve this by either using the Azure Portal or the Azure CLI.
+
+    1. Using the Azure Portal:
+        
+                {
+          "properties": {
+            "roleName": "Resource Group writer",
+            "description": "Allows user to create new Resource Group in the Subscription",
+            "assignableScopes": [
+              "/subscriptions/{your-subscription-id}"
+            ],
+            "permissions": [
+              {
+                "actions": [
+                  "Microsoft.Resources/subscriptions/resourceGroups/write"
+                ],
+                "notActions": [],
+                "dataActions": [],
+                "notDataActions": []
+              }
+            ]
+          }
+        }
+        
+
+    2. Using the Azure CLI: **`az role definition create --role-definition role.json`** command:
+        
+                {
+          "Name": "Resource Group writer",
+          "IsCustom": true,
+          "Description": "Allows user to create new Resource Group in the Subscription",
+          "Actions": [
+            "Microsoft.Resources/subscriptions/resourceGroups/write"
+          ],
+          "NotActions": [],
+          "DataActions": [],
+          "NotDataActions": [],
+          "AssignableScopes": [
+            "/subscriptions/{your-subscription-id}"
+          ]
+        }
+        
+
+  2. Assign _Resource Group writer_ role to you on the Subscription.
+
+  3. Create the below custom role definition. You can achieve this by either using the Azure Portal or the Azure CLI.
+
+  4. Using the Azure Portal:
+    
+        {
+      "properties": {
+        "roleName": "Managed application admin",
+        "description": "Allows user to install and delete Managed Applications",
+        "assignableScopes": [
+          "/subscriptions/{your-subscription-id}/resourceGroups/{your-resourcegroup-id}"
+        ],
+        "permissions": [
+          {
+            "actions": [
+              "Microsoft.Resources/deployments/cancel/action",
+              "Microsoft.Resources/deployments/validate/action",
+              "Microsoft.Resources/deployments/write",
+              "Microsoft.Solutions/applications/delete",
+              "Microsoft.Solutions/applications/write"
+            ],
+            "notActions": [],
+            "dataActions": [],
+            "notDataActions": []
+          }
+        ]
+      }
+    }
+    
+
+  5. Using the Azure CLI: **`az role definition create --role-definition role.json`** command:
+    
+        {
+      "Name": "Managed application admin",
+      "IsCustom": true,
+      "Description": "Allows user to install and delete Managed Applications",
+      "Actions": [
+        "Microsoft.Resources/deployments/cancel/action",
+        "Microsoft.Resources/deployments/validate/action",
+        "Microsoft.Resources/deployments/write",
+        "Microsoft.Solutions/applications/delete",
+        "Microsoft.Solutions/applications/write"
+      ],
+      "NotActions": [],
+      "DataActions": [],
+      "NotDataActions": [],
+      "AssignableScopes": [
+        "/subscriptions/{your-subscription-id}/resourceGroups/{your-resourcegroup-id}"
+      ]
+    }
+    
+
+  6. Create a new resource group in the same Subscription.
+
+  7. Assign the _Managed application admin_ role to you on the above Resource Group.
+

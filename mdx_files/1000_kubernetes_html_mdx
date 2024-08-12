@@ -1,0 +1,562 @@
+https://code.kx.com/insights/microservices/rt/quickstart/kubernetes.html
+
+# Kubernetes - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/rt/quickstart/kubernetes.html
+
+# Running RT using Kubernetes
+
+## Introduction
+
+This section provides a guide to how Reliable Transport (RT) can be brought up
+in a Kubernetes cluster using an helm chart and accompanying docker image.
+There are additional publisher and subscriber docker images and helm charts
+that can be used to publish and subscribe to data through a RT stream. RT can
+be started as a 1 or 3 node cluster.
+
+For demonstration only
+
+The `kxi-rt-q-pub-eval` and `kxi-rt-q-sub-eval` are sample images for
+demonstration only, they are not supported by KX.
+
+The default RT deployment starts a 3 node RT cluster with a node affinity of
+hard.
+
+Node affinity
+
+Setting the node affinity to hard means that the 3 pods will be started on
+distinct nodes.
+
+It also includes the default setting for the required:
+
+  * Volumes
+  * Environment variables
+  * Resources, memory and CPU
+
+For more information on how RT works see [here](../index.html).
+
+A useful tool for inspecting and navigating the Kubernetes cluster is k9s.
+
+## Images
+
+In order to view the docker requirements and pull down the relevant images,
+please see [here](index.html).
+
+## Provide a license
+
+A license for _kdb+ Cloud Edition_ is required and is provided through the
+environment variable KDB_LICENSE_B64. It can be generated from a valid kc.lic
+file with base64 encoding. In a `*nix` based system, we can create the
+environment variable with the following command.
+
+    
+    
+    export KDB_LICENSE_B64=$(base64 path-to/kc.lic)
+    
+
+The kc.lic used must be for _kdb+ Cloud Edition_. A regular kc.lic for On-
+Demand kdb+ will signal a licensing error during startup.
+
+## Download the charts
+
+The charts can be found on an [external
+registry](https://nexus.dl.kx.com/repository/kx-insights-charts). Assuming the
+appropriate access has been granted, the chart will be available for download.
+
+  1. Ensure you have access to the appropriate report for the charts.
+    
+        $ helm repo ls
+    NAME            URL
+    kx-insights     https://nexus.dl.kx.com/repository/kx-insights-charts
+    
+
+  2. If the appropriate repo is not available, you can obtain access as follows:
+    
+        $ helm repo add kx-insights https://nexus.dl.kx.com/repository/kx-insights-charts --username **** --password ****  ## can search for the chart. if available this will return the location
+    
+    "kx-insights" has been added to your repositories
+    
+
+  3. You can now search for the chart and determine the appropriate chart and app version
+    
+        $ helm search repo kx-insights/kxi-rt
+    NAME                            CHART VERSION   APP VERSION     DESCRIPTION
+    kx-insights/kxi-rt         b    1.2.3           1.2.3           A Helm chart for Kubernetes
+    
+
+  4. In order to download the charts, as well as untar them into your local session, you can run the following:
+    
+        helm fetch kx-insights/kxi-rt --version  1.2.3 --untar
+    helm fetch kx-insights/kxi-rt-q-pub --version  1.2.3 --untar
+    helm fetch kx-insights/kxi-rt-q-sub --version  1.2.3 --untar
+    
+
+## kxi-rt configuration
+
+The values file allows for custom configuration to be defined.
+
+You can edit the fields inside the `kxi-rt-pub-sub key` of the values.yaml
+file as follows:
+
+### Application
+
+    
+    
+    kxi-rt-pub-sub:
+      replicaCount:         1
+    
+      logging:
+        logLevel:           INFO
+        qulogLevel:         INFO
+        qulogLeader:        "1"
+    
+      stream:               mystream
+    
+      raft:
+        heartbeat:          1000
+    
+
+configuration name | description  
+---|---  
+`stream` | Information on the significance of the stream name can be found [here](../index.html)  
+`replicaCount` | This configures the `RT_REPLICAS` environment variable, which determines the size of the RT cluster to start. Supported values are 1 or 3  
+`logging.logLevel` | RT is made up of several components, included Raft, this controls the level of logging in RT for everything else  
+`logging.qulogLevel` | Controls the level of logging of the Raft component in RT  
+`raft.heartbeat` | This controls, in milliseconds, the heartbeat interval between the RT pods in your cluster. More detail on this below  
+  
+#### Raft heartbeat
+
+Part of the Raft consensus algorithm relies on a group electing a leader. The
+remaining members of the group would be classed as followers. A follower will
+timeout and call an election if it doesn't receive a heartbeat from the leader
+for between 2*\\(RAFT_HEARTBEAT and 4*\\)RAFT_HEARTBEAT. The follower randomly
+chooses the heartbeat timeout between those lower and upper bounds.
+
+With `.raft.heartbeat`, you can control, in milliseconds, the heartbeat
+interval between the RT pods in your cluster.
+
+Typically an election will take place in the following scenarios:
+
+  * Upon an install of kxi-rt, once there are 2 nodes up and running
+  * Network instability, if the heartbeat between nodes exceeds the $RAFT_HEARTBEAT conditions
+
+You can reduce this value, it will mean faster, but more frequent elections.
+e.g. the elections will be more sensitive to network blips
+
+### Resources
+
+    
+    
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: "1000m"
+      limits:
+        memory: "1Gi"
+        cpu: "1000m"
+    
+    affinity: hard
+    
+    persistence:
+      capacity: 18Gi
+      storageClass: ""
+    
+
+  * resources: you can control the amount of CPU and memory that your pods will consume. The values chosen for these should reflect the amount of data expected to be ingested. For estimated values on these please reach out to your KX sales representative who can assist.
+  * affinity: you can control how a pod is launched relative to other pods. The Kubernetes scheduler can place a pod either on a group of nodes or a pod relative to the placement of other pods. To maximise fault tolerance, RT pods should be ran on distinct nodes, therefore if capacity is available, an affinity of `hard` should be configured.
+  * persistence: you can control the type and size of the PVC that is provisioned in this section. When leaving the storageClass empty, as has been done above, the storage class chose is the default of the cloud provider.
+
+### Archiver
+
+    
+    
+    archiver:
+      time:         60
+      disk:         90
+      limit:        "5Gi"
+      awsBackup:
+        # Settings to backup log files to AWS S3
+        enabled: "0"
+        bucket: "mybucket"
+        region: "us-east-2"
+        keyPrefix: "myprefix/"
+        logLevel: INFO
+        numThreads: 8
+        parallelFiles: 2
+      azureBackup:
+        # Settings to backup log files to Azure blob storage
+        enabled: "0"
+        container: "mycontainer"
+        logLevel: INFO
+        threadsPerFile: 4
+        parallelFiles: 2
+      gcsBackup:
+        # Settings to backup log files to Google cloud storage
+        enabled: "0"
+        bucket: "mybucket"
+        projectId: "myproject"
+        keyPrefix: "myprefix/"
+        logLevel: INFO
+        parallelFiles: 8
+        serviceAccount: ""
+    
+
+Information on the RT archiver and the garbage collection policies can be
+found [here](../index.html).
+
+#### AWS backup
+
+The RT archiver supports backing up RT merged log files to AWS S3. In order to
+use this, AWS credentials must be provided with read and write access to the
+bucket. Typically this is done by creating an IAM role and adding this as a
+service account in the values.yaml:
+
+    
+    
+    kxi-rt-pub-sub:
+      serviceAccount:
+        # Specifies whether a service account should be created
+        create: true
+        # Annotations to add to the service account
+        annotations:
+          eks.amazonaws.com/role-arn: arn:aws:iam::0123456789012:role/my-role-irsa
+        # The name of the service account to use.
+        # If not set and create is true, a name is generated using the fullname template
+        name: my-service-account
+        #
+        # Specifies whether to auto-mount a service account
+        #
+        autoMount: true
+        #
+    
+
+The `awsBackup` settings can thus be configured:
+
+  * enabled: set to `"1"` to enable AWS backup. Default disabled.
+  * bucket: the S3 bucket that the log files should be written to.
+  * region: the AWS region where the bucket is hosted. Default `"aws-global"`
+  * keyPrefix: The object key prefix in the bucket under which to backup the log files. If set this must end in a `/` such that all the log files are placed under a directory in the S3 bucket. The RT stream is automatically appended to this. For example with `bucket: "mybucket"`, `keyPrefix: "myprefix/"` and `stream: "mystream"`, the log files would be backed up as `s3://mybucket/myprefix/mystream/log.0.0`, `s3://mybucket/myprefix/mystream/log.0.1`, etc. Default `""`, i.e. the prefix used is `<stream>/`
+  * logLevel: S3 backup logging level, one of `NONE`, `FATAL`, `ERROR`, `WARN`, `INFO`, `DEBUG` or `TRACE`. Default `INFO`.
+  * numThreads: number of threads that the AWS backup service should use. Default `8`.
+  * parallelFiles: number of log files to be backing up in parallel. Default `2`.
+
+#### Azure backup
+
+The RT archiver supports backing up RT merged log files to Azure Blob Storage.
+In order to use this, Azure credentials must be provided with read and write
+access to the container. This can be done by setting the standard Azure
+environment variables in the values.yaml:
+
+    
+    
+    kxi-rt-pub-sub:
+      env:
+        AZURE_STORAGE_CONNECTION_STRING: "<REDACTED>"
+        AZURE_STORAGE_SERVICE_ENDPOINT: "<REDACTED>"
+        AZURE_STORAGE_ACCOUNT: "<REDACTED>"
+        AZURE_STORAGE_KEY: "<REDACTED>"
+        AZURE_STORAGE_SAS_TOKEN: "<REDACTED>"
+    
+
+Credentials are determined in this order:
+
+  1. `AZURE_STORAGE_CONNECTION_STRING` or
+
+  2. (`AZURE_STORAGE_SERVICE_ENDPOINT` or `AZURE_STORAGE_ACCOUNT`) and (`AZURE_STORAGE_KEY` or `AZURE_STORAGE_SAS_TOKEN`)
+
+The `azureBackup` settings can thus be configured:
+
+  * enabled: set to `"1"` to enable Azure backup. Default disabled.
+  * container: the Azure storage container that the log files should be written to. The RT stream name is automatically appended to this. For example with `container: "mycontainer"` and `stream: "mystream"`, the log files would be backed up to the container `"mycontainer-mystream"`. Default `""`, i.e. the container used is `"<stream>"`
+  * logLevel: S3 backup logging level, one of `NONE`, `FATAL`, `ERROR`, `WARN`, `INFO`, `DEBUG` or `TRACE`. Default `INFO`.
+  * threadsPerFile: number of threads that each file upload operation should use. Default `4`.
+  * parallelFiles: number of log files to be backing up in parallel. Default `2`.
+
+#### GCS backup
+
+The RT archiver supports backing up RT merged log files to Google Cloud
+Storage. In order to use this, GCS credentials must be provided with read and
+write access to the bucket. Typically this is done by creating a secret in the
+kubernetes namespace from the Google Application Credentials before deploying
+the `kxi-rt` helm chart:
+
+    
+    
+    kubectl create secret generic google-application-credentials --from-file ~/.config/gcloud/application_default_credentials.json -n <namespace>
+    
+
+The `kxi-rt` helm charts mount this secret as a volume and point
+`$GOOGLE_APPLICATION_CREDENTIALS` to this file.
+
+The `gcsBackup` settings can thus be configured:
+
+  * enabled: set to `"1"` to enable GCS backup. Default disabled.
+  * bucket: the GCS bucket that the log files should be written to.
+  * projectId: the GCS project ID to which to bucket belongs.
+  * keyPrefix: The object key prefix in the bucket under which to backup the log files. If set this must end in a `/` such that all the log files are placed under a directory in the GCS bucket. The RT stream is automatically appended to this. For example with `bucket: "mybucket"`, `keyPrefix: "myprefix/"` and `stream: "mystream"`, the log files would be backed up as `gs://mybucket/myprefix/mystream/log.0.0`, `gs://mybucket/myprefix/mystream/log.0.1`, etc. Default `""`, i.e. the prefix used is `<stream>/`.
+  * logLevel: GCS backup logging level, one of `NONE`, `FATAL`, `ERROR`, `WARN`, `INFO`, `DEBUG` or `TRACE`. Default `INFO`.
+  * parallelFiles: number of log files to be backing up in parallel. Default `8`.
+  * serviceAccount: An alternative mechanism to provide credentials is to populate this variable with a service account JSON string. If set this will be used instead of the default Google Application Credentials.
+
+## kxi-rt-q-pub configuration
+
+For demonstration only
+
+The `kxi-rt-q-pub-eval` image covered in this section is a sample image for
+demonstration only, they are not supported by KX.
+
+Further details on the `kxi-rt-q-pub-eval` image and how it functions are
+available [here](index.html#publisher).
+
+Configuration
+
+The configuration covered below, which is present in the `kxi-rt-q-
+pub/values.yaml` file should be defined in advance of starting the publisher.
+
+    
+    
+    kxi-rt-pub-sub:
+      stream:
+        prefix:               kxi-
+        name:                 mystream
+    
+      rt:
+        logLevel:             INFO
+        logPath:              /tmp
+        replicaCount:         3
+    
+
+For an internal publisher to RT, the combination of the `stream.prefix` and
+`stream.name` below are used to discover RT. The values selected should match
+the configuration of the `kxi-rt` chart launched.
+
+configuration name | description  
+---|---  
+`stream.prefix` | An RT stream identifier, this is used along with the `stream.name`, to create the RT hostnames that the publisher is to communicate with  
+`stream.name` | An RT stream identifier, this is used along with the `stream.prefix`, to create the RT hostnames that the publisher is to communicate with  
+`rt.logPath` | This location that the RT log files are written to. The location chosen should have sufficient disk space to cater to RT logs being maintained and written to  
+`rt.replicaCount` | The value chosen here should match the size of the RT cluster that the publisher is sending data to  
+  
+## kxi-rt-q-sub configuration
+
+For demonstration only
+
+The `kxi-rt-q-sub-eval` image covered in this section is a sample image for
+demonstration only, they are not supported by KX.
+
+Further details on the `kxi-rt-q-sub-eval` image and how it functions are
+available [here](index.html#subscriber).
+
+Configuration
+
+The configuration covered below, which is present in the `kxi-rt-q-
+sub/values.yaml` file should be defined in advance of starting the subscriber.
+
+    
+    
+    kxi-rt-pub-sub:
+      stream:
+        prefix:               kxi-
+        name:                 mystream
+    
+      rt:
+        logLevel:             INFO
+        logPath:              /tmp
+        replicaCount:         3
+    
+
+For an internal subscriber to RT, the combination of the `stream.prefix` and
+`stream.name` below are used to discover RT. The values selected should match
+the configuration of the `kxi-rt` chart launched.
+
+configuration name | description  
+---|---  
+`stream.prefix` | An RT stream identifier, this is used along with the `stream.name`, to create the RT hostnames that the subscriber is to communicate with  
+`stream.name` | An RT stream identifier, this is used along with the `stream.prefix`, to create the RT hostnames that the subscriber is to communicate with  
+`rt.logPath` | This location that the RT log files are written to. The location chosen should have sufficient disk space to cater to RT logs being maintained and read from  
+`rt.replicaCount` | The value chosen here should match the size of the RT cluster that the subscriber is receiving data from  
+  
+## Deployment
+
+### Installing
+
+When starting the helm charts, there will be 2 inputs:
+
+  * name, an user defined value that will identify the helm charts deployed in a Kubernetes cluster, in the example below, the name chosen is `kxi`.
+  * chart name, these will be static values and corresponds to the name of the helm charts, `kxi-rt`, `kxi-rt-q-pub` and `kxi-rt-q-sub`.
+
+    
+    
+    helm install <release.name> <chart.name> -n <namespace>
+    helm install kxi kxi-rt -n <namespace>
+    
+
+You might find it useful to have a global settings file to configure entities
+such as the kdb+ license file.
+
+The details below show how a kubernetes secret can be created and added to the
+relevant namespace, before subsequently being reference in the helm chart
+deploy.
+
+Create secret and reference secret in global settings file:
+
+    
+    
+    base64 -w0 <path to kc.lic> > license.txt
+    kubectl create secret generic kxi-license --from-file=license=./license.txt
+    $ cat global_settings.yaml
+    global:
+      license:
+        secretName: kxi-license
+        asFile: false
+        onDemand: true
+    
+
+These global settings can then be used when installing the chart by using the
+`-f` argument. To install many instances of a chart, distinct release names
+should be used:
+
+    
+    
+    helm install <release.name> <chart.name> -n <namespace>
+    ## RT Chart
+    helm install kxi kxi-rt -n <namespace> -f global_settings.yaml
+    ## Publisher Chart
+    helm install publisher kxi-rt-q-pub -n <namespace> -f global_settings.yaml
+    ## Subscriber Chart
+    helm install subscriber kxi-rt-q-sub -n <namespace> -f global_settings.yaml
+    
+
+Upon installing the RT helm chart with the configuration values above, there
+will be 3 pods launched on distinct nodes, this will come with 3 distinct
+PVCs:
+
+    
+    
+    $ kubectl get pods -n <namespace>
+    NAME          READY   STATUS    RESTARTS   AGE
+    kxi-mystream-0   1/1     Running   0          29m
+    kxi-mystream-1   1/1     Running   0          29m
+    kxi-mystream-2   1/1     Running   0          29m
+    
+    $ kubectl get pvc -n <namespace>
+    NAME                            STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+    kxi-store--data-kxi-mystream-0      Bound    pvc-1d67c2bb-38cb-4d32-92ce-791923e35e37   12Gi       RWO            gp2            3h43m
+    kxi-store--data-kxi-mystream-1      Bound    pvc-bd5ca1b9-6769-4235-ba4b-2344952ad7e6   12Gi       RWO            gp2            3h43m
+    kxi-store--data-kxi-mystream-2      Bound    pvc-37843bb4-deb4-4066-8e02-dc7a84ba24ce   12Gi       RWO            gp2            3h42m
+    
+
+The publisher and subscriber charts, once launched, will each have a single
+pod and PVC each.
+
+### Uninstalling
+
+To stop the RT helm chart, you run the following:
+
+    
+    
+    helm uninstall <release.name> -n <namespace>
+    helm uninstall kxi -n <namespace>
+    
+
+Upon uninstalling the 3 RT pods will be taken down. However, note that the
+PVCs will be retained. These can be manually deleted if required.
+
+    
+    
+    $ kubectl get pods -n <namespace>
+    NAME          READY   STATUS    RESTARTS   AGE
+    
+    $ kubectl get pvc -n dwalsh-helm
+    NAME                            STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+    kxi-store--data-kxi-mystream-0      Bound    pvc-1d67c2bb-38cb-4d32-92ce-791923e35e37   12Gi       RWO            gp2            3h43m
+    kxi-store--data-kxi-mystream-1      Bound    pvc-bd5ca1b9-6769-4235-ba4b-2344952ad7e6   12Gi       RWO            gp2            3h43m
+    kxi-store--data-kxi-mystream-2      Bound    pvc-37843bb4-deb4-4066-8e02-dc7a84ba24ce   12Gi       RWO            gp2            3h42m
+    
+
+## Steps to bring up RT chart with support for external SDKs and SSL
+
+The RT external SDKs (c and Java) were designed to connect to the _kdb
+Insights Enterprise_ via an Information Service which will provide the RT
+external endpoints and associated SSL ca/cert/key for a client which has
+already been enrolled with Keycloak.
+
+Managing service discovery and authentication with a standalone RT is
+application specific and therefore outside the scope of this document but
+their role can be mocked and the process demonstrated.
+
+It is necessary to perform some additional steps when bringing up the RT helm
+chart to support these external SDKs. These steps must be performed in the
+correct order:
+
+  1. Run the [`make_certs_k8s.sh`](kubernetes-artefacts/make_certs_k8s.sh) script which will generate client and server ca/cert/key in the `certs/` subdirectory. A kubernetes secret will be created from the `certs/server` directory which is mounted into the `/cert` directory of the RT pods where the server ca/cert/key is used to start the external replicators:
+
+    
+    
+    sh make_certs_k8s.sh <namespace> <streamid>
+    
+
+  1. Having generated the certs, bring up the RT chart as described above:
+
+    
+    
+    helm install kx kxi-rt -n <namespace> -f global_settings.yaml
+    
+
+  1. With the chart up, run the [`enrol_json_k8s.sh`](kubernetes-artefacts/enrol_json_k8s.sh) script. This uses `kubectl` to look up up the load balancer endpoints for the external replicators, and reads the client ca/cert/key from `certs/client`:
+
+    
+    
+    sh enrol_json_k8s.sh <namespace> <streamid>
+    
+
+It then uses this information to generate a `client.json` which conforms to
+the same structure as would be returned by the Information Service:
+
+    
+    
+    cat client.json | jq
+    {
+      "name": "client-name",
+      "topics": {
+        "insert": "mystream",
+        "query": "requests"
+      },
+      "ca": "<REDACTED>",
+      "cert": "<REDACTED>",
+      "key": "<REDACTED>",
+      "insert": {
+        "insert": [
+          ":k8s-nealalph-kximystr-f69ea8c8bd-097e6615d0e2d36f.elb.eu-west-1.amazonaws.com:5000",
+          ":k8s-nealalph-kximystr-2c3b427ac6-0f9c2c6d1783dab7.elb.eu-west-1.amazonaws.com:5000",
+          ":k8s-nealalph-kximystr-cff7c9dea0-55bc821329d7c3cd.elb.eu-west-1.amazonaws.com:5000"
+        ],
+        "query": []
+      },
+      "query": []
+    }
+    
+
+The external SDKs can now be started by pointing it to this file rather than
+the Information Service endpoint.
+
+### Java
+
+    
+    
+    RT_REP_DIR=<REPLICATOR_LOCATION>
+    RT_LOG_PATH=<RT_LOG_PATH>
+    KXI_CONFIG_FILE=./client.json
+    java -jar ./rtdemo-<VERSION>-all.jar --runCsvLoadDemo=<CSV_FILE>
+    
+
+### C
+
+    
+    
+    DSN="DRIVER=/usr/local/lib/kodbc/libkodbc.so;CONFIG_FILE=./client.json"
+    Schema="sensorID:int,captureTS:ts,readTS:ts,valFloat:float,qual:byte,alarm:byte"
+    Table="trace"
+    ./csvupload -c "$DSN" -t "$Table" -s "$Schema" < sample.csv
+    
+

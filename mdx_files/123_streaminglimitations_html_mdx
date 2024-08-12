@@ -1,0 +1,15 @@
+https://code.kx.com/insights/enterprise/visualization/streaminglimitations.html
+
+# Known limitations of streaming to Views - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/visualization/streaminglimitations.html
+
+# Known limitations of streaming to Views
+
+_This section describes the known limitations with streaming to Views._
+
+  1. A filter can only act on one keyed column. 
+  2. A filter can only have one value with no wildcards. Filtering on multiple values is not supported. The UI allows it but it results in a timeout on execute. 
+  3. The keyed columns must be symbols not strings. If the keyed columns are strings, the filtering does not work. The columns need to be converted to symbols.
+  4. Due to the use of json in the Streaming Data source **Filter** field you have to use a virtual query to ensure the dropdown value is converted into the correct JSON format. See [here](../walkthrough/report/streaming.html#filtering-based-on-a-dropdown) for an example of how this is setup.
+

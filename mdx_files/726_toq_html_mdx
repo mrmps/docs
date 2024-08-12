@@ -1,0 +1,1180 @@
+https://code.kx.com/pykx/api/pykx-q-data/toq.html
+
+# Convert Pythonic data to PyKX - PyKX
+
+Original URL: https://code.kx.com/pykx/api/pykx-q-data/toq.html
+
+Instead of calling e.g. `pykx.toq('qwerty', ktype=pykx.CharVector)`, one can
+instantiate the desired type directly like so: `pykx.CharVector('qwerty')`.
+
+###  from_arrow  `method descriptor`
+
+    
+    
+    from_arrow(x, ktype=None, *, cast=False, handle_nulls=False)
+
+See Also Memory usage may spike during this function.
+
+Normally converting from Python to q results in one copy of the data being
+made, but because this function first converts to Pandas, it's possible for
+there to be a temporary third copy made. `See the PyArrow docs about
+converting to Pandas for more details
+<https://arrow.apache.org/docs/python/pandas.html#memory-usage-and-zero-
+copy>`_.
+
+Converts PyArrow arrays/tables into PyKX vectors/tables, respectively.
+
+Conversions from PyArrow to q are performed by converting the PyArrow
+array/table to pandas first, which avoids copying data when possible, then
+converting the resulting Pandas data structure to q using `from_pandas_series`
+or `from_pandas_dataframe` as appropriate.
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`x` |  `[Union](https://docs.python.org/3/library/typing.html#typing.Union "typing.Union")['pa.Array', 'pa.Table']` | The `pyarrow.Array` that will be converted into a `pykx.Vector`, or the `pyarrow.Table` that will be converted into a `pykx.Table`. |  _required_  
+`ktype` |  `[Optional](https://docs.python.org/3/library/typing.html#typing.Optional "typing.Optional")[KType]` | Desired `pykx.K` subclass (or type number) for the returned value. If `None`, the type is inferred from `x`. This argument is propagated to the Pandas conversion functions (which in turn propagate it to the Numpy conversion functions). |  `None`  
+`cast` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Unused. |  `False`  
+`handle_nulls` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Unused. |  `False`  
+  
+**Raises:**
+
+Type | Description  
+---|---  
+`[TypeError](https://docs.python.org/3/library/exceptions.html#TypeError)` | Cannot convert PyArrow extension array to `ktype`.  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+`[Union](https://docs.python.org/3/library/typing.html#typing.Union "typing.Union")[k.Vector, k.Table]` | An instance of `pykx.Vector` or `pykx.Table`.  
+  
+###  from_bytes  `method descriptor`
+
+    
+    
+    from_bytes(x, ktype=None, *, cast=False, handle_nulls=False)
+
+Converts a `bytes` object into an instance of a string-like subclass of
+`pykx.K`.
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`x` |  `[bytes](https://docs.python.org/3/library/stdtypes.html#bytes)` | The `bytes` object that will be converted into a `pykx.K` object. |  _required_  
+`ktype` |  `[Optional](https://docs.python.org/3/library/typing.html#typing.Optional "typing.Optional")[KType]` | Desired `pykx.K` subclass (or type number) for the returned value. If `None`, the type is inferred from `x`. The following values are supported: |  `ktype` |  Returned value  
+---|---  
+`None` |  Same as for `ktype=pykx.CharVector` when `len(x) != 1`. Same as for `ktype=pykx.CharAtom` when `len(x) == 1`.  
+`pykx.CharVector` |  The `str` as a q character vector.  
+`pykx.SymbolAtom` |  The `str` as a q symbol.  
+`pykx.CharAtom` |  The `str` as a q character atom.  
+`None`  
+`cast` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Unused. |  `False`  
+`handle_nulls` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Unused. |  `False`  
+  
+**Raises:**
+
+Type | Description  
+---|---  
+`[TypeError](https://docs.python.org/3/library/exceptions.html#TypeError)` | Unsupported `ktype` for `bytes`.  
+`[ValueError](https://docs.python.org/3/library/exceptions.html#ValueError)` | `ktype=pykx.CharAtom`, but `x` is not 1 character long.  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+`[Union](https://docs.python.org/3/library/typing.html#typing.Union "typing.Union")[k.SymbolAtom, k.SymbolVector, k.CharAtom]` | An instance of a `pykx.CharVector`, `pykx.SymbolAtom`, or `pykx.CharAtom`.  
+  
+###  from_callable  `method descriptor`
+
+    
+    
+    from_callable(x, ktype=None, *, cast=False, handle_nulls=False)
+
+Inspection of the callable must be possible.
+
+In order to determine how many parameters a provided callable has, PyKX calls
+`inspect.signature` on it. Some callables may not be introspectable in certain
+implementations of Python. For example, in CPython, some built-in functions
+defined in C provide no metadata about their arguments.
+
+Converts a callable object into a q composition.
+
+The resulting `pykx.Composition` object works by keeping a reference to the
+provided callable object. When the composition is called, it calls the Python
+callable with the arguments it received as `pykx.K` objects. Therefore, Python
+functions that are converted to q functions must be able to handle receiving
+`pykx.K` objects as arguments.
+
+The return value of the provided Python callable will automatically be
+converted to a `pykx.K` object by having `pykx.K` called on it. You can
+control how this conversion happens by manually ensuring the return value of
+the function is a `pykx.K` instance.
+
+Because q does not have keyword arguments, all of the parameters of the Python
+callable are treated as position parameters. `*args` and `**kwargs` are
+likewise treated as individual parameters, which can be provided a
+`pykx.Vector` and a `pykx.Mapping` respectively.
+
+Functions in q can have at most 8 parameters, so Python callables being
+converted to q must abide by this limit. Parameters which have defaults set
+still count towards this limit. An `*args` parameters and a `**kwargs` each
+count as a single parameter towards this limit.
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`x` |  `Callable` | A callable Python object that can take `pykx.K` as arguments, and returns an object that can be converted into a q object via `pykx.K`. |  _required_  
+`ktype` |  `[Optional](https://docs.python.org/3/library/typing.html#typing.Optional "typing.Optional")[KType]` | Desired `pykx.K` subclass (or type number) for the returned value. If `None`, the type is inferred from `x`. The following values are supported: |  `ktype` |  Returned value  
+---|---  
+`None` |  Same as for `ktype=pykx.Composition`.  
+`pykx.Composition` | A q composition that wraps the provided callable object.  
+`None`  
+`cast` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Unused. |  `False`  
+`handle_nulls` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Unused. |  `False`  
+  
+**Raises:**
+
+Type | Description  
+---|---  
+`[TypeError](https://docs.python.org/3/library/exceptions.html#TypeError)` | Unsupported `ktype` for a callable object.  
+`[ValueError](https://docs.python.org/3/library/exceptions.html#ValueError)` | `x` accepts too many parameters - no more than 8 can be accepted.  
+`[ValueError](https://docs.python.org/3/library/exceptions.html#ValueError)` | `inspect.signature(x)` failed - could not introspect `x`.  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+`k.Composition` | A `pykx.Composition` that calls the provided Python callable object when it is calls.  
+  
+###  from_datetime_date  `method descriptor`
+
+    
+    
+    from_datetime_date(x, ktype=None, *, cast=False, handle_nulls=False)
+
+Converts a `datetime.date` into an instance of a subclass of
+`pykx.TemporalFixedAtom`.
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`x` |  `[Any](https://docs.python.org/3/library/typing.html#typing.Any "typing.Any")` | The `datetime.date` that will be converted into a `pykx.TemporalFixedAtom`. |  _required_  
+`ktype` |  `[Optional](https://docs.python.org/3/library/typing.html#typing.Optional "typing.Optional")[KType]` | Desired `pykx.K` subclass (or type number) for the returned value. If `None`, the type is inferred from `x`. The following values are supported: |  `ktype` |  Returned value  
+---|---  
+`None` |  Same as for `ktype=pykx.DateAtom`.  
+`pykx.TimestampAtom` |  The `datetime.date` as a q timestamp atom, which is a signed 64 bit value representing the number of nanoseconds since the q epoch: `2000-01-01T00:00:00.000000000`.  
+`pykx.MonthAtom` |  The `datetime.date` as a q month atom, which is a signed 32 bit value representing the number of months since the q epoch: `2000-01`.  
+`pykx.DateAtom` |  The `datetime.date` as a q date atom, which is a signed 32 bit value representing the number of days since the q epoch: `2000-01-01`.  
+`None`  
+`cast` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Apply a cast to a `datetime.date` object before converting to a `pykx.TemporalFixedAtom` object. |  `False`  
+`handle_nulls` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Unused. |  `False`  
+  
+**Raises:**
+
+Type | Description  
+---|---  
+`[TypeError](https://docs.python.org/3/library/exceptions.html#TypeError)` | Unsupported `ktype` for `datetime.date`.  
+`[NotImplementedError](https://docs.python.org/3/library/exceptions.html#NotImplementedError)` | The q datetime type is deprecated, so support for converting to it from Python has not been implemented.  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+`k.TemporalFixedAtom` | An instance of a subclass of `pykx.TemporalFixedAtom`.  
+  
+###  from_datetime_datetime  `method descriptor`
+
+    
+    
+    from_datetime_datetime(x, ktype=None, *, cast=False, handle_nulls=False)
+
+Setting environment variable `KEEP_LOCAL_TIMES` will result in the use of
+local time zones not UTC time.
+
+By default this function will convert any `datetime.datetime` objects with
+time zone information to UTC before converting it to `q`. If you set the
+environment vairable to 1, true or True, then the objects with time zone
+information will not be converted to UTC and instead will be converted to `q`
+with no changes.
+
+Converts a `datetime.datetime` into an instance of a subclass of
+`pykx.TemporalFixedAtom`.
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`x` |  `[Any](https://docs.python.org/3/library/typing.html#typing.Any "typing.Any")` | The `datetime.datetime` that will be converted into a `pykx.TemporalFixedAtom`. |  _required_  
+`ktype` |  `[Optional](https://docs.python.org/3/library/typing.html#typing.Optional "typing.Optional")[KType]` | Desired `pykx.K` subclass (or type number) for the returned value. If `None`, the type is inferred from `x`. The following values are supported: |  `ktype` |  Returned value  
+---|---  
+`None` |  Same as for `ktype=pykx.TimestampAtom`.  
+`pykx.TimestampAtom` |  The `datetime.datetime` as a q timestamp atom, which is a signed 64 bit value representing the number of nanoseconds since the q epoch: `2000-01-01T00:00:00.000000000`.  
+`pykx.MonthAtom` |  The `datetime.datetime` as a q month atom, which is a signed 32 bit value representing the number of months since the q epoch: `2000-01`.  
+`pykx.DateAtom` |  The `datetime.datetime` as a q date atom, which is a signed 32 bit value representing the number of days since the q epoch: `2000-01-01`.  
+`None`  
+`cast` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Apply a cast to a `datetime.datetime` object before converting to a `pykx.TemporalFixedAtom` object. |  `False`  
+`handle_nulls` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Unused. |  `False`  
+  
+**Raises:**
+
+Type | Description  
+---|---  
+`[TypeError](https://docs.python.org/3/library/exceptions.html#TypeError)` | Unsupported `ktype` for `datetime.datetime`.  
+`[NotImplementedError](https://docs.python.org/3/library/exceptions.html#NotImplementedError)` | The q datetime type is deprecated, so support for converting to it from Python has not been implemented.  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+`k.TemporalFixedAtom` | An instance of a subclass of `pykx.TemporalFixedAtom`.  
+  
+###  from_datetime_timedelta  `method descriptor`
+
+    
+    
+    from_datetime_timedelta(x, ktype=None, *, cast=False, handle_nulls=False)
+
+Converts a `datetime.timedelta` into an instance of a subclass of
+`pykx.TemporalSpanAtom`.
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`x` |  `[Any](https://docs.python.org/3/library/typing.html#typing.Any "typing.Any")` | The `datetime.timedelta` that will be converted into a `pykx.TemporalSpanAtom`. |  _required_  
+`ktype` |  `[Optional](https://docs.python.org/3/library/typing.html#typing.Optional "typing.Optional")[KType]` | Desired `pykx.K` subclass (or type number) for the returned value. If `None`, the type is inferred from `x`. The following values are supported: |  `ktype` |  Returned value  
+---|---  
+`None` |  Same as for `ktype=pykx.TimespanAtom`.  
+`pykx.TimespanAtom` |  The `datetime.timedelta` as a q timespan atom, which is a signed 64 bit value representing a number of nanoseconds.  
+`pykx.MinuteAtom` |  The `datetime.timedelta` as a q minute atom, which is a signed 32 bit value representing a number of minutes.  
+`pykx.SecondAtom` |  The `datetime.timedelta` as a q second atom, which is a signed 32 bit value representing a number of seconds.  
+`pykx.TimeAtom` |  The `datetime.timedelta` as a q date atom, which is a signed 32 bit value representing a number of milliseconds.  
+`None`  
+`cast` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Apply a cast to a `datetime.timedelta` object before converting to a `pykx.TemporalSpanAtom` object. |  `False`  
+`handle_nulls` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Unused. |  `False`  
+  
+**Raises:**
+
+Type | Description  
+---|---  
+`[TypeError](https://docs.python.org/3/library/exceptions.html#TypeError)` | Unsupported `ktype` for `datetime.timedelta`.  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+`k.TemporalSpanAtom` | An instance of a subclass of `pykx.TemporalSpanAtom`.  
+  
+###  from_dict  `method descriptor`
+
+    
+    
+    from_dict(x, ktype=None, *, cast=False, handle_nulls=False)
+
+Converts a `dict` into a `pykx.Dictionary`.
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`x` |  `[dict](https://docs.python.org/3/library/stdtypes.html#dict)` | The `dict` that will be converted into a `pykx.Dictionary`. |  _required_  
+`ktype` |  `[Optional](https://docs.python.org/3/library/typing.html#typing.Optional "typing.Optional")[KType]` | Desired `pykx.K` subclass (or type number) for the returned value. If `None`, the type is inferred from `x`. The following values are supported: |  `ktype` |  Returned value  
+---|---  
+`None` |  Same as for `ktype=pykx.Dictionary`.  
+`pykx.Dictionary` |  The `dict` as a q dictionary. Each key and value of the Python dictionary will be converted independently into a `pykx.K` object, and added to the q dictionary.  
+`None`  
+`cast` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Unused. |  `False`  
+`handle_nulls` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Convert `pd.NaT` to corresponding q null values in Pandas dataframes and Numpy arrays. |  `False`  
+  
+**Raises:**
+
+Type | Description  
+---|---  
+`[TypeError](https://docs.python.org/3/library/exceptions.html#TypeError)` | Unsupported `ktype` for `dict`.  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+`k.Dictionary` | An instance of `pykx.Dictionary`.  
+  
+###  from_ellipsis  `method descriptor`
+
+    
+    
+    from_ellipsis(x, ktype=None, *, cast=False, handle_nulls=False)
+
+Projection nulls are unwieldy.
+
+If you aren't sure you know what you are doing, then you probably don't need
+to use a projection null.
+
+Converts an `Ellipsis` (`...`) into a q projection null.
+
+PyKX uses Python's `...` singleton to represent the q projection null, which
+is similar to generic null (see `from_none`), but indicates to q not just that
+there is missing data, but that it should be filled in with the next q object
+that is applied onto it.
+
+This is how q creates function projections with later parameters specified.
+For instance, the q function projection `{x+y}[;7]` has an argument list of 2
+q objects: a projection null, followed by a long atom with a value of 7.
+
+Because PyKX treats `...` as projection null, q projections can be created in
+Python like so:
+
+    
+    
+    >>> f = pykx.K(lambda x, y: x + y)
+    >>> projection = f(..., 7)
+    >>> projection(2)
+    pykx.LongAtom(pykx.q('9'))
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`x` |  `[Ellipsis](https://docs.python.org/3/library/constants.html#Ellipsis)` | The `Ellipsis` singleton object. |  _required_  
+`ktype` |  `[Optional](https://docs.python.org/3/library/typing.html#typing.Optional "typing.Optional")[KType]` | Desired `pykx.K` subclass (or type number) for the returned value. If `None`, the type is inferred from `x`. The following values are supported: |  `ktype` |  Returned value  
+---|---  
+`None` |  Same as for `ktype=pykx.ProjectionNull`.  
+`pykx.ProjectionNull` |  An instance of `pykx.ProjectionNull`.  
+`None`  
+`cast` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Unused. |  `False`  
+`handle_nulls` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Unused. |  `False`  
+  
+**Raises:**
+
+Type | Description  
+---|---  
+`[TypeError](https://docs.python.org/3/library/exceptions.html#TypeError)` | Unsupported `ktype` for `Ellipsis`.  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+`k.ProjectionNull` | An instance of a subclass of `pykx.ProjectionNull`.  
+  
+###  from_fileno  `method descriptor`
+
+    
+    
+    from_fileno(x, ktype=None, *, cast=False, handle_nulls=False)
+
+Converts an object with a `fileno` attribute to a `pykx.IntAtom`.
+
+In q, int atoms that match open file descriptors can be called as if they were
+functions. Refer to <https://code.kx.com/q/basics/handles/> for more
+information.
+
+The `fileno` attribute of `x` can either be a Python `int`, or a function that
+returns an `int` when called. The `int` should represent an open file
+descriptor.
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`x` |  `[Any](https://docs.python.org/3/library/typing.html#typing.Any "typing.Any")` | An object with a `fileno` attribute. |  _required_  
+`ktype` |  `[Optional](https://docs.python.org/3/library/typing.html#typing.Optional "typing.Optional")[KType]` | Desired `pykx.K` subclass (or type number) for the returned value. If `None`, the type is inferred from `x`. The following values are supported: |  `ktype` |  Returned value  
+---|---  
+`None` |  Same as for `ktype=pykx.IntAtom`.  
+`pykx.IntAtom` |  The open file descriptor as a `pykx.IntAtom`.  
+`None`  
+`cast` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Unused. |  `False`  
+`handle_nulls` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Unused. |  `False`  
+  
+**Raises:**
+
+Type | Description  
+---|---  
+`[TypeError](https://docs.python.org/3/library/exceptions.html#TypeError)` | Unsupported `ktype` for an object with the `fileno` attribute.  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+`k.IntAtom` | A `pykx.IntAtom` that represents an open file descriptor.  
+  
+###  from_float  `method descriptor`
+
+    
+    
+    from_float(x, ktype=None, *, cast=False, handle_nulls=False)
+
+Converts a `float` into an instance of a subclass of
+`pykx.NonIntegralNumericAtom`.
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`x` |  `[Any](https://docs.python.org/3/library/typing.html#typing.Any "typing.Any")` | The `float` that will be converted into a `pykx.NonIntegralNumericAtom` object. |  _required_  
+`ktype` |  `[Optional](https://docs.python.org/3/library/typing.html#typing.Optional "typing.Optional")[KType]` | Desired `pykx.K` subclass (or type number) for the returned value. If `None`, the type is inferred from `x`. The following values are supported: | `ktype` | Returned value  
+---|---  
+`None` | Same as for `ktype=pykx.FloatAtom`.  
+`pykx.FloatAtom` | The `float` as a signed 64 bit float in q.  
+`pykx.RealAtom` | The `float` as a signed 32 bit float in q.  
+`None`  
+`cast` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Apply a cast to a Python `float` before converting to a `pykx.NonIntegralNumericAtom` object. |  `False`  
+`handle_nulls` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Unused. |  `False`  
+  
+**Raises:**
+
+Type | Description  
+---|---  
+`[TypeError](https://docs.python.org/3/library/exceptions.html#TypeError)` | Unsupported `ktype` for a `float`.  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+`k.NonIntegralNumericAtom` | An instance of a `pykx.NonIntegralNumericAtom` subclass.  
+  
+###  from_int  `method descriptor`
+
+    
+    
+    from_int(x, ktype=None, *, cast=False, handle_nulls=False)
+
+Converts an `int` into an instance of a subclass of
+`pykx.IntegralNumericAtom`.
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`x` |  `[Any](https://docs.python.org/3/library/typing.html#typing.Any "typing.Any")` | The `int` that will be converted into a `pykx.IntegralNumericAtom` object. |  _required_  
+`ktype` |  `[Optional](https://docs.python.org/3/library/typing.html#typing.Optional "typing.Optional")[KType]` | Desired `pykx.K` subclass (or type number) for the returned value. If `None`, the type is inferred from `x`. The following values are supported: |  `ktype` |  Returned value  
+---|---  
+`None` |  Same as for `ktype=pykx.LongAtom`, except when `x` is a `bool`, in which case it is the same as for `ktype=pykx.BooleanAtom`.  
+`pykx.LongAtom` |  The `int` as a signed 64 bit integer in q.  
+`pykx.IntAtom` |  The `int` as a signed 32 bit integer in q.  
+`pykx.ShortAtom` |  The `int` as a signed 16 bit integer in q.  
+`pykx.ByteAtom` |  The `int` as a unsigned 8 bit integer in q.  
+`pykx.BooleanAtom` |  The `int` as a boolean in q.  
+`None`  
+`cast` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Apply cast to Python `int` before converting to an `pykx.IntegralNumericAtom` object. |  `False`  
+`handle_nulls` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Unused. |  `False`  
+  
+**Raises:**
+
+Type | Description  
+---|---  
+`[TypeError](https://docs.python.org/3/library/exceptions.html#TypeError)` | Unsupported `ktype` for an `int` or unsupported cast between Python types.  
+`[OverflowError](https://docs.python.org/3/library/exceptions.html#OverflowError)` | The provided `int` is out of bounds for the selected `pykx.IntegralNumericAtom` subclass.  
+The edges of the bounds have special meanings in q.
+
+For `pykx.LongAtom`, `pykx.IntAtom`, and `pykx.ShortAtom`, the lower bound of
+the range is the null value for that type, one larger than that is the
+negative infinity for that type, and the upper bound of the range is positive
+infinity for that type. An exception will not be raised if `int` objects with
+these values are provided. Refer to the nulls and infinities PyKX
+documentation for more information about q nulls and infinities, and how to
+handle them with PyKX.
+
+**Returns:**
+
+Type | Description  
+---|---  
+`k.IntegralNumericAtom` | An instance of a `pykx.IntegralNumericAtom` subclass.  
+  
+###  from_list  `method descriptor`
+
+    
+    
+    from_list(x, ktype=None, *, cast=False, handle_nulls=False)
+
+q lists are vectors
+
+In q, a list (also called a "general list") is a vector of k objects. Non-list
+vectors (also called "typed vectors" or simply "vectors") are vectors of one
+particular type.
+
+Converts a `list` into an instance of a subclass of `pykx.Vector`.
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`x` |  `[list](../pykx-execution/q.html#list)` | The `list` that will be converted into a `pykx.Vector`. |  _required_  
+`ktype` |  `[Optional](https://docs.python.org/3/library/typing.html#typing.Optional "typing.Optional")[KType]` | Desired `pykx.K` subclass (or type number) for the returned value. If `None`, the type is inferred from `x`. The following values are supported: |  `ktype` |  Returned value  
+---|---  
+`None` |  Same as for `ktype=pykx.List`.  
+`pykx.List` |  The `list` as a q list. Each element of the Python list will be converted independently into a `pykx.K` object, and added to the q list.  
+`pykx.BooleanVector` |  The `list` as a `pykx.BooleanVector`. This is equivalent to converting a Numpy array `array(x, dtype=bool)` to q.  
+`pykx.ByteVector` |  The `list` as a `pykx.ByteVector`. This is equivalent to converting a Numpy array `array(x, dtype=np.uint8)` to q.  
+`pykx.ShortVector` |  The `list` as a `pykx.ShortVector`. This is equivalent to converting a Numpy array `array(x, dtype=np.int16)` to q.  
+`pykx.IntVector` |  The `list` as a `pykx.IntVector`. This is equivalent to converting a Numpy array `array(x, dtype=np.int32)` to q.  
+`pykx.LongVector` |  The `list` as a `pykx.LongVector`. This is equivalent to converting a Numpy array `array(x, dtype=np.int64)` to q.  
+`pykx.RealVector` |  The `list` as a `pykx.RealVector`. This is equivalent to converting a Numpy array `array(x, dtype=np.float32)` to q.  
+`pykx.FloatVector` |  The `list` as a `pykx.FloatVector`. This is equivalent to converting a Numpy array `array(x, dtype=np.float64)` to q.  
+`None`  
+`cast` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Unused. |  `False`  
+`handle_nulls` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Unused. |  `False`  
+  
+**Raises:**
+
+Type | Description  
+---|---  
+`[TypeError](https://docs.python.org/3/library/exceptions.html#TypeError)` | Unsupported `ktype` for `list`.  
+`[ValueError](https://docs.python.org/3/library/exceptions.html#ValueError)` | Could not convert some elements of `x` in accordance with the `ktype`.  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+`k.Vector` | An instance of a subclass of `pykx.Vector`.  
+  
+###  from_none  `method descriptor`
+
+    
+    
+    from_none(x, ktype=None, *, cast=False, handle_nulls=False)
+
+Converts `None` into a `pykx.Identity` object.
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`x` |  `None` | The `None` singleton object. |  _required_  
+`ktype` |  `[Optional](https://docs.python.org/3/library/typing.html#typing.Optional "typing.Optional")[KType]` | Desired `pykx.K` subclass (or type number) for the returned value. If `None`, the type is inferred from `x`. The following values are supported: | `ktype` | Returned value  
+---|---  
+`None` | Same as for `ktype=pykx.Identity`.  
+`pykx.Identity` | Generic null (`::`).  
+`None`  
+`cast` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Unused. |  `False`  
+`handle_nulls` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Unused. |  `False`  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+`k.Identity` | A `pykx.Identity` instance, i.e. generic null.  
+  
+###  from_numpy_datetime64  `method descriptor`
+
+    
+    
+    from_numpy_datetime64(x, ktype=None, *, cast=False, handle_nulls=False)
+
+Converts a `numpy.datetime64` into an instance of a subclass of
+`pykx.TemporalFixedAtom`.
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`x` |  `[np](https://numpy.org/doc/stable/reference/index.html#module-numpy "numpy").[datetime64](https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.datetime64 "numpy.datetime64")` | The `numpy.datetime64` that will be converted into a `pykx.TemporalFixedAtom`. |  _required_  
+`ktype` |  `[Optional](https://docs.python.org/3/library/typing.html#typing.Optional "typing.Optional")[KType]` | Desired `pykx.K` subclass (or type number) for the returned value. If `None`, the type is inferred from `x`. The following values are supported: |  `ktype` |  Returned value  
+---|---  
+`None` |  Same as for `ktype=pykx.TimestampAtom`.  
+`pykx.TimestampAtom` |  The `numpy.datetime64` as a q timestamp atom, which is a signed 64 bit value representing the number of nanoseconds since the q epoch: `2000-01-01T00:00:00.000000000`.  
+`pykx.MonthAtom` |  The `numpy.datetime64` as a q month atom, which is a signed 32 bit value representing the number of months since the q epoch: `2000-01`.  
+`pykx.DateAtom` |  The `numpy.datetime64` as a q date atom, which is a signed 32 bit value representing the number of days since the q epoch: `2000-01-01`.  
+`None`  
+`cast` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Unused. |  `False`  
+`handle_nulls` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Unused. |  `False`  
+  
+**Raises:**
+
+Type | Description  
+---|---  
+`[TypeError](https://docs.python.org/3/library/exceptions.html#TypeError)` | Unsupported `ktype` for `numpy.datetime64`.  
+`[NotImplementedError](https://docs.python.org/3/library/exceptions.html#NotImplementedError)` | The q datetime type is deprecated, so support for converting to it from Python has not been implemented.  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+`k.TemporalFixedAtom` | An instance of a subclass of `pykx.TemporalFixedAtom`.  
+  
+###  from_numpy_ndarray  `method descriptor`
+
+    
+    
+    from_numpy_ndarray(x, ktype=None, *, cast=False, handle_nulls=False)
+
+Data is always copied when converting from Numpy to q if not using the PyKX
+Allocator.
+
+While many conversions from q to Python types can be performed without
+incurring a copy, the reverse is not true. As mentioned in [the q C API
+documentation](https://code.kx.com/q/interfaces/capiref/#k-object), vectors in
+q store their metadata in a fixed memory location relative to their data, so
+the data for an array in Python's memory cannot be shared by q, since q would
+have to store the metadata in a memory location it has no ownership of.
+
+Converts a `numpy.ndarray` into a `pykx.Vector`.
+
+If the `pykx.k_allocator` is enabled with the environment variable
+`PYKX_ALLOCATOR` or if the `QARGS` environment variable contains
+`--pykxalloc`, then 0 copy numpy array conversions will be enabled for certain
+`numpy.dtypes`s. This will allow for 0 copy conversions from `numpy` arrays of
+a corresponding `numpy.dtype` to `pykx.NumericVector`s, and
+`pykx.TimespanVector`s. You can find the corresponding `numpy.dtype` of a
+`pykx.Vector` type by checking the `pykx.Vector._np_dtype` property of the
+type you want to create. Note that when these 0 copy conversions are done both
+the numpy array and the resulting `pykx.Vector` refer to the same area of
+memory and changes made to one will be present in the other object.
+
+Because q only supports 1-dimensional arrays (vectors), Numpy arrays with more
+than 1 dimension will have all every level converted into a list of lists
+except for the lowest, for which each vector is converted to a q vector
+independently.
+
+For example, in the following case, even though Numpy stores all of the data
+contiguously in memory with a single `numpy.ndarray` object wrapping it, q
+will store it as 3 vectors, with a list containing them:
+
+    
+    
+    >>> np.arange(12).reshape(3, 4)
+    array([[ 0,  1,  2,  3],
+            [ 4,  5,  6,  7],
+            [ 8,  9, 10, 11]])
+    >>> kx.K(np.arange(12).reshape(3, 4))
+    pykx.List(pykx.q('
+    0 1 2  3
+    4 5 6  7
+    8 9 10 11
+    '))
+
+Numpy masked arrays can be used to indicate null data for integer types.
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`x` |  `[np](https://numpy.org/doc/stable/reference/index.html#module-numpy "numpy").[ndarray](https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray "numpy.ndarray")` | The `numpy.ndarray` that will be converted into a `pykx.Vector`. |  _required_  
+`ktype` |  `[Optional](https://docs.python.org/3/library/typing.html#typing.Optional "typing.Optional")[KType]` | Desired `pykx.K` subclass (or type number) for the returned value. If `None`, the type is inferred from `x`. The following values are supported: |  `ktype` |  Returned value  
+---|---  
+`None` |  The returned vector is as if the `ktype` had been set based off of the Numpy `dtype`, roughly following this mapping: |  `x.dtype` |  Inferred `ktype`  
+---|---  
+`object` |  `pykx.List`  
+`object` (uuid.UUID) |  `pykx.GUIDVector`  
+`object` (str) |  `pykx.SymbolVector`  
+`'U'` |  `pykx.SymbolVector`  
+`'S'` |  `pykx.CharVector`  
+`np.float64` |  `pykx.FloatVector`  
+`np.float32` |  `pykx.RealVector`  
+`np.int64` |  `pykx.LongVector`  
+`np.int32` |  `pykx.IntVector`  
+`np.int16` |  `pykx.ShortVector`  
+`'timedelta64[ms]'` |  `pykx.TimeVector`  
+`'timedelta64[ns]'` |  `pykx.TimespanVector`  
+`'datetime64[ns]'` |  `pykx.TimestampVector`  
+`'datetime64[us]'` |  `pykx.TimestampVector`  
+`'datetime64[ms]'` |  `pykx.TimestampVector`  
+`'datetime64[s]'` |  `pykx.TimestampVector`  
+`'timedelta64[s]'` |  `pykx.SecondVector`  
+`'datetime64[M]'` |  `pykx.MonthVector`  
+`'datetime64[D]'` |  `pykx.DateVector`  
+`'timedelta64[m]'` |  `pykx.MinuteVector`  
+`np.uint8` |  `pykx.ByteVector`  
+`bool` |  `pykx.BooleanVector`  
+`pykx.List` |  The Numpy array as a q general list. Equivalent to `pykx.List(x.tolist())`.  
+`pykx.BooleanVector` |  The Numpy array as a vector of q booleans, which each take up 8 bits in memory.  
+`pykx.ByteVector` |  The Numpy array as a vector of q unsigned 8 bit intergers.  
+`pykx.GUIDVector` |  The Numpy array as a vector of q GUIDs, which each take up 128 bits in memory.  
+`pykx.ShortVector` |  The Numpy array as a vector of q signed 16 bit integers.  
+`pykx.IntVector` |  The Numpy array as a vector of q signed 32 bit integers.  
+`pykx.LongVector` |  The Numpy array as a vector of q signed 64 bit integers.  
+`pykx.RealVector` |  The Numpy array as a vector of q 32 bit floats.  
+`pykx.FloatVector` |  The Numpy array as a vector of q 64 bit floats.  
+`pykx.CharVector` |  The Numpy array as a vector of q characters. Each characters in q is a single byte, which has implications for multi-byte characters in e.g. Unicode strings.  
+`pykx.SymbolVector` |  The Numpy array as a vector of q symbols. Each symbol is permanently interned into q's memory.  
+`pykx.TimestampVector` |  The Numpy array as a vector of q timestamp, i.e. signed 64 bit integers which represent the number of nanoseconds since the q epoch: `2000-01-01T00:00:00.000000000`. The data from the Numpy array will be incremented to adjust its epoch from the standard epoch (`1970-01-01T00:00:00.000000000`) to the q epoch.  
+`pykx.MonthVector` |  The Numpy array as a vector of q months, i.e. signed 32 bit intergers which represent the number of months since the q epoch: `2000-01`. The data from the Numpy array will be incremented to adjust its epoch from the standard epoch (`1970-01`) to the q epoch.  
+`pykx.DateVector` |  The Numpy array as a vector of q dates, i.e. signed 32 bit intergers which represent the number of days since the q epoch: `2000-01-01`. The data from the Numpy array will be incremented to adjust its epoch from the standard epoch (`1970-01-01`) to the q epoch.  
+`pykx.TimespanVector` |  The Numpy array as a vector of q timespans, i.e. signed 64 bit integers which represent a number of nanoseconds.  
+`pykx.MinuteVector` |  The Numpy array as a vector of q minutes, i.e. signed 32 bit integers which represent a number of minutes.  
+`pykx.SecondVector` |  The Numpy array as a vector of q seconds, i.e. signed 32 bit integers which represent a number of seconds.  
+`pykx.TimeVector` |  The Numpy array as a vector of q times, i.e. signed 32 bit integers which represent a number of milliseconds.  
+`None`  
+`cast` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Apply a cast before converting to a `pykx.Vector` object. It will try to cast the input Numpy array to the Numpy type which best conforms to the target `ktype`. |  `False`  
+`handle_nulls` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Convert `pd.NaT` to corresponding q null values in Pandas dataframes and Numpy arrays. |  `False`  
+  
+**Raises:**
+
+Type | Description  
+---|---  
+`[TypeError](https://docs.python.org/3/library/exceptions.html#TypeError)` | Unsupported `ktype` for `numpy.ndarray`.  
+`[ValueError](https://docs.python.org/3/library/exceptions.html#ValueError)` | Numpy array is not C-contiguous, which is required for `ktype`.  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+`k.Vector` | An instance of a subclass of `pykx.Vector`.  
+  
+###  from_numpy_timedelta64  `method descriptor`
+
+    
+    
+    from_numpy_timedelta64(x, ktype=None, *, cast=False, handle_nulls=False)
+
+Converts a `numpy.timedelta64` into an instance of a subclass of
+`pykx.TemporalSpanAtom`.
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`x` |  `[np](https://numpy.org/doc/stable/reference/index.html#module-numpy "numpy").[timedelta64](https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.timedelta64 "numpy.timedelta64")` | The `numpy.timedelta64` that will be converted into a `pykx.TemporalSpanAtom`. |  _required_  
+`ktype` |  `[Optional](https://docs.python.org/3/library/typing.html#typing.Optional "typing.Optional")[KType]` | Desired `pykx.K` subclass (or type number) for the returned value. If `None`, the type is inferred from `x`. The following values are supported: |  `ktype` |  Returned value  
+---|---  
+`None` |  Same as for `ktype=pykx.TimespanAtom`.  
+`pykx.TimespanAtom` |  The `numpy.timedelta64` as a q timespan atom, which is a signed 64 bit value representing a number of nanoseconds.  
+`pykx.MinuteAtom` |  The `numpy.timedelta64` as a q minute atom, which is a signed 32 bit value representing a number of minutes.  
+`pykx.SecondAtom` |  The `numpy.timedelta64` as a q second atom, which is a signed 32 bit value representing a number of seconds.  
+`pykx.TimeAtom` |  The `numpy.timedelta64` as a q time atom, which is a signed 32 bit value representing a number of milliseconds.  
+`None`  
+`cast` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Unused. |  `False`  
+`handle_nulls` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Unused. |  `False`  
+  
+**Raises:**
+
+Type | Description  
+---|---  
+`[TypeError](https://docs.python.org/3/library/exceptions.html#TypeError)` | Unsupported `ktype` for `numpy.timedelta64`.  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+`k.TemporalSpanAtom` | An instance of a subclass of `pykx.TemporalSpanAtom`.  
+  
+###  from_pandas_dataframe  `method descriptor`
+
+    
+    
+    from_pandas_dataframe(x, ktype=None, *, cast=False, handle_nulls=False)
+
+See Also
+
+Converts a `pandas.DataFrame` into a `pykx.Table` or `pykx.KeyedTable` as
+appropriate.
+
+The index and columns of the dataframe are each converted independently, and
+then the results of those conversions are used to assemble the resulting q
+table or keyed table.
+
+If the dataframe does not have column names they will be generated: x, x1, ..,
+x(n-1).
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`x` |  `pd.DataFrame` | The `pandas.DataFrame` that will be converted into a `pykx.Table` or `pykx.KeyedTable`. |  _required_  
+`ktype` |  `[Optional](https://docs.python.org/3/library/typing.html#typing.Optional "typing.Optional")[KType]` | Desired `pykx.K` subclass (or type number) for the returned value. If `None`, the type is inferred from `x`. The following values are supported: |  `ktype` |  Returned value  
+---|---  
+`None` |  The returned value is as if the `ktype` had been set based off of the index of the dataframe. If the index has an integer type, starts at 0, and increases by 1 for every row, then a `pykx.Table` is returned. Otherwise, a `pykx.KeyedTable` is returned. Note that `pykx.KeyedTable` is a subclass of `pykx.Dictionary`, not `pykx.Table`. Both are subclasses of `pykx.Mapping`.  
+`pykx.Table` |  The `pandas.DataFrame` as a q table.  
+`pykx.KeyedTable` |  The `pandas.DataFrame` as a q keyed table.  
+`None`  
+`cast` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Unused. |  `False`  
+`handle_nulls` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Convert `pd.NaT` to corresponding q null values in Pandas dataframes and Numpy arrays. |  `False`  
+  
+**Raises:**
+
+Type | Description  
+---|---  
+`[TypeError](https://docs.python.org/3/library/exceptions.html#TypeError)` | Unsupported `ktype` for `pandas.DataFrame`.  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+`[Union](https://docs.python.org/3/library/typing.html#typing.Union "typing.Union")[k.Table, k.KeyedTable]` | An instance of `pykx.Table` or `pykx.KeyedTable`.  
+  
+###  from_pandas_index  `method descriptor`
+
+    
+    
+    from_pandas_index(x, ktype=None, *, cast=False, handle_nulls=False)
+
+See Also
+
+`from_numpy_ndarray`
+
+Converts a `pandas.Index` into a `pykx.Vector` or `pykx.Table` as appropriate.
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`x` |  `pd.Index` | The `pandas.Index` that will be converted into a `pykx.Table` or `pykx.KeyedTable`. |  _required_  
+`ktype` |  `[Optional](https://docs.python.org/3/library/typing.html#typing.Optional "typing.Optional")[KType]` | Desired `pykx.K` subclass (or type number) for the returned value. If `None`, the type is inferred from `x`. The following values are supported: |  `ktype` |  Returned value  
+---|---  
+`None` |  The resulting value is determined based on the kind of Pandas index provided. If `x` is an instance of `pandas.core.indexes.numeric.NumericIndex`, then it will be converted into a Numpy array, then that will be converted into a `pykx.Vector` via `from_numpy_ndarray`. If `x` is an instance of `pandas.MultiIndex`, then each of its levels will be converted into a Numpy array, and assembled into a `pykx.Table` with column names equal to the names of the levels of the index if they are named. For any level which is not named, its index within `x.levels` is used as its name.  
+`None`  
+`cast` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Unused. |  `False`  
+`handle_nulls` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Convert `pd.NaT` to corresponding q null values in Pandas dataframes and Numpy arrays. |  `False`  
+  
+**Raises:**
+
+Type | Description  
+---|---  
+`[TypeError](https://docs.python.org/3/library/exceptions.html#TypeError)` | Unsupported `ktype` for `pandas.Index`.  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+`[Union](https://docs.python.org/3/library/typing.html#typing.Union "typing.Union")[k.Vector, k.Table]` | An instance of `pykx.Vector` or `pykx.Table`.  
+  
+###  from_pandas_series  `method descriptor`
+
+    
+    
+    from_pandas_series(x, ktype=None, *, cast=False, handle_nulls=False)
+
+See Also
+
+`from_numpy_ndarray`
+
+Converts a `pandas.Series` into an instance of a subclass of `pykx.Vector`.
+
+The given series is converted to a Numpy array, and then converted to a q
+vector as Numpy arrays generally are.
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`x` |  `pd.Series` | The `pandas.Series` that will be converted into a `pykx.Vector`. |  _required_  
+`ktype` |  `[Optional](https://docs.python.org/3/library/typing.html#typing.Optional "typing.Optional")[KType]` | Desired `pykx.K` subclass (or type number) for the returned value. If `None`, the type is inferred from `x` using the same logic as `from_numpy_ndarray` applied to `x.to_numpy()`. |  `None`  
+`cast` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Unused. |  `False`  
+`handle_nulls` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Convert `pd.NaT` to corresponding q null values in Pandas dataframes and Numpy arrays. |  `False`  
+  
+**Raises:**
+
+Type | Description  
+---|---  
+`[TypeError](https://docs.python.org/3/library/exceptions.html#TypeError)` | Unsupported `ktype` for `pandas.Series`.  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+`k.Vector` | An instance of a subclass of `pykx.Vector`.  
+  
+###  from_pathlib_path  `method descriptor`
+
+    
+    
+    from_pathlib_path(x, ktype=None, *, cast=False, handle_nulls=False)
+
+Converts a `pathlib.Path` into a q handle symbol.
+
+In q a symbol atom that begin with a `:` is known as an "hsym", or handle
+symbol. These symbols represent local or remote paths or resources.
+
+Windows paths are reformatted as POSIX paths.
+
+This function does not make the path absolute.
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`x` |  `[Path](https://docs.python.org/3/library/pathlib.html#pathlib.Path "pathlib.Path")` | The `pathlib.Path` that will be converted into an hsym. |  _required_  
+`ktype` |  `[Optional](https://docs.python.org/3/library/typing.html#typing.Optional "typing.Optional")[KType]` | Desired `pykx.K` subclass (or type number) for the returned value. If `None`, the type is inferred from `x`. The following values are supported: |  `ktype` |  Returned value  
+---|---  
+`None` |  Same as for `ktype=pykx.SymbolAtom`.  
+`pykx.SymbolAtom` |  The `pathlib.Path` as a q handle symbol, which will be the path as text, prefixed by `:`, as a POSIX path.  
+`None`  
+`cast` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Unused. |  `False`  
+`handle_nulls` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Unused. |  `False`  
+  
+**Raises:**
+
+Type | Description  
+---|---  
+`[TypeError](https://docs.python.org/3/library/exceptions.html#TypeError)` | Unsupported `ktype` for `pathlib.Path`.  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+`k.SymbolAtom` | An instance of a subclass of `pykx.IntegralNumericVector`.  
+  
+###  from_pykx_k  `method descriptor`
+
+    
+    
+    from_pykx_k(x, ktype=None, *, cast=False, handle_nulls=False)
+
+Converts a `pykx.K` object into a `pykx.K` object.
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`x` |  `k.K` | A `pykx.K` instance. |  _required_  
+`ktype` |  `[Optional](https://docs.python.org/3/library/typing.html#typing.Optional "typing.Optional")[KType]` | Desired `pykx.K` subclass (or type number) for the returned value. If `None`, the type is inferred from `x`. The following values are supported: |  `ktype` |  Returned value  
+---|---  
+`None` |  The provided `pykx.K` object unchanged.  
+`The type of`x` |  Same as for `ktype=None`.  
+`pykx.List` |  The provided `pykx.K` object as a `pykx.List` object  
+`pykx.BooleanAtom` |  The provided `pykx.K` object as a `pykx.BooleanAtom`  
+`pykx.ByteAtom` |  The provided `pykx.K` object as a `pykx.ByteAtom`  
+`pykx.ShortAtom` |  The provided `pykx.K` object as a `pykx.ShortAtom`  
+`pykx.IntAtom` |  The provided `pykx.K` object as a `pykx.IntAtom`  
+`pykx.LongAtom` |  The provided `pykx.K` object as a `pykx.LongAtom`  
+`pykx.RealAtom` |  The provided `pykx.K` object as a `pykx.RealAtom`  
+`pykx.FloatAtom` |  The provided `pykx.K` object as a `pykx.FloatAtom`  
+`pykx.CharAtom` |  The provided `pykx.K` object as a `pykx.CharAtom`  
+`pykx.SymbolAtom` |  The provided `pykx.K` object as a `pykx.SymbolAtom`  
+`pykx.TimestampAtom` |  The provided `pykx.K` object as a `pykx.TimestampAtom`  
+`pykx.MonthAtom` |  The provided `pykx.K` object as a `pykx.MonthAtom`  
+`pykx.DateAtom` |  The provided `pykx.K` object as a `pykx.DateAtom`  
+`pykx.DatetimeAtom` |  The provided `pykx.K` object as a `pykx.DatetimeAtom`  
+`pykx.TimespanAtom` |  The provided `pykx.K` object as a `pykx.TimespanAtom`  
+`pykx.MinuteAtom` |  The provided `pykx.K` object as a `pykx.MinuteAtom`  
+`pykx.SecondAtom` |  The provided `pykx.K` object as a `pykx.SecondAtom`  
+`pykx.TimeAtom` |  The provided `pykx.K` object as a `pykx.TimeAtom`  
+`pykx.BooleanVector` |  The provided `pykx.K` object as a `pykx.BooleanVector`  
+`pykx.ByteVector` |  The provided `pykx.K` object as a `pykx.ByteVector`  
+`pykx.ShortVector` |  The provided `pykx.K` object as a `pykx.ShortVector`  
+`pykx.IntVector` |  The provided `pykx.K` object as a `pykx.IntVector`  
+`pykx.LongVector` |  The provided `pykx.K` object as a `pykx.LongVector`  
+`pykx.RealVector` |  The provided `pykx.K` object as a `pykx.RealVector`  
+`pykx.FloatVector` |  The provided `pykx.K` object as a `pykx.FloatVector`  
+`pykx.CharVector` |  The provided `pykx.K` object as a `pykx.CharVector`  
+`pykx.SymbolVector` |  The provided `pykx.K` object as a `pykx.SymbolVector`  
+`pykx.TimestampVector` |  The provided `pykx.K` object as a `pykx.TimestampVector`  
+`pykx.MonthVector` |  The provided `pykx.K` object as a `pykx.MonthVector`  
+`pykx.DateVector` |  The provided `pykx.K` object as a `pykx.DateVector`  
+`pykx.DatetimeVector` |  The provided `pykx.K` object as a `pykx.DatetimeVector`  
+`pykx.TimespanVector` |  The provided `pykx.K` object as a `pykx.TimespanVector`  
+`pykx.MinuteVector` |  The provided `pykx.K` object as a `pykx.MinuteVector`  
+`pykx.SecondVector` |  The provided `pykx.K` object as a `pykx.SecondVector`  
+`pykx.TimeVector` |  The provided `pykx.K` object as a `pykx.TimeVector`  
+`pykx.Table` |  The provided `pykx.K` object as a `pykx.Table`  
+`pykx.Dictionary` |  The provided `pykx.K` object as a `pykx.Dictionary`  
+`None`  
+`cast` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Unused. |  `False`  
+`handle_nulls` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Unused. |  `False`  
+  
+**Raises:**
+
+Type | Description  
+---|---  
+`[LicenseException](../exceptions.html#pykx.exceptions.LicenseException "pykx.exceptions.LicenseException")` | Directly casting between `ktype`s is not possible without a license.  
+`[TypeError](https://docs.python.org/3/library/exceptions.html#TypeError)` | `ktype` is not `None` and does not match the provided `pykx.K` object or any of the castable `ktype`s.  
+`[QError](../exceptions.html#pykx.exceptions.QError "pykx.exceptions.QError")` | Cannot cast the provided `pykx.K` object to `ktype`.  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+`k.K` | The provided `pykx.K` instance.  
+  
+###  from_range  `method descriptor`
+
+    
+    
+    from_range(x, ktype=None, *, cast=False, handle_nulls=False)
+
+Converts a `range` into an instance of a subclass of
+`pykx.IntegralNumericVector`.
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`x` |  `[range](https://docs.python.org/3/library/stdtypes.html#range)` | The `range` that will be converted into a `pykx.IntegralNumericVector`. |  _required_  
+`ktype` |  `[Optional](https://docs.python.org/3/library/typing.html#typing.Optional "typing.Optional")[KType]` | Desired `pykx.K` subclass (or type number) for the returned value. If `None`, the type is inferred from `x`. The following values are supported: |  `ktype` |  Returned value  
+---|---  
+`None` |  Same as for `ktype=pykx.LongVector`.  
+`pykx.LongVector` |  The `slice` as a q vector of signed 64 bit integers.  
+`pykx.IntVector` |  The `slice` as a q vector of signed 32 bit integers.  
+`pykx.ShortVector` |  The `slice` as a q vector of signed 16 bit integers.  
+`pykx.ByteVector` |  The `slice` as a q vector of unsigned 8 bit integers.  
+`pykx.BooleanVector` |  The `slice` as a q vector of unsigned 1 bit integers.  
+`None`  
+`cast` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Unused. |  `False`  
+`handle_nulls` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Unused. |  `False`  
+  
+**Raises:**
+
+Type | Description  
+---|---  
+`[TypeError](https://docs.python.org/3/library/exceptions.html#TypeError)` | Unsupported `ktype` for `range`.  
+`[OverflowError](https://docs.python.org/3/library/exceptions.html#OverflowError)` | The minimum or maximum value in the range is out of bounds for the selected `ktype`.  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+`k.IntegralNumericVector` | An instance of a subclass of `pykx.IntegralNumericVector`.  
+  
+###  from_slice  `method descriptor`
+
+    
+    
+    from_slice(x, ktype=None, *, cast=False, handle_nulls=False)
+
+Converts a `slice` into an instance of a subclass of
+`pykx.IntegralNumericVector`.
+
+Slice objects are used by Python for indexing. In q, indexing is done by
+applying a numeric atom or vector to the object being indexed. As such,
+`from_slice` works by converting the given `slice` into a
+`pykx.IntegralNumericVector`, which can then be applied to an indexable q
+object.
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`x` |  `[slice](https://docs.python.org/3/library/functions.html#slice)` | The `slice` that will be converted into a `pykx.IntegralNumericVector`. |  _required_  
+`ktype` |  `[Optional](https://docs.python.org/3/library/typing.html#typing.Optional "typing.Optional")[KType]` | Desired `pykx.K` subclass (or type number) for the returned value. If `None`, the type is inferred from `x`. The following values are supported: |  `ktype` |  Returned value  
+---|---  
+`None` |  Same as for `ktype=pykx.LongVector`.  
+`pykx.LongVector` |  The `slice` as a q vector of signed 64 bit integers.  
+`pykx.IntVector` |  The `slice` as a q vector of signed 32 bit integers.  
+`pykx.ShortVector` |  The `slice` as a q vector of signed 16 bit integers.  
+`pykx.ByteVector` |  The `slice` as a q vector of unsigned 8 bit integers.  
+`pykx.BooleanVector` |  The `slice` as a q vector of unsigned 1 bit integers.  
+`None`  
+`cast` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Unused. |  `False`  
+`handle_nulls` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Unused. |  `False`  
+  
+**Raises:**
+
+Type | Description  
+---|---  
+`[TypeError](https://docs.python.org/3/library/exceptions.html#TypeError)` | Unsupported `ktype` for `slice`.  
+`[OverflowError](https://docs.python.org/3/library/exceptions.html#OverflowError)` | The minimum or maximum value in the slice is out of bounds for the selected `ktype`.  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+`k.IntegralNumericVector` | An instance of a subclass of `pykx.IntegralNumericVector`.  
+  
+###  from_str  `method descriptor`
+
+    
+    
+    from_str(x, ktype=None, *, cast=False, handle_nulls=False)
+
+Converts a `str` into an instance of a string-like subclass of `pykx.K`.
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`x` |  `[str](https://docs.python.org/3/library/stdtypes.html#str)` | The `str` that will be converted into a `pykx.K` object. |  _required_  
+`ktype` |  `[Optional](https://docs.python.org/3/library/typing.html#typing.Optional "typing.Optional")[KType]` | Desired `pykx.K` subclass (or type number) for the returned value. If `None`, the type is inferred from `x`. The following values are supported: | `ktype` | Returned value  
+---|---  
+`None` | Same as for `ktype=pykx.SymbolAtom`.  
+`pykx.SymbolAtom` | The `str` as a q symbol.  
+`pykx.SymbolicFunction` | The `str` as a q symbol that can be called as a function.  
+`pykx.CharVector` | The `str` as a q character vector.  
+`pykx.CharAtom` | The `str` as a q character atom.  
+`None`  
+`cast` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Unused. |  `False`  
+`handle_nulls` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Unused. |  `False`  
+  
+**Raises:**
+
+Type | Description  
+---|---  
+`[TypeError](https://docs.python.org/3/library/exceptions.html#TypeError)` | Unsupported `ktype` for a `str`.  
+`[ValueError](https://docs.python.org/3/library/exceptions.html#ValueError)` | `ktype=pykx.CharAtom`, but `x` is not 1 character long.  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+`[Union](https://docs.python.org/3/library/typing.html#typing.Union "typing.Union")[k.CharAtom, k.CharVector, k.SymbolAtom]` | An instance of a `pykx.SymbolAtom`, `pykx.CharVector`, or `pykx.CharAtom`.  
+  
+###  from_tuple  `method descriptor`
+
+    
+    
+    from_tuple(x, ktype=None, *, cast=False, handle_nulls=False)
+
+See Also
+
+`from_list`
+
+Converts a `tuple` into an instance of a subclass of `pykx.Vector`.
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`x` |  `[tuple](https://docs.python.org/3/library/stdtypes.html#tuple)` | The `tuple` that will be converted into a `pykx.Vector`. |  _required_  
+`ktype` |  `[Optional](https://docs.python.org/3/library/typing.html#typing.Optional "typing.Optional")[KType]` | Desired `pykx.K` subclass (or type number) for the returned value. If `None`, the type is inferred from `x`. The following values are supported: |  `ktype` |  Returned value  
+---|---  
+`None` |  Same as for `ktype=pykx.List`.  
+`pykx.List` |  The `tuple` as a q list. Each element of the Python list will be converted independently into a `pykx.K` object, and added to the q list.  
+`pykx.BooleanVector` |  The `tuple` as a `pykx.BooleanVector`. This is equivalent to converting a Numpy array `array(x, dtype=bool)` to q.  
+`pykx.ByteVector` |  The `tuple` as a `pykx.ByteVector`. This is equivalent to converting a Numpy array `array(x, dtype=np.uint8)` to q.  
+`pykx.ShortVector` |  The `tuple` as a `pykx.ShortVector`. This is equivalent to converting a Numpy array `array(x, dtype=np.int16)` to q.  
+`pykx.IntVector` |  The `tuple` as a `pykx.IntVector`. This is equivalent to converting a Numpy array `array(x, dtype=np.int32)` to q.  
+`pykx.LongVector` |  The `tuple` as a `pykx.LongVector`. This is equivalent to converting a Numpy array `array(x, dtype=np.int64)` to q.  
+`pykx.RealVector` |  The `tuple` as a `pykx.RealVector`. This is equivalent to converting a Numpy array `array(x, dtype=np.float32)` to q.  
+`pykx.FloatVector` |  The `tuple` as a `pykx.FloatVector`. This is equivalent to converting a Numpy array `array(x, dtype=np.float64)` to q.  
+`None`  
+`cast` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Unused. |  `False`  
+`handle_nulls` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Unused. |  `False`  
+  
+**Raises:**
+
+Type | Description  
+---|---  
+`[TypeError](https://docs.python.org/3/library/exceptions.html#TypeError)` | Unsupported `ktype` for `tuple`.  
+`[ValueError](https://docs.python.org/3/library/exceptions.html#ValueError)` | Could not convert some elements of `x` in accordance with the `ktype`.  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+`k.Vector` | An instance of a subclass of `pykx.Vector`.  
+  
+###  from_uuid_UUID  `method descriptor`
+
+    
+    
+    from_uuid_UUID(x, ktype=None, *, cast=False, handle_nulls=False)
+
+Converts a `uuid.UUID` into a `pykx.GUIDAtom`.
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`x` |  `UUID` | The `uuid.UUID` that will be converted into a `pykx.GUIDAtom`. |  _required_  
+`ktype` |  `[Optional](https://docs.python.org/3/library/typing.html#typing.Optional "typing.Optional")[KType]` | Desired `pykx.K` subclass (or type number) for the returned value. If `None`, the type is inferred from `x`. The following values are supported: | `ktype` | Returned value  
+---|---  
+`None` | Same as for `ktype=pykx.GUIDAtom`.  
+`pykx.GUIDAtom` | The `uuid.UUID` as a q GUID atom.  
+`None`  
+`cast` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Unused. |  `False`  
+`handle_nulls` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Unused. |  `False`  
+  
+**Raises:**
+
+Type | Description  
+---|---  
+`[TypeError](https://docs.python.org/3/library/exceptions.html#TypeError)` | Unsupported `ktype` for `uuid.UUID`.  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+`k.GUIDAtom` | An instance of `pykx.GUIDAtom`.
+

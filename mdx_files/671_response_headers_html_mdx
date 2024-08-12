@@ -1,0 +1,33 @@
+https://code.kx.com/insights/core/kurl/appendix/response_headers.html
+
+# Response headers | Examples | REST client | kdb Insights Core - kdb products
+
+Original URL: https://code.kx.com/insights/core/kurl/appendix/response_headers.html
+
+Startup a q server on localhost 8081, and message it and display the response
+headers on the client.
+
+    
+    
+    port:"8081"
+    server:hsym `$":localhost:",port
+    system "q -p ",port
+    loginfo:{show enlist (.z.p; x);}
+    
+    // Sleep to wait for port to come up
+    loginfo "Waiting for port to come online"
+    system "sleep 1"
+    
+    // Setup remote server that stays up for ~10 seconds
+    server (set;`.z.pp; {.h.hy[`json] .j.j `a`b`c!1 2 3})
+    server (set;`.z.ts; {[start;x] if[x > start + 00:00:10; exit 0]; }[.z.p;])
+    server (system;"t 1000")
+    
+    // Query server using advanced option for including response headers
+    request_headers:enlist["Content-Type"]!enlist "application/json"
+    body:.j.j `hello`world!1 2
+    opts: `response_headers`headers`body!(1b;request_headers;body)
+    resp:.kurl.sync ("http://localhost:8081";`POST;opts)
+    show "\r\n" vs last resp
+    
+

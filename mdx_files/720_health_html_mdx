@@ -1,0 +1,147 @@
+https://code.kx.com/insights/enterprise/walkthrough/health.html
+
+# kdb Insights Enterprise guided walkthrough - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/walkthrough/health.html
+
+# Get Data - SQL Database
+
+_The purpose of this walkthrough is to demonstrate how to ingest SQL data into
+kdb Insights Enterprise._
+
+A health dataset, hosted on a PostresSQL database, has been provided for use
+in this walkthrough, which has records of air quality, traffic congestion, car
+and bike accidents for a day in New York. Once ingested, it is ready to be
+queried and visualized.
+
+No kdb+ knowledge required
+
+No prior experience with q/kdb+ is required to build this
+[pipeline](../glossary.html#pipeline).
+
+Before you import data you must ensure the **insights-demo** database is
+created, as described [here](database.html).
+
+## Import Data
+
+The import process creates a **Pipeline** which is a collection of nodes:
+
+  * **Readers** \- read data from its source 
+  * **Decoders** \- define the type of data imported
+  * **Schema** \- converts the data to a type compatible with a kdb+ database
+  * **Writers** \- write the data to a kdb Insights Enterprise database
+
+Open the import wizard by selecting **2\. Import** from the **Overview** page.
+You are prompted to select a reader node from the **Import you Data** screen.
+
+### Select a Reader
+
+A reader stores details of data to import.
+
+  1. Select **PostgreSQL** from the **Relational** readers, shown below.
+
+![Select PostgreSQL from relational readers.](img/postgressqlimport.jpg)
+
+  2. Enter the following values for the PostgresSQL database in the **Configure PostgreSQL** screen.
+
+setting | value  
+---|---  
+Server | postgres.trykdb.kx.com  
+Port | 5432  
+Database | demo  
+Username | demo  
+Query | select * from health  
+  3. Click **Next** to open the **Configure Schema** screen.
+
+### Add a Schema
+
+The schema is responsible for converting data to a type compatible with a kdb+
+database. Every data table imported requires a schema; and every data table
+must have a **timestamp** key to be compatible with kdb's time series columnar
+database. **insights-demo** has a predefined schema for the **health** data
+set.
+
+  1. Complete the Apply Schema properties as follows:
+
+setting | value  
+---|---  
+Apply a Schema | Checked  
+Data Format | Any  
+  2. Click the **Load Schema** icon ![](img/addschemaicon.jpg) and select the **insights-demo** schema from the Database dropdown and **weather** from the Table dropdown, as shown below.
+
+![Select the **health** table from the **insights-demo**
+database.](img/loadhealthschema.jpg)
+
+  3. Click **Load** and then **Next** to open the **Configure Writer** screen.
+
+### Configure the Writer
+
+The last step in creating this pipeline is to add a **Writer** which writes
+transformed data to the kdb Insights Enterprise database.
+
+  1. Specify the following settings:
+
+setting | value  
+---|---  
+Database | insights-demo  
+Table | health  
+Write Direct to HDB | No  
+Deduplicate Stream | Yes  
+Set Timeout Value | No  
+  2. Click **Open Pipeline** to review the pipeline in the [pipeline viewer](../ingest/pipeline/index.html#building-a-pipeline).
+
+The [pipeline](../glossary.html#pipeline) is a linked set of
+[nodes](../glossary.html#nodes) derived from each step of the import process
+that reads data from its source, transforms it to a kdb+ compatible format,
+and writes it to a kdb Insights Enterprise database.
+
+The completed PostgresSQL pipeline is shown below.
+
+![The completed PostgresSQL pipeline.](img/postgreshealth.jpg)
+
+## Save the Pipeline
+
+You now need to save and deploy your **Pipeline**.
+
+  1. Enter a **Name** in the top left of the workspace. The name must be unique to the pipeline; for example, **health-1**.
+
+![Save the pipeline as **health-1**.](img/savesqlpipeline.jpg)
+
+  2. Click **Save**.
+
+  3. The **health-1** pipeline is now available under **Pipelines** in the left-hand menu.
+
+## Deploy the Pipeline
+
+You must deploy the pipeline in order for it to read the data from its source,
+transform it to a kdb+ compatible format, and write it to the **insights-
+demo** database.
+
+  1. Click on **Save & Deploy** in the top panel, as shown below.
+
+![Save and deploy the pipeline](img/pipelinedeploy.jpg)
+
+  2. Deploying a PostgresSQL pipeline requires a password to access the database. Enter the following password in the **Enter password for PostgreSQL** screen.
+
+setting | value  
+---|---  
+password | demo  
+  3. Check the progress of the pipeline under the **Running Pipelines** panel on the **Overview** tab. The data is ready to query when **Status** is set to **Running**. Note that it may take several minutes for the pipeline to start running.
+
+![A running health pipeline available for querying.](img/runninghealth.jpg)
+
+Pipeline warnings
+
+Once the pipeline is running some warnings may be displayed in the **Running
+Pipelines** panel of the **Overview** tab, these are expected and can be
+ignored.
+
+## Next Steps
+
+Now that your **Pipeline** is up and running you can:
+
+### Further Reading
+
+Use the following links to learn more about specific topics mentioned in this
+page:
+

@@ -1,0 +1,346 @@
+https://code.kx.com/platform/api/schemas/
+
+# Schemas - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/api/schemas/
+
+# Schemas
+
+Set of APIs for dealing with schemas defined in _Control_.
+
+Schemas loaded from _Control_ will automatically register meta information in
+the `.schema` data structures;
+
+    
+    
+    .schema.cols[`dxAlert]
+    /=> `time`sym`alertkey`triggered`source`tag1`tag2`description`data
+    
+    .schema.tab[`dxAlert]
+    /=> time sym alertkey triggered source tag1 tag2 description data
+    -------------------------------------------------------------
+    
+
+## .tbl.gettable
+
+Loads a schema into memory. Retrieves the schemas at the version the process
+is operating at.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+t | symbol | Schema name  
+  
+**Example:**
+
+    
+    
+     .tbl.gettable[`dfxTrade]
+    
+
+## .tbl.loadtables
+
+Loads a list of schemas. Retrieves the schemas at the version the process is
+operating at.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+m | symbol[] | Schema list  
+  
+**Example:**
+
+    
+    
+     .tbl.loadtables[`dfxTrade`dfxQuote]
+    
+
+## `.tbl.addtablewithgroups`
+
+Creates a schema table and specifies which groups it belongs to
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+tn | symbol | Schema table name  
+kc | symbol list | Keyed columns  
+des | character | Description  
+coldata | mixed list | Data for columns in schema  
+groups | symbol list | Groups schema table belongs to  
+  
+**Example:**
+
+    
+    
+     .tbl.addtablewithgroups[`schema1;enlist `column0;"new schema";((`column0;`column1);(`Symbol;`Boolean);("column0";"false");(`true;`false);("None";"None")// ); enlist `new_schema_group]
+    
+
+## `.tbl.compareTableWithSchema`
+
+Compare in-memory table to _Control_ version
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+tabName | symbol | Name of table to compare  
+configProfile | symbol | Config profile. Use a null symbol or `.ex.configprofile.|`  
+schemaName | symbol | Schema name  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+table | Table of meta info joined from both tables. See example for full format  
+  
+**Example:**
+
+    
+    
+     .tbl.compareTableWithSchema[`dfxTrade; `; `dfxTrade]
+     /=> column  idx dataType  dataTypeChar attribute columnNew idxNew dataTypeNew dataTypeCharNew attributeNew defaultNew
+     /=> -----------------------------------------------------------------------------------------------------------------
+     /=> time    0   Timestamp p                      time      0      Timestamp   p                            0Np
+     /=> sym     1   Symbol    s            g         sym       1      Symbol      s               g            `
+     /=> price   2   Float     f                      price     2      Float       f                            0n
+     /=> size    3   Integer   i                      size      3      Integer     i                            0Ni
+     /=> seqNum  4   Long      j                      seqNum    4      Long        j                            0N
+     /=> src     5   Symbol    s                      src       5      Symbol      s                            `
+     /=> srcTime 6   Timestamp p                      srcTime   6      Timestamp   p                            0Np
+     /=> cond    7   Symbol    s                      cond      7      Symbol      s                            `
+     /=> status  8   Symbol    s                      status    8      Symbol      s                            `
+     /=> side    9   Character c                      side      9      Character   c                            " "
+     /=> msgrcv  10  Timestamp p                      msgrcv    10     Timestamp   p                            0Np
+    
+
+## `.tbl.deletetable`
+
+Deletes a schema table
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+tn | symbol | Schema table name  
+  
+**Example:**
+
+    
+    
+     .tbl.deletetable[`schema1]
+    
+
+## `.tbl.getActiveProfileTablesVer`
+
+Gets all the schema that exist in the active profile at the specified version
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+verNo | long | Version number  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol[] | All existing schema at specified version  
+  
+**Example:**
+
+    
+    
+     .tbl.getActiveProfileTablesVer[1000]
+     /=> `dxQrTimings`.yday.dmxFiles...
+    
+
+## `.tbl.getLoadedSchemas`
+
+Returns the list of loaded schemas
+
+**Returns:**
+
+Type | Description  
+---|---  
+symbol[] | Schema list  
+  
+**Example:**
+
+    
+    
+     .tbl.getLoadedSchemas[]
+     /=> `dfxAsk`dfxBbo`dfxBid`dfxBookSnapshot`dfxOrder`dfxQuote`dfxQuote_midprice`dfxTrade..
+    
+
+## `.tbl.getinfoVer`
+
+Gets schema meta information at the version specified. If null is input as the
+tbls parameter, information on all schema existing at the specified version is
+returned.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+tbls | symbol[] | Schema names  
+ver | long | Version number  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+table | Schema meta information  
+  
+**Example:**
+
+    
+    
+     .tbl.getinfoVer[`schema1; 1500]
+     /=> table    keycols colnames     coltype                 colattr tablegroup
+     /=> ------------------------------------------------------------------------
+     /=> schema1          time sym src Timestamp Symbol Symbol  g      dtxFX
+    
+
+## `.tbl.getinfo`
+
+Gets schema meta information at the version the process is operating at. If an
+empty list or null is input, information on all schema is returned.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+tbls | symbol[] | Schema names  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+table | Schema meta information  
+  
+**Example:**
+
+    
+    
+     .tbl.getinfo[`schema1]
+     /=> table    keycols colnames     coltype                 colattr tablegroup
+     /=> ------------------------------------------------------------------------
+     /=> schema1          time sym src Timestamp Symbol Symbol  g      dtxFX
+    
+
+## `.tbl.gettabledetails`
+
+Gets schema meta information. Executed on Control as `deltacomponent`. If
+`deltacomponent` is configured to be a non-Administrator user then the results
+will be subject to a permission check.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+n | symbol | Schema name  
+  
+**Example:**
+
+    
+    
+     .tbl.gettabledetails[`dfxTrade]
+     /=> ucname      | `delta_install_default
+     /=> table       | `dfxTrade
+     /=> keycols     | `symbol$()
+     /=> description | "Schema for the dfxTrade table"
+     /=> colnames    | `time`sym`price`size`seqNum`src`srcTime`cond`status`side`msgrcv
+     /=> coltype     | `Timestamp`Symbol`Float`Integer`Long`Symbol`Timestamp`Symbol`Symbol`Character`Timestamp
+     /=> default     | ("";"";"";"";"";"";"";"";"";"";"")
+     /=> colattr     | ``g`````````
+     /=> coldesc     | ("";"";"";"";"";"";"";"";"";"";"")
+     /=> schemagroups| ,`dtxFX
+    
+
+## `.tbl.gettablesbygroup`
+
+Returns the list of schemas for a group
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+r | symbol | Schema group  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol[] | Schema list  
+  
+**Example:**
+
+    
+    
+     .tbl.gettablesbygroup[`DM_Monitoring]
+     /=> `.yday.dmxJobScheduling`.yday.dmxJobSummary`dmxFileChange`dmxFiles`dmxJobScheduling`dmxJobSummary`dmxPing..
+    
+
+## `.tbl.loadgrouptables`
+
+Loads all schemas for a group. Retrieves the schemas at the version the
+process is operating at.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+s | symbol | Schema group  
+  
+**Example:**
+
+    
+    
+     .tbl.loadgrouptables[`dtxFX]
+    
+
+## `.tbl.regTab`
+
+Registers meta information for a table. Populates the table schema and columns
+in `.schema.tab` and `.schema.cols` structures respectively. Structures can be
+accessed directly.
+
+Handled automatically for schemas loaded from _Control_.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+name | symbol | Table name  
+  
+**Example:**
+
+    
+    
+     .tbl.regTab[`dxQuote]
+    
+
+## `.tbl.updatetablewithgroups`
+
+Updates a schema table and specifies which groups it belongs to
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+tn | symbol | Schema table name  
+kc | symbol list | Keyed columns  
+des | character | Description  
+coldata | mixed list | Data for columns in schema  
+groups | symbol list | Groups schema table belongs to  
+  
+**Example:**
+
+    
+    
+     .tbl.updatetablewithgroups[`schema1;enlist `column0;"updated schema";((`column0;`column1);(`Symbol;`Boolean);("column0";"false")(`true;`false);("None";"// None")); enlist `new_schema_group]
+    
+

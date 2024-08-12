@@ -1,0 +1,255 @@
+https://code.kx.com/insights/enterprise/database/configuration/assembly/stream.html
+
+# Stream - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/database/configuration/assembly/stream.html
+
+# Stream configuration
+
+Streams move and sequence data and messages between components within kdb
+Insights. kdb Insights includes [Reliable Transport
+(RT)](../../../../microservices/rt/index.html) as the primary stream bus.
+Custom streams can also be used, but they must comply with the RT interface.
+
+## Configuration
+
+In kdb Insights Enterprise, all streams use Reliable Transport to move data.
+In this mode, streams are configured under the `spec.elements.sequencer` key
+of the assembly.
+
+User interface configuration
+
+This guide discusses configuration using YAML files. If you are using kdb
+Insights Enterprise, you can configure your system using the [kdb Insights
+user interface](../ui/stream.html)
+
+### Sequencer
+
+The `sequencer` field under `elements` allows you to optionally define
+multiple RT stream instances within the Assembly.
+
+The operator will have defaults set for `sequencer` at install time, these
+cover target ports and image details.
+
+Under the key `sequencer` each RT stream instance can be defined under its own
+key, representing the instance name.
+
+    
+    
+    spec:
+    ...
+      elements:
+    ...
+       sequencer:
+          north:
+            size: 3
+            external: true
+            externalNodePort: true
+            useInternalLBAnnotations: false
+            topicConfig:
+              subTopic: "data"
+    
+
+key | type | required | description | default | validation  
+---|---|---|---|---|---  
+`size` | `integer` | `false` | Size of the StatefulSet to be deployed. Note, the size must be consistent for all streams in an assembly. | `3` | Limited to `1` or `3`  
+`external` | `boolean` | `true` | External facing Sequencer, setting true enables External IP. | `"false"` |   
+`externalNodePort` | `boolean` | `true` | Use node port type for externally facing Sequencer service. | `"false"` |   
+`useInternalLBAnnotations` | `boolean` | `false` | When enabled will set Service annotations to create an [Internal LoadBalancer](https://kubernetes.io/docs/concepts/services-networking/service/#internal-load-balancer) the external service. | `"true"` |   
+`image` | `object` | `false` | Image details for container.  |  |   
+`env` | `list` | `false` | List of [environment variables](../../../../microservices/rt/quickstart/docker-compose.html#environment-variables). |  |   
+`args` | `string[]` | `false` | Command line arguments to be passed to container. |  |   
+`topicConfig` | `object` | `false` | Sequencer Topic Configurations See [Sequencer Topics Config](stream.html#topic-config). |  |   
+`volume` | `object` | `false` | RT Sequencer directory paths. See [RT Volume](stream.html#sequencer-volume). |  |   
+`topicConfigDir` | `string` | `false` | Location of RT 'pull' directory. | `"/config/topics/"` | `^[\/]+[a-zA-Z0-9\/-_]*$`  
+`volumeMounts` | `list` | `false` | List of standard Kubernetes Volume Mount definitions. Volume must be present in `spec.volumes`. |  |   
+`k8sPolicy` | `object` | `false` | Kubernetes Pod configurations. See [Kubernetes policy](reference.html#k8spolicy) for more details. |  |   
+`archiver` | `object` | `false` | [Sequencer Archiver](stream.html#archiver). |  |   
+  
+#### Topic config
+
+RT Streams can be internal or external to a Kubernetes cluster. Setting
+`external` to `true` and adding the`topicConfig` object allows an external
+publisher to publish to a RT stream which is running inside the cluster. The
+presence of the `topicConfig` object in the assembly file will result in the
+operator provisioning a set of Load Balancers. The Load Balancers serve as a
+point of ingress to the cluster.
+
+    
+    
+    spec:
+    ...
+      elements:
+    ...
+        sequencer:
+          south:
+            external: false
+          north:
+            external: true
+            topicConfig:
+              subTopic: "ext-north"
+    
+
+key | type | required | description | default | validation  
+---|---|---|---|---|---  
+`subTopic` | `string` | `false` | An external ID for a RT stream. A publisher external to the cluster can use this when requesting RT endpoints from the information service. If `topicConfig` is include `subTopic` is required. |  | `^[a-z0-9]+[a-z0-9-]*[a-z0-9]+$`  
+  
+subTopic example
+
+An example of a publisher requesting the RT endpoints from the information
+service can be found [here](../../../security/authentication.html#realms).
+
+#### Sequencer volume
+
+The `volume` object allows you to configure the Sequencers RT log volume. This
+is the volume container the sequencer logs for state, subscribing and
+publishing topics.
+
+    
+    
+    spec:
+    ...
+      elements:
+    ...
+        sequencer:
+          south:
+            volume:
+              mountPath: "/s/"
+              subPaths:
+                in: "in"
+                out: "out"
+                cp: "state"
+              size: "20Gi"
+    
+
+key | type | required | description | default | validation  
+---|---|---|---|---|---  
+`mountPath` | `string` | `false` | Mount location of volume. | `"/s/"` | `^[\/]+[a-zA-Z0-9\/-_]*$`  
+`accessModes` | `string[]` | `false` | Requested Kubernetes [access modes](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes) for PVC. |  |   
+`storageClass` | `string` | `false` | Kubernetes Storage Class. |  |   
+`size` | `string` | `false` | Kubernetes Storage size request. | `"20Gi"` |   
+`subPaths` | `object` | `false` | Sub directories under Mount location. |  |   
+`subPaths.in` | `string` | `false` | Location of RT 'in' sub directory. | `"in"` | `^[a-zA-Z0-9-_]+$`  
+`subPaths.out` | `string` | `false` | Location of RT 'out' sub directory. | `"out"` | `^[a-zA-Z0-9-_]+$`  
+`subPaths.cp` | `string` | `false` | Location of RT 'cp' sub directory. | `"state"` | `^[a-zA-Z0-9-_]+$`  
+  
+#### Archiver
+
+Each Sequencer has the option to enable an Archiver deployment. This Archiver
+deployment is used for truncating the Sequencers log file, based on log size
+or age. There is also an option to configure the Sequencer to archive log
+files to object storage.
+
+The log files cannot be kept on the Sequencer node indefinitely as the nodes
+disk space will be finite. While there are configuration options that allow
+users to control the rate at which data is truncated, the log files will
+eventually be truncated. When the log file truncation happens, the data in the
+log file is no longer available, and cannot be recovered. The motivation for
+the archival to object storage is to provide a backup of your data before the
+log file is truncated.
+
+##### Log file truncation
+
+    
+    
+    spec:
+    ...
+      elements:
+    ...
+        sequencer:
+          south:
+            archiver:
+              retentionDuration: 10080
+              maxDiskUsagePercent: 90
+              maxLogSize: 5
+    
+
+key | type | required | description | default | validation  
+---|---|---|---|---|---  
+`retentionDuration` | `integer` | `false` | Log retention in minutes | `10080` |   
+`maxLogSize` | `string` | `false` | Maximum log size | `50G` | `^([+-]?[0-9.]+)([eEinukmgtpKMGTP]*[-+]?[0-9]*)$`  
+`maxDiskUsagePercent` | `integer` | `false` | Max disk utilization | `90%` |   
+  
+##### Log file archival to S3
+
+An example set of configuration which includes the archiver to S3 object
+storage.
+
+    
+    
+    spec:
+    ...
+      elements
+    spec:
+      # ...
+      elements:
+      # ...
+        sequencer:
+          south:
+            annotations:
+              serviceAccount:
+                eks.amazonaws.com/role-arn: arn:aws:iam::03.....32:role/aws-kxi-rnd-irsa
+            k8sPolicy:
+              serviceAccount: "my-aws-sa"  # Name of service account for AWS authentication
+              serviceAccountConfigure:
+                create: true
+            env:
+              - name: RT_AWS_BACKUP_ENABLED
+                value: "1"
+              - name: RT_AWS_BACKUP_REGION
+                value: "us-east-2"
+              - name: RT_AWS_BACKUP_BUCKET
+                value: "kxi-rnd"
+              - name: RT_AWS_BACKUP_KEYPREFIX
+                value: "prefix/"
+              - name: RT_AWS_BACKUP_LOGLEVEL
+                value: "INFO"
+              - name: RT_AWS_BACKUP_NUM_THREADS
+                value: "4"
+              - name: RT_AWS_BACKUP_PARALLEL_FILES
+                value: "2"
+    
+
+To configure archival to object storage a set of environment variables must be
+set. You must also create a specific AWS role for your cluster, referenced
+here as `aws-kxi-rnd-irsa`. The setup above adds an AWS service account to the
+`kxi-rt` container, this holds the credentials used to access S3
+
+Naming convention
+
+When log files are backed up to S3 the object key follows this naming
+convention:
+
+    
+    
+    s3://$RT_AWS_BACKUP_BUCKET/$RT_AWS_BACKUP_KEYPREFIX/<RT_STEAMNAME>/<FILENAME>
+    
+
+This means that the
+
+`RT_AWS_BACKUP_KEYPREFIX`
+
+should be edited between a
+
+[`kxi-rt` session](../../../../microservices/rt/index.html#definitions)
+
+to avoid conflation of Sequencer logs in object storage.
+
+AWS threads
+
+The facility to archive to object store is built upon the AWS C++ SDK. The
+reference to threads in the environment variable `RT_AWS_BACKUP_NUM_THREADS`,
+refers to the number of background threads created by the SDK to copy the data
+to S3. We have chosen a default of 4 threads, however the rate of messages
+sent to RT may need this value to be increased.
+
+environment variable | default | description  
+---|---|---  
+`RT_AWS_BACKUP_ENABLED` | `0` | The backup is disabled by default, and can be enabled by setting the value to `1`  
+`RT_AWS_BACKUP_BUCKET` | No default | The S3 bucket that the log files should be written to. Required field if AWS backup is enabled.  
+`RT_AWS_BACKUP_REGION` | No default | The AWS region where the bucket is hosted. Required field if AWS backup is enabled.  
+`RT_AWS_BACKUP_KEYPREFIX` | No default | The object key prefix in the bucket under which to backup the log files. This must end in a `/`, such that all the log files are placed under a directory in the S3 bucket. The RT stream name is automatically appended to this prefix. Required field if AWS backup is enabled.  
+`RT_AWS_BACKUP_LOGLEVEL` | `INFO` | S3 backup logging level, one of `NONE`, `FATAL`, `ERROR`, `WARN`, `INFO`, `DEBUG` or `TRACE`.  
+`RT_AWS_BACKUP_NUM_THREADS` | `4` | The number of threads that the AWS backup service should use.  
+`RT_AWS_BACKUP_PARALLEL_FILES` | `2` | The number of log files that can be backed up in parallel.
+

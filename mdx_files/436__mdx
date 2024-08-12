@@ -1,0 +1,79 @@
+https://code.kx.com/dashboards/highlightrules/
+
+# Highlight Rules - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/highlightrules/
+
+# Highlight rules
+
+![Screenshot](../img/highlightrules/samplehighlightrules.jpg)  
+_Highlight rules in operation in a Data Grid_
+
+Highlight rules are a common property utilizing color and/or icon markers to
+notify users of value changes and are best used with real-time streaming or
+polling data.
+
+[Canvas Chart](../canvascharts/), [Data Grid](../datagrid/), [Pie
+Chart](../piechart/)
+
+## Build a rule
+
+![Screenshot](../img/highlightrules/highlightrulebasic.jpg)
+
+_Name_
+
+    Assign a name for your rule
+_Target_
+
+    The _Data Source_ column updated when the rule is true
+_Condition Source_
+
+    The _Data Source_ column monitored by the _Condition Operator_ against the _Condition Value_
+_Condition Operator_
+
+    
+
+may be a numeric comparison, but can also test for strings in text values
+
+operator | explanation  
+---|---  
+search | find _Condition Value_ match; assign [View State Parameter](../viewstateparameters/) and pair with [Text Input](../textinput/).  
+contains | find all instances with the _Condition Value_  
+starts with | find all instances starting with the _Condition Value_  
+ends with | find all instance ending with the _Condition Value_  
+== | exact match, e.g. client name  
+< | less than _Condition Value_  
+> | greater than _Condition Value_  
+<= | less than or equal to _Condition Value_  
+>= | greater than or equal to _Condition Value_  
+!= | excludes _Condition Value_  
+_Condition Value_
+
+    Typically `previous value`. Can also be mapped to a [View State Parameter](../viewstateparameters/). _Condition Value_ can either be a numeric or text value; e.g. if searching for a client name from a list of clients in a [Data Grid](../datagrid/) column.
+_Color_
+
+    Text color changed by rule when true
+_Background Color_
+
+    _Data Grid_ cell background or _Canvas Chart_ bar or point changed by rule when true
+_Border Color_
+
+    _Data Grid_ cell border or _Canvas Chart_ bar or point border changed by rule when true
+_Icon_
+
+_Icon Color_
+
+    For _Data Grid_ , icon appears when rule is true. 
+
+[Data Grid](../datagrid/)
+
+## Gradient
+
+![Screenshot](../img/highlightrules/canvasgradient.jpg) _Gradient highlight
+rule applied to bubble and bar canvas chart_
+
+Set a gradient color using _Color Palette_ with a range defined by _Rule Min_
+and _Rule Max_
+
+[Canvas Chart](../canvascharts/)
+

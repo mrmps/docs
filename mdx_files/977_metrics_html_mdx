@@ -1,0 +1,67 @@
+https://code.kx.com/insights/enterprise/monitoring/metrics.html
+
+# Overview - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/monitoring/metrics.html
+
+# Monitoring overview
+
+_kdb Insights Enterprise_ produces [metrics](metrics-reference.html) and
+includes pre-packaged [alerts](alerts-reference.html) in order for you to
+monitor the state of the application.
+
+_kdb Insights Enterprise_ also provides pre-packaged Grafana
+[dashboards](dashboards-reference.html) that provide visualizations to assist
+with monitoring _kdb Insights Enterprise_.
+
+They are all designed to work with the _Prometheus_ stack but do not ship with
+it. You must deploy the _Prometheus_ stack and enable the application to
+integrate with it.
+
+This page describes how to install Prometheus. To enable metrics, alerts and
+dashboards at installation time, use the details provided
+[here](../configuration/observability.html#configure-logging).
+
+[Prometheus](https://prometheus.io/)
+
+## Prometheus
+
+The most common method of deploying _Prometheus_ is the [Prometheus
+operator](https://github.com/prometheus-operator/prometheus-operator).
+
+This can be deployed alongside Grafana for visualizations, and Kubernetes node
+metrics exporters to gather cluster-wide metrics. One example of this is the
+[kube-prometheus-stack](https://github.com/prometheus-community/helm-
+charts/tree/main/charts/kube-prometheus-stack) _Helm_ chart. This is what we
+will install.
+
+### Deploying Prometheus
+
+The _kube-prometheus-stack_ is usually deployed within its own namespace using
+_Helm_. Full installation details are provided
+[here](https://github.com/prometheus-community/helm-
+charts/blob/main/charts/kube-prometheus-stack/README.md).
+
+  1. Create a namespace
+    
+        kubectl create ns monitoring
+    
+
+  2. Install using _Helm_
+    
+        export RELEASE_NAME=kx-prom
+    helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+    helm repo update
+    helm install $RELEASE_NAME prometheus-community/kube-prometheus-stack -n monitoring
+    
+
+Monitoring release name
+
+Take note of your chosen `$RELEASE_NAME` as this is required when configuring
+_kdb Insights Enterprise_. In the example above, this is `kx-prom`.
+
+To enable metrics at installation time, use the details
+[here](../configuration/observability.html#configure-metrics)
+
+## Additional Links
+

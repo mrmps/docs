@@ -1,0 +1,157 @@
+https://code.kx.com/insights/enterprise/security/authentication.html
+
+# Authentication - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/security/authentication.html
+
+# Authentication and authorization
+
+[Keycloak](https://www.keycloak.org/) is an open-source identity and access
+management platform.
+
+_kdb Insights Enterprise_ uses Keycloak to provide features such as:
+
+  * User authentication and authorization
+  * Service account authentication and authorization
+  * Role management
+  * Single sign on (SSO) and identity brokering
+
+## Administration console
+
+Keycloak is configured through the administration console.
+
+You can access the Keycloak administration console at
+`https://{INSIGHTS_HOSTNAME}/auth` with the Keycloak administrator username
+and password.
+
+The administrator username is defined in the Keycloak environment variables
+ConfigMap.
+
+    
+    
+    kubectl get configmap -l app.kubernetes.io/name=keycloak
+    
+
+The administrator password is defined in the `kxi-keycloak` secret.
+
+    
+    
+    kubectl get secret kxi-keycloak
+    
+
+## Administration passwords
+
+There are four passwords that are used to administer
+[Keycloak](https://www.keycloak.org/), set during
+[installation](../installation/insights.html)
+
+Password | Description  
+---|---  
+`admin-password` | This is the password for the Keycloak administrator  
+`management-password` | This is the password for the WildFly management user  
+`postgres-password` | This is the password for the database superuser  
+`password` | This is the password for the database user that Keycloak uses  
+  
+These are stored in two secrets called `kxi-keycloak` and `kxi-postgresql`.
+
+## Terminology
+
+Here are some core terms to help you understand how _kdb Insights Enterprise_
+uses Keycloak.
+
+term | details  
+---|---  
+authentication | Authentication is the act of verifying that a user is who they say they are.  
+authorization | Authorization determines what operations a user is allowed to perform.  
+clients | Clients are entities that can request Keycloak to authenticate a user or can authenticate themselves with Keycloak. _kdb Insights Enterprise_ is a client of Keycloak.  
+groups | Groups manage groups of users and service accounts. Click [here](managing-groups.html) to see how to manage groups.  
+identity provider* | An identity provider is a service that can authenticate a user. Keycloak is an identity provider.  
+identity brokering | Identity brokering is the process of using a different identity provider to authenticate users instead of Keycloak.  
+realm | A realm manages a set of users, roles and clients. Users and clients belong to a realm. When a user logs in, they log into a realm. Realms are isolated from each other, allowing Keycloak to manage distinct groups of users and clients.  
+roles | Roles define a type of user. _kdb Insights Enterprise_ assigns permissions to specific roles that can then be assigned to users.  
+service accounts | Service accounts are associated with clients and allow roles and permissions to be assigned to clients for authorization. Click [here](managing-service-accounts.html) to see how to manage service accounts.  
+users | Users are individuals that can log into _kdb Insights Enterprise_. Click [here](managing-users.html) to see how to manage users.  
+  
+More definitions of Keycloak terms can be found at:
+
+[Keycloak Core Concepts and
+Terms](https://www.keycloak.org/docs/latest/server_admin/index.html#core-
+concepts-and-terms)
+
+## Realms
+
+Keycloak is deployed as a dependency of _kdb Insights Enterprise_ by default
+and the realm name is `insights`.
+
+This realm contains all of the users, clients and roles.
+
+To save resources, if you are deploying _kdb Insights Enterprise_ multiple
+times in a cluster, you can use one shared Keycloak instance for all of the
+Insights deployments. In this case the realm name is`insights-<NAMESPACE>`,
+where `<NAMESPACE>` is the Kubernetes namespace where _kdb Insights
+Enterprise_ is deployed.
+
+Read the [shared Keycloak documentation](shared-keycloak.html) for more
+information.
+
+Set this variable to allow you to easily copy and paste any commands that
+reference it.
+
+    
+    
+    export REALM_NAME=insights
+    
+
+## Users and service accounts
+
+Details on how to manage the users and service accounts are listed below:
+
+## Roles
+
+_kdb Insights Enterprise_ comes with a selection of preconfigured high level
+roles, these are:
+
+name | role | details  
+---|---|---  
+Viewer | insights.role.viewer | This role allows a user to view existing reports, pipelines and queries but not deploy, update or delete them. This role can view logs but cannot modify the logging level of the platform. This role also cannot export any contents from the system other than diagnostics.  
+Reporter | insights.role.reporter | This role extends the viewer role with the ability to modify log levels and export configuration from the platform. This role can also perform custom queries on the kdb Insights database.  
+Developer | insights.role.developer | This role adds the ability to deploy and teardown resources. This role can also create new pipelines, databases and reports. This role can develop streaming applications but is unable to delete any persisted data within the system.  
+Maintainer | insights.role.maintainer | This role has no restrictions and can perform all actions.  
+  
+## Configuring the realm
+
+### Configuring email
+
+Keycloak sends emails to users to verify their email addresses and when they
+forget their passwords. To enable Keycloak to send emails, you nned to provide
+Keycloak with your SMTP server settings.
+
+In the administration console:
+
+  1. Click **Realm settings** in the menu.
+  2. Click the **Email** tab.
+  3. Enter the appropriate details.
+  4. Click **Save**.
+
+To configure email at installation time use the values detailed in the
+[Keycloak configuration section](../configuration/security.html#reset-
+password-service).
+
+## Configuring authentication
+
+### Password policies
+
+_kdb Insights Enterprise_ supports a wide range of password policies.
+
+Read the [configuration
+documentation](../configuration/security.html#password-policy) for information
+on the default password policy and how to adjust it at installation time.
+
+To change the password policy in the administration console:
+
+  1. Click **Authentication** in the menu.
+  2. Click the **Policies** tab.
+  3. Select the policy to add in the **Add policy** dropdown.
+  4. Enter a value that applies to the chosen policy.
+  5. Click **Save**.
+

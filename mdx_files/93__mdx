@@ -1,0 +1,105 @@
+https://code.kx.com/platform/qr_perf/
+
+# Performance - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/qr_perf/
+
+# Performance
+
+## Request dequeueing
+
+As discussed in previous sections, the _QR_ provides the `checkQueue`
+parameter to allow applications define how they would like to clear request
+queues. The default implementation provided uses a first-in, first-out (FIFO)
+approach. A table of queued requests is the input to this analytic. As the
+number of requests in the queue grows, the lookup of data for each can become
+a latency bottleneck. To improve this, a `useFIFO` parameter has been added to
+the _QR_ template. When enabled, the _QR_ still implements FIFO but in a more
+performant way and bypasses `checkQueue` hook.
+
+Customized `checkQueue` hook
+
+The new FIFO mode will not be enabled if the _QR_ has a custom analytic
+specified for the `checkQueue` hook. To enable FIFO, ensure the analytic is
+set to `dxQRCheckQueue` and set `useFIFO=true`.
+
+## Logging
+
+The _QR_ logging has been made configurable. By default it uses the _KX Delta
+Platform_ version but can be configured to use a slimmer mode. This mode
+shortens the message text and simply pushes to `STDOUT`.
+
+This is set using the `.qr.logmode` parameter:
+
+    
+    
+    platform   Platform logging APIs (default)
+    slim       new slim logging APIs
+    none       disable QR-specific logging
+    
+
+## 4.5.0 improvements
+
+For the 4.5.0 release, _QR_ performance was improved in comparison to previous
+releases. The focus of the improvements is within the _QR_ process itself,
+receiving and dispatching requests. This section details the improvements
+under three scenarios:
+
+  * Immediate – client sends requests for available database, immediately dispatched
+  * Queued – database unavailable, requests get queued
+  * Dequeued – queue of requests, requests dispatched when DB becomes available.
+
+These scenarios are compared between 4.5.0 and 4.4.0.
+
+4.5.0 release is running in FIFO mode.
+
+### By version
+
+**Base performance** improvement between the two versions is shown in the
+table below. During the investigations, performance was shown to be linked to
+the number of processed requests or the size of the request queue. Two sets of
+tests were run to examine performance under different conditions; _small_ and
+_large_ numbers of queued/processed requests.
+
+scenario | small | large  
+---|---|---  
+Immediate | 27% | 75%  
+Queued | 35% | 42%  
+Dequeued | 73% | 98%  
+  
+The results indicate that **performance degradation** was a significant issue
+in the 4.4.0 _QR_. Each of the test scenarios was also investigated on small
+and large numbers of processed and queued requests. In the _immediate_
+scenario, performance is linked to the number of requests. For the _queue_ and
+_dequeue_ cases, it is linked to the queue size. The table indicates the
+degradation for each version with the corresponding number of requests.
+
+scenario | requests | 4.4.0 | 4.5.0  
+---|---|---|---  
+Immediate | 100,000 | 64% | (negligible)  
+Queued | 10,000 | (negligible) | (negligible)  
+Dequeued | 10,000 | 94% | (negligible)  
+  
+In 4.5.0 FIFO mode, the _QR_ shows negligible performance degradation as the
+number of requests grows.
+
+### Request dequeuing
+
+Comparing the performance of FIFO mode against a simple custom dequeue
+analytic for the _Dequeued_ scenario. The test is the same as before with a
+small and large number of queued requests. Using a queue size of 10,000
+requests for the large case and less than 100 for the small case, the custom
+dequeue analytic performs 98% worse.
+
+mode | degradation  
+---|---  
+FIFO | (negligible)  
+Custom | 98%  
+  
+The other two scenarios are unaffected by this mode.
+
+### Logging
+
+  * _Slim_ logging mode is 5-10% faster than the _platform_ mode
+  * No _QR_ logging is 20-30% faster than _platform_
+

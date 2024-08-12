@@ -1,0 +1,269 @@
+https://code.kx.com/platform/entitlements/
+
+# Entitlements - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/entitlements/
+
+# Entitlements
+
+Entitlements define and restrict user access to any permissible [Control
+entity](../user_interface/#control-entities) in _KX Control_.
+
+They are an effective way of defining different views of the system for
+different user groups.
+
+They can be integrated with LDAP for authentication, allowing enterprise-wide
+security to be enforced.
+
+Entities and users can be grouped and entitled together. The entitlements can
+then be inherited or overridden for subgroup and/or users.
+
+A password security policy can include password criteria and ageing.
+
+Any attempted access to any process is logged.
+
+When entitlements are changed they are automatically pushed to all processes,
+with no need for restarts.
+
+## Users
+
+Users are the basis of all permissions within _KX Control_. Each user can have
+individual permissions set; and also be part of a User Group and inherit
+permissions from it. A user can have access restrictions set and be associated
+with a specific authentication control.
+
+### Create a user
+
+From the top menu pick _File > New > User_. Choose the user authentication
+type (Default or SAML), for default users set a password, email address, and a
+package to include the user in, for SAML users the password field is not
+required.
+
+![Screenshot](../img/control/createuser.png)
+
+Use the User Editor to record details for the user, then click _Save_.
+
+![Screenshot](../img/control/saveuser.png)
+
+### User editor
+
+The editor has five tabs.
+
+tab | description  
+---|---  
+User Details | Details of the user  
+User Groups | Define User Groups  
+User Entity Permissions | Entities permissioned to the user  
+Authentication & Access Control | User-specific authentication control policies  
+Revision History | Revision history of the entity  
+  
+#### Authentication and access control
+
+This tab is only for use with the default user types. For SAML users the tab
+will be active but all of the fields will be disabled. For the default users,
+Users and User Groups can be configured to enforce a password policy for
+subscribed users. To enable the environment variable
+_DELTADASHBOARD_PASSWORD_POLICY_ should be set to _YES_ and the _KX Delta
+Platform_ restarted. The available policy configuration meets [OWASP
+recommendations for password
+complexity](https://www.owasp.org/index.php/Authentication_Cheat_Sheet#Password_Complexity)
+
+![Screenshot](../img/control/auth_access_control.png)
+
+field | description  
+---|---  
+Inherit User Group Authentication | Inherit the policy from parent User Group  
+Apply Policy | Enable/disable policy  
+Minimum Length | Minimum length of password  
+Maximum Length | Maximum length of password  
+Password History | Number of passwords before one can be repeated  
+Password Max Duration | Maximum number of days before a password must be changed  
+Attempts Before Lock | Number of incorrect attempts a user will be allowed before locking user  
+  
+Available password policy requirements allow for configuring
+
+  * Min lowercase characters
+  * Min uppercase characters
+  * Min numeric characters
+  * Min special characters
+
+Acceptable special characters are in line with [OWASP
+guidelines](https://www.owasp.org/index.php/Password_special_characters)
+
+### Change password
+
+#### By the user
+
+_Change Password_ allows a user to change her own password. From the User Menu
+pick _Change Password_ and set a new password. After you successfully change
+your password you will be logged out and you must enter your new password.
+
+![Screenshot](../img/control/changepassword.png)
+
+#### By the administrator
+
+An administrative user with the correct privileges can reset a user’s
+password. The administrative user does not have to know the user’s current
+password.
+
+Right-click the user in question and select _Reset Password_ ; set a new
+password.
+
+![Screenshot](../img/control/resetpassword.png)
+
+### Delete a user
+
+An appropriately permissioned administrative user can delete users. Right-
+click on the user from the navigation view, select _Delete_ and confirm
+
+![Screenshot](../img/control/deleteuser.png)
+
+## User groups
+
+Users can be grouped to allow for group-level permissions. This section looks
+at
+
+  * Creating User Groups
+  * Access Restrictions
+  * Deleting User Groups
+
+### Create a user group
+
+As an Administrative user, from the top menu, pick _File > New > User Group_.
+
+![Screenshot](../img/control/createusergroup.png)
+
+Name the group, and assign it a package.
+
+The User Group Editor will open. Use it, then save the new group.
+
+### User group editor
+
+![Screenshot](../img/control/usergroupeditor.png)
+
+The editor has five tabs.
+
+tab | description  
+---|---  
+Members | Assign users to the group  
+User Group Entity Permissions | Assign entity permissions to the group  
+Access Restrictions | Assign access limitations to the group  
+Authentication & Access Control | Set group-specific authentication control policies  
+Revision History | Review revision history of the entity  
+  
+### User group access restrictions
+
+There are three types of access restriction available to groups:
+
+type | restriction  
+---|---  
+Dashboard Access URLs | limits the URLs from which a user can log in via Dashboards  
+Dashboard Access IPs | limits the IP addresses from which a user will be able to log in via Dashboards  
+IP Access Affinity | lists IP addresses from which a user connection can be initialized. It allows us to prevent users from logging in via the UI, as it will be from a local IP, whereas Dashboards users will always login via the Delta App Server which has a dedicated IP address  
+  
+![Screenshot](../img/control/usergroupaccessrestrictions.png)
+
+### Delete a user group
+
+An administrative user can delete a user group by right-clicking on the group
+in the Navigation View and selecting _Delete_.
+
+![Screenshot](../img/control/usergroupdelete.png)
+
+## Entity groups
+
+Entity groups let you set permissions for groups of entities. Any entities in
+the group will inherit the user and group permissions set on the entity group.
+
+For example an entity group can contain several entities
+
+![Screenshot](../img/control/testentitygroup.png)
+
+The three entities in this entity group will inherit the permissions set on
+the entity group.
+
+![Screenshot](../img/control/entitygrouppermissions.png)
+
+In this case the fxeval user will have read permission on the three entities
+and the DeltaMonUsers group will have Read/Write permission on the three
+entities.
+
+_KX Control_ installs with some Entity Groups already defined.
+
+Entity group | Info  
+---|---  
+ActionTracker | Contains entities related to the operation of action tracker processes. The ActionTrackerUsers group has permission on this entity group  
+CxLogin | This entity group is used internally to allow users permission to connect to the _KX Control_ process. Giving a user permission to this entity group will allow them to open a handle to the Control process.  
+  
+To see the details of an entity group, double-click its name listed in the
+Navigation Panel. The Entity Group Editor will open.
+
+### Create an entity group
+
+Set up further entity groups to contain other subsets of entities. A group can
+include entities of different types.
+
+From the top menu, pick _File > New > Entity Group_. Name it and assign a
+package if required. The Entity Group Editor will open.
+
+### Entity group editor
+
+![Screenshot](../img/control/entitygroup.png)
+
+The editor has three tabs.
+
+tab | description  
+---|---  
+Member Entities | Assign entities (Process, Analytic, Schema) to a group  
+User and Group Permissions | Grant users and/or user groups access to the group  
+Revision History | See the revision history of the group  
+  
+### Delete an entity group
+
+An Administrative user can delete an entity group:
+
+Select the group from the Navigation View, and pick _Delete_ from the context
+menu. (Right click)
+
+## Set entity permissions
+
+Entities can be permissioned individually; as part of an Entity Group; or
+through the User and User Group editors.
+
+Available permission levels are
+
+level | description  
+---|---  
+Read/Write | Allow read and write access to the entity  
+Read | Allow read access to the entity  
+Read/Deny Write | Allow read access to the entity and deny write (see clarification below)  
+Deny All | Deny all access to the entity  
+  
+Deny overrides Grant
+
+As a general rule _Deny_ overrides _Grant_ access. If you grant a User Group
+_Read/Write_ access to an entity but give one of the group’s members
+_Read/Deny Write_ access, that member will have only read access to the
+entity.
+
+### Setting via entity
+
+Below, _Read/Write_ permissions to the schema `DxFiles` has been given to the
+`Administrator` user and the `ActionTrackerUsers` user group; but only _Read_
+permission to the `BSU` user group.
+
+![Screenshot](../img/control/permissionsentityeditor.png)
+
+Multiple items can be selected and the permissions changed for all selected
+items instead of performing actions on individual items.
+
+![Screenshot](../img/control/multichangeaccesslevel.png)
+
+### Setting via user or user group
+
+Below, the user group `BSU` has been granted _Read/Write_ permissions to
+several entities and _Read_ access to others. This view is useful for working
+on the specific permissions for a specific user or user group.
+
+![Screenshot](../img/control/permissionsusereditor.png)
+

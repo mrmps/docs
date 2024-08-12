@@ -1,0 +1,88 @@
+https://code.kx.com/platform/qr_reqtimes/
+
+# Request timings - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/qr_reqtimes/
+
+# Request timings
+
+Functionality exists in the QR framework to record timestamps for each request
+at different points in the lifecycle. This allows developers to investigate
+the performance of the QR cluster and the solution-specific requests. If
+enabled, the QR/QP will record timestamps at each point and persist the data
+to disk after a request is closed. Both components append data to an on-disk
+binary file (similar to that of a Stream tickerplant) from where it can be
+replayed to into memory or persisted to a historical database. The processes
+write to an active file and after a configurable interval, will roll the files
+to create a new one.
+
+Enabling this functionality is controlled by the `timestampLogging` parameter
+of the QR and QP instances. By default this points at `DS_QR_TIMINGS:DEFAULT`
+which has the logging disabled. `logdir` controls where the files get written
+to and the `rollFreq` is a frequency (in seconds) of how often to roll the
+active log. Any consumers should replay only the rolled files and never the
+active ones. The filenames are in the format; `ds_qp_a` (active),
+`ds_qp_a.20171229D040000` (rolled).
+
+![Screenshot](../img/qr/timingcfg.png)
+
+## Timing schema
+
+The schema used to store the timing data is called `dxQrTimings` and is
+included with the Control package.
+
+column | type | description  
+---|---|---  
+queryID | long | Sub-request ID  
+requestID | long | Parent request ID  
+request | untyped | Request object  
+database | symbol | Database name  
+logCorr | string | Logging correlator  
+qp | symbol | QP name  
+status | symbol | Request final status  
+reqType | symbol | ``oneshot` or ``polling`  
+reason | string | Reject reason  
+clientTime | timestamp | Time assigned by client when entering request  
+qrRecv | timestamp | When request was received by QR  
+queueEntry | timestamp | When request appended to the queue  
+queueExit | timestamp | When request removed from queue  
+qrSend | timestamp | When QR dispatched to QP  
+qpRecv | timestamp | When QP receives request  
+qpSend | timestamp | When QP sends request  
+dbRecv | timestamp | When DB receives  
+dbSend | timestamp | When DB responds  
+qpRecv2 | timestamp | When QP receives response  
+qpCache | timestamp | When QP caches result  
+qpSend2 | timestamp | When QP sends result  
+  
+## Lifecycle
+
+![Screenshot](../img/qr/timings.png)
+
+The image above shows the points at which the timestamps are recorded. Some
+noteworthy points are described below;
+
+point | note  
+---|---  
+Client Time | An optional timestamp provided by the client. For kdb+ clients, this is specified as ``clientTime` in the `opts` dictionary of the QR request APIs.  
+Queue | Requests are appended to the queue immediately after being received, however they may not be dequeued until resources are available. The difference between the `queueEntry` and `queueExit` timestamps is the length of time sitting in the queue plus processing time to dequeue.  
+QP cache | When the QP receives a result, an aggregation is performed after the result is cached. `qpRecv2` to `qpCache` records how long the processing took to cache. `qpCache` to `qpSend2` records the time taken to aggregate and prepare the results for sending  
+Routed Requests | These are treated as multiple separate sub-requests and recorded as such. After entering the queue, all timestamps up to `qpSend2` will be independent. All sub-requests to complete before the last will remain in the cache until the last is finished and at this point the aggregation is performed. Each will have the same send time but different cache times.  
+Timeouts | A request may timeout in two ways; either at the QR or at the QP. A timeout at the QR will occur if no sub-requests have been dispatched and at the QP if any have been. For the former case, there will be timestamps recorded up to `queueEntry` only. For the latter case, all up to `qpSend` will be recorded  
+  
+The following example uses a _KX Stream_ File Watcher template to replay the
+QR timing logs and publish via messaging.
+
+  * Create a new instance of the `DS_FILEWATCHER` template
+  * Set up the instance template as in the image below
+  * Run the instance
+
+The process will register as a publisher of `dxQrTimings` and watch the QR
+logs directory for rolled files. When a rolled file is found, it publishes any
+replayed records to any subscribed processes and deletes the file when
+complete. The `.fw.qr.*` code can be updated to change the behavior, e.g. to
+zip the files, you can change the last line of `.fw.qr.init` to
+`.fw.qr.setAction[`.fw.qr.zip];`
+
+![Screenshot](../img/qr/filewatcher.png)
+

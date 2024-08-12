@@ -1,0 +1,161 @@
+https://code.kx.com/insights/enterprise/use-cases/sdk-sample-ingestion.html
+
+# Using language interfaces - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/use-cases/sdk-sample-ingestion.html
+
+# Using the kdb Insights language interfaces
+
+This use case highlights how to deploy the `sdk-sample-assembly` Custom
+Resource (CR) pipeline, publish data into it and query the data, all through
+secure and authenticated endpoints within _kdb Insights Enterprise_.
+
+The goal is to take the data pipeline highlighted below and deploy to the _kdb
+Insights Enterprise_ base application to allow data to be ingested, persisted
+and queried.
+
+## Deploying the Assembly CR
+
+You can deploy the assembly on top of the base instance of the _kdb Insights
+Enterprise_ in your cluster.
+
+To deploy the assembly, [download](overview.html#downloading-assemblies) the
+`sdk_sample_assembly.yaml` from the release repository and deploy to your
+cluster with the command.
+
+    
+    
+    kxi assembly deploy --filepath sdk_sample_assembly.yaml
+    
+
+The label `insights.kx.com/app` currently gets set to the name of the assembly
+so this can be used as a filter to view the resources. For example if you
+deployed an assembly called `sdk-sample-assembly` you can see the pods
+associated with the assembly by running:
+
+    
+    
+    $ kubectl get pods -l insights.kx.com/app=sdk-sample-assembly
+    NAME                                   READY          STATUS          RESTARTS    AGE
+    sdk-sample-assembly-dap-hdb-0                       2/2     Running   0          2d15h
+    sdk-sample-assembly-dap-hdb-1                       2/2     Running   0          2d15h
+    sdk-sample-assembly-dap-hdb-2                       2/2     Running   0          2d15h
+    sdk-sample-assembly-dap-idb-0                       2/2     Running   0          2d15h
+    sdk-sample-assembly-dap-idb-1                       2/2     Running   0          2d15h
+    sdk-sample-assembly-dap-idb-2                       2/2     Running   0          2d15h
+    sdk-sample-assembly-dap-rdb-0                       2/2     Running   0          2d15h
+    sdk-sample-assembly-dap-rdb-1                       2/2     Running   0          2d15h
+    sdk-sample-assembly-dap-rdb-2                       2/2     Running   0          2d15h
+    sdk-sample-assembly-sm-0                            5/5     Running   0          2d15h
+    insights-spctl-sdtransform-v5ma6j9p0o-0             2/2     Running   0          2d15h
+    insights-spwork-sdtransform-v5ma6j9p0o-1-0          2/2     Running   0          2d15h
+    rt-sdk-sample-assembly-north-0                      1/1     Running   0          2d15h
+    rt-sdk-sample-assembly-north-1                      1/1     Running   0          2d15h
+    rt-sdk-sample-assembly-north-2                      1/1     Running   0          2d15h
+    rt-sdk-sample-assembly-north-arc-5489dfff9f-88w4h   1/1     Running   0          2d15h
+    rt-sdk-sample-assembly-south-0                      1/1     Running   0          2d15h
+    rt-sdk-sample-assembly-south-1                      1/1     Running   0          2d15h
+    rt-sdk-sample-assembly-south-2                      1/1     Running   0          2d15h
+    rt-sdk-sample-assembly-south-arc-7d75955d89-8jbq8   1/1     Running   0          2d15h
+    
+
+## Client integration
+
+Now you have deployed the _kdb Insights Enterprise_ along with a `sdk-sample-
+assembly` to ingest data, a client must be enrolled to allow data to be
+published via the authenticated and secure RT entry-point. Here we will walk
+through the registration of a simple client while full details on the client
+enrollment workflow can be found [here](../../microservices/rt/sdks/getting-
+started-sdks.html#authentication-and-connectivity)
+
+The diagram below highlights the key components that allow the flow of data
+into the system from external sources. To do this securely it is necessary to
+utilize the Information Service and the Client Controller to register clients
+and allow them to understand the endpoints. It must also authorize itself and
+publish the data to the appropriate location
+
+![Client Registration](../img/basic-assembly-registration.jpg)
+
+## Client enrollment
+
+Authentication with _kdb Insights CLI_ is a pre-requisite for this step, as
+described [here](../cli/authentication.html).
+
+External clients need to be enrolled in the system. This provisions resources
+for them and configures their topics.
+
+    
+    
+    kxi client enrol --name client-1 --insert-topic sdk-sample-assembly
+    
+    
+    
+    {
+      "message": "success",
+      "detail": "Client enrolled",
+      "url": "5ed6e5b7c80c8e35d07249d12f32d9eb",
+      "config_url": "https://${INSIGHTS_HOSTNAME}/informationservice/details/5ed6e5b7c80c8e35d07249d12f32d9eb"
+    }
+    
+
+The `url` field should be stored as it's used by the publisher to get publish
+endpoints. The `$INSIGHTS_HOSTNAME` variable is a placeholder for your
+deployment hostname.
+
+Note
+
+The `--insert-topic` argument must match the topic used in the assembly.
+
+In this example, it is `sdk-sample-assembly`. See the next section for more
+information.
+
+### Matching topics
+
+Topics assigned to clients need to be known by the system. There needs to be
+an assembly configured to consume that topic otherwise the data will not be
+published.
+
+To illustrate this the YAML snippet below shows where the topic is configured
+for an assembly. The sequencer named `north` is configured as _external_ and
+its topic is set as `sdk-sample-assembly`.
+
+    
+    
+    spec:
+      elements:
+        ..
+        sequencer:
+          ..
+          north:
+            external: true
+            topicConfig:
+              subTopic: "sdk-sample-assembly"
+    
+
+Clients configured with the `sdk-sample-assembly` topic will be matched to
+this assembly.
+
+## Publishing data
+
+The _kdb Insights_ interfaces can be used to ingest data. See
+[here](../interfaces/index.html) for details.
+
+## Removing a client
+
+Authentication with cli is a pre-requisite for this step, as described
+[here](../cli/authentication.html).
+
+A client can be removed by running the CLI command below:
+
+    
+    
+    kxi client remove --name client-1
+    
+    
+    
+    {
+      "message": "success",
+      "detail": "Client removed"
+    }
+    
+

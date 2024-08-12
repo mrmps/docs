@@ -1,0 +1,171 @@
+https://code.kx.com/insights/api/machine-learning/q/analytics/api/variadic/stats.html
+
+# Statistical models - kdb products
+
+Original URL: https://code.kx.com/insights/api/machine-learning/q/analytics/api/variadic/stats.html
+
+# Statistical Models
+
+The following outlines the variadic function definitions provided with the kdb
+Insights ML Analytics library for various statistical models. Full breakdowns
+of the algorithms represented can be found
+[here](https://code.kx.com/q/ml/toolkit/stats/), this includes, via examples
+the use of the function returns for prediction, this is not outlined below
+explicitly.
+
+Note
+
+All arguments marked with an asterisk are optional and can be input using the
+notation defined in the [function calls section](function-calls.html) of the
+model monitoring documentation.
+
+## Ordinary Least Squares(OLS) Regression
+
+### `.ml.kxi.stats.OLS.fit`
+
+_Fit a Ordinary Least Squares(OLS) model_
+
+    
+    
+    .ml.kxi.stats.OLS.fit[X;y]
+    
+
+**Parameters:**
+
+name | type | description  
+---|---|---  
+`X` | `any` | Endogenous variable determined by it's relationship with others.  
+`y` | `any` | Exogenous variables which effect the endogenous variable.  
+  
+_options:_
+
+name | type | description | default  
+---|---|---|---  
+`trend` | `boolean` | Is trend to be accounted for. | `1b`  
+  
+**Returns:**
+
+type | description  
+---|---  
+`dictionary` | All information collected during the fitting of a model, along with prediction functionality.  
+  
+**Examples:**
+
+**Example 1:** Fit a model using default configuration
+
+    
+    
+    // Generate data
+    q)endog:til 10
+    q)exog:3+2*til 10
+    
+    // Fit model
+    q)show mdl1:.ml.kxi.stats.OLS.fit[endog;exog]
+    modelInfo| `coef`variables`statsDict!(-1.5 0.5;(+(,`name)!,`yIntercept`x0)!+`..
+    predict  | {[config;exog]
+      modelInfo:config`modelInfo;
+      trend:`yIntercept i..
+    q)mdl1[`modelInfo]`variables
+    name      | coef stdErr       tStat         pValue C195
+    ----------| ---------------------------------------------------
+    yIntercept| -1.5 2.571224e-16 -5.833798e+15 0      5.929253e-16
+    x0        | 0.5  1.93265e-17  2.587121e+16  0      4.456699e-17
+    
+
+**Example 2:** Fit a model modifying the default behavior
+
+    
+    
+    // Generate data
+    q)endog:til 10
+    q)exog:3+2*til 10
+    
+    // Fit model
+    q)show mdl2:.ml.kxi.stats.OLS.fit[endog;exog;.var.kw[`trend;0b]]
+    modelInfo| `coef`variables`statsDict!(,0.3983051;(+(,`name)!,,`x0)!+`coef`std..
+    predict  | {[config;exog]
+      modelInfo:config`modelInfo;
+      trend:`yIntercept i..
+    q)mdl2[`modelInfo]`variables
+    name| coef      stdErr     tStat    pValue       C195
+    ----| -----------------------------------------------------
+    x0  | 0.3983051 0.01622758 24.54495 2.875458e-10 0.03742086
+    
+
+## Weighted Least Squares(WLS) Regression
+
+### `.ml.kxi.stats.WLS.fit`
+
+_Fit a Weighted Least Squares(WLS) model_
+
+    
+    
+    .ml.kxi.stats.WLS.fit[X;y]
+    
+
+**Parameters:**
+
+name | type | description  
+---|---|---  
+`X` | `any` | Endogenous variable determined by it's relationship with others.  
+`y` | `any` | Exogenous variables which effect the endogenous variable.  
+  
+_options:_
+
+name | type | description | default  
+---|---|---|---  
+`weights` | `float[]` | Weights to apply to `X`. | `::`  
+`trend` | `boolean` | Is trend to be accounted for. | `1b`  
+  
+**Returns:**
+
+type | description  
+---|---  
+`dictionary` | All information collected during the fitting of a model, along with prediction functionality.  
+  
+**Examples:**
+
+**Example 1:** Fit a model using default configuration
+
+    
+    
+    // Generate data
+    q)endog:til 10
+    q)exog:3+2*til 10
+    
+    // Fit model
+    q)show mdl1:.ml.kxi.stats.WLS.fit[endog;exog]
+    modelInfo| `coef`variables`statsDict`weights!(-1.5 0.5;(+(,`name)!,`yIntercep..
+    predict  | {[config;exog]
+      modelInfo:config`modelInfo;
+      trend:`yIntercept i..
+    q)show each mdl1[`modelInfo]`variables`weights;
+    name      | coef stdErr       tStat         pValue C195
+    ----------| ---------------------------------------------------
+    yIntercept| -1.5 5.126997e-15 -2.925689e+14 0      1.182288e-14
+    x0        | 0.5  3.853687e-16 1.297459e+15  0      8.886618e-16
+    130.4302 46.95487 23.95657 14.49224 9.701419 6.945986 5.217208 4.06184 3.2517..
+    
+
+**Example 2:** Fit a model modifying the default behavior
+
+    
+    
+    // Generate data
+    q)endog:til 10
+    q)exog:3+2*til 10
+    
+    // Fit model
+    q)params:.var.kwargs`trend`weights!(0b;10?1f)
+    q)show mdl2:.ml.kxi.stats.WLS.fit[endog;exog;params]
+    modelInfo| `coef`variables`statsDict`weights!(,0.4012137;(+(,`name)!,,`x0)!+`..
+    predict  | {[config;exog]
+      modelInfo:config`modelInfo;
+      trend:`yIntercept i..
+    q)show each mdl2[`modelInfo]`variables`weights;
+    name| coef      stdErr     tStat    pValue       C195
+    ----| -----------------------------------------------------
+    x0  | 0.4012137 0.01625652 24.68018 2.723961e-10 0.03748759
+    0.5232126 0.6587993 0.4064619 0.3612185 0.6559165 0.6997534 0.5315412 0.89392..
+    
+

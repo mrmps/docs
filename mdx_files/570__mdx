@@ -1,0 +1,201 @@
+https://code.kx.com/dashboards/datafilter/
+
+# Data Filter - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/datafilter/
+
+# Data Filter
+
+![Screenshot](../img/datafilter/datafilter2.jpg)  
+_Data Filter showing a nested filter event_
+
+The Data Filter is a server-side filter tool to manage data in the Dashboards
+UI. The output is displayed in a component; e.g. Data Grid or Canvas Chart
+
+## Set up
+
+  1. Select the _data source_ to filter.
+
+  2. Set a [view state parameter](../viewstateparameters/) for _kdb string_.
+
+The _Query Model_ is built by the user; see build a filter.
+
+## Basics
+
+![Screenshot](../img/datafilter/datafilterbasics.png)
+
+_Name_
+
+    A name for the component provided by the user. 
+
+Data Filter uses three elements:
+
+_Data Source_
+
+    
+
+This is the data set on which filtering events will act. Data columns from
+this source will populate the Fields section and will be available for
+selection in the dropdown Filter.
+
+![Screenshot](../img/datafilter/alleventsequery.jpg)
+
+![Screenshot](../img/datafilter/dropdownfields.jpg)
+
+_Query Model_
+
+    
+
+The query model is built by the filter UI (it does not need to be defined in
+advance); for example, the filter:
+
+![Screenshot](../img/datafilter/datafilter2.jpg)
+
+will be represented by the query model:
+
+    
+    
+    {"operator":"AND",
+        "children":
+            [
+                {
+                    "propertyName": "sym",
+                    "propertyType":    11,
+                    "operator":     "equal",
+                    "value":        "EUR/USD",
+                    "active":       true
+                },
+                {
+                    "propertyName": "src",
+                    "propertyType": 11,
+                    "operator":     "not_equal",
+                    "value":        "BankOnline",
+                    "active":       true
+                },
+                {   
+    
+                    "propertyName": "bid",
+                    "propertyType": 9,
+                    "operator":     "greater",
+                    "value":        "1.3946",
+                    "active":         true
+                },
+                {
+                    "propertyName": "bsize",
+                    "propertyType": 6,
+                    "operator":     "less_or_equal",
+                    "value":        "1000000",
+                    "active":       true
+                }
+            ]
+    }
+    
+
+_KDB String_
+
+    
+
+This is the output of the filter and should be assigned to a [View State
+Parameter](../viewstateparameters/). The string is then parsed out using a
+custom [Data source](../datasources/) in another dashboard component, e.g. a
+[Data Grid](../datagrid/).
+
+![Screenshot](../img/datafilter/datagridfilter.jpg)
+
+![Screenshot](../img/datafilter/datafilterandgrid.jpg)
+
+    
+
+The _KDB String_ is parsed with the following `filteredEvents` query, as used
+in a [Data Grid](../datagrid/) example:
+
+![Screenshot](../img/datafilter/filteredevents.jpg)
+
+    
+    
+        {[sym;startTime;endTime;filter] 
+        res: dfxQuote;
+    
+        .dfilt.apply[res;filter]}
+    
+
+    
+
+![Screenshot](../img/datafilter/kdbeventstring.jpg)
+
+## Bindings
+
+Allows filter nodes to be assigned to [view state
+parameters](../viewstateparameters/). Available Bindings are determined by the
+view state type; for example, _Bindings_ of type `float` will be available for
+selection as a filter for `float` data.
+
+_Key_
+
+    The Name of the assigned binding to appear in the dropdown
+_Viewstate_
+
+    View state parameter used by the the filter. 
+
+## Fields
+
+![Screenshot](../img/datafilter/datagridfilter.jpg)
+
+The default view is text input per [Data source](../datasources/) column.
+However, a dropdown selector can instead replace the text input. The Dropdown
+can be created using a Data Source or by adding a row.
+
+![Screenshot](../img/datafilter/venudropdownsetup.jpg)
+
+![Screenshot](../img/datafilter/venudropdown.jpg)
+
+## Fields Comparison
+
+![Screenshot](../img/datafilter/comparefields.jpg)
+
+Clicking on the Compare Fields icon will change the value input field to a
+dropdown selector containing a list of all other columns from the [Data
+source](../datasources/) matching the type of the currently selected column.
+This makes it possible to do field-to-field comparison when filtering.
+
+## Format, Style, Margins
+
+![Screenshot](../img/datafilter/datafilterformatmenu.png)
+
+_Sort List by Selected_
+
+    When checked and the dropdown is expanded to show the items available for selection, the selected values will be displayed at the top of the list. This property only applies to the values dropdown in a field-to-value comparison.
+
+[Style](../style/#component-style) for common style settings
+
+## Build a filter
+
+![Screenshot](../img/datafilter/filterkey.jpg) _Sample key of different Types
+supported by Data Filter_
+
+  1. Add a rule.
+
+![Screenshot](../img/datafilter/addafilterrule.jpg)
+
+First dropdown is drawn from [data source](../datasources/) data options.
+
+Second dropdown is one of the operators: `equal`, `not equal`, `in`, `not in`,
+`like`, `not like`, `is blank`, `is not blank`.
+
+  2. Add a second rule; here the AND statement requires the first and second rules to be true.
+
+![Screenshot](../img/datafilter/addasecondrule.jpg)
+
+  3. Add a new Group; show where `subType` is equal to `rejected` OR `new`.
+
+![Screenshot](../img/datafilter/addagroup.jpg)
+
+This gives a filter result in the Data Grid of:
+
+![Screenshot](../img/datafilter/outputresults.jpg)
+
+Groups, Rules, and AND/OR statements can be freely mixed and built by the user
+in the Dashboard.
+
+Filter group ordering can be changed with drag-and-drop.
+

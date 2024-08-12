@@ -1,0 +1,46 @@
+https://code.kx.com/platform/stream/rte_template/
+
+# RTE - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/stream/rte_template/
+
+# DS_RTE
+
+The _Real-time Engine (RTE)_ process subscribes to another process and
+receives streaming data from that process. It is configured to process the
+streaming data in a particular manner. It is generally configured to subscribe
+to specific tables and run high computational calculations, as specified by
+the realTimeMsgFunct analytic parameter, on these tables.
+
+Typical use cases for an RTE process would include a PnL Engine or an RTE
+calculating and publishing enriched data such as vwap, moving averages etc.
+The RTE can also be configured to publish information sometimes directly to
+another Process within the framework or back to a Tickerplant so that other
+process instances can subscribe to any enrichment it does.
+
+## Parameters
+
+The below table details the _RTE_ template parameters.
+
+name | type | default value | description  
+---|---|---|---  
+messagingServer | Config Parameter | DS_MESSAGING_SERVER | Messaging server to connect to  
+subscriptionChannel | Symbol |  | Messaging channel to subscribe to  
+subscriptionTablelist | Symbol[] |  | List of tables to subscribe to  
+subscriptionColumnList | Symbol[] |  | Column to subscribe to in each table for the subscriptionFilterList values  
+subscriptionFilterList | Symbol[] |  | List of symbols to subscribe to  
+publishChannel | Symbol |  | Messaging channel to publish on  
+publishTableList | Symbol[] |  | List of tables to publish  
+initialStateFunct | Analytic | dxInitialDataState | Specifies the Analytic to be used to initialize the RTE process  
+realTimeMsgFunct | Analytic | dxUpdInsertPub | Update function to be used by the RTE  
+eodFunct | Analytic | dxEODSaveAndDelete | End of day (EOD) actions  
+gatewayQuery | Analytic | dxQuery_basic | Analytic which handles queries from the Gateway process  
+monitoringInterval | Integer |  | Time (in milliseconds) interval for publishing internal latency and throughput statistics  
+tableEodList | Config Parameter | DS_TABLES_EOD_LIST | The tables that should be saved down to HDB at EOD event  
+subscriptionSource | Process Instance |  | List of processes that the RTE should subscribe to  
+consumerProcesses | Process Instance |  | List of consumer processes.  
+consumerAlertSize | Integer |  | Number of bytes in output queue of a consumer process to trigger an alert  
+consumerDisconnectSize | Integer |  | Number of bytes in output queue of a consumer process to trigger a disconnect  
+logReplayFunct | Analytic | dxLogReplayTemplate | Analytic to replay the TP log  
+endInterval | Analytic | dxEndIntervalTemplate | Function to call when TP sends endInterval trigger
+

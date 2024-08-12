@@ -1,0 +1,29 @@
+https://code.kx.com/platform/deployment/raising_support_issues/
+
+# Raising support issues - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/deployment/raising_support_issues/
+
+# Raising support issues
+
+The _KX Delta Platform_ bundles come with a set of support scripts which can
+be executed to collate the relevant host and environment info. The scripts
+should be executed on each of the affected hosts in the environment and the
+TGZ files should be provided along with a detailed description of the issue
+when reporting the problem.
+
+    
+    
+     ./runSupportScripts.sh
+    +----------------------------------------------------------+
+    Current install location [~/kxinstall]:
+    
+
+This will run the `checkHosts.sh`, `checkEnv.sh` and `validateCerts.sh` (if
+applicable) and generate timestamped tgz files.
+
+Archive file | Content description  
+---|---  
+KX-SUPPORT-HOST-XXXXXXXX-XXXXXX.tgz | Host information such as FQDN, OS Version, Installed Packages  
+KX-SUPPORT-LOGS-XXXXXXXX-XXXXXX.tgz | KX Delta Platform log files. Errors and configuration files.
+

@@ -1,0 +1,52 @@
+https://code.kx.com/insights/accelerators/fsi/release-notes/fx-flow-release-notes.html
+
+# Release Notes - kdb products
+
+Original URL: https://code.kx.com/insights/accelerators/fsi/release-notes/fx-flow-release-notes.html
+
+# kdb Insights Enterprise KX Flow Accelerator - Release notes
+
+_This section details the release notes for the kdb Insights KX Flow
+Accelerator_
+
+## Version 1.0.0
+
+#### Release Date
+
+2024-05-30
+
+###  New Features
+
+  * Schemas for Executable Streaming Prices (`FXQuote` and `FXClientQuote`)
+  * Schemas for RFS pricing (`FXQuoteReply`, `FXQuoteRequest`, `FXQuoteReplyLegs` and `FXQuoteRequestLegs`) 
+  * Schemas for Orders (`FXOrderReport`, `FXOrderRequest`, `FXOrderReportLegs` and `FXOrderRequestLegs`)
+  * Pipelines for KX Flow data ingestion to above tables
+  * Schemas for reference data (`Instrument` and `ExchangeHolidayCal`)
+  * Pipelines to load reference data from csv files in an s3 storage location
+  * Query and analytic API extensions via the [FSI Library](../fsi-lib-overview.html)
+  * Extented getTicks API for Fx book building via the `fxBookType` argument
+  * An example Insights View for displaying streaming data
+  * Example Jupyter notebooks, demonstrating Python and REST API access
+
+### Artifacts
+
+type | Location  
+---|---  
+Accelerator Package | https://portal.dl.kx.com/assets/raw/kxi-accelerators/fsi/fsi-kx-flow/  
+  
+### Version Dependencies
+
+There are minimum versions of the underlying FSI Library, kdb Insights
+Enterprise, and the kxi CLI which are required to use KX Flow Accelerator.
+
+KX Flow Accelerator | FSI Library | Insights Enterprise | kxi CLI  
+---|---|---|---  
+1.0.0 | 1.0.0 | 1.9.0 | 1.9.0  
+  
+## Known Issues
+
+Expand to see the list of known issues here
+
+  * ID Mapping is not applied to get* API calls. Data is only returned for underlying symbols, even when `IDMapping` is set on get* API calls. Requests for ID Mapped symbols do not return any results. 
+  * When holiday calendars are applied in get* API calls using `applyHolidayCalendar`, the call always returns an empty result.
+

@@ -1,0 +1,54 @@
+https://code.kx.com/insights/enterprise/ingest/examples/postgres/query.html
+
+# Querying PostgreSQL - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/ingest/examples/postgres/query.html
+
+# PostgreSQL Queries
+
+This guide provides an overview of integrating the Stream Processor with a
+PostgreSQL database.
+
+The Stream Processor provides a reader interface for issuing queries on a
+PostgreSQL database. The [`.qsp.read.fromPostgres`](../../../../api/stream-
+processor/q/readers.html#qspreadfrompostgres) API can be used as a data source
+in a pipeline.
+
+The following `spec.q` will run a select query against a "finance" database
+and write it to the console. The details of the database will be configured
+during deployment.
+
+    
+    
+    .qsp.run
+        .qsp.read.fromPostgres["SELECT * FROM stocks"; "finance"]
+        .qsp.write.toConsole[]
+    
+
+Deployment prerequisite
+
+The example below requires a PostgreSQL database to be running in the cluster
+as setup in the Kubernetes section of [this tutorial](setup.html).
+
+    
+    
+    jobname=$(curl -X POST http://localhost:5000/pipeline/create -d \
+        "$(jq -n  --arg spec "$(cat spec.q)" --arg pass "$PGPASSWORD" \
+        '{
+            name     : "psql",
+            type     : "spec",
+            config   : { content: $spec },
+            settings : { minWorkers: "1", maxWorkers: "10" },
+            env      : {
+                KXI_SP_POSTGRES_SERVER   : "postgresql",
+                KXI_SP_POSTGRES_PORT     : "5432",
+                KXI_SP_POSTGRES_DATABASE : "finance",
+                KXI_SP_POSTGRES_USERNAME : "postgres",
+                KXI_SP_POSTGRES_PASSWORD : $pass
+            }
+        }' | jq -asR .)" | jq -r .id)
+    
+
+Once deployed, check the console output of the deployed `spwork` pod to see
+the result of the query.
+

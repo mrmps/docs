@@ -1,0 +1,188 @@
+https://code.kx.com/insights/microservices/database/configuration/routing.html
+
+# Routing - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/database/configuration/routing.html
+
+# Routing configuration
+
+[Query routing](../query/routing.html) is managed by two primary components,
+the Service Gateway, and the Resource Coordinator. Queries are broken into
+partials and distributed across [query instances](assembly/query.html) and
+collected into a final result in the [Aggregator](aggregation.html).
+
+![process diagram](images/query-routing.png)
+
+Unless otherwise specified, the arrows in the diagram represent asynchronous q
+IPC communication between processes. Query flow is as follows.
+
+arrow | description  
+---|---  
+`1` | Client makes API request to a Service Gateway replica. This can be synchronous or asynchronous.  
+`2` | The Service Gateway forwards the request to the Resource Coordinator.  
+`3` | The Resource Coordinator sends partial requests to each DAP relevant to the query based on purview.  
+`4` | DAPs forward their responses to a single Aggregator for aggregation.  
+`5` | The Aggregator sends the response to the same Service Gateway the client connected to.  
+`6` | The Service Gateway sends response back to client.  
+  
+These components route queries across one or more assemblies and are installed
+as part of a base deployment. These components are generally configured using
+environment variables or a [values
+file](https://helm.sh/docs/chart_template_guide/values_files/) if using a
+Kubernetes based deployment. In both environment, environment variables can be
+used to change configuration.
+
+## Environment Variables
+
+Configuration can be supplied to the Service Gateway or the Resource
+Coordinator using environment variables. Environment variables are configured
+differently depending on the method of deployment. In all cases, the variables
+are always string values.
+
+### Service Gateway
+
+name | description  
+---|---  
+`GATEWAY_QIPC_PORT` | Gateway port for QIPC traffic.  
+`GATEWAY_QIPC_EXT_PORT` | Gateway port for external QIPC traffic.  
+`GATEWAY_HTTP_PORT` | Gateway port for HTTP traffic.  
+`SM_CONTAINER_NAMES` | Comma separated list of SM containers to connect to when using Kubernetes-based discovery. You should not need to touch this unless you've customized your SM container names. (default:`"sm"`).  
+`DISCOVERY_PROXY` | Discovery proxy address (not required if not using discovery).  
+`KXI_SG_RC_ADDR` | `host:port` of RC process to connect to.  
+`KXI_SG_GC_FREQ` | Frequency in minutes to run JVM Heap Garbage Collection. Default five minutes.  
+`KXI_SG_TIMEOUT` | Default request timeout in milliseconds (default: `60000`).  
+`KXI_SG_TIMEOUT_MARGIN` | Controls the amount of time to wait for the RC to complete a request in milliseconds. The service gateway waits this many milliseconds after a request has timeout out for the RC to issue a timeout request. (default: `30000`)  
+`KXI_RC_SERVICE_NAME` | The key that the Service Gateway looks for to find Resource Coordinators within the discovery registry. (default: `KXI-SG-RC`).  
+`KXI_RC_LABEL_SELECTOR` | Allow the gateway to find Resource Coordinators by label selector. Required for Kubernetes-based discovery.  
+`KXI_DA_LABEL_SELECTOR` | Allow the gateway to find data-access pods by label selector.  
+`KXI_SM_LABEL_SELECTOR` | Allow the gateway to find storage-manager pods by label selector.  
+`KXI_EXCLUDE_CONTAINER_NAMES` | Comma separated container sub-strings to avoid connecting to when using Kubernetes-based discovery. Defaults to `istio,sidecar`. This setting is overridden by `KXI_RC_CONTAINER_NAME` or `KXI_DA_CONTAINER_NAME`.  
+`KXI_RC_CONTAINER_NAME` | Comma separated Resource Coordinator exact container names to connect to when using Kubernetes-based discovery. Overrides `KXI_EXCLUDE_CONTAINER_NAMES`.  
+`KXI_DA_CONTAINER_NAME` | Comma separated Data Access container exact container names to connect to when using Kubernetes-based discovery. Overrides `KXI_EXCLUDE_CONTAINER_NAMES`.  
+`KXI_SM_CONTAINER_NAME` | Specifies the Storage Manager container names to connect when using Kubernetes-based discovery. If unspecified, we use the list of values from `SM_CONTAINER_NAMES`.  
+`KXI_SG_BUFFER_INITIAL` | Initial size in bytes to allocate per connected aggregator (default: 5MB as `5000000`).  
+`KXI_SG_BUFFER_RETAIN` | Maximum size in bytes to hold on to per connected aggregator (default: 5MB as `5000000`).  
+`KXI_SG_USE_SSL` | Decide if `GATEWAY_QIPC_EXT_PORT` should use TLS. Default 1.  
+`KXI_AUTH_DISABLED` | Set `KXI_AUTH_DISABLED=0` to use the gateway with Keycloak.  
+`KXI_OIDC_JSON_PATH` | OIDC JSON used for mapping Keycloak authentication endpoints.  
+`KXI_SCOPE_AFFINITY` | Scope affinity. Either "hard" or "soft", see [scope](../query/scope.html) (default: "hard").  
+`KXI_ASSEMBLY_KEY` | Specifies the Kubernetes label key that identifies a pod's assembly (default: `"insights.kx.com/app"`).  
+`KXI_GW_ENT_CACHE_TTL` | The number of milliseconds to cache the entitlements from RC (default: `30000`).  
+`USE_SP_WATCHER` | (Kubernetes only) Set to `1` if the GW should configure an SP watcher to automatically discover SP workers for web sockets.  
+`SP_SELECTOR_OVERRIDE` | If `USE_SP_WATCHER=1`, this sets the label selectors the GW will use to find SP workers: default is `sp.kx.com/role=worker,sp.kx.com/pipeline=%s`. %s will be replaced by the pipeline instance ID.  
+`SP_SERVICE_PORT_NAME` | If `USE_SP_WATCHER=1`, sets the port name to expect to look underneath to get the container port.  
+`SP_STREAM_HOST` | If not using an SP watcher, hostname for the SP worker  
+`SP_STREAM_PORT` | If not using an SP watcher, port for the SP worker.  
+`JAVA_OPTS` | CLI Flags to pass to Java. Such as `-Xms` and `-Xmx` to set minimum and max heap size. See Java memory and JAVA_OPTS below.  
+  
+Streaming message buffers
+
+For streaming messages back to clients, the gateway will stream up to
+`KXI_SG_BUFFER_INITIAL` per write operation. Total payloads can be any size,
+and this setting controls the chunk sizes. The default is based empherically
+on a "moderate" network speed of 4Mb/s. For configurations with higher
+performing network speeds, this setting should be increased.
+
+Set `KXI_SG_STREAM_THRESHOLD` on the `resource-coordinator` and `aggregator`
+to control when they will decide to use streaming. Also defaults to 5MB in
+bytes.
+
+For non-streaming messages, messages can be up to 2GB, and
+`KXI_SG_BUFFER_RETAIN` is how much heap space in bytes maximum will be shrunk
+back down after a message is sent. This allows tuning the application so
+"average" messages do not pay an overhead of memory re-allocation.
+`KXI_SG_BUFFER_INITIAL` is the how much space is reserved without any messages
+having come across, and is the minimum size in bytes that will be retained.
+
+HTTP request size limit
+
+The maximum size of an HTTP request to the gateway is 10MB.
+
+#### Java memory and JAVA_OPTS
+
+You can provide Java CLI arguments to the Service Gateway by setting the
+`JAVA_OPTS` environment variable.
+
+When using the Helm chart for the Service Gateway, `JAVA_OPTS` is
+automatically set based on the container memory limits. If you override
+`JAVA_OPS` explicitly or if you’re not using Helm charts, you must explicitly
+set `-Xms`, `-Xmx`, and `-XX:MaxDirectMemorySize`.
+
+  * `-Xms` provides Java with a minimum heap size it won't shrink below. Once memory used exceeds the value of `-Xms`, memory usage won't drop lower than that number.
+  * `-Xmx` provides Java with a maximum heap size it won't grow beyond. Data is garbage collected before it crosses that point.
+  * `OutOfMemoryError: Java heap space` is logged if an allocation runs out of heap space.
+  * `-XX:MaxDirectMemorySize` sets the size that is used for native-off-heap `DirectByteBuffer` memory, and configures how large and how many I/O messages are temporarily stored and cached.
+  * `OutOfMemoryError: Direct buffer memory` is logged if if an allocation runs out of direct memory space.
+  * Direct memory is not garbage collected immediately when it's no longer in use. Instead, the application may attempt to re-use the space for future messages.
+
+Direct byte buffer memory is used for I/O buffers, while the heap memory is
+used for all other purposes. Memory usage may temporarily exceed `Xmx` because
+some memory is off-heap. The sum of `Xmx` and `XX:MaxDirectMemorySize` should
+be less than the container memory limit.
+
+`-Xms` is defaulted to `256Mb`, unless it would be larger than the calculated
+value for `-Xmx`. In that case, `-Xms` is left undefined and the JVM decides.
+
+If the container memory limit exceeds `256Mi`, the system configures a `128Mi`
+margin for reserved space. `-Xmx` and `-XX:MaxDirectMemorySize` are set to
+divide the remaining container `memory limits` equally into halves. This
+division mirrors the default tuning of the OpenJDK JVM, where by default,
+`MaxDirectMemorySize` of zero or undefined implies equal to maximum heap size.
+
+If the container memory limit is less than `256Mi`, the system doesn’t
+configure a margin and attempts to allocate all of the memory to the heap and
+`MaxDirectMemorySize`.
+
+For more information on Java arguments and performance tuning, refer to the
+[OpenJDK documentation for the `java`
+command](https://man.archlinux.org/man/java-openjdk11.1.en).
+
+The following example setting, gives a minimum heap size of `256m`, a maximum
+of `1024m`, and allows for `1g` off heap. This setting is an illustrative
+example only, not a configuration suggestion.
+
+    
+    
+    JAVA_OPTS="-Xms256m -Xmx1024m -XX:MaxDirectMemorySize=1g"
+    
+
+Minimum idle memory usage"
+
+With default configuration, you can expect the Service Gateway to idle at a
+memory usage somewhere between `-Xms` and the sum of `-Xms` and
+`-XX:MaxDirectMemorySize`.
+
+For example, with a 2Gi limit, you can expect the Service Gateway to idle at
+memory usages between 256Mi to `256+1Gi=1.25Gi`, which are roughly 12.5% to
+62.5% of the limit quota in use.
+
+If you find the minimum memory usage too high, try explicitly setting
+`-XX:MaxDirectMemorySize` to a lower value.
+
+### Resource Coordinator
+
+name | description  
+---|---  
+`KXI_NAME` | Process name.  
+`KXI_PORT` | Port.  
+`KXI_GC_FREQ` | Frequency in milliseconds to run garbage collect in a timer (default: `600000`, set to `0` to disable).  
+`KXI_SG_TIMEOUT` | Default request timeout in milliseconds (default: `60000`).  
+`KXI_DISC` | Multi-RC discovery mode: `"kubernetes"` or `""`.  
+`KXI_RC_LABEL_SELECTOR` | Label selector to discover other RCs via Kubernetes-based discovery (default: `app.kubernetes.io/name=resource-coordinator`).  
+`KXI_RC_CONTAINER_NAME` | RC container name for Kubernetes-based discovery (default: `resource-coordinator`).  
+`KXI_SG_CONN_TIMEOUT` | Timeout on connection open.  
+`KXI_SG_MAX_RETRY` | Maximum number of retries the RC is willing to do for retry-able errors.  
+`KXI_ALLOWED_SBX_APIS` | Comma-delimited list of sandbox APIs to allow in non-sandbox RCs (e.g. `.kxi.sql,.kxi.qsql,.kxi.sql2`).  
+`KXI_SG_REQ_DEL_FREQ` | Time in milliseconds to run the request table delete routine (default: `10000`).  
+`KXI_SG_QUEUE_DEL_FREQ` | Time in milliseconds to run the queue table delete routine (default: `10000`).  
+`KXI_SAPI_HB_FREQ` | Time in milliseconds to run the heartbeat to connected processes (default: `30000`).  
+`KXI_SAPI_HB_TOL` | Number of heartbeat intervals a process can miss before being disconnected (default: `2`).  
+`KXI_SG_MULTI_RC_TO_MAX_WAIT` | On a timeout of a multi-RC request, number of 10 second iterations to wait for timeout details from all RCs (default: 1).  
+`KXI_ENABLE_FLUSH` | Set to `true` to enable async flush on messages from RC to DA/Agg and from Agg to GW (default `false`).  
+`KXI_SG_STREAM_THRESHOLD` | Threshold in bytes for the RC to use streaming APIs of the Service Gateway (default: 5MB as `5000000`).  
+`KXI_ALLOW_OLD_LABEL_STYLE` | Allows queries and APIs to continue to use the old label style prior to 1.5. See [upgrading to 1.5](../upgrading.html#labelsin15) for details. (default: "false")  
+`KXI_RC_STS_SIZE` | Number of RCs in the stateful set when using Kubernetes-based discovery with DAPs and Aggs. See [ordinal connections](../query/resilience.html#ordinal-connection).  
+`KXI_ASSEMBLY_NAME` | Set in order for the RC to self-identify as an assembly RC. See [routing](../query/routing.html#scope).  
+`KXI_WARN_FREQ` | Frequency, in milliseconds, at which the RC issues a warning message if no DAPs or no aggregators are connected (default: `60000`, i.e. 1 minute).  
+`KXI_WARN_THRESHOLD` | If no DAPs or aggregators are connected, the RC begins generating error messages after this many warnings (default: 10).
+

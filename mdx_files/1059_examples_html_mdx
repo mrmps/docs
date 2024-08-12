@@ -1,0 +1,153 @@
+https://code.kx.com/insights/core/qpacker/examples.html
+
+# Example applications | QPacker | kdb Insights Core - kdb products
+
+Original URL: https://code.kx.com/insights/core/qpacker/examples.html
+
+# Example applications
+
+The best way to explore QPacker (QP) is to build some of the examples.
+
+Download the `qpacker-examples.tgz` package via
+[Nexus](https://nexus.dl.kx.com/#browse/browse:kx-insights-packages:qpacker):
+
+Once unpacked the following examples are available:
+
+    
+    
+    basic-tick-system      a tick setup
+    cloud-c-sample         an integration with C libraries
+    
+
+## `hello.q`
+
+Now you have built the example applications, create your first hello-world
+application using QPacker.
+
+Make a new directory and a file `hello.q`:
+
+    
+    
+    p)def* hello():
+      print("hello from python")
+    
+    -1 "hello from q";
+    hello[]
+    
+
+If you have both embedPy and q installed, you should be able to run this
+straight away with the command `q hello.q`.
+
+If you do not, not to worry: you can have QPacker build this entirely with
+Docker and run the packaged and Dockerized version.
+
+To do this we tell QP two things: dependencies and the entrypoint. We create a
+file `qp.json` in the same directory as the `hello.q` above:
+
+    
+    
+    {
+        "default": {
+            "depends": [ "py" ],
+            "entry": [ "hello.q" ]
+        }
+    }
+    
+
+`entry` is a list; multiple entries are used to suggest alternatives
+
+Run `qp run` to build the Docker image and run it interactively. Should the
+build fail, use `qp doctor` to analyze your application and see
+recommendations to correct the problem.
+
+## Project configuration
+
+Working through the examples and building your first application, you see the
+importance of the `qp.json` file in configuring the project for use with
+QPacker.
+
+The root directory of every QP project contains a `qp.json` file. It holds
+metadata for the package, such as what is it called, who builds and
+distributes it, the physical location for entrypoints for the `qp run`
+command, and what (if any) the dependencies are. If runtime dependencies are
+not met, QP synthesizes them by building them with Docker.
+
+Consider again the `qp.json` from our example.
+
+    
+    
+    {
+        "default": {
+            "depends": [ "py" ],
+            "entry": [ "hello.q" ]
+        }
+    }
+    
+
+The entrypoint for the program is the `hello.q` script. Since the file has the
+`.q` extension it automatically builds in a dependency on `q`. The `depends`
+clause is an explicit declaration of a dependency on Python.
+
+## C-language extensions
+
+An entrypoint is not necessarily source code. QP understands that
+`libkdbcurl.so` is the entrypoint even if that file does not yet exist. QP
+understands Makefile, GNU and `cmake` build scripts. However, it needs the
+entrypoint to determine the resulting artefact.
+
+If your make-scripts install dependencies (e.g. via `yum`) then QP picks them
+up automatically provided the `.so` file has an explicit dependency on them.
+If your `.so` file loads other `.so` files dynamically (using `dlopen`) you
+will need some customizations.
+
+    
+    
+    {
+        "default": {
+            "entry": [ "libkdbcurl.so" ]
+        }
+    }
+    
+
+Also in this directory will be a Makefile that understands how to compile
+`libkdbcurl.so` on whatever supported architectures there are.
+
+You will also likely need a q-based entrypoint as well – not just to load
+(with [Dynamic Load](https://code.kx.com/q/ref/dynamic-load/)) the various
+functions in the C module, but also to give them usable names for the q
+processes that depend on _this_ module.
+
+For an example of how a C library is built and subsequently dynamically linked
+to q functions, refer to the `cloud-c-sample`.
+
+##  Building applications with Python
+
+Any projects with Python library dependencies should have a `requirements.txt`
+file defined in the project root alongside `qp.json`. This must include
+libraries required by any submodules or dependencies, regardless of whether
+there are other `requirements.txt` files elsewhere in the directory tree.
+
+`requirements.txt` will be referenced by the Dockerfile to be used when
+creating the Docker environment.
+
+If there are no dependent libraries, `requirements.txt` may be omitted.
+
+## Multiprocess packages
+
+Many real applications are made up of multiple processes communicating over
+the network. QP can build a multi-process application by listing each
+component in the `qp.json`, each with its own entrypoint. Consider the `basic-
+tick-system` example included: a tickerplant (with a sample feed handler), one
+or more realtime database, historical databases, and gateway processes. We
+simply enumerate and name these entrypoints. The `basic-tick-system` example
+demonstrates this.
+
+`qp build -docker` builds five Docker containers given this configuration,
+which can be run (for interactive testing and development) using `qp run tp`
+and `qp run hdb`, and so on. As these are Docker images, you can use Docker
+Compose, Kubernetes, or any other orchestration tool that is compatible with
+Docker.
+
+Remember that the default component is the one used if this module is used as
+a dependency for another module.
+

@@ -1,0 +1,145 @@
+https://code.kx.com/platform/release_410/
+
+# 4.1.0 - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/release_410/
+
+# Changes in 4.1.0
+
+## SAML enterprise single sign on
+
+4.1 comes with the ability to integrate with SAMLv2 SSO. This provides an
+enterprise-level Single Sign On solution for all clients and works with any
+IDPs. See the _KX Delta Platform_ deployment guides and [SAML
+Workflow](../saml_login/) for more information.
+
+## Permissions namespace
+
+As part of the 4.1.0 release the permissions namespace has been renamed from
+`.p` to `.pm`. In order to smooth the transition, a mapping of the functions
+from the new `.pm` namespace to the previous namespace `.p` has been
+introduced. This mapping is controlled by an environment variable, which is
+set to carry out the mapping by default. The environment variable is set in
+`delta.profile`:
+
+    
+    
+    DELTACONTROL_PERM_MAP=YES
+    
+
+If this environment variable is set to `YES` when _KX Control_ is started, the
+mapping will be carried out. The mapping will also be carried out on any
+permissioned process.
+
+The mapping will not create tables or global variables in the `.p` namespace,
+only functions.
+
+The mapping is carried out using functions in the `.cx.map` namespace.
+
+## Lambda permissioning
+
+It is possible to permission the running of lambdas. This is controlled by an
+environment variable in `delta.profile` which is off by default:
+
+    
+    
+    DELTACONTROL_LAMBDA_PERMISSIONED=NO
+    
+
+If this environment variable is set to `YES` when _KX Control_ is started,
+only administrators will be allowed to run lambdas on _Control_ or
+permissioned processes.
+
+When lambda permissioning is enabled all core components should work as
+normal.
+
+Query Builder
+
+The _KX Dashboards_ Query Builder uses lambdas, and will not work with
+permissioned processes.
+
+## Query router
+
+### Polling requests
+
+Client interfaces support registering polling requests with the framework. QR
+manages the polling of requests and client receives updates periodically.
+
+### Aggregations
+
+Parameter in the QP instances to set the default request aggregation function.
+
+### Sub-requests
+
+Ability for the QP to initiate sub-requests after an aggregation if required
+in the case of missing data.
+
+### Client registration
+
+Notification callback when QR registration complete in Java Stream API and
+kdb+ client (`.qr.client.register1`)
+
+### Logging correlator
+
+Log messages are prefixed with a string that can be used to correlate messages
+across different process logfiles. The prefix will be the same for each log
+message relating to a request, so the user can easily grep log files to see
+the status of a request. Assigned by the client on creation of a request or by
+the QR if none provided. All log messages across multiple processes will use
+the same correlator prefix.
+
+### Timestamping
+
+Optional ability to enable timestamp recording for the lifecycle of a request.
+Useful for tracking request state and examining framework latency. More
+information in the Query Router docs.
+
+## Enhanced instance configuration
+
+Detailed configuration of process instances can be carried out via the
+Instance Config reserved parameter.
+
+This takes overrides of the `INSTANCE_CONFIG` parameter as possible values.
+
+Using this, it is possible to set various supported parameters on a process
+instance.  
+[Enhanced Instance Configuration](../enhanced_instance_configuration/)
+
+## DC checkpoints
+
+Added a viewer for checkpoints in Control and the ability to set a new one or
+to revert to a previous one.
+
+[Checkpoints](../checkpoints/)
+
+## Process status view
+
+Added a viewer that lists only running processes, without workflow
+information.
+
+[Viewers](../viewers/)
+
+## Email distribution lists
+
+Allow [email distribution lists](../emaildistribution/) to be created and
+edited.
+
+### Compare entity revision history
+
+For any entity viewer with a _Revisions_ tab, you can compare any two
+revisions.
+
+[Compare revision history](../revisions/#compare-revisions)
+
+## Package exporter entity search
+
+In the Package Exporter view, there is now a search area to see if an entity
+is already in the package.
+
+## Miscellaneous
+
+### Security
+
+  * Static code-analysis tools integrated with core JVM KX Delta Platform components
+  * Enhanced password-management and storage, with encryption and content control
+

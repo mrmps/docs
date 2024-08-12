@@ -1,0 +1,644 @@
+https://code.kx.com/platform/stream/actiontracker/
+
+# Action Tracker - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/stream/actiontracker/
+
+# Action tracker
+
+An Action Tracker is a fully configurable issue-tracking and workflow-
+management framework used to track items or tickets through a defined life-
+cycle. A workflow can be created consisting of different stages (Queues) and
+paths between these stages (Transitions), all of which are configurable in _KX
+Control_.
+
+A basic example is given in the diagram below. When an item is initially
+raised it is assigned a default queue of Open. The transitions are shown by
+the green arrows. The item can be transitioned from the Open queue to either
+Investigating or Escalated and from there on to Closed. Transitions can be bi-
+directional, which requires configuring two separate transition entities
+during set up.
+
+![Screenshot](../img/stream/actiontracker_example.png)
+
+Action Trackers are used widely within solutions built on top of _KX Delta
+Platform_ , including surveillance and case management. Alerts can be tracked,
+escalated, and prioritised to allow specific actions and reviews depending on
+the nature of the alert.
+
+An overview of the Action Tracker, Queues and Transitions setup, permissioned
+for a logged in user can be seen in _KX Control_ by picking _Open Viewer >
+Action Tracker Library_ from the _Tools_ menu.
+
+![Screenshot](../img/stream/actiontracker_library.png)
+
+## Action tracker management
+
+To create a new Action Tracker, in _KX Control_ , select `File > New > Action
+Tracker`. Choose a unique name and package when prompted.
+
+![Screenshot](../img/stream/actiontracker_definition.png)
+
+The following configuration can be applied.
+
+parameter | effect  
+---|---  
+Active | Indicates if the Action Tracker is active  
+Description | Purpose of the Action Tracker  
+Display Name | Name displayed in the workspace navigator  
+Last Triggered | Time that the tracker was last triggered  
+Created On | Time the tracker was created  
+Created By | User who created the tracker  
+Last Modified On | Time the tracker was last modified  
+Modified By | User who last modified the Action Tracker  
+Owner | Owner of the tracker: can be a user or a user group  
+Re-issues | Indicates a new Action Tracker item will be created for an alert only if no active item exists for that alert instance and sym  
+Use Reissue Data | When reissues enabled, whether to store reissued alert data for item  
+Locking | Enable/Disable editing of Action Tracker items  
+Case | Indicates if the Action Tracker is a case  
+New Item Callback | Analytic that runs when a new item is created or reopened  
+  
+### Queues
+
+An Action Tracker queue indicates the current stage in the Action Tracker
+workflow. Considering the Action Tracker to be a trade delivery attempt, the
+different queues it could have would reflect the stages it would go through;
+open, credit check, client cancel, failed order, finished order, delivery.
+
+The Queues associated with a particular Action Tracker can be viewed and
+opened from the _Queues_ tab in the Action Tracker editor. The figure shows
+the typical Queue setup for a credit-alert Action Tracker;
+
+![Screenshot](../img/stream/actiontracker_queues.png)
+
+To create a new Queue select the corresponding option in the toolbar on the
+top right of the Action Tracker editor.
+
+![Screenshot](../img/stream/actionqueue_definition.png)
+
+The following configuration can be applied.
+
+parameter | effect  
+---|---  
+Action Tracker | Name of associated Action Tracker  
+Description | Purpose of the Queue  
+Display Name | Name displayed in the workspace navigator  
+Owner | Owner of the Queue  
+State Type | State of the Queue*  
+Status | Status to be displayed in the Action Tracker for this Queue  
+Status Color | Color Picker to specify the status-box color. Can be overriden by selecting the _Use default value_ option  
+Text Style | Indicates text style of items in the _Current Items_ view. Can be set to bold/italic  
+Show Resolution | Indicates resolutions specified for any queue in a final state are to be displayed on the transition screen for an item in the Action Tracker dashboard  
+Time to Live (TTL) | Period after which a notification is sent that the queue has not progressed  
+TTL Action | Analytic to be used on TTL action. Should be included in the `dxATNotificationTTL` analytic group  
+  
+* Queue state is specified as:
+
+state | effect  
+---|---  
+none | all Queues other than initial and final are set to `none`  
+initial | if first queue in the workflow it must be set to `initial`  
+final | if last queue in the workflow it must be set to `final`  
+  
+### Transitions
+
+Where the Queue status is set to _none_ or _initial_ , transitions define how
+an Action Tracker has passed from one queue to another. For the trade delivery
+example given above, where a queue (stage) in the workflow was defined as
+`Credit Check`, a logical transitional setup would be the transitions `Pass
+check` and `Fail check`. This would be proceeded by either passing the Action
+Tracker to the queue `Delivery` or `Fail check` depending on the outcome.
+
+The transitions relating to a particular queue can be viewed in the
+_Transitions_ tab of the queue editor. The figure shows a typical transition
+setup for the `AwaitingClientResponse` queue associated with the credit alert
+Action Tracker.
+
+![Screenshot](../img/stream/actionqueue_transitions.png)
+
+To create a new transition select the corresponding option in the toolbar on
+the top right of the Action Tracker/Action Queue editor. The transition can
+then be applied to the necessary queue configuration by setting the parameters
+_From queue_ and _To queue_ as required.
+
+The following configuration can be applied to the transition.
+
+parameter | effect  
+---|---  
+Action Tracker | Name of associated Action Tracker  
+Description | Purpose of the transition  
+Display Name | Name displayed in the workspace navigator  
+Display Form | The display form will typically prompt the user to record additional information, such as task estimates. Custom forms are prepared by a q developer and should be included in the `dxATTransitionDDF` analytic group  
+From queue | The queue from which the transition is activated  
+To queue | Queue to which the transition is directed  
+Transition Action | Analytic to be executed on the transition. Should be included in the `dxATActionTransition` analytic group  
+Notification Action | Analytic to be executed for the notification. Should be included in the `dxATNotificationAssign` analytic group  
+Reassign to | A user to whom an Action Tracker item is to be automatically reassigned: select a user, or check _Current user_  
+Current User | If _Reassign to_ is not specified, an Action Tracker item can be manually reassigned  
+Show transition popup | Indicates that when a user clicks a transition button on an Action Tracker item, the display form is to be shown  
+  
+### Resolutions
+
+Where Queue status is set to `final` a resolution can be configured specifying
+the possible reasons for an Action Tracker item reaching a final status, e.g.
+`Resolved`, `Raised in Error`, `Duplicate` etc.
+
+To create a new resolution select the corresponding option in the toolbar on
+the top right of the queue editor. The user is then prompted to supply an ID
+for the resolution and a breif description outlining the nature of the
+resolved entity.
+
+## Workflows
+
+The Action Tracker process workflows in _KX Control_ are `DS_Launch_AT_[A|B]`.
+These consist of;
+
+  * AT - handles alerts, item creation and any state changes
+  * HDB - history of all closed items plus their alerts and activity
+  * GW - used to query across the open and closed items
+  * QM - acts as a proxy for dashboard subscriptions.
+
+The AT process subscribes to the `dxATAlert` messaging topic on a `ds_at`
+channel. These alert messages are generated by other processes publishing
+messages on that channel and each is linked to a specific action tracker. When
+it hits the AT process, a new item is generated or a re-issue is added for an
+existing one.
+
+### Reissues
+
+By default when an alert is published to the AT, a new action tracker item is
+created. This behavior can be changed with the _Reissues_ flag on the action
+tracker definition.
+
+![Screenshot](../img/stream/actiontracker_reissues.png)
+
+If enabled for an action tracker, then when an alert is triggered for which an
+action tracker item already exists, a new item will not be generated. Instead
+the existing item will have it's _Issue Count_ incremented.
+
+![Screenshot](../img/stream/actiontracker_issuecount.png)
+
+An alert's uniqueness is defined by the following columns from the `dxATAlert`
+schema; `actionTracker`, `sym`, and `alertkey`. If the _Use Reissue Data_
+field is enabled, the re-issued alert will be used in the dashboard instead of
+the original one.
+
+#### Closed item reissues
+
+It is possible to configure an Action Tracker such that the reissue map of an
+item is not cleared when that item is closed. If there is a reissue of this
+closed item (i.e. an item with the same alertkey) it will take the item id of
+the closed item. The new item analytic hook will receive a flag indicating
+that a closed item has been reissued.
+
+To set the list of action trackers that have their reissue map persisted, use
+the API `.at.setPersistReissueATs` on the action tracker process. This needs
+to be called every time the action tracker starts up as the list is not saved
+when the process shuts down. This could be done in the initial state function
+or in a start up instruction.
+
+**.at.setPersistReissueATs**
+
+Called on the action tracker process to set the list of action trackers that
+have their reissue map persisted when an item is closed.
+
+    
+    
+    .at.setPersistReissueATs[`LateTrade`DeltaMon]
+    
+
+When a new item is created, the new item analytic will receive a flag
+indicating if this is a closed item that has been reissued,
+`isClosedItemReissue` true/false.
+
+New item creation callback
+
+## Action tracker dashboard
+
+The action tracker dashboard consists of a current items panel and a panel
+showing the details of the action tracker item currently selected.
+
+![Screenshot](../img/stream/actiontracker_dashboard.png)
+
+The current items panel can be used to view all open and closed action tracker
+items. Various filters can be applied to narrow the number of items shown.
+
+When an action item is selected details of the item will be displayed in the
+lower panel. This will include the item status (e.g. open), when the item was
+generated and also the properties of the alert.
+
+### Item actions
+
+There are four types of actions open to the user which can change the state of
+action items:
+
+  * Add comment – users can add text based comments to tickets
+  * Reassigning – users can assign the ticket to other users or groups, subject to permissions
+  * Users can upload certain types of files which are then linked with the tickets. This requires the `DeltaDaemon` to be running and configured correctly. It is also possible to configure an antivirus scan to run on these files. A file can be attached to several items at once, just select them all in the current items panel, click upload and check the _Apply to all selected items_ box.
+  * Transitions – users can transition a ticket between different queues (e.g. Open to Investigating). 
+
+![Screenshot](../img/stream/actiontracker_itemactions.png)
+
+The payload for the item can also be edited using the _Edit_ button at the top
+right of the action item display.
+
+![Screenshot](../img/stream/actiontracker_payloadedit.png)
+
+### Reopen
+
+Functionality exists to reopen items after they have been closed. This is
+implemented as a special transition. Where normal transitions link two
+specific queues, the _Reopen_ transition links any final queue with the
+initial one. As such it's not linked to any queue in action tracker
+definitions and hence configured via a button from the _Action Tracker_
+configuration panel.
+
+![Screenshot](../img/action-tracker-reopen.jpg)
+
+Other than this, the behavior is the same.
+
+  * Same hooks and behavior for transition analytics, notifications, assignments etc
+  * Permissionable by role
+  * Appears as a normal transition in the user dashboard
+
+Reopen item validation
+
+### Streaming view
+
+To enable a streaming version of the items view, the dashboard component
+should have the `Streaming Data Connection` set to the `ds_action_tracker`
+connection group. This offers greatly improved performance over the polling
+model as the volume of data being transported is greatly reduced.
+
+When a user opens the screen or sets filters, a subscription is made to the
+backend processes. This runs an initial snapshot of the items in the database
+and returns those to the front-end. When an item is modified, the change will
+be pushed to each subscription it's part of, updating the front-end views.
+
+The volume of data handled in the streaming model is much lower than via
+polling, which gives the better performance. Instead of large datasets on
+every poll, the snapshot is only returned once on startup of the subscription
+and subsequent updates are only for changed rows. The snapshot can potentially
+be large so the dashboard component has a `Max Rows` parameter to limit the
+size. Set to `-100` for last hundred rows, `+100` for first hundred and `0`
+for unlimited.
+
+As with the polling model, the columns returned are configurable through the
+component and the filters can be defined by the user.
+
+### Locking items
+
+To prevent multiple users editing an item at the same time, locking can be
+enabled in the action tracker definition.
+
+![Screenshot](../img/stream/actiontracker_locking.png)
+
+When enabled, items will be locked when a user begins editing. Certain user
+groups can be given permission to override locks on an item via entitlements
+in the _Role Management_ tab of the action tracker definition.
+
+### New item creation callback
+
+An analytic can be defined that will run whenever a new action tracker item is
+created. There is a drop down in the action tracker definition, _new item
+callback_. The analytic selected here will run when a new item is created by
+an alert, when a new item is created manually or when an item is reopened. The
+callback will run with the item details as a parameter. To be available for
+selection in the drop down, analytics must be members of the
+`dxATItemCreation` analytic group.
+
+![Screenshot](../img/stream/actiontracker_newitemcallback.png)
+
+## Entitlements
+
+To allow a user to use the Action Tracker and be assigned tickets, the user
+should have permission on the _ActionTracker_ entity group and be permissioned
+to the Action Tracker entity in question.
+
+Tickets can be assigned to users and groups with read permissions to the
+Action Tracker.
+
+If a user does not have permission to a particular Action Tracker, they will
+not see any items for that Action Tracker.
+
+To transition items the user will need read permissions on the relevant Queue
+and Transition entities.
+
+### Role management
+
+To enable specific user groups to perform actions on the Action Tracker items
+use the _Role Management_ tab.
+
+![Screenshot](../img/stream/actiontracker_rolemanagement.png)
+
+role | effect  
+---|---  
+Override Lock | Enable override of a lock on an item  
+Can Delete | Enable deletion of comments and attachments to items  
+Create | Enable creating items  
+  
+## Case management
+
+The case management functionality exists to build groups of items by linking
+them together and progressing the whole case as one. As an example, in the
+market surveillance world, multiple suspicious trading alerts against a trader
+or group would be linked together to form a case. The case could then be
+progressed while optionally progressing the linked alerts themselves.
+
+Case management can be enabled in the _Action Tracker_ dashboard component
+using the `Case Management` checkbox.
+
+### Creating cases
+
+When enabled, this adds a new `Create Action` button to the dashboard
+component. This button opens a dialogue which allows the user to select which
+action tracker they want to use and the associated payload data.
+
+![Screenshot](../img/action-tracker-create.jpg)
+
+By default any user can create an action tracker case/item. A check can be
+enabled to only allow users that have the _create_ role for the action tracker
+to create items/cases
+
+Role management
+
+This check can be enabled using an INSTANCE_CONFIG override setting,
+`.at.createRoleCheck`. This needs to be enabled on both the action tracker and
+action tracker GW.
+
+[Enhanced instance
+configuration](../../enhanced_instance_configuration/#enhanced-instance-
+configuration)
+
+### Links
+
+A new panel to manage and display links will be included when an item is
+opened. The table shows the linked items and the link type. An `X` button
+exists for each row to delete the link.
+
+![Screenshot](../img/action-tracker-linkspanel.jpg)
+
+The `Add Links` button can be used to add links to this item. The dialog
+allows you to specify the link type and multiple IDs to link to.
+
+![Screenshot](../img/action-tracker-linksdialogue.jpg)
+
+Links are defined in pairs with each pair having a main and complement text.
+Consider the following;
+
+  * `item1` is opened and linked to `item2`
+  * Link is chosen as _derives to_
+  * `item1` is stored as _derives to_
+  * `item2` is stored as _derives from_
+
+The available links are stored in _KX Control_ configuration with a default
+bundled with _Stream_ called `DS_AT_LINKS:DEFAULT`. To specify custom link
+types, create an override of this called `DS_AT_LINKS:AT` and package with the
+solution instead of overriding the _KX Stream_ value.
+
+![Screenshot](../img/action-tracker-linkscfg.jpg)
+
+### Progressing linked items
+
+When progressing a case, the linked items can also be progressed. To do this
+involves a couple of steps;
+
+  * Transition of the case must have a custom `Transition Analytic` defined
+  * Analytic should call to get the links for the item (`dxATGetLinks`)
+  * Should then call to progress selected linked items with the desired queues (`dxATProgressLinks`)
+
+#### APIs
+
+**dxATGetLinks**
+
+Get links for an item. Returns a table of linked IDs, display name and link
+text.
+
+tag | name | type | description  
+---|---|---|---  
+param | ID | long | Item ID  
+returns |  | table | Table of links  
+      
+    
+    dxATGetLinks[1]
+    /=> id name  link             
+    /=> --------------------------
+    /=> 2  "abc" "derives to"     
+    /=> 3  "abc" "is derived from"
+    /=> ..
+    
+
+**dxATProgressLinks**
+
+Progresses a table of IDs to the specified queues. Usually called within
+transition analytics to manually transition items linked to a parent ID.
+
+tag | name | type | description  
+---|---|---|---  
+param | id | long | ID of item being transitioned  
+param | items | table | Table of linked items to transition  
+  
+Input table format is;
+
+column | type | description  
+---|---|---  
+id | long | IDs to progress  
+queue | symbol | Desired queue  
+      
+    
+    tab:([] id:2 3 4; queue:`LateTrade.CauseIdentified)
+    dxATProgressLinks[1; tab]
+    
+
+**Notes**
+
+  * Progressing linked items does not perform the individual transitions on each of them. Updates the current queue and records the change in the item history
+  * Only progresses open items
+  * Must specify valid queue names
+
+### Creating cases with linked items
+
+Creating a case with linked items can be restricted to items in certain
+configured queues.
+
+If a case is created with linked items, a validation function will run to
+check the queues of the items being linked. If validation fails no case will
+be created. The validation function is defined on the action tracker gateway
+and can be overwritten using an INSTANCE_CONFIG setting
+(`.at.createCheckQueues`) to implement any bespoke code required.
+
+[Enhanced instance
+configuration](../../enhanced_instance_configuration/#enhanced-instance-
+configuration)
+
+The default validation will allow all queues to be linked unless a table on
+the action tracker gateway is populated (`.at.createQueues`). If this table is
+poplated, validation will succeed if all the queues of the linked items are in
+the `allowedQueues` column of the table.
+
+The table and the default validation function,
+`.at.i.createCheckQueuesDefault`, are defined in the `dxATGWAPIs` instruction.
+This table can be populated in dxATInitialStateGW by users using config or
+whatever they require.
+
+It is possible to require a minimum length of comment when transitioning or
+closing an Action Tracker alert. This is achieved via a table
+(`.at.transitionComments`) on the action tracker gateway process.
+
+The validation is performed with reference to a table on the action tracker
+gateway, `.at.transitionComments`, which can be populated with transition
+names and the minimum required comment length for those transitions. This
+allows different minimum comment lengths to be specified for different
+transitions. On the action tracker gateway there is an API to populate the
+table (`dxATSetTransitionCommentLengths`), and an API to return the current
+table contents (`dxATGetTransitionCommentLengths`). The table can be populated
+in `dxATInitialStateGW` by users via this API using config or whatever they
+require.
+
+#### APIs
+
+**dxATGetTransitionCommentLengths**
+
+Returns the `.at.transitionComments` table, which is keyed on transition, the
+format is
+
+column | type  
+---|---  
+transition | symbol  
+minComment | integer  
+      
+    
+    dxATGetTransitionCommentLengths[]
+    /=> transition                      |  minComment
+    /=> --------------------------------|------------
+    /=> LateTrade.Cause_Identified      |  5
+    /=> DeltaMon.Complete               |  10
+    /=> CreditAlert.Client_Acknowledged |  15
+    
+
+**dxATSetTransitionCommentLengths**
+
+Called to populate the `.at.transitionComments` table. When an item is
+transitioned, validation will occur on the comment if the transition appears
+in the `.at.transitionComments` table. The table specifies the minimum comment
+length required for a given transition. If the comment does not meet the
+minimum required length, the transition will be disallowed.
+
+    
+    
+    tab:([]transition:`LateTrade.Cause_Identified`DeltaMon.Complete`CreditAlert.Client_Acknowledged;minComment:(5i; 10i; 15i))
+    dxATSetTransitionCommentLengths[tab]
+    
+
+## End of day
+
+At end of day any closed items on the action tracker process will be saved to
+the action tracker HDB. This is performed by the end of day analytic on the
+action tracker process, `dxATEOD1` by default, which will save closed items to
+the date partition in the HDB matching the date the item was opened. A second
+end of day analytic is provided, `dxATEOD`, which will save closed items to
+the date partition in the HDB for the date they were closed. Either analytic
+can be used, `dxATEOD1` is the default.
+
+## Schema change, alertkey field
+
+To avoid the sym file growing too large in the action tracker HDB, the
+alertkey field in the dxATItemCurrent table on the action tracker and the
+action tracker HDB has been changed in 4.6.0 to be a string instead of a
+symbol. The date at which this change took place on an environment is
+persisted in a table on the action tracker process, `dxATStatus`. On the
+action tracker HDB the date is stored in the table `dxATHDBStatus`. Data from
+before the change in the action tracker HDB will still have symbol values for
+the alertkey field. Any dashboard queries to the action tracker HDB will
+convert this older data to string values to ensure consistency.
+
+## Reopen item validation
+
+In terms of reopening items, it is possible to:
+
+  * Configure which closed queues can be reopened and which cannot
+  * Specify which queue an item for a given closed queue is reopened to
+  * Specify that when an item is reopened, it should return to the queue it was in before it was closed
+
+There is a table on the action tracker gateway process, `.at.reopenQueues`,
+which is empty by default. When the table is empty reopening action tracker
+items will result in default behavior, i.e. items opened to the initial queue
+for the action tracker. The table is defined in `dxATGWAPIs`. If the table is
+populated then validation will occur. In that case if a queue is not in the
+table it cannot be reopened. Queues can be configured to reopen to the initial
+queue for the action tracker, the previous queue it was in before closing or
+to a named queue. There is an API to populate the table,
+`dxATSetReopenQueues`. The table can be populated in `dxATInitialStateGW` by
+users via this API using config or whatever they require.
+
+The `.at.reopenQueues` table is keyed on queue, the columns are
+
+column | type  
+---|---  
+queue | symbol  
+mode | symbol  
+named | symbol  
+  
+For each queue, the "mode" column dictates how an item in that queue will be
+reopened, the mode column can take values initial, named or previous:
+
+  * initial will reopen the queue to the initial queue for the action tracker
+  * previous will reopen the queue to the last queue it was in before closing
+  * named will reopen the queue to the queue specified in the "named" column
+
+### APIs
+
+**dxATSetReopenQueues**
+
+Called to populate the `.at.reopenQueues` table which dictates which closed
+queues can be reopend and which queue an item should be reopened into
+
+    
+    
+    tab:([]queue:`LateTrade.Closed`DeltaMon.Closed`CreditAlert.Closed;mode:`previous`named`initial;named:``DeltaMon.Investigating`)
+    dxATSetReopenQueues[tab]
+    
+
+**dxATGetReopenQueues**
+
+Returns the `.at.reopenQueues` table
+
+    
+    
+    dxATGetReopenQueues[]
+    /=> queue              |  mode      named              
+    /=> -------------------|----------------
+    /=> LateTrade.Closed   |  previous  `      
+    /=> DeltaMon.Closed    |  named     DeltaMon.Investigating      
+    /=> CreditAlert.Closed |  initial   `
+    
+
+## Subscribing to AT cluster
+
+A process can become a client of the action tracker cluster by subscribing to
+some or all of the replicated tables on the action tracker process. Changes to
+these tables will be published to any client processes.
+
+Subscribing is achieved via API loaded in the module `shared/q/px.atsub.q`.
+Guidance on setting up subscriptions can be found here
+
+[Action Tracker Client](../../api/atclient/)
+
+## Runnning AT as a service
+
+The action tracker, action tracker gateway and action tracker HDB can be run
+as sevices.
+
+`kx_at`, `kx_hdb_at` and `kx_gw_at` services are included in _Stream_.
+
+A new process instance parameter `hdbProcessServ` has been added to the action
+tracker template. This is the HDB to use when the action tracker is running as
+a service. For `kx_at` it is set to `kx_hdb_at`.
+
+For `kx_gw_at` the process instance parameter processConfig is set to be an
+override of `DS_GW_Servers` that points to `kx_at` and `kx_hdb_at`,
+`DS_GW_Servers:kx_gw_at`.
+
+To use the action tracker dashboard with services the Data Connection and
+Streaming Data Connection should be changed to point at the services.
+

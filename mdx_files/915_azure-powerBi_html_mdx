@@ -1,0 +1,269 @@
+https://code.kx.com/insights/enterprise/azure-marketplace/azure-powerBi.html
+
+# Azure PowerBI Integration - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/azure-marketplace/azure-powerBi.html
+
+# Azure PowerBI Integration
+
+_This section shows you how can connect kdb Insights Enterprise to your
+PowerBI application through the REST API._
+
+## Connect PowerBI to kdb Insights Enterprise
+
+The following steps describe how to connect both applications, so you can
+retrieve data from kdb Insights Enterprise and analyze it in your PowerBI
+environment.
+
+### Prerequisites
+
+Ensure you meet the following criteria before attempting to set up the PowerBI
+connection:
+
+  1. kdb Insights Enterprise is [installed](installing-kx-insights-platform-on-azure.html).
+  2. kdb Insights Enterprise [contains data](../walkthrough/weather.html).
+  3. Versions in use:
+
+product | version  
+---|---  
+kdb Insights Enterprise | 1.4 (March 2023)  
+PowerBI Desktop | 2.114.864.0 64-bit (February 2023)  
+  4. PowerBI Desktop is already downloaded and configured.
+
+  5. You have downloaded the kdbPowerBI template [here](powerbi/kdbIE_1.9.0_connector.pbit).
+
+### Get PowerBI ready
+
+To load data, you need to update some privacy settings:
+
+  1. Open the PowerBI desktop application.
+  2. On the top left, access File > Options and Settings > Options > (under Global) Privacy. Set it to **Always ignore Privacy Level settings**.
+  3. Click **OK**.
+
+![privacy](images/powerbi0.jpg)
+
+### Find the data for the template
+
+The [template](powerbi/kdb_1.4.0_connector.pbit) in this example requires
+certain fields to be populated:
+
+![template](images/bitemplate1.jpg)
+
+The value for each field can be identified using the instructions below.
+
+#### Host Name
+
+  1. Access your Resource Group in the Azure Portal and select the **kdbInsightsEnt** cluster.
+
+![cluster](images/powerbi3.jpg)
+
+  2. On the left panel under Kubernetes resources, select **Services and ingresses**.
+
+  3. Select the **Ingress** tab.
+
+![ingress](images/powerbi4.jpg)
+
+  4. Make a note of the value in the Hosts column (it should look like this: xxxx.someregion.cloudapp.azure.com).
+
+#### Client Id
+
+You need to create a new Client Id for this example.
+
+  1. Open a web browser.
+  2. Paste the Host Name into the address bar, adding "**/auth/** " at the end (it should look like this: https://xxxx.someregion.cloudapp.azure.com/auth/).
+  3. The Keycloak Sign in page should appear.
+  4. Log in with the credentials from [step 3](installing-kx-insights-platform-on-azure.html#general-configuration) of the install guide.
+
+![signin](images/keycloack1.jpg)
+
+Reminder
+
+Username or e-mail is always "user".
+
+  5. Once inside Keycloak, open the dropdown in the left panel and select **Insights**.
+
+![clients](images/keycloack2.jpg)
+
+  6. Select **Clients** below the dropdown.
+
+  7. On the _Clients_ tab, select **Create Client**.
+
+![create](images/keycloack3.jpg)
+
+  8. Enter your Client ID under _General Settings_.
+
+![client1](images/keycloack4.jpg)
+
+  9. Click **Save**.
+
+  10. Adjust your Capability Config settings.
+
+![settings](images/keycloack5.jpg)
+
+  11. Click **Save**.
+
+  12. Open the **Service Account Roles** tab.
+
+  13. Click **Assign role**.
+
+![roles](images/keycloack7.jpg)
+
+  14. Search for `insights.query*` and select the checkbok.
+
+![roles](images/keycloak-role.jpg)
+
+  15. Click **Assign**.
+
+#### Client Secret
+
+Assuming a Client Id has been created and the Client Settings have been
+adjusted and Saved, the Client Secret can be discovered using the following
+steps:
+
+  1. Choose the Access > Credentials tab.
+  2. Copy the Client Secret in the box.
+
+![secret](images/keycloack-client.jpg)
+
+  3. Make a note of the copied text.
+
+#### User Query
+
+This refers to the query that is executed to retrieve data from kdb Insights
+Enterprise into PowerBI.
+
+It should follow the KX SQL format similar to "`select * from TABLE_NAME`".
+
+Warning
+
+KX compatibility with ANSI SQL is in progress, check the latest status of the
+supported functionalities [here](../../core/sql/sql-compliance.html).
+
+#### Max Records
+
+This field is optional and does not need to be populated.
+
+### Loading data with template
+
+  1. Open the PowerBI desktop application.
+  2. Navigate to File > Import > PowerBI template.
+
+![powerbi](images/powerbi1.jpg)
+
+  3. Select the template.
+
+  4. Fill out the fields in the template with the values retrieved in the previous section.
+
+![load](images/bitemplate2.jpg)
+
+  5. Click **Load**.
+
+  6. A pop up similar to the one below appears. Click **Anonymous** on the left panel and click **Connect**.
+
+![popup](images/powerbi18.jpg)
+
+Warning
+
+In some cases, PowerBI displays warnings about Credentials. If this occurs,
+follow these quick actions to resolve the issue.
+
+### Retrieving data
+
+From the screen in the previous step:
+
+  1. Click the **table** icon from the left-hand menu.
+
+![table](images/powerbi19.jpg)
+
+![table1](images/powerbi20.jpg)
+
+  2. You should see the table populated with its contents.
+
+Filtering using labels
+
+If the loaded data contains labels, those can also be used as a filtering
+method to obtain more specific results.
+
+### Analysing data
+
+With the data loaded into the table:
+
+  1. Click the **graph** icon.
+
+![graph](images/powerbi16.jpg)
+
+  2. On the right-hand menu, select the type of chart and the data for each axis.
+
+![graph1](images/powerbi17.jpg)
+
+### Solving Credentials Error
+
+When loading data, PowerBI may give a credential error similar to the one
+below:
+
+![image](images/powerbi-issues1.jpg)
+
+If this occurs follow the steps below to resolve the issue:
+
+  1. When the error pop-up appears select **Cancel**.
+  2. A message apprears saying "you'll need to refresh data". Click **Close**.
+
+![image](images/powerbi-issues2.jpg)
+
+  3. You are now on the main PowerBI screen with the following yellow message:
+
+![image](images/powerbi-issues3.jpg)
+
+  4. Access File > Options and settings > Data source Settings.
+
+![image](images/powerbi-issues4.jpg)
+
+  5. A new window appears with your current host. Select the host and click **Edit Permissions...**.
+
+![image](images/powerbi-issues5.jpg)
+
+  6. A pop-up appears. You may see under Credentials, "Type: Not Specified". This is the core of the issue as PowerBI did not store the defaulted credentials correctly.
+
+![image](images/powerbi-issues6.jpg)
+
+  7. Click **Edit**. A pop-up appears. Ensure you select _Anonymous_ and click **Save**.
+
+![image](images/powerbi-issues7.jpg)
+
+  8. You´ll see the Permissions are now set to Anonymous. Make sure the Privacy Level is set to _None_ and you click **OK**.
+
+![image](images/powerbi-issues8.jpg)
+
+  9. In the top toolbar, click **Refresh**.
+
+![image](images/powerbi-issues9.jpg)
+
+  10. You should now be able to retrieve data.
+
+### Modifying the initial query
+
+In case you need to edit the query to retrieve additional data, follow these
+steps:
+
+  1. On the _Data_ panel, find getData, click **...**.
+
+![image](images/powerbi-update1.jpg)
+
+  2. A new window opens. In the left panel, all the information you provided for the template to retrieve data is displayed.
+
+At this point, you can update the query.
+
+  3. Select _UserQuery_ and edit the field on the right side panel. Click **getData** to reload (you can ignore any credential message pop-ups).
+
+![image](images/powerbi-update2.jpg)
+
+  4. On the top panel, click **Close & Apply**. The window closes and you'll go back to the main screen.
+
+![image](images/powerbi-update3.jpg)
+
+  5. On the main screen, click on the table icon to make sure the updated query has been correctly executed and the respective data is loaded.
+
+![table](images/powerbi19.jpg)
+
+  6. Continue to analyze the data.
+

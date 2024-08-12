@@ -1,0 +1,73 @@
+https://code.kx.com/platform/netcon_support/
+
+# Netcon Support - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/netcon_support/
+
+# Netcon support
+
+Windows installations of _KX Delta Platform_ support the use of Netcon to set
+socket options.
+
+Documentation for Netcon itself is available to _KX for Sensors_ clients.
+
+That documentation will indicate that two environment variables must be set,
+namely
+
+    
+    
+    NETCON_LIBDIR
+    NETCON_CONFIG
+    
+
+One approach would be to set the Netcon library directory to be `delta-
+bin/config` and to have the Netcon configuration file in that directory also.
+In that case the environment variables could be set in `delta-
+bin/delta.profile` as:
+
+    
+    
+    set NETCON_LIBDIR=%DELTA_CONFIG%
+    set NETCON_CONFIG=%DELTA_CONFIG%\netcon.cfg
+    
+
+To configure the _KX Delta Platform_ for Netcon, ensure the Netcon executable
+is in the `delta-bin/config` directory of the environment.
+
+In addition, two KX Delta Platform environment variables must be updated in
+`delta-bin/delta.profile`:
+
+    
+    
+    set DELTACONTROL_USENETCON=YES
+    set DELTACONTROL_NETCONEXE=<name of Netcon executable>
+    
+
+Once the environment is started after these changes _KX Delta Platform_
+processes will attempt to invoke the configured Netcon executable on start up.
+
+## Upgrading an Existing Deployment
+
+The _KX Delta Platform_ Tomcat package contains a script change (to
+`catalina.bat`) to allow Tomcat to invoke Netcon when started.
+
+If you are installing a _KX Delta Platform_ patch to get Netcon support there
+could be a scenario where the Tomcat version in the patch matches the existing
+Tomcat version in your _KX Delta Platform_ Windows environment. In this case
+the normal upgrade process would not make any changes to the existing Tomcat
+and thus not add the script change to `catalina.bat`.
+
+In **this scenario only** , the `install.bat` script in the _KX Delta
+Platform_ patch, which performs the upgrade, can force a Tomcat upgrade. To
+perform this, pass the `replaceTomcat` option when running the `install.bat`
+script:
+
+    
+    
+    install.bat replaceTomcat
+    
+
+If you are attempting this it is strongly advised to make a back up of the
+Tomcat directory (`KxPlatformWinDeploy_*\delta-bin\software\Tomcat_*`) before
+the upgrade.
+

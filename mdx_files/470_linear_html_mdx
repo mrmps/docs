@@ -1,0 +1,194 @@
+https://code.kx.com/insights/api/machine-learning/q/analytics/api/online/SGD/linear.html
+
+# Linear Regression - kdb products
+
+Original URL: https://code.kx.com/insights/api/machine-learning/q/analytics/api/online/SGD/linear.html
+
+# Linear Regression SGD Model
+
+A linear regression model assumes that there is a linear relationship between
+the input variables `X` and the target/output value `y`. In practice this
+implies that there exists some linear combination of the input variable `X`
+which allows us to infer/predict the value `y`.
+
+This relationship can be described by the formula:
+
+\\[y_i= \sum_{n=1}^{N} \theta_{n} X_{i,n}\\]
+
+Where:
+
+Parameter | Description  
+---|---  
+`X` | Are the `N` dimensional features which in linear combination represent `y`  
+`y` | Is the variable being predicted  
+\\(\theta\\) | Are the weighted coefficients used to calculate the best linear combination of `X` to describe `y`  
+  
+The goal of a linear regresion model is to calculate the `theta` coefficients
+which can then be used in combination with input data to make predictions
+based on this linear relationship.
+
+## `.ml.online.sgd.linearRegression.fit`
+
+_Fit a linear regression model using stochastic gradient descent_
+
+    
+    
+    .ml.online.sgd.linearRegression.fit[X;y;trend;paramDict]
+    
+
+**Parameters:**
+
+name | type | description  
+---|---|---  
+`X` | `any` | Input/training data of N dimensions.  
+`y` | `any` | Output/target regression data.  
+`trend` | `boolean` | Is a trend to be accounted for.  
+`paramDict` | `dictionary` | Any modifications to be applied during the fitting process of SGD (See here for more details).  
+  
+**Returns:**
+
+type | description  
+---|---  
+`dictionary` | All information collected during the fitting of a model, along with prediction and update functionality. `updateSecure` has also been included to allow new data to be used to update the model where additional checks are applied to the data to ensure that it is in the correct format to ensure no 'model pollution' occurs.  
+  
+The information collected during the fitting of the model are contained within
+the `modelInfo` key and includes:
+
+name | description  
+---|---  
+`theta` | The weights calculated during the process.  
+`iter` | The number of iterations applied during the process.  
+`diff` | The difference between the final `theta` values and the preceding values.  
+`trend` | Whether or not a trend value was fitted during the process.  
+`paramDict` | The parameter dictionary used during the process.  
+`inputType` | The data type of each column of the input data.  
+  
+Prediction functionality is contained within the `predict` key. The function
+takes the following inputs:
+
+  * `X` is the input/training data of N dimensions
+
+and returns the predicted values
+
+The model contains two types of update functions
+
+  * `update`, where models are updated assuming that the data given is suitable
+  * `updateSecure`, where additional checks are applied to the data to ensure that it is in the correct format to ensure no 'model pollution' occurs.
+
+Both functions take the following inputs:
+
+  * `X` is the input/training data of N dimensions
+  * `y` is the output/target regression data
+
+returns a dictionary containing all information collected during the updating
+of a model, along with a prediction and update function.
+
+If `updateSecure` is used, an error will be returned if appropriate data is
+not used. See here for more information.
+
+During the `update` phase, the same model parameters are used that were
+applied during the fitting process, except the maximum iteration is set to 1.
+
+**Examples:**
+
+**Example 1:** Fit, predict and update a model
+
+    
+    
+    // Create data with strong correlation but also some noise
+    q)X:8*100?1f
+    q)y:4+3*X+100?1f
+    
+    // Fit a linear regression SGD
+    q)show regMdl:.ml.online.sgd.linearRegression.fit[X;y;1b;`maxIter`alpha!(1000;0.01)]
+    modelInfo   | `theta`iter`diff`trend`paramDict`inputType!(5.648133 2.934584;1000;..
+    predict     | {[config;X]
+      config:config`modelInfo;
+      theta:config`theta;
+      tre..
+    update      | {[config;X;y]
+      modelInfo:config`modelInfo;
+      theta:modelInfo`thet..
+    updateSecure| {[config;secure;X;y]
+      modelInfo:config`modelInfo;
+      theta:mode..
+    
+    // Information generated during the fitting of the model
+    q)regMdl.modelInfo
+    theta    | 5.648133 2.934584
+    iter     | 1000
+    diff     | 0.01827465 0.01503591
+    trend    | 1b
+    paramDict| `alpha`maxIter`gTol`theta`k`seed`batchType`gra...
+    inputTyp | -9h
+    
+    // Predict on new data
+    q)Xnew:8*10?1f
+    q)regMdl.predict[Xnew]
+    12.26865 19.97765 24.66665 18.05956 13.65026...
+    
+    // Update the model using new data points
+    q)Xupd:8*5?1f
+    q)yUpd:4+3*Xupd+5?1f
+    q)show regUpd:regMdl.update[Xupd;yUpd]
+    modelInfo   | `theta`iter`diff`trend`paramDict!(5.627178 2.926986;1;0.02095537 0..
+    predict     | {[config;X]
+      config:config`modelInfo;
+      theta:config`theta;
+      tre..
+    update      | {[config;X;y]
+      modelInfo:config`modelInfo;
+      theta:modelInfo`thet..
+    updateSecure| {[config;secure;X;y]
+      modelInfo:config`modelInfo;
+      theta:mode..
+    
+    // Information generated during the updating of the model
+    q)regUpd.modelInfo
+    theta    | 5.627178 2.926986
+    iter     | 1
+    diff     | 0.02095537 0.007598042
+    trend    | 1b
+    paramDict| `alpha`maxIter`gTol`theta`k`seed`batchType`gradArgs`penalty`lambda.
+    inputTyp | -9h
+    
+
+## Configurable parameters
+
+In the above function, the following are the optional configurable entries for
+`paramDict`:
+
+name | type | description | default  
+---|---|---|---  
+`alpha` | `float` | Learning rate applied. | `0.01`  
+`maxIter` | `integer` | Max possible number of iterations before the run is terminated, this does not guarantee convergence. | `100`  
+`gTol` | `float` | If the difference in gradient falls below this value the run is terminated. | `1e-5`  
+`theta` | `float` | Initial starting weights. | `0`  
+`k` | `integer` | Number of batches used or random points chosen each iteration. | `*n`  
+`seed` | `integer` | Random seed. | `random`  
+`batchType` | `symbol` | Batch type - ``single`shuffle`shuffleRep`nonShuffle`noBatch`. | `shuffle`  
+`penalty` | `symbol` | Penalty/regularization term - ``l1`l2`elasticNet`. | `l2`  
+`lambda` | `float` | Penalty term coefficient. | `0.001`  
+`l1Ratio` | `float` | Elastic net mixing parameter - only used if penalty type is `ElasticNet` is applied. | `0.5`  
+`decay` | `float` | Decay coefficient. | `0`  
+`p` | `float` | Momentum coefficient. | `0`  
+`verbose` | `boolean` | If information about the fitting process is to be printed after every epoch. | `0b`  
+`accumulation` | `boolean` | If the theta value after each epoch is returned as the output | 0b  
+`thresholdFunc` | `list` | Threshold function and value to apply when using [`updateSecure`](secure.html) | `()`  
+  
+In the above table `*n` is the length of the dataset.
+
+A number of `batchTypes` can be applied when fitting a model using SGD, the
+supported types and an explanation of their use of the `k` parameter are
+explained below:
+
+_options:_
+
+name | description  
+---|---  
+`noBatch` | No batching occurs and all data points are used (regular gradient descent)  
+`nonShuffle` | Data split into `k` batches with no shuffling applied.  
+`shuffle` | Data shuffled into `k` batches. Each data point appears once.  
+`shuffleRep` | Data shuffled into `k` batches. Data points can appear more than once and not all data points may be used.  
+`single` | `k` random points are chosen each iteration.
+

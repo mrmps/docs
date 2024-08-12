@@ -1,0 +1,196 @@
+https://code.kx.com/insights/microservices/database/best-practices/performance.html
+
+# Performance - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/database/best-practices/performance.html
+
+# Performance best practices
+
+## Query
+
+### Attributes and schema
+
+Key to the performance of a kdb+ database is appropriate schema design and
+[choice of attributes](../configuration/assembly/schema.html#attributes).
+
+Additionally, symbols allow rapid access to string data. They should not be
+used for random or large-cardinality string columns as they cannot be garbage
+collected when no longer necessary; performance degrades as symbols are added.
+
+### Response serialization
+
+The kdb Insights Database supports QIPC binary and REST with JSON and binary
+payloads.
+
+REST, along with JSON, allows for a convenient query method, but has
+significant serialization overhead compared to the much faster QIPC binary
+serialization format.
+
+You can use the QIPC binary format from a REST call by specifying the
+`application/octet-stream` `Accept` header:
+
+    
+    
+    curl -X POST --header "Content-Type: application/json" \
+        --header "Accept: application/octet-stream" \
+        --header "Authorization: Bearer $INSIGHTS_TOKEN" \
+        -o results.dat \
+        --data "{\"table\":\"trades\"}" \
+        "https://${INSIGHTS_HOSTNAME}/servicegateway/kxi/getData"
+    
+    
+    
+    curl -X POST --header "Content-Type: application/json" \
+        --header "Accept: application/octet-stream" \
+        -o results.dat \
+        --data "{\"table\":\"trades\"}" \
+        "http://${SERVICE_GATEWAY}/kxi/getData"
+    
+
+### `getData` and custom APIs vs SQL
+
+SQL offers a convenient method to explore data within an kdb Insights
+Database, but is much slower in comparison to the `getData` API and q custom
+APIs that are crafted for a specific purpose from q. For best performance, use
+`getData` where possible.
+
+To further reduce performance variability and SQL taking resources from
+`getData` and custom APIs queries, SQL is disabled by default on the non-`qe`
+gateway. SQL is only accessible via the resource-isolated `qe` gateway, and
+the kdb Insights Enterprise UI makes use of this for all queries made within
+the UI.
+
+Scaling can be done by increasing the number of
+[threads](../configuration/advanced/query-scaling.html#threads) or
+[replicas](../configuration/advanced/query-scaling.html#replicas).
+
+### Threads
+
+Query performance benefits from additional threads when a query uses [built-in
+primitives](https://code.kx.com/q/kb/mt-primitives/). The number of threads
+should match the number of CPUs allocated to each DAP. See [query
+scaling](../configuration/advanced/query-scaling.html#threads) to configure
+threads for DAPs in your deployment.
+
+### Replicas
+
+Data Access Processes are individual kdb+ processes, which, while fast in
+executing queries, are single-threaded. To increase query throughput and the
+number of concurrent queries, rather than execution of a single query, you can
+use additional DAP replicas. The gateway makes use of all replicas available
+when load-balancing query work. See [query
+scaling](../configuration/advanced/query-scaling.html#replicas) to configure a
+number of replicas in your deployment.
+
+## Ingestion
+
+### Compression
+
+Compression is on by default for all tiers (including the IDB). Compression
+offers significant storage savings, but for very high data ingestion rates,
+the CPU overhead of compression can cause SM to not keep up. While observing
+SM resource utilization during operation, if CPU is being used significantly
+more than storage IO, disabling compression may help increase ingestion
+performance.
+
+### Batch publishing
+
+Publishing individual rows in each message causes significant overhead in
+message processing within both SM and DA. To vectorize the ingestion
+operations, batch publisher messages as much as possible (e.g., publish a
+message of the form `(<table-name>; <many-records>)` rather than `(<table-
+name; <row>)`).
+
+### `blockSize`
+
+The `blockSize` configuration within SM controls how frequently data should be
+written to disk. If this value is too small, the Storage Manager flushes to
+disk too often. If this value is too high, the RAM limits are less impactful.
+If the `blockSize` is omitted, a default `blockSize` of 12 million records
+(per table) is used.
+
+If SM (particularly EOI) appears to be hanging and not keeping up with the
+stream, check that disk IO is being performed. Enable trace logging to observe
+a log message each time SM flushes to storage.
+
+### Interval configuration
+
+The SM interval currently controls the frequency at which data is written to
+new IDB partitions. The choice of interval has a few impacts:
+
+  * The interval governs the amount of data held in-memory within the RDB - the larger the interval, the more data is held in-memory. This also impacts how much RAM is required for the RDB.
+  * The interval governs how much data needs to be replayed when SM or DA start up for recovery. An hour-long interval means that SM and DA may need to replay an hour (or more if unable to keep up) of data. A 5-minute interval has a much faster recovery time.
+  * The more frequently data is written to the IDB, the more data is divided within IDB partitions. For a 1-hour interval, data is divided into 24 (during regular operation) intervals throughout the day, while a 10 minute interval divides data into 144 intervals. The more intervals, the more files must be interacted with during a query.
+
+### End of day processing
+
+Moving data from the IDB to HDB can be a time, CPU and memory intensive
+process due to several factors:
+
+  * The data in a table needs to be read and written a few times during the existing EOD process.
+  * The data may need to be uncompressed and compressed multiple times if the IDB and/or HDB tiers have compression turned on.
+  * As tables get longer the sort operation ([`xasc`](https://code.kx.com/q/ref/asc/#xasc)) can become expensive in terms of time and hardware resources.
+
+For these reasons, an alternative SM sort method has been developed which will
+decrease the amount of time needed to complete the EOD process while also
+reducing the amount of memory it needs.
+
+The method is activated by default and it can be disabled by setting
+`KXI_SM_EOD_SORT` to `0` i.e. it would appear in an assembly as:
+
+    
+    
+      elements:
+        sm:
+          env:
+            - name: KXI_SM_EOD_SORT
+              value: "0"
+    
+
+By default, the new method allocates RAM to the EOD process by considering the
+SM Kubernetes memory request and limit as well as the physical RAM available
+on the node. If it becomes necessary to further lower the amount of RAM
+allocated to the sort process, then the `KXI_SM_EOD_SORT_LIMIT`(GB) variable
+can be set.
+
+    
+    
+            - name: KXI_SM_EOD_SORT_LIMIT
+              value: "96"
+    
+
+As a guide:
+
+  * if `spec.elements.sm.k8sPolicy.limits.memory` and `spec.elements.sm.k8sPolicy.requests.memory` are both set then the `spec.elements.sm.k8sPolicy.limits.memory` value is used to allocate RAM to the sort. 
+
+  * if `KXI_SM_EOD_SORT_LIMIT` is set then the RAM allocated is set to the minimum of its value and either `spec.elements.sm.k8sPolicy.limits.memory` or `spec.elements.sm.k8sPolicy.requests.memory`.
+
+  * if neither `spec.elements.sm.k8sPolicy.*.memory` nor `KXI_SM_EOD_SORT_LIMIT` are set then the RAM allocated to the sort process is 10% of the physical RAM of the node upon which the `SM` pod is running.
+
+Since the EOD process involves reading, writing and manipulating large
+vectors, the `eodPeachLevel` is set to `column` so that several columns can be
+read or written at the same time. This is especially true if the data in HDB
+is to be compressed. Since the level is set to `column` then also remember to
+check the SM Kubernetes CPU request value and the number of threads allocated
+to EOD process(`KXI_SM_EOD_THREADS`) to ensure the values in each are not
+conflicting.
+
+    
+    
+            - name: KXI_SM_EOD_THREADS
+              value: "6"
+    
+
+The alternative sort method takes advantage of the relationship between how
+the data is sorted in the IDB and HDB and which attributes have been applied
+to each. Below are a few notes to keep in mind when deciding on the correct
+schema a table:
+
+  * The most common way to sort data in the HDB is by `sym,time` or in more pipeline-like terminology `<an ID column>,<prtnCol>` with a `parted` attribute applied to the ID column in the HDB and a `sorted` attribute applied to the `prtnCol` in the IDB. 
+
+  * The [Columnar database and query optimization white paper](https://code.kx.com/q/wp/columnar-database/#use-of-attributes/) may be useful when deciding which attributes to apply to your tables.
+
+  * If the goal of a pipeline is to simply ingest and complete the EOD process in the minimum amount of time using the minimum amount of resources then the data should be `sorted` in both IDB and HDB by the `prtnCol` associated with the table and the `sorted` attribute applied in both cases. This has the added benefit of allowing the `getData` API to automatically optimize a request to ensure that the attributed columns are correctly prioritized when reading the data from the disk backed tiers. 
+
+  * If attributes are not applied to `partnCol` then you should optimize your query to ensure that the column with the attribute is first in the list of constraints of the request. 
+

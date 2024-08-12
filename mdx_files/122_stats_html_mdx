@@ -1,0 +1,83 @@
+https://code.kx.com/insights/enterprise/ingest/pipeline/operators/stats.html
+
+# Stats - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/ingest/pipeline/operators/stats.html
+
+# Statistics
+
+_Compute different statistics using your data_
+
+Statistics operators allow for quick computation of summary statistics and
+different types of averages.
+
+See APIs for more details
+
+A q interface can be used to build pipelines programatically. See [the q
+API](../../../../api/stream-processor/q/stats.html) for API details.
+
+A Python interface is included along side the q interface and can be used if
+PyKX is enabled. See [the Python API](../../../../api/stream-
+processor/python/stats.html) for API details.
+
+The pipeline builder uses a drag-and-drop interface to link together
+operations within a pipeline. For details on how to wire together a
+transformation, see the [building a pipeline guide](../index.html#building-a-
+pipeline).
+
+## Descriptive Statistics
+
+_Computes various descriptive statistics on a dataset_
+
+![Descriptive Statistics properties](images/ui/stats/describe-config.png)
+
+**Required Parameters:**
+
+name | description | default  
+---|---|---  
+Columns | A list of column names to compute statistics on. |   
+Statistics | A list of statistics which should be computed. |   
+  
+## Simple Moving Average
+
+_Computes a simple moving average on a dataset_
+
+![Simple Moving Average properties](images/ui/stats/sma-config.png)
+
+**Required Parameters:**
+
+name | description | default  
+---|---|---  
+Source Columns | A list of column names on which to compute the average. |   
+Range | The number of records to include in the average. |   
+Destination Columns | The columns to write to. These can overwrite existing columns. |   
+  
+## Exponential Moving Average
+
+_Computes an exponential moving average on a dataset_
+
+![Exponential Moving Average properties](images/ui/stats/ema-config.png)
+
+**Required Parameters:**
+
+name | description | default  
+---|---|---  
+Source Columns | A list of column names on which to compute the average. |   
+Alpha | The decay rate. |   
+Destination Columns | The columns to write to. These can overwrite existing columns. |   
+  
+## Time Weighted Average
+
+_Computes a time weighted average on a dataset containing times_
+
+![Time Weighted Average properties](images/ui/stats/twa-config.png)
+
+**Required Parameters:**
+
+name | description | default  
+---|---|---  
+Source Columns | A list of column names on which to compute the average. |   
+Time Column | The name of the column containing the time data. |   
+Range | The number of records to include in the average. |   
+Destination Columns | The columns to write to. These can overwrite existing columns. | 
+

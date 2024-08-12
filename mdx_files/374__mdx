@@ -1,0 +1,102 @@
+https://code.kx.com/dashboards/vegachart/
+
+# Vega Chart - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/vegachart/
+
+# Vega Chart
+
+![Screenshot](../img/vega/vegasamples.jpg)
+
+Component that renders a chart using [Vega](https://vega.github.io/vega/)
+Chart library. Demonstration of capabilities of the library can be found in
+[Vega Example Gallery](https://vega.github.io/vega/examples/).
+
+## Set up
+
+  1. Set the data source.
+
+  2. Specify the JSON for the _Vega Config_.
+
+## Basics
+
+![Screenshot](../img/vega/vegaconfigbasics.png)
+
+_Name_
+
+    A name for the component provided by the user. 
+
+### _Data Source_
+
+A [query](../datasources/) or [analytic](../datasources/). When set, values of
+first _data_ item in _Vega Config_ will be overwritten.
+
+### _Vega Config_
+
+![Screenshot](../img/vega/vegaconfigjson.jpg)
+
+Specification in JSON format of multiple aspects of the chart:
+
+  * data handling and transformations
+  * visual representation
+  * behavior
+
+Documentation about available options can be found on [Vega
+Website](https://vega.github.io/vega/docs/).
+
+Auto stretch
+
+Chart will automatically fit available space if neither _width_ nor _height_
+is specified.
+
+#### Data Source override
+
+External resource in Vega configuration can referenced as shown in code below.
+
+    
+    
+    {
+        "data": [{
+            "name": "vectors",
+            "url": "data/windvectors.csv",
+            "format": {"type": "csv", "parse": "auto"}      
+        }],
+        .. 
+    
+
+Setting _Data Source_ will modify the configuration above with actual values:
+
+    
+    
+    {
+        "data": [{
+            "name": "vectors",
+            "values": [
+                {
+                    longitude:7.5,
+                    latitude:4.3,
+                    ..
+                    speed:3.12
+                },
+                ..
+            ]
+        }],
+        ..         
+    
+
+Notice that the _url_ and _format_ properties are replaced with _values_.
+
+### _Render Type_
+
+Controls whether the chart is rendered as `<canvas>`(faster) or `<svg>`.
+
+## Style
+
+_Advanced CSS_
+
+     [Advanced CSS](../style/#advanced-css)
+
+## Format, Margins
+
+[Style](../style/#component-style) for common settings
+

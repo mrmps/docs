@@ -1,0 +1,93 @@
+https://code.kx.com/insights/core/kurl/appendix/async.html
+
+# Async | Examples | REST client | kdb Insights Core - kdb products
+
+Original URL: https://code.kx.com/insights/core/kurl/appendix/async.html
+
+# Async
+
+_Async example demonstrating how to use correlation IDs_
+
+The example represents an async request that checks if a file exists and
+creates that file if it does not. No real files are used; instead a boolean is
+used.
+
+Startup a q server on port 8081 for demonstration.
+
+    
+    
+    port:"8081"
+    server:hsym `$":localhost:",port
+    system "q -p ",port
+    
+
+We are going to define the server’s API to check a boolean and return either
+`"hello world"`, or a 404 saying no file exists.
+
+We define the function locally below, and install it dynamically over IPC
+
+    
+    
+    remotezph:{
+      $[fileexists; .h.hy[`txt] "hello world"; .h.hn["404";`txt; "No file found"]] }
+    
+    server (set;`fileexists;0b)
+    server (set;`.z.ph; remotezph)
+    
+    server (set;
+      `.z.pp;
+      {fileexists::1b; .h.hy[`json] .j.j `time`file!(.z.p; `:filename.txt)} )
+    
+    // Have the server quit after 5 minutes of up time,
+    // so you don't run this code and leave it up forever
+    server (set;`.z.ts; {[start;x] if[x > start + 00:05:00; exit 0]; }[.z.p;])
+    server (system;"t 1000")
+    
+
+Now we define the client API that uses Kurl to make async requests.
+
+    
+    
+    // Simple async handler that creates files if they don't exist
+    // @param id CorrelationID
+    // @param name Arbitrary data (in our case filename)
+    // @param resp (http code;response text)
+    onmessage:{[id; name; resp]
+      event: cid ? id;
+      if[event ~ `getfile;    checkGETResult[name; resp]];
+      if[event ~ `createfile; getfile name]; }
+    
+    // Correlation ID - Project in an ID that makes responses meaningful to you
+    // In a more complex app you may save a dynamic dictionary of these
+    // The GUIDs here are meaningless, but demonstrate IDs can be a complex shape
+    ids:2?0ng;
+    cid: (!) . flip (
+      (`getfile;    ids 0);
+      (`createfile; ids 1) )
+    
+    // Async POST file creation
+    createfile:{[name]
+      body:.j.j `name`content!(name;"hello world");
+      opts:`body`callback!(body;onmessage[cid `createfile; name;]);
+      .kurl.async ("http://localhost:8081/v1/createfile"; `POST; opts) }
+    
+    // Async GET file
+    getfile:{[name]
+      loginfo "asking for a file";
+      opts:``callback!(::;onmessage[cid `getfile; name;]);
+      .kurl.async ("http://localhost:8081/v1/getfile?file=myFile"; `GET; opts) }
+    
+    // Return response if file exists, else create it
+    checkGETResult:{[name; resp]
+      $[404 = resp 0;
+          [ loginfo "file not found, making it"; createfile name];
+        200 = resp 0;
+          [ loginfo "file now found"; resp 1];
+        [ loginfo "got some unexpected error"]] }
+    
+    loginfo:{show enlist (.z.p; x);}
+    
+
+To kick off the demo, make a request to ask for `myFile`! Wait for the server
+on port 8081 to come up before running
+

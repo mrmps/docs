@@ -1,0 +1,197 @@
+https://code.kx.com/insights/enterprise/database/storage/initial-import.html
+
+# Initial import - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/database/storage/initial-import.html
+
+# Storage Manager initial import
+
+_How to use Storage Manager with an existing kdb+ database_
+
+Storage Manager (SM) guarantees atomicity during write-down; and at the same
+time ensures that a database is mountable by vanilla kdb+ process at any point
+in time. To achieve this, SM uses symbolic links to represent a standard kdb+
+segmented database, while keeping the backing data in a proprietary structure.
+Data in object storage is excluded from this transformation, and kept in
+standard kdb+ format.
+
+Thus, to work with an existing database, SM first needs to adjust the database
+to its own format.
+
+## Import scenarios
+
+Three scenarios are supported: \- partitioned database on disk \- partitions
+only in object storage \- partitions on disk and partitions in object storage
+(the same date partition can't exist in both)
+
+### Configuration
+
+Configure the SM to check for an existing kdb+ database under the
+`elements.sm` key within an assembly file. Once the SM has been initialized
+for the first time, and the database has been imported, this configuration can
+be removed.
+
+    
+    
+    elements:
+      sm:
+        description: Storage manager
+        source: stream
+        initialImport: true
+        tiers:
+          - name: stream
+            mount: rdb
+          - name: idb
+            mount: idb
+            schedule:
+              freq: 00:15:00      
+          - name: hdb
+            mount: hdb
+            store: file:///data/hdb
+            schedule:
+              snap: 00:00:00           
+            retain: 
+              time: 2 weeks
+          - name: objstor
+            mount: hdb
+            store: s3://historical-data/db
+    
+
+| name | type | required | description | | ---- | ---- | -------- | ----------- | | `initialImport` | boolean | No | When the flag is enabled the SM will check for an existing kdb+ database under the `data` sub-directory of the directory pointed to by `baseURI` of the HDB-based mount. If a database isn't found at the location the SM will terminate. After the first SM startup, the flag is redundant and can be removed. 
+
+### Simple partitioned database on disk
+
+The database is in the [standard format for a partitioned (non-segmented)
+database](https://code.kx.com/q/kb/partition/). Put the database under the
+`data` sub-directory of the directory pointed to by `baseURI` of the HDB-based
+`mount`, that is, the mount whose `type=local`, and `partition=date`. The
+database is converted in-place to SM format.
+
+    
+    
+    mounts:
+      rdb:
+        type: stream
+        partition: none
+        baseURI: none
+      idb:
+        type: local
+        partition: ordinal
+        baseURI: file:///data/idb
+      hdb:
+        type: local
+        partition: date
+        baseURI: file:///data/hdb
+    
+
+Example schema definition
+
+    
+    
+    tables:
+      trade:
+        description: Trade data
+        type: partitioned
+        prtnCol: time
+        sortColsOrd: sym
+        sortColsDisk: sym
+        columns:
+          - name: time
+            description: Time
+            type: timestamp
+          - name: sym
+            description: Symbol name
+            type: symbol
+            attrMem: grouped
+            attrDisk: parted
+            attrOrd: parted
+          - name: price
+            description: Price
+            type: float
+          - name: size
+            description: Size
+            type: long
+    
+
+#### Database structure
+
+    
+    
+    tree /data/hdb/data
+    ├── 2024.01.01
+    │   └── trade
+    │       ├── price
+    │       ├── size
+    │       ├── sym
+    │       └── time
+    ├── 2024.01.02
+    │   └── trade
+    │       ├── price
+    │       ├── size
+    │       ├── sym
+    │       └── time
+    └── sym
+    
+
+It is possible to have partitions located in object storage: set the `store`
+property of the last HDB-based tier to point to it (e.g. `s3://historical-
+data/db`), and SM will add an entry for it in the generated `par.txt`.
+
+### Partitions only in object storage
+
+This scenario resembles the _Simple partitioned database_ scenario, except
+that the location pointed to by the first HDB-based tier contains only the
+`sym` file (if applicable): all the partitions exist in object storage. SM
+will add an entry for it in the generated `par.txt`.
+
+#### Database structure
+
+    
+    
+    tree data/hdb/data
+    data/hdb/data
+    └── sym
+    
+    
+    
+    aws s3 ls s3://historical-data/db
+                               PRE 2024.01.01/
+                               PRE 2024.01.02/
+    
+
+#### Prerequisites
+
+The following conditions must be met for all the above scenarios:
+
+  * tables match the schema specified in the assembly configuration
+  * partition values are `date`
+  * no overlap between partition values (across tiers)
+  * a backup copy of the data exists
+
+Backup policy
+
+Note that the backup is not enforced, since it is likely originating in a
+different volume before being copied to the SM volume. It is up to the user to
+ensure that this data is backed up somewhere prior to starting SM.
+
+### Future support
+
+In the future, SM will support importing a [fully segmented
+database](https://code.kx.com/q/database/segment/), whose segments map one-to-
+one with tiers specified in the assembly configuration.
+
+## Database validation
+
+The SM will validate the entire database against the schema configuration
+within the assembly to ensure that it conforms and is operational. If the SM
+validation finds any issues with the database it will provide details in the
+logs on what validation failed, and what needs to be addressed, before
+terminating. In this scenario the user can take SM offline and resolve the
+validation failures locally before attempting to re-initialize SM again.
+
+## Error recovery
+
+SM has a recovery mechanism: if it gets interrupted during a long conversion,
+on restart it continues where it left off. If an error occurs during
+conversion, SM rolls back the database to its original state.
+

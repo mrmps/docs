@@ -1,0 +1,198 @@
+https://code.kx.com/insights/enterprise/analysis/query.html
+
+# Querying databases - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/analysis/query.html
+
+# Querying Databases
+
+_This section describes how to retrieve data from your kdb Insights Enterprise
+deployment for analysis using the UI Query screen_.
+
+## Creating a Query
+
+Use one of the following methods to open the **Query** screen:
+
+  * click **+** on the ribbon menu and choose **Query**
+  * click **+** beside **Queries** on the left-hand menu
+  * click **3\. Query** on the **Overview** page
+
+![New Query](img/new-query.png)
+
+The **Query** screen provides three query methods:
+
+  1. Query Form
+  2. SQL based query
+  3. Q based query
+
+## Query Form
+
+The **Query** tab provides you with the ability to retrieve data from the
+database without the need to write code. It gives you the option to return
+data within specific date/time ranges and apply filters to that data in order
+to constrain the data you receive to only that which you need. The fields of
+the **Query** tab, shown in the following screenshot, are described in the
+mandatory fields.
+
+![Query API](img/Basic_get_data_query.png)
+
+Additional filter options are also available.
+
+### Mandatory Fields
+
+The following table describes the mandatory fields of the **Query** tab.
+
+name | description  
+---|---  
+**Table Name** | The name of the table that you're querying. This is presented to you as a dropdown list of available tables.  
+**Start Date** | The start date which defines the lower bound of your returned data. Use the datepicker to define the date and time at which your query begins.  
+![Date Picker](img/date_picker.png)  
+**End Date** | The end date which defines the upper bound of your returned data. Use the datepicker to define the date and time at which your query ends.  
+**Output Variable** | This is the name you define for the q variable to which this data is assigned. You can use this variable to complete further analysis in the **Scratchpad** using Python or q. Refer to the guides [here](python-dev.html) and [here](q-dev.html) for details.  
+  
+### Query Filtering
+
+In addition to the mandatory fields you can also add filtering conditions.
+
+To add a filter click **Add Filter** and **Select Function** to display the
+following set of filter types:
+
+![Filter Types](img/filter-types.png)
+
+Combining Filters
+
+Multiple filters can be applied, and filters of different types can be
+combined. Except for select columns and define aggregations which cannot be
+combined.
+
+#### Filter
+
+The **Filter** option is used for applying custom filtering to the query.
+
+![Basic filtering](img/Basic_filter.png)
+
+To apply a filter you must specify the following:
+
+name | description  
+---|---  
+**Select Column** | The column to be selected.  
+**Select Function** | The function to be used to apply the filtering logic which is one of:  
+`in`  
+`like`  
+`not equal`  
+`within`  
+`<`  
+`<=`  
+`=`  
+`>=`  
+`>`  
+**FX Parameter** | An input provided by you which defines the item against which the column is compared.  
+  
+#### Filter By Label
+
+The **Filter By label** option provides the ability to query specific tables
+in each assembly.
+
+![Basic Filter by Label](img/Basic_filter_label.png)
+
+To apply a **Filter By label** you must specify the following:
+
+name | description  
+---|---  
+**Key** | Select the key value of the label that was assigned to the assembly.  
+**Value** | Select the value(s) of the label(s) to query from the tables that correspond to the label.  
+  
+If no label is selected then all corresponding tables are queried.
+
+#### Select Columns
+
+The **Select Columns** option provides the ability to filter the query results
+to display selected columns only.
+
+![Basic Filter by Label](img/filter-select-columns.png)
+
+To filter selected columns click on the **Select Columns** field and choose
+the column(s) from the list displayed. This list represents the columns in the
+table selected under **Table Name** in the mandatory fields.
+
+#### Sort
+
+The **Sort** options allows you to sort the results of a returned query based
+on the column chosen in the **Select Column** field.
+
+![Basic sort](img/Basic_sort.png)
+
+#### Define Aggregation
+
+The **Define Aggregation** option allows you to apply aggregations to
+specified columns of the table returning the result as an additional column.
+
+![Basic aggregation](img/Basic_aggregation.png)
+
+To apply an aggregation you must specify the following:
+
+name | description  
+---|---  
+**Set Return Column** | The column the results of the aggregation are returned to.  
+**Select Aggregation** | The aggregations available to you are as follows:   
+count  
+last  
+sum  
+prd (product)  
+min  
+max  
+all  
+any  
+var (variance)  
+avg (average)  
+dev (deviation)  
+svar (sample variance)  
+sdev (standard deviation)  
+**Select Column** | The column the aggregation is applied to.  
+  
+The **Select Columns** filter cannot be combined with a **Define Aggregation**
+filter.
+
+#### Group Aggregation By
+
+The **Group Aggregation By** option allows you to group the results of
+aggregations based on the **Selected Column**.
+
+![Basic Group By](img/Basic_group.png)
+
+## Using a _SQL_ based query
+
+The _SQL_ query option provided within the Query Window provides you with the
+ability to query the tables available within your deployment using SQL syntax.
+These queries can run in a distributed manner across all available data
+associated with a table. The following shows how this functionality will be
+presented to you:
+
+![Basic SQL](img/Basic_SQL.png)
+
+The ANSI SQL implementation used here is based on the kdb Insights SQL API
+outlined [here](../../core/sql.html).
+
+Limitations of kdb Insights SQL query API
+
+The SQL functionality used within the kdb Insights Enterprise provides a
+subset of an ANSI SQL compliant API the limitations of this are outlined
+[here](../../core/sql/sql-compliance.html) in depth.
+
+Similarly to the _Query_ form you must specify the output variable to which
+the return of the SQL statement will be defined in q, this allows for further
+inspection of the data in Python and q.
+
+## Using a _Q_ based query
+
+The _Q_ query option provided within the Query Window provides you with the
+ability to query the various tiers of their database. Specifically, unlike in
+the SQL section above, the Q query functionality requires you to target a
+particular tier of their database for query in order to query data within the
+time window covered by the RDB, IDB or HDB respectively. The following shows
+how this functionality will be presented to you:
+
+![Basic Q](img/Basic_Q_query.jpg)
+
+## Next Steps
+

@@ -1,0 +1,85 @@
+https://code.kx.com/dashboards/messages/
+
+# Messages - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/messages/
+
+# Messages
+
+The following messages may be configured or returned
+
+## showErrorMessage
+
+Show a Dashboards error message on the component
+
+    
+    
+    api.showErrorMessage(errorObj);
+    
+
+### Parameters
+
+#### errorObj
+
+An object containing the description of the error.
+
+parameter | description  
+---|---  
+error | Error description  
+type | One of `Error`, `Warning` or `Info`  
+  
+### Example
+
+    
+    
+    api.showErrorMessage({
+        'error': 'Please define a data source',
+        'type': 'Info'
+    });
+    
+
+### Response
+
+None
+
+## hideErrorMessage
+
+Hides the Dashboards error message for the component.
+
+    
+    
+    api.hideErrorMessage();
+    
+
+## onSettingsChange
+
+The component should implement an `onSettingsChange` (settings) function to
+receive the settings from the Dashboards Properties Panel.
+
+The full settings object is provided on load; for example:
+
+    
+    
+    { 
+        "Basics": { 
+            "Data": "/"
+        },
+        "Style":{ 
+            "Theme": "Dark",
+            "AskFill": "#00ff00",
+            "AskOpacity": 1,
+            "BidFill": "#ff3300",
+            "BidOpacity": 1
+        }
+    }
+    
+
+Changes are passed only with a path to the changed property; e.g.:
+
+    
+    
+    { 
+        "Style.AskOpacity": 5
+    }
+    
+

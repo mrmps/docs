@@ -1,0 +1,38 @@
+https://code.kx.com/platform/control_failoveractions/
+
+# Failover actions - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/control_failoveractions/
+
+# Failover actions
+
+If _KX Control_ is deployed in a cluster and there is a failover event, all
+the processes that are currently running will attempt to connect to the new
+leader _KX Control_ process. If a connection to a particular process is not
+made within a certain time then the unexpected shutdown action for that
+process will be triggered. This timeout can be configured using the
+`DELTACONTROL_MISSING_PROCS_TIMEOUT` environment variable in `delta.profile`.
+It is set to 60 seconds by default.
+
+    
+    
+    export DELTACONTROL_MISSING_PROCS_TIMEOUT=60
+    
+
+It is possible to configure if the unexpected shutdown actions are triggered
+when the timeout is passed. This can be done via the
+`DELTACONTROL_FAILOVER_ACTIONS` environment variable in `delta.profile`.
+
+    
+    
+    export DELTACONTROL_FAILOVER_ACTIONS=ALL
+    
+
+The possible options are
+
+Value | Description  
+---|---  
+ALL (default) | Unexpected shutdown action triggered for any process that breaches timeout  
+NONE | No unexpected shutdown action triggered for any process that breaches timeout  
+KDB | Unexpected shutdown actions triggered for all except `DS_LAUNCH` processes
+

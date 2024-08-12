@@ -1,0 +1,181 @@
+https://code.kx.com/developer/remote-editors/
+
+# Remote editor - KX Developer
+
+Original URL: https://code.kx.com/developer/remote-editors/
+
+# Remote editors
+
+Remote editors enable code execution on different kdb+ processes from a single
+Developer instance. Scratchpads and `.q` files can be connected to external
+kdb+ processes to evaluate single snippets of code or entire scripts.
+
+## Getting started
+
+To connect to a remote process, click _Remote Scratchpad_ from the _Tools_
+menu.
+
+![Remote scratchpad menu](../img/remote-editors/remote-scratchpad-menu.png)
+
+This will open a new scratchpad and launch the _Connection Manager_.
+
+![Empty connection manager](../img/remote-editors/empty-connection-
+manager.png)
+
+Add a new connection to an existing kdb+ process by clicking _New_ and
+entering the values. In this example, we are connecting to a process over IPC
+running on the same machine as Developer on port `8065`. The remote process
+requires credentials to connect so the _Requires Authentication_ field has
+been selected.
+
+![New connection dialog](../img/remote-editors/new-connection-dialog.png)
+
+The connection has been created for the remote process but it has not yet been
+connected to. Before connecting, extra options specific to Remote Scratchpads
+can be configured for the selected connection at the bottom of the Connection
+Manager. For example, selecting a _Tab Color_ can help identify that this
+Remote Scratchpad is connected to this remote process. The table below
+outlines what these options are.
+
+field | description  
+---|---  
+Capture Output | A variable name to store the computation output of the remote process in the current local process. See remote results for more information.  
+Record Limit | The maximum number of records to be stored in the variable name specified by _Capture Output_. See remote results for more information.  
+Tab Color | The tab color is used to highlight the editor tab to indicate which connection is being used.  
+  
+The connection can be opened by clicking the _Connect_ button. Because we
+selected that authentication was required for this connection, a prompt for
+credentials will appear.
+
+![Connect to process](../img/remote-editors/attach-prompt.png)
+
+Now that a connection to the remote process has been opened, we can click
+_Select_ to use this connection for our Remote Scratchpad and close the
+dialog. Now, anything evaluated in the editor will be executed on the remote
+process.
+
+![Remote editor](../img/remote-editors/remote-editor.png)
+
+## Connection manager
+
+The connection manager can be accessed by _Connection Manager..._ from the
+_File_ menu. It can also be accessed using the context menu inside an editor
+and selecting _Remote > Connection Manager..._ or _Remote > Attach_...
+
+![Connection manager](../img/remote-editors/connection-manager.png)
+
+The connection manager lists all configured connections.
+
+column | description  
+---|---  
+★ | Favorite connection indicator. Click the empty start ☆ to favorite a connection and use the _Filter_ drop down to hide and show only favorites  
+Name | User defined name for the connection. This name is displayed in the tab of any connected editors.  
+Type | The connection type. Note that not all connections types are supported for use with Remote Editors.  
+Details | Some key details about the connection. For IPC connections this is the [IPC connection string](https://code.kx.com/q/basics/handles).  
+Active | Indicates if the connection to the remote process is currently established or not.  
+  
+To search for a specific connection string or connection name, a search can be
+entered in the _Search_ field. To filter the results by group, a filter can be
+filtered using the _Filter_ drop down menu. Connections can also be filtered
+by type.
+
+![Connection filter](../img/remote-editors/filter.png)
+
+filter | description  
+---|---  
+All | Show all connections  
+Active | Show only connections that are currently connected to a remote process  
+Favorite | Show connections that have been starred ★  
+User | Show connections that were manually created  
+Control (_platform only_) | Show process instances, tasks and services from Control that can be connected to  
+[Any Connection Type] | Show only connections of the selected type  
+  
+### Creating a connection
+
+To create a new connection, click the _New_ button. This will open the _New
+Connection_ dialog. Select the desired connection type, and then enter the
+connection information in the fields provided. Click _Ok_ to create the
+connection. Once the connection information has been added, the remote process
+can be connected to by pressing the _Connect_ button. The table below outlines
+each of the fields for creating an IPC connection.
+
+![New connection dialog](../img/remote-editors/new-connection-dialog.png)
+
+field | description  
+---|---  
+Name | The name of the connection is used to identify which process an editor is being connected to. This name will be prepended to any editors that use this connection.  
+Host | The host field is a combination of a protocol (Localhost, Hostname, TLS/SSL, Domain Sockets) and a location. For more information about these protocols, see [IPC handles](https://code.kx.com/q/basics/handles).  
+Port | The port of the remote process to connect to. Check the remote process's port by running `system "p"` on the remote process. See [listening port](https://code.kx.com/q/basics/listening-port/) for more information.  
+Timeout | The maximum time in milliseconds to wait for the connection handshake to the remote process.  
+Default Username | A default username to pre-fill in the authentication dialog if the process requires authentication.  
+Requires Authentication | If the remote process uses authentication for connections, check the _Requires Authentication_ box to be prompted for a username and password when connecting to the remote.  
+  
+### Connecting to a process
+
+To connect to a remote process, select the connection in the connection list
+and click _Connect_. If the connection requires authentication, a dialog to
+enter the username and password will be presented.
+
+![Connect to process](../img/remote-editors/attach-prompt.png)
+
+To close the connection, select the connection in the connection list and
+click _Disconnect_. If the remote closes the handle or the connection is
+dropped, the connection will automatically be disconnected. Subsequent
+operations in the remote editor will prompt to reconnect to the remote
+connection. Once reconnected to the process, the issued operation will be re-
+run.
+
+![Auto reconnect](../img/remote-editors/auto-reconnect.png)
+
+## Interacting with remote editors
+
+Remote editors support executing arbitrary code on the remote connection. Code
+can be evaluated on the remote process with the same controls as a normal
+editor (display, execute, etc.). See [Q menu commands](../editor/#q-menu-
+commands) for more information about execution options. Remote editors can
+also be used to inspect data values in the _Visual Inspector_ , however this
+requires capture output to be enabled.
+
+### Running remote scripts
+
+In addition to ad-hoc code execution, entire scripts can be run on the remote
+process. To run a script on a remote process, open the script from the
+workspace tree and attach the editor to a remote process.
+
+![Attach script](../img/remote-editors/attach-script.png)
+
+Once connected, right click on the script editor and select _Run Script_. This
+will evaluate the entire remote script in the remote process.
+
+![Run remote script](../img/remote-editors/remote-run-script.png)
+
+## Remote results
+
+Computations on the remote process are not directly accessible in the current
+process. To pull data from the remote process to the local process, use the
+_Capture Output_ option for a connection. When this option is enabled and a
+variable name is provided, the result of code executed on the remote process
+will be stored in a variable of that name in the local process. To limit the
+amount of data that is transferred from the remote process to the local
+process, a data limit is associated with the output variable. Setting this
+value will reduce the number of records pulled from the remote process to the
+local process with a maximum of this value.
+
+Capture output
+
+The capture output variable is overwritten on each remote evaluation. To save
+the result of a computation for further use, it is recommended that the data
+is copied to a different variable.
+
+![Capture output](../img/remote-editors/capture-output.png)
+
+Once setup, all expressions evaluated using the remote connection will store
+their result in the local process using the variable of that name.
+
+![Remote result](../img/remote-editors/remote-capture.png)
+
+This can be useful for pulling data to the local process to use tools like the
+_Visual Inspector_ to inspect the result data further. If capture output is
+enabled, inspecting something in the remote process will store the value in
+the output variable and open the inspector on it.
+

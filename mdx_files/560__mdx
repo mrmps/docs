@@ -1,0 +1,657 @@
+https://code.kx.com/platform/api/ipc/
+
+# IPC - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/api/ipc/
+
+# IPC
+
+APIs for opening, closing and maintaining IPC handles.
+
+## `.px.ipc.getAlternates`
+
+Gets the list of alternate IPs for a set of hosts. If no alternates exist for
+a host, returns the input host
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+hosts | symbol[] | Host list  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol[][] | IP alternates list  
+  
+**Example:**
+
+    
+    
+     hosts:`server1`server2;
+     ips:(`192.168.0.1`171.30.0.1; `192.168.0.2`171.30.0.2);
+     .px.ipc.setAlternates[hosts; ips];
+     .px.ipc.getAlternates[hosts]
+     /=> (`192.168.0.1`171.30.0.1; `192.168.0.2`171.30.0.2)
+    
+
+**Example:**
+
+    
+    
+     0N!.px.ipc.getAlternates[1#`foo];
+     /=> ,,`foo
+    
+
+## `.px.ipc.setAlternatesFromFile`
+
+Read a host alternates file and set the alternate list.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+file | symbol | File path  
+  
+**Example:**
+
+    
+    
+     file:hsym .utils.checkForEnvVar["ENV=DELTA_CONFIG=/host_alternates.csv"];
+     .px.ipc.setAlternatesFromFile[file];
+    
+
+## `.px.ipc.setAlternates`
+
+Sets the list of alternate IPs for a set of hosts.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+hosts | symbol[] | Host list  
+ips | symbol[][] | IP alternates list  
+  
+**Example:**
+
+    
+    
+     host:`server1`server2`server1.domain.com;
+     ips:(`192.168.0.1`171.30.0.1; `192.168.0.2`171.30.0.2; `192.168.0.1`171.30.0.1);
+     .px.ipc.setAlternates[hosts; ips];
+    
+
+## `.px.ipc.tryEnable`
+
+Assesses if parallel connectivity is supported
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+cfg | Boolean | If this parameter is true support for parallel connectivity will be assessed  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+Boolean | True if parallel connectivity supported  
+  
+**Example:**
+
+    
+    
+     .px.ipc.tryEnable[.pl.cfg.i.getParam[`.dm.i.retryParallel]]
+     /=> 1b
+    
+
+## `.utils.closecon`
+
+Closes an IPC handle. Uses `hclose` but does not trigger `.z.pc`.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | int | Handle  
+  
+**Example:**
+
+    
+    
+     .utils.closecon[6i]
+    
+
+## `.utils.dccAlt`
+
+Uses `.px.ipc.phopenAlt` to open connections in parallel with alternates.
+Otherwise exhibits the same behaviour as `.utils.dcc` with respect to
+credentials and `deltacomponent`.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+c | symbol | Connection string  
+t | long | Timeout value in milliseconds. Null or zero for no timeout  
+e | fn | Function or projection with one parameter to handle connection error  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+int | Integer handle  
+  
+**Example:**
+
+    
+    
+     hp:`:localhost:5000;
+     .utils.dccAlt[hp; 1000; {'x}]
+    
+
+## `.utils.dccMode`
+
+Wrapper function for `.utils.dcc` that builds `hopen` string but includes a
+connection mode to account for TLS or UDS. Can connect as `deltacomponent` by
+using a null user.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+host | symbol | Host name  
+port | int | Port number  
+user | symbol | Username  
+pass | string | Password  
+mode | symbol | Connection mode - standard TCPIP, UDS or TLS  
+timeout | long | Open connection timeout  
+trapF | func | Function to handle connection error  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+int | Connection handle  
+  
+**Example:**
+
+    
+    
+     .utils.dccMode[`localhost; 5000i; `; ""; `tls; 0; {0Ni}]
+     /=> 5i
+    
+
+**Example:**
+
+    
+    
+     .utils.dccMode[`localhost; 5000i; `; ""; `uds; 1000; { -2"Connection failed: ",x; 0Ni}]
+     /=> 5i
+    
+
+## `.utils.dcc`
+
+Opens a handle to a host and port. Can be called with or without user
+credentials. If called without credentials but a set of conditions are
+satisified, the handle will be opened as an internal _Control_ user,
+`deltacomponent`.
+
+The set of conditions are;
+
+  * Process template file is in a allowlist of core _Control_ templates
+  * Not being invoked as part of another IPC call (`.z.w=0`)
+  * Or if invoked in an IPC call, the remote user (`.z.u`) is also `deltacomponent`
+
+deltacomponent user
+
+If `deltacomponent` is configured as a non-administrator user then requests on
+handles opened using this API will be subject to permission checks. For more
+information see the _KX Control_ documentation
+[here](../../security/#security-and-the-deltacomponent-user)
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+c | symbol | Connection string, with or without user credentials  
+t | long | Timeout value in milliseconds. Null or zero for no timeout  
+e | fn | Function or projection with one parameter to handle connection error  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+int | Integer handle  
+  
+**Example:**
+
+    
+    
+     hp:`:localhost:5000;
+     errF:{[h;e] .log.out[.z.h; "Error connecting to ",string[h]; e]; 0Ni};
+     .utils.dcc[hp; 1000; errF[hp;]]
+     /=> 4i
+    
+
+**Example:**
+
+    
+    
+     hp:`:localhost:5000:user:password;
+     .utils.dcc[hp; 0Ni; {0Ni}]
+     /=> 5i
+    
+
+## `.utils.opencon`
+
+Opens an IPC or file handle. Acts as a wrapper for `hopen`. Returns `-1i` if
+the open was unsuccessful.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | symbol | Connection string  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+int | Handle value  
+  
+**Example:**
+
+    
+    
+     .utils.opencon[`:localhost:5000]
+     /=> 5i
+    
+
+## `.ch.addExit`
+
+Add a process exit handler. The function should take one parameter and will be
+triggered when `.z.exit` is called.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+functionName | symbol | Function name  
+  
+**Example:**
+
+    
+    
+     .ch.addExit[`cleanHandles]
+    
+
+## `.ch.addPC`
+
+Add a close connection handler. Should take one parameter and will be
+triggered when `.z.pc` is called.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+functionName | symbol | Function name  
+  
+**Example:**
+
+    
+    
+     .ch.addPC[`closeHandles]
+    
+
+## `.ch.addPO`
+
+Add an open connection handler. Should take one parameter and will be
+triggered when `.z.po` is called.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+functionName | symbol | Function name  
+  
+**Example:**
+
+    
+    
+     .ch.addPO[`openHandles]
+    
+
+## `.ch.deleteExit`
+
+Removes a process exit handler.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+functionName | symbol | Function name  
+  
+**Example:**
+
+    
+    
+     .ch.deleteExit[`cleanHandles]
+    
+
+## `.ch.deletePC`
+
+Removes a close connection handler.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+functionName | symbol | Function name  
+  
+**Example:**
+
+    
+    
+     .ch.deletePC[`closeHandles]
+    
+
+## `.ch.deletePO`
+
+Removes an open connection handler.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+functionName | symbol | Function name  
+  
+**Example:**
+
+    
+    
+     .ch.deletePO[`openHandles]
+    
+
+## `.ch.getHandle`
+
+Returns the client handle (`.z.w`)
+
+**Returns:**
+
+Type | Description  
+---|---  
+int | Client handle  
+  
+**Example:**
+
+    
+    
+     .ch.getHandle[]
+     /=> 3i
+    
+
+## `.ch.getHost`
+
+Get the host of the remote handle
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | int | IPC handle  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol | Remote host  
+  
+**Example:**
+
+    
+    
+     .ch.getHost[6i]
+     /=> `remotehost
+    
+
+## `.ch.getName`
+
+Get the name registered for a handle
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | int | IPC handle  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol | Process name  
+  
+**Example:**
+
+    
+    
+     .ch.getName[6i]
+     /=> `ds_qp_a.1
+    
+
+## `.ch.getPID`
+
+Get the PID registered for a handle
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | int | IPC handle  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+int | Process PID  
+  
+**Example:**
+
+    
+    
+     .ch.getPID[6i]
+     /=> 12968i
+    
+
+## `.ch.getStatus`
+
+Get the status of a handle
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | int | IPC handle  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol | Handle status  
+  
+**Example:**
+
+    
+    
+     .ch.getStatus[6i]
+     /=> `opened
+    
+
+## `.ch.getType`
+
+Returns flag indicating if handle is to KX Delta Platform or external process
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | int | IPC handle  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | True for non-KX Delta Platform process  
+  
+**Example:**
+
+    
+    
+     .ch.getType[3i]
+     /=> 1b
+    
+
+## `.px.ipc.close`
+
+Closes a remote connection and trigger the `.z.pc` callback.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+handles | int[] | Handle list  
+  
+**Example:**
+
+    
+    
+     .px.ipc.close[5 6i];
+    
+
+## `.px.ipc.phopenAlt`
+
+Connects to a target process by looking up the alternates for it, building the
+connection strings and passing the results to `.px.ipc.phopen` Returns handle
+numbers for valid connections and null for others.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+hosts | symbol[] | List of hosts  
+ports | int[] | List of ports  
+protocols | symbol[] | Connection protocols (null, tls, uds)  
+timeout | long | Connection timeout  
+validator | null | Request to run to validate process state  
+user | symbol | Connection user  
+password | string | Connection password  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+int[] | List of handles  
+  
+**Example:** Two targets with one set of alternative IPs
+
+    
+    
+     hosts:`server1`server2;
+     ports:5000 5001i;
+     ips:(`192.168.0.1`171.30.0.1; `192.168.0.2`171.30.0.2);
+     .px.ipc.setAlternates[hosts; ips];
+     0N!handles:.px.ipc.phopenAlt[hosts; ports; count[hosts]#`; 1000; (`.r.isLeader; (::)); `Administrator; "password"]
+     /=> 0N 5i
+    
+
+## `.px.ipc.phopenDcc`
+
+Acts as a wrapper to `.px.ipc.phopenAlt` but takes a connection string as an
+input. Used by `.utils.dccAlt` as a means to use `deltacomponent` with
+`phopen`. Will split the connection string and figure out the targets,
+protocol, and credentials.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+hp | symbol[] | Connection string  
+timeout | long | Connection timeout  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+int | null | Handle or 2 element list for error  
+  
+**Example:**
+
+    
+    
+     hosts:`server1`server2;
+     ports:5000 5001i;
+     ips:(`192.168.0.1`171.30.0.1; `192.168.0.2`171.30.0.2);
+     .px.ipc.setAlternates[hosts; ips];
+     hp:.utils.getHostPortOnly[`localhost; 6000; `];
+     0N!handle:.px.ipc.phopenDcc[hp; 1000];
+     /=> 5i
+    
+     hp:.utils.getHostPortOnly[`localhost; 6000; `tls];
+     0N!handle:.px.ipc.phopenDcc[hp; 1000];
+     /=> (`err; "phopen connection failed")
+    
+
+## `.px.ipc.phopen`
+
+Implements a parallel `hopen` to a host/port and alternatives. Each connection
+attempt uses the specified timeout and runs a validation command on the target
+process to check its state (must return a boolean). Returns handle numbers for
+valid connections and null for others.
+
+The `what` parameter is a list of alternatives for the host/port details.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+what | symbol[][] | Vector of host/port alternatives  
+timeout | long | Connection timeout  
+validator | null | Request to run to validate process state  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+int[] | List of handles  
+  
+**Example:** Four targets with one set of alternative IPs
+
+    
+    
+     hps:(`:192.186.1.1:5000:Administrator:password`:172.31.0.174:5000:Administrator:password;
+          `:192.186.1.2:5000:Administrator:password`:172.31.0.175:5000:Administrator:password;
+          `:192.186.1.3:5000:Administrator:password`:172.31.0.176:5000:Administrator:password;
+          `:192.186.1.4:5000:Administrator:password`:172.31.0.177:5000:Administrator:password);
+     0N!handles:.px.ipc.phopen[hps; 1000; (`.r.isLeader; (::))]
+     /=> 0N 5 0N 0Ni
+    
+
+**Example:** Multiple leaders
+
+    
+    
+     0N!handles:.px.ipc.phopen[hps; 1000; (`.r.isLeader; (::))]
+     /=> 0N 5 0N 6i
+    
+
+## Callbacks
+
+The following functions serve as wrappers to internal kdb+ callbacks for
+handles opening (`.z.po`), closing (`.z.pc`) and process exits (`.z.exit`).
+Multiple custom handlers can be added and removed using the listed functions.
+
+## Handle Info
+
+Return meta information about handles registered against this process.
+

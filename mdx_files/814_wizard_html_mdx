@@ -1,0 +1,436 @@
+https://code.kx.com/insights/enterprise/ingest/wizard.html
+
+# Import wizard - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/ingest/wizard.html
+
+# Import
+
+Import is a guided process for importing data from a number of different
+sources, including cloud and relational data services.
+
+![Available data sources to import data from.](images/ui/wizard/summary.jpg)  
+_Available data sources to import data from._
+
+## Set up
+
+  1. Select a data source; a guided walkthrough for [Object Storage](../walkthrough/weather.html), [Kafka](../walkthrough/trans.html) or [SQL database](../walkthrough/health.html) imports via the UI are available to try.
+
+  2. Complete the workflow, then `Open Pipeline`.
+
+  3. Changes can be made in the [pipeline](pipeline/index.html); for example, for Kafka import it is necessary to include a Map function.
+
+  4. Save the pipeline (giving it a name in the process).
+
+  5. Deploy the pipeline to an active database, or deploy a database and associated pipeline(s). A successfully deployed database shows a green circle with a tick inside it. The status of a pipeline is available under _Running Pipelines_ in the **Overview** page; a successfully deployed pipeline lists as `Running` or `Finished` under _Status_ and has a green tick or gray circle respectively next to it.
+
+Guided Walkthrough
+
+If using guided walkthrough examples, create and deploy an `insights-demo`
+database before deploying the pipeline.
+
+  6. [Open a Query tab](../visualization/query.html) to query the data. Opening the SQL tab is the quickest way to get data:
+
+Advanced Settings
+
+Each pipeline created by the Import wizard will have an option for Advanced
+pipeline settings. It should be noted, no additional code is required for the
+standard import options described below. The Advanced settings include
+**Global Code** which is executed before a pipeline is started; this code may
+be necessary for Stream Processor hooks, global variables and named functions.
+
+Schema Column Parsing
+
+Parsing is done automatically as part of the import process. If defining a
+manual parse, ensure parsing is enabled for all time, timestamp, and string
+fields unless your input is IPC or RT.
+
+![Parsing is done automatically, but it should be done for all time, timestamp
+and string fields if not automatic.](images/ui/wizard/parse-strings.png)  
+_Parsing is done automatically, but it should be done for all time, timestamp
+and string fields if not automatic._
+
+### Kafka
+
+Connect to an Apache Kafka distributed event streaming platform.
+
+  1. Define the Reader node with the Kafka broker details, port information and topic name.
+
+Sample Kafka Reader Node
+
+     * Broker: kafka:9092 (note:not a working example)
+     * Topic: trades
+     * Offset: Start
+     * Use TLS: No
+
+  2. Event data on Kafka is of JSON type, so use a JSON [decoder](pipeline/operators/decoders.html) node to transform the data to a kdb+ friendly format. Data will be converted to a kdb+ dictionary. There is no need to change the default setting for this.
+
+  3. Apply a Schema with the Transform node; this ensures data is of the correct datatype in the destination database. A schema can be loaded from a database; use the [**Build a Database**](../glossary.html) wizard available from the Overview page to create a database and schema if required. `Parse Strings` can be left as `Auto`; but ensure any time, timestamp and string data columns is set to `On` or `Auto`.
+
+Sample Kafka transform for trades
+
+column name | column type | parse strings  
+---|---|---  
+datetime | Timestamp | Auto  
+ticker | Symbol | Auto  
+price | Float | Auto  
+size | Integer | Auto  
+  
+[For further information about
+schemas.](../database/configuration/ui/schema.html)  
+
+  4. Write the data to a table.
+
+item | description  
+---|---  
+Database | Select an database from the dropdown to assign the data, or create a database by clicking ![Add Database icon](images/ui/wizard/plus-icon.jpg), before returning to the import wizard to add the database.  
+Table | Select a table from the selected database to write the data to; this is typically the schema table from the previous step. If not completed during the schema step, create a [database](../database/configuration/ui/database.html) with a schema matching the data.  
+Write Direct to HDB | Unchecked  
+Deduplicate Stream | Can remain checked.  
+  
+[For further information about
+databases.](../database/configuration/ui/database.html)  
+
+  5. Open the Pipeline view
+
+  6. Include a Map function to convert the data from a kdb+ dictionary to a kdb+ table. This Map function should be inserted between the JSON Decoder of Step 2 and the Transform Schema of Step 3 in the pipeline view; see image below:
+
+![A completed Kafka pipeline.](images/ui/wizard/kafka-pipe.png)  
+_A completed Kafka pipeline._
+
+  7. Save the Pipeline
+
+  8. Deploy the database and Kafka pipeline.
+
+  9. [Query the data](../visualization/query.html). Open the SQL tab. Use the topic name as the `Output variable`. This will be the name of the table to query when getting data; for example, SQL query:
+
+  10. Get Data
+
+The Broker field can be the Kafka broker pod name when the Kafka broker is
+installed in the same Kubernetes namespace as _kdb Insights Enterprise_. If
+the Kafka cluster has been installed into a different Kubernetes namespace,
+then the field expects the full service name of the Kafka broker - i.e.
+`kafka:9092`, where `default` is the namespace that the Kafka cluster is in.
+The full-service name is set in the `KX_KAFKA_BROKERS` environment variable
+property in the Kafka Producer Kubernetes installation instructions.
+
+[See the guided walkthrough Kafka import example.](examples/kafka/index.html)
+
+### Kdb Expression
+
+Import data directly using a kdb+ expression.
+
+  1. The Kdb Expression Reader starts with a code editor; add the following kdb+ data generator in the node editor:
+
+kdb+ query
+
+    
+        n:2000;
+    ([] date:n?(reverse .z.d-1+til 10);
+        instance:n?`inst1`inst2`inst3`inst4;
+        sym:n?`USD`EUR`GBP`JPY;
+        num:n?10)
+    
+
+  2. Configure the Schema to use. This can be done manually within the node, or preferably, loaded from a database.
+
+_Data Format_
+
+    `Any`
+_Schema_
+
+    Use the defined schema for the kdb expression import, created manually or imported from an existing schema. `Parse Strings` can be set to `Auto` for all columns; but ensure any time, timestamp and string data columns is set to `On` or `Auto`.
+  3. Configure the Writer.
+
+item | description  
+---|---  
+Database | Select an database from the dropdown to assign the data, or create a database by clicking ![Add Database icon](images/ui/wizard/plus-icon.jpg) before returning to the wizard to add the database.  
+Table | Select a table from the selected database to write the data to; this is typically the schema table from the previous step. If not completed during the schema step, create a [database](../database/configuration/ui/database.html) with a schema matching the data.  
+Write Direct to HDB | Unchecked  
+Deduplicate Stream | Can remain checked.  
+  
+[For further information about
+databases.](../database/configuration/ui/database.html)  
+
+  4. Open the Pipeline
+
+  5. Rename the Pipeline 
+
+  6. Save the Pipeline
+
+  7. Add the pipeline to the database. Free Trial users can add the pipeline to their `insights-demo` database. Save the database with the pipeline.
+
+![Expression pipeline associated with the insights-demo
+database.](images/ui/wizard/expression-database.jpg)  
+_Expression pipeline associated with the`insights-demo` database._
+
+  8. Deploy the database and associated Expression pipeline.
+
+  9. [Query the data](../visualization/query.html). Open the SQL tab. Repeat the schema table name as the `Output variable`. This will be the name of the table to query when getting data; for example:
+
+  10. Get Data
+
+### SQL Databases
+
+Applicable to all supported SQL databases, including PostgreSQL and Microsoft
+SQL Server.
+
+  1. Define the Reader node, including any required authentication, alongside server and port details.
+
+Sample Postgres Reader Node
+
+     * Server: postgresql
+     * Port: 5432
+     * Database: testdb
+     * Username: testdbuser
+     * Password: testdbuserpassword
+     * query: select * from cars
+
+Where _Server_ is `postgresql.default.svc`, the `default` is the namespace,
+e.g. `db` will be `postgresql.db.svc`
+
+case sensitive
+
+Node properties and queries are case sensitive and should be lower case.
+
+  2. Define the Schema. `Parse Strings` can be set to `Auto` for all columns; but ensure any time, timestamp and string data columns is set to `On` or `Auto`.
+
+Sample Postgres Configure Schema
+
+column name | column type | parse string  
+---|---|---  
+Year | Date | Auto  
+Name | Symbol | Auto  
+Miles_per_Gallon | Float | Auto  
+Cylinders | Float | Auto  
+Displacement | Float | Auto  
+Horsepower | Float | Auto  
+Acceleration | Float | Auto  
+Origin | Symbol | Auto  
+  
+![A schema for a sample pipeline.](images/ui/wizard/car-schema.jpg)  
+_A schema for a sample pipeline._
+
+[For further information about
+schemas.](../database/configuration/ui/schema.html)
+
+  3. Configure the Writer
+
+item | description  
+---|---  
+Database | Select an database from the dropdown to assign the data, or create a database by clicking ![Add Database icon](images/ui/wizard/plus-icon.jpg), before returning to the import wizard to add the database.  
+Table | Select a table from the selected database to write the data to; this is typically the schema table from the previous step. If not completed during the schema step, create a [database](../database/configuration/ui/database.html) with a schema matching the data.  
+Write Direct to HDB | Unchecked  
+Deduplicate Stream | Can remain checked.  
+  
+[For further information about
+databases.](../database/configuration/ui/database.html)  
+
+  4. Open Pipeline
+
+  5. Save the Pipeline
+
+  6. Deploy the database and Postgres pipeline.
+
+  7. [Query the data](../visualization/query.html). Open the SQL tab. Define an `Output variable`, e.g. "**cars** ", this will be the name of the table to query when using `kdb+/q` or `python` in the scratchpad.
+
+For querying in the SQL tab:
+
+  8. Get Data
+
+[See the guided walkthrough SQL database import
+example.](examples/postgres/index.html)
+
+### Cloud Storage Services
+
+Organizations require data services which balance performance, control,
+security and compliance - while reducing the cost of storing and managing such
+vast amounts of data. Limitless scale is the reason object storage is the
+primary storage of cloud service providers, **Amazon** , **Google** and
+**Microsoft**. kdb Insights allows users take advantage of object storage and
+an example is available as part of a [guided
+walkthrough](examples/s3/index.html)
+
+Amazon S3Google Cloud Storage (GCS)Azure Cloud Storage (ACS)
+
+  1. Define the Reader node with the S3 path details for how the file will be read and optionally, the Kubernetes secret for authentication. Default values can be used for all but `Path` and `Region`.
+
+Sample Amazon 3 Reader Node
+
+     * Path: s3://bucket/pricedata.csv
+     * Region: us-east-1
+
+  2. Define a CSV [decoder](pipeline/operators/decoders.html#csv) node. Your imported data source requires a timestamp column to parse the data.
+
+Typical CSV decoder Node
+
+     * Delimiter: ","
+     * Header: First Row
+     * Encoding Format: UTF8
+
+Other required properties can be left at default values.
+
+  3. Define the Transform Schema application
+
+A sample Schema for a time column, category column and two value columns
+
+     * Data Format: Any
+     * Schema: Load a schema from a database by clicking ![schema add button](images/ui/wizard/schema-add-icon.jpg); create a database and schema if needed, or manually add the columns and column type for each of the source data columns in the Transform Node. `Parse Strings` can be set to `Auto` for all columns; but ensure any time, timestamp and string data columns is set to `On` or `Auto`.
+column name | column type | parse strings  
+---|---|---  
+time | Timestamp | Auto  
+sym | Symbol | Auto  
+price | Float | Auto  
+volume | Integer | Auto  
+  
+[For further information about
+schemas.](../database/configuration/ui/schema.html)
+
+  4. Define the table name to upsert the data to. Select the database and table to write the data too from the dropdown menu; this will be the same database and table from the [schema creation](../database/configuration/ui/schema.html) step.
+
+Writer Node
+
+     * Database: databasename
+     * Table: pricedata
+     * Write Direct to HDB: unchecked
+     * Deduplicate stream: checked
+
+[For further information about
+databases](../database/configuration/ui/database.html)
+
+  5. Open the Pipeline
+
+  6. Save the Pipeline
+
+  7. Deploy the database with associated Amazon S3 pipeline.
+
+  8. [Query the data](../visualization/query.html). Open the SQL tab. Define the `Output variable` as "pricedata".
+
+  9. Get Data
+
+Note that a Kubernetes secret is required if authenticating with Amazon S3.
+See the section on [Amazon S3
+Authentication](pipeline/operators/readers.html#amazon-s3-authentication) for
+more details.
+
+[For further information about Amazon S3
+Authentication.](pipeline/operators/readers.html#amazon-s3-authentication)
+
+  1. Define the Reader node with GCS details. Default values can be used for all but `Path` and `Project ID`. `Project ID` may not always have a customizable name, so its name will be contingent on what's assigned when creating your GCS account.
+
+Sample GCS Reader Node
+
+     * Path: gs://mybucket/pricedata.csv
+     * Project ID: ascendant-epoch-999999
+
+Other required properties can be left at default values.
+
+  2. Define a CSV [decoder](pipeline/operators/decoders.html#csv) node. Your imported data source requires a timestamp column to parse the data.
+
+Typical CSV decoder Node
+
+     * Delimiter: ","
+     * Header: First Row
+     * Encoding Format: UTF8
+
+  3. Define the Transform Schema application
+
+A sample Schema for a time column, category column and two value columns
+
+     * Data Format: Any
+     * Schema: Load a schema from a database by clicking ![schema add icon](images/ui/wizard/schema-add-icon.jpg); create a database and schema if needed, or manually add the columns and column type for each of the source data columns in the Transform Node. `Parse Strings` can be set to `Auto` for all columns; but ensure any time, timestamp and string data columns is set to `On` or `Auto`.
+column name | column type | parse strings  
+---|---|---  
+time | Timestamp | Auto  
+sym | Symbol | Auto  
+price | Float | Auto  
+volume | Integer | Auto  
+  
+[For further information about
+schemas.](../database/configuration/ui/schema.html)
+
+  4. Define the table name to upsert the data to. Select the database and table to write the data to from the dropdown menu; this will typically be the same database and table from the [schema creation](../database/configuration/ui/schema.html) step.
+
+Writer Node
+
+     * Database: databasename
+     * Table: pricedata
+     * Write Direct to HDB: unchecked
+     * Deduplicate stream: checked
+
+[For further information about
+databases](../database/configuration/ui/database.html)
+
+  5. Open the Pipeline
+
+  6. Save the Pipeline
+
+  7. Deploy the database and associated GCP pipeline.
+
+  8. [Query the data](../visualization/query.html). Open the SQL tab. Define the `Output variable` as "pricedata".
+
+  9. Get Data
+
+[For further information about Google Cloud Storage
+Authentication](pipeline/operators/readers.html#google-cloud-storage-
+authentication)
+
+  1. Define the ACP Reader node with ACS details. Default values can be used for all but `Path` and `Project ID`. A customizable account name is supported for ACS.
+
+Sample ACP Reader Node
+
+     * Path: ms://mybucket/pricedata.csv
+     * Account: myaccountname
+
+Other required properties can be left at default values.
+
+  2. Define a CSV [decoder](pipeline/operators/decoders.html#csv) node. Your imported data source requires a timestamp column to parse the data.
+
+Typical CSV decoder Node.
+
+     * Delimiter: ","
+     * Header: First Row
+     * Encoding Format: UTF8
+
+  3. Define the Transform Schema application
+
+A sample Schema for a time column, category column and two value columns
+
+     * Data Format: Any
+     * Schema: Load a schema from a database by clicking ![schema add icon](images/ui/wizard/schema-add-icon.jpg); create a database and schema if needed, or manually add the columns and column type for each of the source data columns in the Transform Node. `Parse Strings` can be set to `Auto` for all columns; but ensure any time, timestamp and string data columns is set to `On` or `Auto`.
+column name | column type | parse strings  
+---|---|---  
+time | Timestamp | Auto  
+sym | Symbol | Auto  
+price | Float | Auto  
+volume | Integer | Auto  
+  
+[For further information about
+schemas.](../database/configuration/ui/schema.html)
+
+  4. Define the table name to upsert the data to. Select the database and table to write the data to from the dropdown menu; this will be the same database and table from the [schema creation](../database/configuration/ui/schema.html) step.
+
+Writer Node
+
+     * Database: databasename
+     * Table: pricedata
+     * Write Direct to HDB: unchecked
+     * Deduplicate stream: checked
+
+[For further information about
+databases](../database/configuration/ui/database.html)
+
+  5. Open the Pipeline
+
+  6. Save the Pipeline
+
+  7. Deploy the database and associated ACS pipeline.
+
+  8. [Query the data](../visualization/query.html). Open the SQL tab. Define the `Output variable` as "pricedata".
+
+  9. Get Data
+
+[For further information about Microsoft Azure
+Authentication](pipeline/operators/readers.html#microsoft-azure-
+authentication)
+

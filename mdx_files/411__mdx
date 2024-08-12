@@ -1,0 +1,59 @@
+https://code.kx.com/platform/controlui_api_permissions/
+
+# UI API permissions - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/controlui_api_permissions/
+
+# Control UI API permissions
+
+An administrator can make use of the full Control Web UI. If there are users
+who are not administrators but need to interact with the UI there are several
+permission groups that can be applied.
+
+The API is granular around entity types. A user can be given permission to
+some or all of the API groups to allow them to carry out different roles.
+
+Many permissions may require access to the entity itself, for example task
+permission will be based entirely on whether the user has permission to the
+parent process instance.
+
+Permission to create an entity will be based on whether a user has **update**
+permission on the relevant API group. For example, to create an analytic the
+user must have update permission on the UxAnalytics API group.
+
+If a user has permission for a workflow they will see all tasks in that
+workflow when it is opened, regardless of process instance permission level.
+
+The basic Control UI functionality, including being able to view the
+navigation tree and process status view, is governed by permission to the
+`UxControl` API group.
+
+The permissions can be assigned to a user or a user group in the _Entity
+Permissions_ tab.
+
+![Screenshot](../img/control/controlapipermissions.png)
+
+![Screenshot](../img/control/controlapipermissionsgroup.png)
+
+Ux permission list:
+
+permission | details  
+---|---  
+UxProcess | create/edit instances, templates, workflows, tasks, services  
+UxInterrogation | instance, task, services, workflow run history, reading log files (included in `UxProcess`)  
+UxRuntime | start/stop instances, tasks, services, workflows (included in `UxInterrogation`, `UxProcess`)  
+UxAnalytics | create/edit analytics, analytic groups  
+UxConfiguration | create/edit configuration parameters, configuration parameter groups  
+UxConnections | create/edit connections, connection groups  
+UxEntityGroups | create/edit entity groups  
+UxEmails | create/edit email distribution lists  
+UxSchemas | create/edit schema, schema groups  
+UxDashboards | UI dashboards, UI settings  
+UxSessions | enable/disable logging, force logout  
+UxUsers | create users, user groups  
+UxAccounts | lock/unlock users, change/reset passwords  
+UxActionTrackers | create/edit action trackers, action queues, action transitions, resolutions  
+UxControl | basic Control UI functionality, navigation tree, process status view  
+UxPackaging | create, save, import and export packages  
+UxRevision | entity revision history, details, revert entity (included in entity Ux groups)
+

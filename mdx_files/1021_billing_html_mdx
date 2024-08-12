@@ -1,0 +1,164 @@
+https://code.kx.com/insights/enterprise/azure-marketplace/billing.html
+
+# Azure billing - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/azure-marketplace/billing.html
+
+# Billing kdb Insights Enterprise through Azure
+
+Once you decide to buy kdb Insights Enterprise you must create and configure
+your account on our transactable [SaaS Billing
+offer](https://portal.azure.com/#create/firstderivativesplc1596469572732.kdb-
+insights-enterprise-billing/preview). This offer is only used to bill your kdb
+Insights Enterprise instances.
+
+Note
+
+You will see in your invoices that the Billing offer is billed for the agreed
+KX License amount, whereas the kdb Insights Enterprise instance will only have
+infrastructure costs. This allows you to recreate your kdb Insights Enterprise
+instance whenever you want and we will still be able to generate KX License
+bills through the Billing offer.
+
+Our offer is MACC (Microsoft Azure Consumption Commitment) eligible, meaning
+it will contribute to your [Azure consumption commitment
+benefit](https://learn.microsoft.com/en-us/marketplace/azure-consumption-
+commitment-benefit).
+
+## Prerequisites
+
+Before creating a Billing Offer you need the following:
+
+  * Access to the [SaaS Billing offer](https://portal.azure.com/#create/firstderivativesplc1596469572732.kdb-insights-enterprise-billing/preview) webpage
+
+  * Permissions to access or create a resource group
+
+  * Permissions to create and subscribe to an Azure SaaS offer
+
+## Create transactable Billing Offer
+
+In the following steps you will create a Billing offer.
+
+  1. Go to `Azure Marketplace`.
+  2. Search for `Managed kdb Insights Enterprise License`. Click on the offer.
+
+![Marketplace offer](images/billing_azure_martketplace_search.png)
+
+  3. Read the Overview, Plans + Pricing and Usage Information + Support page. You can also come back here to provide a rating if you would like to.
+
+  4. Select your plan and click `Subscribe`.
+
+![Marketplace plan](images/billing_azure_martketplace_select_plan.png)
+
+  5. Select the `azure subscription` and `resource group` where the Billing offer should be stored.
+
+![Marketplace plan creation](images/billing_azure_martketplace_creation.png)
+
+     * We recommend that you create one resource group dedicated for all your KX Billing offers. The name of the resource group can be anything.
+
+     * The name of the KX Billing offer can also be anything. However, since this SaaS offer is used to bill a `kdb Insights Enterprise instance` we recommend naming your SaaS offer something that resembles the name of the `kdb Insights Enterprise` instance.
+
+  6. Select your preferred `Billing term` and `Price + payment frequency` if you have multiple options available.
+
+  7. Select Recurring Billing if you want to auto-renew your offer once the `Billing term` has expired.
+  8. Go to Tags. Configure tags as needed based on your policies.
+  9. Go to Review + Subscribe. Review your offer then click `Subscribe`.
+
+## Configure your account
+
+Once you have created your KX License Billing offer on Azure, you will need to
+configure your `Account`.
+
+Note
+
+The following steps will take you to our [Licensing portal](https://kx-
+license-billing-portal.azurewebsites.net/). If opening of third party websites
+is blocked on the machine you are using to log in to Azure, you will need to
+ensure opening of this website is allowed before you can complete these steps.
+
+Warning
+
+You must complete the following process in 30 days, otherwise the KX License
+Billing offer will be deleted.
+
+### Navigate to the landing page
+
+First, navigate to the Client Landing Page of KX.
+
+There are multiple options to do this:
+
+#### \- Option 1:
+
+When the Billing offer is created, if you click `Configure account now` you
+will be taken to the landing page.
+
+![Navigate to the landing page
+1](images/billing_azure_martketplace_configure_account_now_1.png)
+
+#### \- Option 2:
+
+Go to your Billing offer on Azure and click `Configure account now` or `Open
+SaaS Account on publisher's site` if the account is already configured.
+
+![Navigate to the landing page
+2](images/billing_azure_martketplace_configure_account_now_2.png)
+
+#### \- Option 3:
+
+Follow this link: [Licensing portal](https://kx-license-billing-
+portal.azurewebsites.net/)
+
+### Grant consent to KX Landing Page
+
+When you sign in on our landing page for the first time, our application will
+require consent to access user data ([User.Read
+scope](https://learn.microsoft.com/en-us/graph/permissions-reference#user-
+permissions)). Approving it allows us to identify you.
+
+![Grant Consent](images/billing_azure_martketplace_consent_1.png)
+
+#### Admin consent to KX Landing Page
+
+By default, any user can consent to this scope, but the permissions required
+to consent will depend on your Azure Tenant Policies. In some cases, only an
+Admin user has the appropriate access:
+
+![Grant Admin Consent](images/billing_azure_martketplace_consent.png)
+
+If admin rights are required to consent, you will need to reach out to a
+person with one of the following roles: [Global Administrator, Cloud
+Application Administrator, Application
+Administrator](https://learn.microsoft.com/en-us/azure/active-
+directory/manage-apps/review-admin-consent-requests#prerequisites)
+
+An administrator can either:
+
+  1. [Allow users to consent for apps from verified publishers](https://learn.microsoft.com/en-us/azure/active-directory/manage-apps/configure-user-consent?pivots=portal) and mark User.Read scope to be [low impact](https://learn.microsoft.com/en-us/azure/active-directory/manage-apps/configure-permission-classifications?tabs=azure-portal#manage-permission-classifications)
+  2. Configure [admin consent workflow](https://learn.microsoft.com/en-us/azure/active-directory/manage-apps/configure-admin-consent-workflow)
+  3. Grant [tenant-wide admin consent](https://learn.microsoft.com/en-us/azure/active-directory/manage-apps/grant-admin-consent?pivots=portal)
+  4. Grant consent [on behalf of a user](https://learn.microsoft.com/en-us/azure/active-directory/manage-apps/grant-consent-single-user?pivots=msgraph-powershell)
+
+### KX license subscription
+
+Once you navigate to the landing page by clicking `Configure Account Now`, you
+will need to fill in your contact details - most will be pre-populated and all
+fields are required.
+
+![Activate Account](images/billing_azure_martketplace_activate_account.png)
+
+  1. Click on **View License Details** and review your details
+
+![License
+Details](images/billing_azure_martketplace_activate_license_details.png)
+
+  2. Click `Activate License`
+
+Note
+
+If you navigated to the landing page directly, you can see your license under
+KX Licenses. You can activate it by clicking Activate on the Action menu.
+
+  3. Once the Activation has been acknowledged the webpage will inform you that the request is being processed and direct you to the Subscriptions List where you can see the status of your license subscriptions.
+
+![License Activated](images/billing_azure_martketplace_activated_account.png)
+

@@ -1,0 +1,142 @@
+https://code.kx.com/insights/microservices/rt/sdks/rt-bridge.html
+
+# RT Bridge - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/rt/sdks/rt-bridge.html
+
+# RT Bridge
+
+## Introduction
+
+The RT Bridge is a q process, that can be installed outside the _kdb Insights
+Enterprise_ cluster to enable your existing applications that currently
+deliver data to a q process (typically a tickerplant), to deliver the same
+data to the _kdb Insights Enterprise_ without modification.
+
+The RT Bridge is a q process that provides an `update` function, just like the
+`update` function in a tickerplant, to publish data to _kdb Insights
+Enterprise_.
+
+A valid kdb+ license file is required
+
+The RT Bridge requires that a valid kdb+ license file is present in the
+system.
+
+## Downloading
+
+You can download RT Bridge from the KX Insights
+[Nexus](https://nexus.dl.kx.com/#browse/browse:kxi-package-public) registry.
+
+The following artifacts are available:
+
+  * `rt-bridge-${VERSION}.install.sh`
+  * `rt-bridge-${VERSION}.deb`
+  * `rt-bridge-${VERSION}-rhel.x86_64.rpm`
+
+## Installing
+
+To install the RT Bridge, open a command terminal and run the following:
+
+## Uninstalling
+
+To uninstall the RT Bridge, open a command terminal and run the following:
+
+## Running the RT Bridge
+
+Before running the RT Bridge you will need to follow the instructions
+[here](getting-started-sdks.html#authentication-authorization) to allow the RT
+bridge to send data to _kdb Insights Enterprise_.
+
+The following arguments are available when running the RT Bridge:
+
+argument | required | default | description  
+---|---|---|---  
+-dir | Mandatory | none | The storage directory for local stream log files and state files.  
+-configurl | Mandatory | none | The URL to the Information Service endpoint.  
+-timeout | Optional | 5000 | The number of milliseconds after which the RT Bridge exits if cannot connect to the Information Service.  
+-port | Optional | 5000 | The port to open to receive qIPC messages from the calling application.  
+-upd | Optional | "upd" | The name of the function publishers should call through qIPC to publish messages.  
+  
+configurl format
+
+The URL is in the format:
+(https://{INSIGHTS_HOSTNAME}/informationservice/details/{KC_CONFIG_URL})
+
+For example: The following command shows how to run the RT Bridge to send data
+to an RT Stream in _kdb Insights Enterprise_ defined by the `KC_CONFIG_URL`
+and storing the messages locally in the `/s/out` folder:
+
+    
+    
+    rt-bridge -dir /s/out -configurl https://{INSIGHTS_HOSTNAME}/informationservice/details/{KC_CONFIG_URL}
+    
+
+Calling without commandline arguments
+
+When called without commandline arguments, this brief instruction is printed:
+
+    
+    
+    rt-bridge
+    
+    usage: rt-bridge -dir /s/out [-timeout 5000] [-port 5000] [-upd upd] -configurl url
+    
+
+### RT Bridge readiness
+
+After starting the RT Bridge it prints the below message when it is ready to
+receive messages and has opened a qIPC port to which you can send data:
+
+    
+    
+    $ rt-bridge -dir /tmp/rt-demo -configurl $URL
+    
+    ; saving ssl files
+    ; setting cookie and enabling networking...
+    ; setup complete
+    ; starting replication to...
+    ; publishing insert to...
+    ; publishing query to...
+    ; update function: upd
+    ; rt-bridge is open on port 5000
+    
+
+## Publishing data
+
+You can now publish data to the RT Bridge, which will deliver the data to _kdb
+Insights Enterprise_.
+
+The sample below publishes a set of messages called `data` to a table called
+`email`. It does this via the `upd` function:
+
+    
+    
+    // open a tcp/ip socket connection to the RT bridge
+    h:hopen 5000
+    
+    // send data synchronously to the RT bridge
+    h(`upd; `email; data);
+    
+    // alternatively, send data asynchronously to the RT bridge
+    neg[h](`upd; `email; data);
+    
+
+Points of note
+
+The bridge defaults to running on port 5000. The default function used to feed
+into kdb Insights Enterprise is called `upd`.
+
+## Clean Shutdown
+
+It is important to shut down the RT Bridge properly to avoid potential data
+loss (eg. due to local disk failures) or unnecessary delays.
+
+On normal exit (for example \ or `exit 0`) the `.z.exit` handle flushes the
+message buffer to make sure every message is replicated on the remote servers.
+
+Killing the process
+
+When the process is killed (for example using `kill -9`) some messages may
+remain in the buffer and are only delivered after restarting the RT Bridge
+with the same parameters.
+

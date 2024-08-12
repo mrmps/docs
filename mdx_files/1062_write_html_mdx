@@ -1,0 +1,49 @@
+https://code.kx.com/pykx/api/pykx-save-load/write.html
+
+# Writing data to disk - PyKX
+
+Original URL: https://code.kx.com/pykx/api/pykx-save-load/write.html
+
+Writes a JSON representation of the given q object to a file.
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`path` |  `[Union](https://docs.python.org/3/library/typing.html#typing.Union "typing.Union")[[str](https://docs.python.org/3/library/stdtypes.html#str), [Path](https://docs.python.org/3/library/pathlib.html#pathlib.Path "pathlib.Path"), [k](../pykx-q-data/wrappers.html#pykx.wrappers "pykx.wrappers").[SymbolAtom](../pykx-q-data/wrappers.html#pykx.wrappers.SymbolAtom "pykx.wrappers.SymbolAtom")]` | The path to the JSON file. |  _required_  
+`data` |  `[Any](https://docs.python.org/3/library/typing.html#typing.Any "typing.Any")` | Any type to be serialized and written as a JSON file. |  _required_  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+`[Path](https://docs.python.org/3/library/pathlib.html#pathlib.Path "pathlib.Path")` | A `pykx.SymbolAtom` that can be used as a file descriptor for the file.  
+See Also
+
+[`q.read.json`](read.html#pykx.read.QReader.json)
+
+**Examples:**
+
+Convert a pandas `Dataframe` to JSON and then write it to disk in the current
+directory.
+
+    
+    
+    df = q('([] a: til 5; b: 2 * til 5)').pd()
+    q.write.json('example.json', df)
+
+Convert a Python `int` to JSON and then write it to disk in the current
+directory.
+
+    
+    
+    q.write.json('example.json', 143)
+
+Convert a Python `dictionary` to JSON and then write it to disk in the current
+directory.
+
+    
+    
+    dictionary = {'a': 'hello', 'b':'pykx', 'c':2.71}
+    q.write.json('example.json', dictionary)
+

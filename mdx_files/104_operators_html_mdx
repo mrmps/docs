@@ -1,0 +1,1157 @@
+https://code.kx.com/insights/api/stream-processor/q/operators.html
+
+# Operators - kdb products
+
+Original URL: https://code.kx.com/insights/api/stream-processor/q/operators.html
+
+# Operators
+
+An operator is a first-class building block in the stream processor API.
+Operators are strung together in a user’s program to transform and enrich
+data.
+
+## `.qsp.accumulate`
+
+_Aggregates a stream into an accumulator_
+
+    
+    
+    .qsp.accumulate[fn; initial]
+    .qsp.accumulate[fn; initial; output]
+    
+
+**Parameters:**
+
+name | type | description | default  
+---|---|---|---  
+fn | function | An aggregator which takes the metadata, data, and the accumulator, and returns an updated accumulator. | Required  
+initial | any | The initial state of the accumulator. | Required  
+output | function | A function to transform the output before emitting it. It gets passed the value of the accumulator. | ::  
+  
+> For all common arguments, refer to [configuring operators](configuring-
+> operators.html)
+
+Aggregates a stream into an accumulator, which is updated and then emitted for
+each incoming batch. The value being emitted is passed to the `output`
+function, which can modify it before passing it to the next operator. If the
+accumulator is a dictionary, it may be necessary to enlist the result in the
+output function so the next operator receives a table.
+
+If no output function is specified, the accumulator will be emitted. If the
+accumulator is a dictionary, an output function like `{enlist x}` can be used
+to emit tables.
+
+This pipeline calculates the running averages for each column.
+
+    
+    
+    .qsp.run
+        .qsp.read.fromCallback[`publish]
+        .qsp.accumulate[{[md; data; acc]
+            acc[`total] +: count data;
+            acc[`sum] +: sum data;
+            acc
+            };
+            `total`sum!(0; ());
+           // The enlist is needed to turn the dictionary into a table
+           {enlist x[`sum] % x`total}]
+        .qsp.write.toConsole[]
+    
+    publish each 10 cut ([] x: 100?1f; y: 100?1f)
+    
+
+This pipeline emits the number of times each status has been seen
+
+    
+    
+    .qsp.run
+        .qsp.read.fromCallback[`publish]
+        .qsp.accumulate[{[md; data; acc] acc + count each group data `status};
+            `a`b`c!0 0 0;
+            // The enlist is needed to turn the dictionary into a table
+            {enlist x}]
+        .qsp.write.toConsole[]
+    
+    publish each 10 cut ([] status: 100?`a`b`c)
+    
+
+## `.qsp.apply`
+
+_Apply a function to incoming batches in the stream_
+
+    
+    
+    .qsp.apply[fn]
+    .qsp.apply[fn; .qsp.use (!) . flip (
+        (`onFinish; onFinish);
+        (`state   ; state))]
+    
+
+**Parameters:**
+
+name | type | description | default  
+---|---|---|---  
+fn | function | An operator applied to incoming data (see below). | Required  
+  
+_options:_
+
+name | type | description | default  
+---|---|---|---  
+onFinish | function | A function run when the pipeline finishes or is torn down, to flush the buffer. It is passed the operator and metadata. | None  
+state | any | The initial state. | ::  
+params | symbol or symbol[] | The arguments to pass to fn. | ``operator`metadata`data`  
+  
+> For all common arguments, refer to [configuring operators](configuring-
+> operators.html)
+
+`fn` is a ternary function, which is applied to incoming batches in the
+stream.
+
+The arguments of `fn` are:
+
+Since `apply` is most often used with state, the `operator` and `metadata`
+arguments are implicitly added to the user-defined function.
+
+Unlike other operators, `apply` is _asynchronous_ , and data returned by it
+does _not_ immediately flow through the rest of the pipeline. Instead, the
+operator must use [`.qsp.push`](general.html#qsppush) to push data through the
+pipeline when ready.
+
+This is often useful when combined with the state API for implementing custom
+window operation, running asynchronous external tasks (see [task
+registration](lifecycle.html#qspregistertask)), and similar behaviors.
+
+When `apply` is used to buffer data, the `onFinish` option should be used to
+flush the buffer when the pipeline finishes. It will be called once for every
+key in the state including the default key (empty symbol), with the metadata
+dictionary passed to it containing only the key.
+
+Buffer events in memory before running an analytic:
+
+    
+    
+    .qsp.run
+      .qsp.read.fromCallback[`publish]
+      // Buffer the stream to 10000 events before pushing downstream
+      .qsp.apply[
+        {[op; md; data]
+          $[10000 <= count state: .qsp.get[op; md] , data;
+            // If we've hit 10000 events, clear the state and push the buffer
+            [.qsp.set[op; md; ()]; .qsp.push[op; md; state]];
+            // Otherwise, update the buffer
+            .qsp.set[op; md; state]
+            ]
+          };
+        .qsp.use (!) . flip (
+            // Set the default state to empty
+            (`state;     ());
+            (`onFinish;  {[op; md] .qsp.push[op; md] .qsp.get[op; md]}))
+        ]
+    
+      // Run an analytic on the buffered stream
+      .qsp.map[{ 10*x }]
+      // Convert to the (tableName; tableData) format expected by RT
+      .qsp.map[{ (`customAnalytic; value flip x) }]
+      .qsp.write.toVariable[`output]
+    
+    publish each 50 cut ([] data: 20000?1f)
+    
+
+Register an asynchronous task for true async:
+
+    
+    
+    .qsp.run
+      .qsp.read.fromCallback[`publish]
+      .qsp.apply[
+        {[op; md; data]
+          // Register a task which represents the unfinished async kurl GET request
+          tid: .qsp.registerTask[op];
+          .kurl.async (
+            data `url;
+            "GET";
+            ``callback!(
+                ::;
+                {[op;md;data;tid;r]
+                  .qsp.finishTask[op;tid]; //   Mark the task as finished
+                  data[`response]: r 1;    //   Add GET request response to data
+                  .qsp.push[op;md;data];   //   Push enriched data to the next operator
+                }[op;md;data;tid]
+            )
+          );
+        }
+      ]
+      .qsp.write.toConsole[];
+    
+    publish each ([] url: ("https://www.google.ca"; "https://www.example.com"))
+    
+
+## `.qsp.filter`
+
+_Filter elements out of a batch, or a batch from a stream_
+
+    
+    
+    .qsp.filter[fn]
+    .qsp.filter[fn; .qsp.use (!) . flip (
+        (`dropEmptyBatches; dropEmptyBatches);
+        (`allowPartials   ; allowPartials);
+        (`state           ; state))]
+    
+
+**Parameters:**
+
+name | type | description | default  
+---|---|---|---  
+fn | function | A unary function returning a boolean atom or vector, that either filters elements out of a batch, or filter out a batch in its entirety from a stream. | Required  
+  
+_options:_
+
+name | type | description | default  
+---|---|---|---  
+dropEmptyBatches | boolean | `1b` to only emit non-empty batches. | `0b`  
+allowPartials | boolean | `1b` indicates this filter operation can handle partial batches of data. See below for more details on partial batches. | `1b`  
+state | any | The initial state. | `::`  
+params | symbol or symbol[] | The arguments to pass to fn | ``data`  
+  
+> For all common arguments, refer to [configuring operators](configuring-
+> operators.html)
+
+The `fn` function will be called on each batch in the stream. If the result is
+a boolean
+
+  * vector, only records that it flags in the batch progress through the stream
+  * atom, all records in the batch progress or are discarded according to the flag
+
+Partial data batches
+
+Some source nodes can push partial sets of data through a pipeline to reduce
+overall batch sizes. For example, a file reader might break the file down into
+smaller chunks and push each chunk through the pipeline. If the current
+operator requires an entire batch of data (ex. an entire file) then set
+`allowPartials` to `0b` to force the batch to be buffered to completion before
+running this operator. If the operator does receive partial data, it is
+presumed to also emit them
+
+Filter for a single table:
+
+    
+    
+    .qsp.run
+      .qsp.read.fromStream[":tp:5000"]
+      // Values come in as (tableName; tableValue), so select the desired
+      // table name
+      .qsp.filter[{ `trade ~ first x }]
+      // After the filter, there are only tuples corresponding to trades
+      // in the stream, so the `tableName` field can be discarded
+      .qsp.map[{ x 1 }]
+      .qsp.write.toConsole[]
+    
+
+## `.qsp.keyBy`
+
+_Keys a stream on a value in the stream_
+
+    
+    
+    .qsp.keyBy[field]
+    .qsp.keyBy[field; .qsp.use (!) . flip enlist (
+         (`allowPartials; allowPartials))]
+    
+
+**Parameters:**
+
+name | type | description | default  
+---|---|---|---  
+field | function or symbol or number | The field parameter allows you to extract a field from the input data to use as a key. If a symbol or number is provided, the field is used to index into the data in the stream and return the corresponding field. If a function is provided, the function will return the key for a given message. | Required  
+  
+_options:_
+
+name | type | description | default  
+---|---|---|---  
+allowPartials | boolean | `1b` indicates this filter operation can handle partial batches of data. See below for more details on partial batches. | `1b`  
+  
+> For all common arguments, refer to [configuring operators](configuring-
+> operators.html)
+
+Partial data batches
+
+Some source nodes can push partial sets of data through a pipeline to reduce
+overall batch sizes. For example, a file reader might break the file down into
+smaller chunks and push each chunk through the pipeline. If the current
+operator requires an entire batch of data (ex. an entire file) then set
+`allowPartials` to `0b` to force the batch to be buffered to completion before
+running this operator. If the operator does receive partial data, it is
+presumed to also emit them
+
+Key on pass or fail:
+
+    
+    
+    .qsp.run
+       .qsp.read.fromCallback[`score]
+       .qsp.keyBy[`pass]
+       .qsp.accumulate[{z+count y};0]
+       .qsp.map[{enlist `pass`count!(y`key;x)}; .qsp.use``params!(`;`data`metadata)]
+       .qsp.write.toVariable[`output]
+    
+    score ([] date: .z.d; id: 10?`3; pass: 10?0b);
+    output
+    
+    
+    
+    pass count
+    ----------
+    1    4
+    0    6
+    
+
+## `.qsp.map`
+
+_Apply a function to data passing through the operator_
+
+    
+    
+    .qsp.map[fn]
+    .qsp.map[fn; .qsp.use (!) . flip (
+        (`allowPartials; allowPartials);
+        (`state        ; state))]
+    
+
+**Parameters:**
+
+name | type | description | default  
+---|---|---|---  
+fn | function | A unary function that is applied it to the data, and returns the result. | Required  
+  
+_options:_
+
+name | type | description | default  
+---|---|---|---  
+allowPartials | boolean | `1b` indicates this filter operation can handle partial batches of data. See below for more details on partial batches. | `1b`  
+  
+> For all common arguments, refer to [configuring operators](configuring-
+> operators.html)
+
+Partial data batches
+
+Some source nodes can push partial sets of data through a pipeline to reduce
+overall batch sizes. For example, a file reader might break the file down into
+smaller chunks and push each chunk through the pipeline. If the current
+operator requires an entire batch of data (ex. an entire file) then set
+`allowPartials` to `0b` to force the batch to be buffered to completion before
+running this operator. If the operator does receive partial data, it is
+presumed to also emit them
+
+A basic map:
+
+    
+    
+    .qsp.run
+      .qsp.read.fromCallback[`trade]
+      .qsp.map[{ update price * size from x }]
+      .qsp.write.toConsole[]
+    
+    trade ([] price: 10?200f; size: 10?1000)
+    
+
+A stateful map:
+
+    
+    
+    .qsp.run
+      .qsp.read.fromCallback[`trade]
+      // *Note* - using `state` implicitly adds the `operator` and `metadata`
+      // arguments required for .qsp.* state APIs.
+      .qsp.map[
+        {[op;md;data]
+          // Retrieve the previous state from the last batch
+          previous: .qsp.get[op;md];
+          // Calculate size * price for each symbol
+          v: select sp:price * size by sym from data;
+          // Set the state to include the current batch calculation
+          .qsp.set[op; md; previous , v];
+          // Send the difference between the current and last batch to
+          // any forward operators in the pipeline (here, console writer)
+          select from v - previous where sym in key[v]`sym
+        };
+        .qsp.use``state!(::; ([sym:0#`] sp:0#0f))
+      ]
+      .qsp.write.toConsole[]
+    
+    trade each 1 cut ([]
+        sym: `ABC`ABC`XYZ`XYZ`ABC`XYZ;
+        price: 200 203 53 52 190 55;
+        size: 100 100 200 400 100 150)
+    
+
+Retrieving metadata within a map:
+
+    
+    
+    .qsp.run
+      .qsp.read.fromCallback[`publish]
+      // Group events into logical groups every 5 seconds of event time
+      // based on the 'timestamp' column in the data to indicate which
+      // window an event should belong
+      .qsp.window.tumbling[00:00:05; `time]
+      .qsp.map[
+        {[md;x]
+          // Add the start of the window to the batched event data
+          update start: md`window from x
+        };
+        .qsp.use``params!(::; 1#`metadata)
+      ]
+      .qsp.write.toConsole[]
+    
+    publish ([] time: 0p + 00:00:01 * 0 3 5 7 9 11; data: til 6)
+    
+
+## `.qsp.merge`
+
+_Merge two data streams_
+
+    
+    
+    .qsp.merge[stream; function]
+    .qsp.merge[stream; function; .qsp.use (!) . flip (
+        (`flush  ; flush);
+        (`trigger; trigger);
+        (`concat ; concat);
+        (`state  ; state))]
+    
+
+**Parameters:**
+
+name | type | description | default  
+---|---|---|---  
+stream | pipeline | A separate pipeline to merge. | Required  
+function | function | A function of the two streams to combine both into one. | Required  
+  
+_options:_
+
+name | type | description | default  
+---|---|---|---  
+flush | symbol | Indicates which side of the merge operation to flush data from. | `left`  
+trigger | function or symbol | This defines when the merge function should be run. It can be a custom function run on the buffered data, or a symbol to use a predefined trigger. | `both`  
+concat | function | A function to update the buffer with incoming data. | Append incoming data  
+state | any | The initial state. | ::  
+params | symbol or symbol[] | The arguments to pass to fn. | ``left`right`  
+  
+> For all common arguments, refer to [configuring operators](configuring-
+> operators.html)
+
+merges `stream` to the current stream using `fn`.
+
+Data loss
+
+When merging data from multiple readers, it is very easy to write a pipeline
+that will exhibit data loss. Read through [this
+page](../../../microservices/stream-processor/concepts/determinism.html)
+before using the merge operator.
+
+Merge can be used to join and enrich streams with other streams, with static
+data, or to union two streams into a single stream. The stream to which
+`.qsp.merge` is appended is the left stream, and the stream included as a
+parameter is the right stream.
+
+The merge function is passed the buffered values for the two streams, to merge
+them into an output batch. It must return the pair `(metadata; data)`.
+
+The `flush` option indicates which side of the merge operation to flush data
+from. Data is flushed after a merge has been performed, meaning that once the
+merge is complete, the indicated stream is cleared for the next merge
+operation. Data that is not flushed in the join will be buffered indefinitely.
+This value can be one of the following symbols:
+
+  * `left` \- Only flush data from the left stream
+  * `right` \- Only flush data from the right stream
+  * `both` \- Flush both streams
+  * `none` \- Don't flush any data
+
+The `trigger` option determines when the merge function should be run. It can
+be one of the following symbols, or a function that evaluates to a boolean. If
+a function is provided it is passed the buffered state of the left and right
+streams as arguments, each as pairs of `(metadata; data)`.
+
+  * `immediate` \- Emit on any input
+  * `both` \- Emit when both streams have buffered data
+  * `left` \- Emit when the left stream has buffered data
+  * `right` \- Emit when the right stream has buffered data
+
+Initial message ordering
+
+With the exception of the default `both`, using any of the above options may
+require prior knowledge of which stream will receive data first. In cases
+where the first message satisfies the trigger condition, i.e. the left side
+receiving the first message when using `left`, the merge function will be
+passed an empty list representing the opposite buffer. The same behaviour
+applies to `right` and occurs regardless when using `immediate`.
+
+Be aware that this behaviour can also be encountered beyond the initial
+message when using `both` as the flush option above.
+
+    
+    
+      right: .qsp.read.fromCallback[`rcb];
+    
+      .qsp.run
+        .qsp.read.fromCallback[`lcb]
+        .qsp.merge[right;{show "left (x): ",.Q.s1[x]," right (y): ",.Q.s1[y]};.qsp.use ``trigger!(::;`left)];
+    
+      lcb ([] a:1 2; b:3 4)
+    
+    
+    
+      "left (x): +`a`b!(1 2;3 4) right (y): ()"
+    
+
+The `concat` option is a function applied to an incoming stream to concatenate
+data from the same stream. It is passed two arguments: the previously cached
+state, and the incoming message, both as `(metadata; data)` tuples.
+
+The `params` list can be any subset `left`,`right`, `leftMeta`, `rightMeta`,
+`metadata`, and `operator`, to specify what is passed to the merge function.
+
+This example joins the last quote for each trade. Note that because nothing
+tracks when quotes come in relative to the trade stream, the following
+pipeline is [nondeterministic](../../../microservices/stream-
+processor/concepts/determinism.html).
+
+    
+    
+    // Create a data flow for quote updates
+    quotes: .qsp.read.fromCallback[`updQuote]
+      // A stateful map to hold the last seen quote for each symbol
+      .qsp.map[
+        {[o;m;z]
+          // Update the state with the last value for each symbol from the batch
+          // The '.qsp.set' returns the data set, forwarding it on to downstream
+          // operators.
+          .qsp.set[o;m] .qsp.get[o;m] upsert select price by sym from z
+        };
+        .qsp.use``state!(::; ()) ]
+    
+    // Create a data stream for trade updates
+    quoteAsOfTrade: .qsp.read.fromCallback[`updTrade]
+      // Left join the last quote for each sym onto each new trade in the stream
+      // Since the updates from the quoteStream are keyed, the buffer will be updated
+      // with the latest data, and doesn't need to be re-keyed before joining with `lj`.
+      .qsp.merge[quotes; lj]
+      .qsp.write.toConsole[]
+    
+    .qsp.run quoteAsOfTrade
+    
+    updQuote ([sym: `ABC`XYZ] time: 2001.01.01D12:00:00; price: 45 72)
+    updTrade ([] sym: `ABC`XYZ; size: 1000 5000)
+    
+    
+    
+                                 | sym size price
+    -----------------------------| --------------
+    2022.03.03D19:40:06.743993600| ABC 1000 45
+    2022.03.03D19:40:06.743993600| XYZ 5000 72
+    
+
+Note that when using keyed streams, `.qsp.merge` keeps a separate state for
+each key. Thus, in the following example where a reference file (implicitly
+keyed with the file name) is joined to incoming batches, the right stream must
+be unkeyed with an apply operator. Otherwise it will be buffered under the key
+`store.csv` while the left stream is buffered under the default key, and
+neither buffer would have incoming messages on both streams to trigger the
+merge.
+
+    
+    
+    `stores.csv 0: csv 0: ([storeID: 0 1] country: `CA`US)
+    
+    stores: .qsp.read.fromFile[`stores.csv; .qsp.use ``chunking!00b]
+        .qsp.decode.csv[([storeID: `long$()] country: `$())]
+        // Reset the metadata to be unkeyed
+        .qsp.apply[{[op; md; data] .qsp.push[op; enlist[`]!enlist[::]; data]}]
+    
+    .qsp.run .qsp.read.fromCallback[`newSale]
+        .qsp.merge[stores; lj]
+        .qsp.write.toVariable[`out]
+    
+    newSale ([] storeID: enlist 0; SKU: 31415; price: 199.99)
+    newSale ([] storeID: enlist 1; SKU: 27182; price: 34.99)
+    
+    out
+    
+    
+    
+    storeID SKU   price  country
+    ----------------------------
+    0       31415 199.99 CA
+    1       27182 34.99  US
+    
+
+## `.qsp.parallel`
+
+(_Beta Feature_) _Applies multiple functions in parallel to a stream_
+
+Beta Features
+
+To enable beta features, set the environment variable `KXI_SP_BETA_FEATURES`
+to `true`.
+
+    
+    
+    .qsp.parallel[fns]
+    .qsp.parallel[fns; .qsp.use (!) . enlist flip (
+        (`merge; merge)]
+    
+
+**Parameters:** name | type | description | default  
+---|---|---|---  
+fns | function, dictionary or function[] | An operator applied to incoming data. | Required  
+  
+_options:_
+
+name | type | description | default  
+---|---|---|---  
+merge | function | A function run on the outputs of the functions passed in. | None  
+params | symbol or symbol[] | The arguments to pass to each fn. | ``data`  
+  
+> For all common arguments, refer to [configuring operators](configuring-
+> operators.html)
+
+This operator is a core operator that can perform functions in parallel. This
+operator allows multiple aggregations to be run over the same data in
+parallel.
+
+State is not supported
+
+Cannot update multiple states within the same global variable therefore, state
+cannot be supported within parallel execution.
+
+This pipeline applies functions on a stream.
+
+    
+    
+    .qsp.run
+      .qsp.read.fromCallback[`publish]
+      .qsp.parallel[(avg;max)]
+      .qsp.map[enlist]
+      .qsp.write.toVariable[`output];
+    
+    publish 1 2 3;
+    publish 4 5 6;
+    output
+    
+
+This pipeline applies a dictionary on a stream and merges the input with the
+correct output.
+
+    
+    
+    .qsp.run
+      .qsp.read.fromCallback[`publish] 
+      .qsp.parallel[`identity`usd`eur!(::; {0.777423 * x`price}; {0.764065 * x`price}); 
+        .qsp.use ``merge!(::; {x[`identity] ,' flip `identity _ x})]
+      .qsp.write.toVariable[`output];
+    publish ([] price: 2.7 5.07);
+    publish ([] price: 1.35 9.15);
+    {.01*`int$x*100} output
+    
+    
+    
+    price usd  eur 
+    ---------------
+    2.7   2.1  2.06
+    5.07  3.94 3.87
+    1.35  1.05 1.03
+    9.15  7.11 6.99
+    
+
+## `.qsp.reduce`
+
+_Aggregate partial windows_
+
+    
+    
+    .qsp.reduce[fn; initial]
+    .qsp.reduce[fn; initial; output]
+    
+
+**Parameters:**
+
+name | type | description | default  
+---|---|---|---  
+fn | function | An aggregator which takes the metadata, data, and the accumulator for a given window, and returns an updated accumulator. | Required  
+initial | any | The initial state of the accumulator. | Required  
+output | function | A function to transform the output before emitting it. It gets passed the value of the accumulator. | ::  
+  
+> For all common arguments, refer to [configuring operators](configuring-
+> operators.html)
+
+A window may include more records than can fit in memory. As such, it may be
+necessary to reduce the buffered records into a smaller, aggregated value at
+regular intervals. If the window operator uses the `countTrigger` option, a
+partial window will be emitted when the number of buffered records exceeds the
+`countTrigger`. Partial windows will also be emitted when a stream goes idle.
+These partial windows can be aggregated using `.qsp.reduce`. When the window
+is complete, `.qsp.reduce` will emit the result of reducing the partial
+windows.
+
+The reduce operator runs a function on each incoming batch to update the
+accumulator for that window. Each window has a separate accumulator. For
+partial windows, such as those emitted by `countTrigger` or idle streams, the
+accumulator will be updated but not emitted. When a window is closed, such as
+when the high-water mark passes the end of the window, the accumulator will be
+updated for that final batch, and then it will be emitted.
+
+If no output function is specified, the accumulator will be emitted. If the
+accumulator is a dictionary, an output function like `{enlist x}` can be used
+to emit tables.
+
+Any partial windows will be emitted on teardown.
+
+This pipeline calculates the average of the `val` column. There are 1000
+records per window, but the reduction is run whenever the buffer size reaches
+100 records.
+
+    
+    
+    .qsp.run
+        .qsp.read.fromCallback[`publish]
+        .qsp.window.tumbling[00:00:01; `time; .qsp.use ``countTrigger!0 100]
+        .qsp.reduce[{[md; data; acc]
+            acc[`total] +: count data;
+            acc[`sum] +: sum data `val;
+            acc[`window]: md `window;
+            acc
+            };
+            `total`sum`window!(0; 0f; ::);
+            {enlist `startTime`average!(x`window; x[`sum] % x`total)}]
+        .qsp.write.toVariable[`out]
+    
+    publish each 10 cut ([] time: .z.p + 00:00:00.001 * til 10000; val: 10000?1f)
+    out
+    
+    
+    
+    startTime                     average
+    ---------------------------------------
+    2023.10.17D18:29:03.000000000 0.4979897
+    2023.10.17D18:29:04.000000000 0.4955796
+    2023.10.17D18:29:05.000000000 0.4848963
+    2023.10.17D18:29:06.000000000 0.5141578
+    2023.10.17D18:29:07.000000000 0.4984107
+    2023.10.17D18:29:08.000000000 0.5013768
+    2023.10.17D18:29:09.000000000 0.4986774
+    2023.10.17D18:29:10.000000000 0.5160887
+    2023.10.17D18:29:11.000000000 0.5066924
+    2023.10.17D18:29:12.000000000 0.4941379
+    ...
+    
+    
+    
+    //Set a new high-water mark to close out earlier windows
+    publish ([] time: .z.p + 00:00:10; val: 1?1f)
+    
+    
+    
+    startTime                     average
+    ---------------------------------------
+    2023.10.17D18:29:03.000000000 0.4979897
+    2023.10.17D18:29:04.000000000 0.4955796
+    2023.10.17D18:29:05.000000000 0.4848963
+    2023.10.17D18:29:06.000000000 0.5141578
+    2023.10.17D18:29:07.000000000 0.4984107
+    2023.10.17D18:29:08.000000000 0.5013768
+    ...
+    
+
+## `.qsp.rolling`
+
+(_Beta Feature_) _Applies a moving-window function to a stream_
+
+Beta Features
+
+To enable beta features, set the environment variable `KXI_SP_BETA_FEATURES`
+to `true`.
+
+**Parameters:** name | q type | description | default  
+---|---|---|---  
+n | long | The size of the buffer | Required  
+fn | function | A function that takes a vector | Required  
+  
+> For all common arguments, refer to [configuring operators](configuring-
+> operators.html)
+
+This operator is equivalent to .qsp.map, but for moving window functions such
+as moving averages or those comparing a vector to a shifted version of itself,
+such as the difference function.
+
+This operator does not emit a moving window, that can be done with
+`.qsp.window.count`. Rather, it maintains a buffer of the last `n` records,
+which is prepended to each incoming batch. The results of the function on
+these prepended elements are dropped, as their values would have already been
+emitted in an earlier batch.
+
+Functions that aggregate data points to one value cannot be used
+
+Functions that aggregate data to a constant number of data points (example
+sum) will not work in conjunction with the rolling operator because it needs
+to have data points in the buffer to provide the correct output.
+
+Functions that displace values cannot be used
+
+Functions like `{-2 _ (x = prev x) and (x = prev prev x)}` and `{2 _ (x = next
+x) and (x = next next x)}` cannot be evaluated with any rolling window size.
+In order to make this type of function work you have to create a function that
+does not displace needed input.
+
+If a user wanted to know when there are multiple consecutive values between
+batches we could use these types of functions to do that with the rolling
+operator.
+
+However, the function `{-2 _ (x = prev x) and (x = prev prev x)}` with a
+rolling window of 2 displaces needed values in order to output the correct
+result. Below displays the rolling operator working on this function. Notice,
+the enlist ``b` batch as this is where the needed value is displaced.
+
+Incorrect example:
+
+    
+    
+    .qsp.run
+      .qsp.read.fromCallback[`publish]
+      .qsp.rolling[2; {-2 _ (x = prev x) and (x = prev prev x)}]
+      .qsp.write.toVariable[`output];
+    
+    publish `a`a`a`b;
+    // happening in rolling:
+    // fn: {-2 _ (x = prev x) and (x = prev prev x)}
+    //     {-2 _ (0110b and 0010b)}
+    //     {-2 _ 0010b}
+    
+    publish enlist `b;
+    // in buffer -> `a`b`b (due to rolling window length of 2)
+    // happening in rolling:
+    // fn: {-2 _ (x = prev x) and (x = prev prev x)}
+    //     {-2 _ (001b and 000b)}
+    //     {-2 _ 000b}
+    
+    publish `b`a`a`b;
+    // in buffer -> `b`b`b`a`a`b
+    // happening in rolling:
+    // fn: {-2 _ (x = prev x) and (x = prev prev x)}
+    //     {-2 _ (011010b and 001000b)}
+    //     {-2 _ 001000b}
+    
+    output
+    
+
+Compare this to the result when passing in the same data in one single batch.
+
+    
+    
+    .qsp.teardown[];
+    .qsp.run
+      .qsp.read.fromCallback[`publish]
+      .qsp.rolling[2; {-2 _ (x = prev x) and (x = prev prev x)}]
+      .qsp.write.toVariable[`output];
+    
+    publish `a`a`a`b`b`b`a`a`b;
+    // fn: {-2 _ (x = prev x) and (x = prev prev x)}
+    //     {-2 _ (011011010b and 001001000b)}
+    //     {-2 _ 001001000b}
+    output
+    
+
+Correct Example:
+
+    
+    
+    .qsp.run
+      .qsp.read.fromCallback[`publish]
+      .qsp.rolling[2; {2 _ (x = prev x) and (x = prev prev x)}]
+      .qsp.write.toVariable[`output];
+    publish each (`a`a`a`b; enlist `b; `b`a`a`b);
+    output
+    
+    
+    
+    .qsp.teardown[];
+    .qsp.run
+      .qsp.read.fromCallback[`publish]
+      .qsp.rolling[2; {2 _ (x = prev x) and (x = prev prev x)}]
+      .qsp.write.toVariable[`output];
+    publish `a`a`a`b`b`b`a`a`b;
+    output
+    
+
+This pipeline applies a moving average. Since the average is based on a given
+record and the four before it, a buffer size of four is used.
+
+    
+    
+    .qsp.run
+      .qsp.read.fromCallback[`publish]
+      .qsp.rolling[4; mavg[5]]
+      .qsp.write.toVariable[`output];
+    publish 1 2 10 1 2 2 1 2;
+    output
+    
+    
+    
+    1 1.5 4.333333 3.5 3.2 3.4 3.2 1.6
+    
+
+The output will gradually approach 0 as the number of non-zero entries in the
+buffer decreases.
+
+    
+    
+    publish 0 0 0 0 0;
+    output
+    
+
+This pipeline calculates f(x[t]) = x[t] - x[t-1], starting at t=1
+
+    
+    
+    .qsp.run
+      .qsp.read.fromCallback[`publish]
+      .qsp.rolling[1; {1 _ deltas x}]
+      .qsp.write.toVariable[`output];
+    publish 2 4 6 8 11;
+    output
+    
+
+## `.qsp.split`
+
+_Split the current stream_
+
+> For all common arguments, refer to [configuring operators](configuring-
+> operators.html)
+
+The `split` operator allows a single stream to be split into arbitrarily many
+separate streams for running separate analytics or processing.
+
+Split operators can either be explicitly added, or are implicit if the same
+operator appears as a parent multiple times when resolving all streams given
+to `.qsp.run` into a single DAG before running.
+
+Explicit split operator:
+
+    
+    
+    streamA: .qsp.read.fromCallback[`publish]
+      .qsp.map[{x + 1}]
+      .qsp.split[]
+    
+    streamB: streamA .qsp.map[{10 * x}] .qsp.write.toConsole[]
+    streamC: streamA .qsp.map[{x - 1}] .qsp.write.toVariable[`output]
+    
+    .qsp.run (streamB; streamC)
+    
+    publish ([] data: til 10)
+    
+
+Implicit split operator:
+
+    
+    
+    streamA: .qsp.read.fromCallback[`publish]
+      .qsp.map[{x + 1}]
+    
+    streamB: streamA .qsp.map[{10 * x}] .qsp.write.toConsole[]
+    streamC: streamA .qsp.map[{x % 2}] .qsp.write.toVariable[`output]
+    
+    .qsp.run (streamB; streamC)
+    
+    publish ([] data: til 10)
+    
+
+## `.qsp.sql`
+
+_Perform an SQL query over data in a stream_
+
+    
+    
+    .qsp.sql[query;schema]
+    .qsp.sql[query;schema;.qsp.use (!) . flip enlist(`schemaType;schemaType)]
+    
+
+**Parameters:**
+
+name | type | description | default  
+---|---|---|---  
+query | string | An SQL query to be performed over table data in the stream. | Required  
+schema | table, dictionary or :: | The schema of the incoming data. Either an empty table representing the schema of the data table, a dictionary of column names and their type character, or null to infer the schema. | ::  
+  
+_options:_
+
+name | type | description | default  
+---|---|---|---  
+schemaType | symbol | How to interpret the provided schema object. By default the schema is treated as the desired literal output. Alternatively, this can be set to be `schema` and a special table of `([] name: `$(); datatype: `short$())` can be provided describing the desired output. | `literal`  
+  
+> For all common arguments, refer to [configuring operators](configuring-
+> operators.html)
+
+Queries must
+
+If data in the stream is not table data, an error will be signaled. Choosing
+to pass a schema will allow the query to be precompiled enabling faster
+processing on streaming data.
+
+Queries run in a local worker process
+
+SQL queries are not distributed across workers, and are currently run on each
+worker's substream
+
+Select average price by date:
+
+    
+    
+    // Generate some random data with dates and prices
+    n: 100
+    t: ([] date: n?.z.d-til 3; price: n?1000f)
+    
+    .qsp.run
+      .qsp.read.fromCallback[`publish]
+      .qsp.sql["select date, avg(price) from $1 group by date"; 0#t]
+      .qsp.write.toConsole[]
+    
+    publish t
+    
+    
+    
+                                 | date       price
+    -----------------------------| -------------------
+    2021.07.26D18:28:29.377228300| 2021.07.24 509.2982
+    2021.07.26D18:28:29.377228300| 2021.07.25 455.0621
+    2021.07.26D18:28:29.377228300| 2021.07.26 507.9869
+    
+
+Select using q date parameter:
+
+    
+    
+    // Generate some random data with dates and prices
+    n: 100
+    t: ([] date: n?.z.d-til 3; price: n?1000f)
+    
+    .qsp.run
+      .qsp.read.fromCallback[`publish]
+      .qsp.sql["select avg(price) from $1 where date = $2"; 0#t
+        .qsp.use``args!(::;enlist .z.d)]
+      .qsp.write.toConsole[]
+    
+    publish t
+    
+    
+    
+                                 | price
+    -----------------------------| --------
+    2021.07.26D18:31:20.854529500| 489.4781
+    
+
+Select the average price over 2-second windows:
+
+    
+    
+    schema: ([] time:`timestamp$(); price: `float$());
+    
+    .qsp.run
+      .qsp.read.fromCallback[`publish]
+      .qsp.window.tumbling[00:00:02; `time]
+      .qsp.sql["select min(time) as start_time, max(time) as end_time, avg(price) from $1"; schema]
+      .qsp.write.toConsole[]
+    
+    publish `time xasc ([] time: 100?.z.p+0D00:00:01*til 20; price: 100?1000f)
+    
+    
+    
+                                 | start_time                    end_time                      price
+    -----------------------------| --------------------------------------------------------------------
+    2021.07.27D10:27:38.432116100| 2021.07.27D10:27:38.409337200 2021.07.27D10:27:39.409337200 407.0665
+                                 | start_time                    end_time                      price
+    -----------------------------| --------------------------------------------------------------------
+    2021.07.27D10:27:38.446046200| 2021.07.27D10:27:40.409337200 2021.07.27D10:27:41.409337200 528.9845
+                                 | start_time                    end_time                      price
+    -----------------------------| ------------------------------------------------------------------
+    2021.07.27D10:27:38.462265300| 2021.07.27D10:27:42.409337200 2021.07.27D10:27:43.409337200 387.83
+     ..
+    
+
+Select using schemaType parameter:
+
+    
+    
+    schema: ([] name:`date`price; datatype:-12 -9h);
+    
+    .qsp.run
+      .qsp.read.fromCallback[`publish]
+      .qsp.sql["select date, avg(price) from $1 group by date"; schema; .qsp.use``schemaType!(::;`schema)]
+      .qsp.write.toConsole[]
+    
+    publish ([] date: n?.z.d-til 3; price: n?1000f) 
+    
+    
+    
+                                 | date       price   
+    -----------------------------| -------------------
+    2024.01.18D16:18:22.143816200| 2024.01.16 496.5402
+    2024.01.18D16:18:22.143816200| 2024.01.17 436.0239
+    2024.01.18D16:18:22.143816200| 2024.01.18 540.1907
+    
+
+## `.qsp.union`
+
+_Interleave two streams_
+
+    
+    
+    .qsp.union[stream]
+    .qsp.union[stream; .qsp.use (!) . flip (
+         (`flush  ; flush);
+         (`trigger; trigger))]
+    
+
+name | type | description | default  
+---|---|---|---  
+stream | pipeline | The stream to unite with the current stream. | Required  
+  
+_options_ :
+
+name | type | description | default  
+---|---|---|---  
+flush | symbol | Indicates which side of the merge operation to flush data from. | `both`  
+trigger | function or symbol | This defines when the merge function should be run. It can be a custom function run on the buffered data, or a symbol to use a predefined trigger. | `immediate`  
+  
+> For all common arguments, refer to [configuring operators](configuring-
+> operators.html)
+
+Unite `stream` and the current stream into a single stream.
+
+This is similar to a join, with the difference that elements from both sides
+of the union are left as-is, resulting in a single stream.
+
+Unions are non-deterministic, as it is unknown in which order the sources will
+be read from. Set `KXI_ALLOW_NONDETERMINISM` to "true" to allow enable this
+operator.
+
+Simple union of two streams:
+
+    
+    
+    streamA: .qsp.read.fromCallback[`callbackA] .qsp.map[{ enlist(`a;x) }]
+    streamB: .qsp.read.fromCallback[`callbackB] .qsp.map[{ enlist(`b;x) }]
+    streamC: streamA .qsp.union[streamB] .qsp.write.toConsole[]
+    
+    .qsp.run streamC
+    
+    callbackA 1; callbackB 1; callbackA 1
+    
+    
+    
+    2021.06.28D21:40:07.939960300 | `a 1
+    2021.06.28D21:40:08.204401700 | `b 1
+    2021.06.28D21:40:08.910553600 | `a 1
+    
+

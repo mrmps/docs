@@ -1,0 +1,207 @@
+https://code.kx.com/insights/microservices/database/configuration/advanced/custom-auth-ipc.html
+
+# Custom IPC Authorization - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/database/configuration/advanced/custom-auth-ipc.html
+
+# Custom IPC Authorization
+
+Custom IPC Authorization may be configured to allow you to integrate your own
+authorization provider. This can be used to link out to other authentication
+providers or to write your own. The custom authentication scheme allows the
+authorizer to limit user actions using role based access control.
+
+The authorize function will be invoked on each HTTP request that comes into
+the Service Gateway, and on each connection opened by IPC clients. By default,
+the authorize function is simply a global q function in an IPC sidecar called
+`authorize`. You can set the environment variable `KXI_SG_AUTH_IPC_AUTH_API`
+on the Service Gateway to override the name of this function. The provider
+should implement an authorize function named in `KXI_SG_AUTH_IPC_AUTH_API`
+(default `authorize`) which accepts a single parameter. The authorize function
+is responsible for returning a list of roles on success, or an error reason.
+
+External port
+
+Authorization is only applied on the `GATEWAY_EXT_QIPC_PORT` configured for
+the Service Gateway.
+
+## Environment Variables
+
+The following environmental variables are used to configure the Service
+Gateway.
+
+name | description | default  
+---|---|---  
+`KXI_SG_AUTH_IPC_HOST` | Controls if custom IPC authorization will be used. Set this to the host of your sidecar | N/A  
+`KXI_SG_AUTH_IPC_PORT` | The port number of the sidecar process. | `"1234"`  
+`KXI_SG_AUTH_IPC_USE_TLS` | Instructs if the IPC connection should use TLS. | `"false"`  
+`KXI_SG_AUTH_IPC_AUTH_API` | The symbolic name of the API that will be triggered on the sidecar to authorize requests | `"authorize"`  
+  
+`localhost`
+
+We recommend configuring the authorizer as a process or container side by side
+with the Service Gateway. This will allow for the fastest transport.
+
+For authorization, a one-shot connection is made to the your provider. If
+[validate user (`.z.pw`)](https://code.kx.com/q/ref/dotz/#zpw-validate-user)
+checks pass, then the authorize function is invoked with dictionary.
+
+## `.z.pw` user validation check
+
+For the [validate user check `.z.pw`](https://code.kx.com/q/ref/dotz/#zpw-
+validate-user), the username and password are set to the basic credentials the
+client has provided:
+
+    
+    
+    h:hopen `:localhost:1234:myuser:pass
+    
+    
+    
+    # Provide curl a username with --user, or -u to prompt. This gets transformed to the HTTP Header: Authorization Basic and the username and password are base64 encoded and
+    # [authorization: Basic bXl1c2VyOnBhc3M=]
+    curl -X POST --user "myuser:pass" "http://localhost:8080/data"
+    
+
+If the Authorization scheme is _non-basic_ , then the username is set to the
+Authorization scheme, and the password is set to the entire value.
+
+For example, given the header `Authorization: Bearer
+eyJleGFtcGxlIjogImhlbGxvd29ybGQifQ=="`, the username will be `Bearer`, and the
+password will be set to `eyJleGFtcGxlIjogImhlbGxvd29ybGQifQ==`.
+
+## Authorize function
+
+The authorize function is set with `KXI_SG_AUTH_IPC_AUTH_API` and defaults to
+`authorize`.
+
+The following dictionary is provided to the function:
+
+key | description | type  
+---|---|---  
+`user` | The basic username, or the Authorization schema for non-basic HTTP Authorization | symbol  
+`pass` | The basic password, or the Authorization headers value for non-basic HTTP Authorization | symbol  
+`uri` | The URI for the HTTP request | string  
+`method` | The HTTP request method | symbol  
+`headers` | All HTTP headers for the request | dict (string values)  
+`body` | Optional body for the HTTP request | string  
+  
+The response may contain the following output keys:
+
+key | description | type  
+---|---|---  
+`roles` | Symbolic list of authorized roles | symbol[]  
+`code` | Suggested HTTP response code | integer  
+`error` | Error message reason | string  
+  
+On success, the authorize function is expected to return a dictionary of roles
+that the request or connection is entitled to:
+
+    
+    
+    enlist[`roles]!enlist`insights.query.sql`insights.query.data
+    
+
+The Service Gateway will then handle denying the request if the path requested
+is not permitted by those roles.
+
+On denial, the authorize function is expected to return an error reason, and
+suggested HTTP code. If no code is provided, it will default to `401`.
+
+    
+    
+    `code`error!(404i;"The requested user was not found")
+    
+
+If the authorize function throws an exception, it will be treated as _401
+Unauthorized_ and the reason set to the thrown error.
+
+If some I/O error occurs, the request will be responded to with _500 Internal
+Server Error_ and the reason set to the Service Gateway's underlying OS
+reason.
+
+### Sample implementation
+
+To allow access to all administrative APIs, SQL, qSQL, get data, and custom
+APIs for any request made by an example user `bob`:
+
+    
+    
+    // @param d {dict} Dictionary of user, pass, and HTTP uri, method, headers, body (if relevant)
+    authorize:{[d]
+        :$[`bob ~ d`user;
+            enlist[`roles]!enlist `$"insights.query.",/:("admin";"sql";"qsql";"custom";"data");
+            `code`error!(403i;"Everyone except bob is forbidden")];
+        }
+    
+
+## IPC client authorization flow
+
+For an IPC connection, the authorization function is called _once_ upon
+establishing the client connection, and the roles are checked for each API
+call made.
+
+The Service Gateway remembers the roles on per connection basis, and will not
+re-fetch them for the lifetime of that connection.
+
+  * Client connects to the service gateway with ``:host:port:user:pass`
+  * If validate user check passes, authorize is called on the custom provider
+  * `authorize` returns a dictionary of roles that the Service Gateway will cache for the lifetime of the client connection
+  * The Service Gateway now closes the connection made to the custom provider
+
+Now for the lifetime of the persistent connection:
+
+  * Client makes a request for some API
+    * For example, `getData`: `h (`.kxi.getData;`startTS`endTS`table!(-0wp;0pw;`trade);()!())`
+  * Roles are checked
+    * In this example, `.kxi.getData` which maps to `insights.query.data`
+  * The request is now permitted or denied
+  * Repeat for the next request
+
+## HTTP client authorization flow
+
+For an HTTP Request, the authorization function will be triggered on each
+request.
+
+  * Client makes a request for some path 
+  * If validate user check passes, authorize is called on the custom provider
+  * The service-gateway closes the connection
+  * Roles are checked
+    * For `/data` which maps to `insights.query.data`
+  * The request is now permitted or denied
+
+## Sample Kubernetes Deployment
+
+The following sample configuration shows salient configuration for a custom
+IPC provider as a container beside the Service Gateway in a deployment.
+Information such as image pull secrets, and other Service Gateway required
+environmental variables have been omitted for brevity.
+
+Assuming the name of your custom image is `custom-ipc-image` and the tag is
+`0.0.0`:
+
+    
+    
+    ---
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata: {}
+    spec:
+      template:
+        spec:
+         containers:
+            - name: sg-gateway
+              image: registry/kxi-sg-gw:0.0.0
+              env:
+                - name: KXI_SG_AUTH_IPC_HOST
+                  value: "localhost"
+                - name: KXI_SG_AUTH_IPC_PORT
+                  value: "5000"
+           - name: auth-provider
+             image: registry/custom-ipc-image:0.0.0
+             args: ["-p", "5000"]
+             ports:
+               - name: ipc-port
+                 containerPort: 5000
+    
+

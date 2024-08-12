@@ -1,0 +1,627 @@
+https://code.kx.com/insights/api/stream-processor/q/windows.html
+
+# Windows - kdb products
+
+Original URL: https://code.kx.com/insights/api/stream-processor/q/windows.html
+
+# Windows
+
+## `.qsp.window.count`
+
+_Split the stream into equally sized windows_
+
+    
+    
+    .qsp.window.count[size]
+    .qsp.window.count[size;frequency]
+    .qsp.window.count[size;frequency; .qsp.use (!) . flip enlist(
+        (`acceptDictionaries; acceptDictionaries))]
+    
+
+**Parameters:**
+
+name | type | description | default  
+---|---|---|---  
+size | long | The exact number of records to include in each window. | Required  
+frequency | long | The number of records between the starts of consecutive windows. If this is less than `size`, the windows will overlap. | The window size  
+  
+_options:_
+
+name | type | description | default  
+---|---|---|---  
+acceptDictionaries | boolean | If batches will never be dictionaries, this can be 0b to increase performance. | 1b  
+  
+> For all common arguments, refer to [configuring operators](configuring-
+> operators.html)
+
+This operator buffers incoming records until the number of buffered records
+reaches or exceeds `size`, at which point the buffer is split into windows of
+length `size`. Any left over records will remain in the buffer. Sliding
+windows can be emitted by using the `frequency` parameter. Regardless of how
+many overlapping windows a record will appear in, only one copy of each record
+is kept in memory.
+
+Any partial windows will be emitted on teardown.
+
+    
+    
+    .qsp.run
+        .qsp.read.fromCallback[`publish]
+        .qsp.window.count[10]
+        .qsp.write.toConsole[]
+    
+    // This will emit two windows of ten records each, with five remaining in the buffer
+    publish ([] x: til 25)
+    
+    // This will bring the number of buffered records up to ten, triggering another window
+    publish ([] x: til 5)
+    
+
+## `.qsp.window.global`
+
+_Aggregate the stream using a custom trigger_
+
+    
+    
+    .qsp.window.global[trigger]
+    .qsp.window.global[trigger; .qsp.use (!) . flip (
+        (`mixedSchemas      ; mixedSchemas);
+        (`acceptDictionaries; acceptDictionaries);
+        (`state             ; state)]
+    
+
+**Parameters:**
+
+name | type | description | default  
+---|---|---|---  
+trigger | function | A function that splits the stream (see below). | Required  
+  
+_options:_
+
+name | type | description | default  
+---|---|---|---  
+mixedSchemas | boolean | mixedSchemas must be true if batches are tables with different schemas. It may also significantly increase performance when batches are tuples or lists of different types. Note the caveat below about how this changes the buffer parameter. | 0b  
+acceptDictionaries | boolean | If batches will never be dictionaries, this can be 0b to increase performance. | 1b  
+state | any | The initial state. | ::  
+  
+> For all common arguments, refer to [configuring operators](configuring-
+> operators.html)
+
+This operator splits a stream into windows by buffering incoming batches, and
+splitting the buffer on the indices returned by the `trigger` function.
+
+The `trigger` function is passed the following parameters:
+
+  * the operator's id
+  * the buffered records
+  * an offset of where the current batch starts
+  * the current batch's metadata
+  * the current batch's data
+
+As batches are ingested, the trigger function will be applied to each batch,
+and data will be buffered. However, the buffering behavior will depend on the
+output of the trigger function:
+
+  * If the trigger function returns an **empty list** or generic null, the incoming batch will be buffered and nothing will be emitted.
+  * If the trigger function returns **numbers** , the buffer will be split on those indices, with each index being the start of a new window.
+
+The last list will remain in the buffer. This last list can be emitted by
+returning the count of the buffer as the last index. To map indices in the
+current batch to indices in the buffer, add the `offset` parameter to the
+indices.
+
+The buffered records cannot be modified from the trigger function.
+
+Batches with mixed schemas are only supported when using the `mixedSchemas`
+option.
+
+Caveat when using mixedSchemas
+
+When this is set, the buffer passed to the trigger will be a list of batches,
+rather than a single table. The indices returned by the trigger function will
+still work as though the buffer were a single list.
+
+On teardown, any records left in the buffer will be emitted as a single batch.
+
+This pipeline emits a window whenever the high water mark is exceeded.
+
+    
+    
+    .qsp.run
+        .qsp.read.fromCallback[`publish]
+        .qsp.window.global[{[id; buffer; offset; md; data]
+            state: .qsp.get[id; md];
+            // Split whenever a new high water mark is seen
+            runningMax: or\[state , data `val];
+            // Find where the running maximum increases
+            indices: offset + 1 + where 0 <> 1 _ deltas runningMax;
+            .qsp.set[id; md] last runningMax;
+            : $[state < max data `val;
+                indices;
+                ()]}; .qsp.use ``state!0 15]
+        .qsp.write.toConsole[]
+    
+
+The pipeline can then be passed data
+
+    
+    
+    // This will be buffered, as the initial high water mark is not exceeded
+    publish ([] val: 0 1 5);
+    // The 16 exceeds the high water mark, causing everything before it to be emitted
+    publish ([] val: 14 15 16);
+    // As each of these are the highest value seen thus far, two windows are emitted
+    publish ([] val: 17 18);
+    // With the high water mark now at 18, these will all be buffered
+    publish ([] val: 16 17 16);
+    
+
+This pipeline splits the stream on a specific value.
+
+    
+    
+    .qsp.run
+        .qsp.read.fromCallback[`publish]
+        .qsp.window.global[{[id; buffer; offset; md; data]
+            offset + where data[`status] = `new
+            }]
+        .qsp.write.toConsole[]
+    
+
+The pipeline can then be passed data. Each window, after the first, will start
+with the status `new`
+
+    
+    
+    neg[h](`publish; ([] val: 88 89 21 98 0n 24; status: `running`running`running`running`new`running))
+    neg[h](`publish; ([] val: 34 28 0n 90 0n 47; status: `running`running`new`running`new`running))
+    
+
+## `.qsp.window.sliding`
+
+_Aggregate the stream into potentially overlapping windows based on event
+time_
+
+    
+    
+    .qsp.window.sliding[period; duration; timeColumn]
+    .qsp.window.sliding[period; duration; timeColumn; .qsp.use (!) . flip (
+        (`lateness          ; lateness);
+        (`timeAssigner      ; timeAssigner);
+        (`passthrough       ; passthrough);
+        (`sort              ; sort);
+        (`countTrigger      ; countTrigger);
+        (`skipEmptyWindows  ; skipEmptyWindows);
+        (`acceptDictionaries; acceptDictionaries))]
+    
+
+**Parameters:**
+
+name | type | description | default  
+---|---|---|---  
+period | timespan, time, second or minute | How frequently windows should fire. | Required  
+duration | timespan, time, second or minute | The length of each window. | Required  
+timeColumn | symbol | The column containing the timestamps to window on. | Required, unless timeAssigner is specified  
+  
+_options:_
+
+name | type | description | default  
+---|---|---|---  
+lateness | timespan, time, second or minute | Time delay before emitting a window to allow late events to arrive. | 0D  
+timeAssigner | function | A time-assigner function. | None  
+passthrough | boolean | Emit late events as a separate batch, rather than dropping them. | 0b  
+sort | boolean | Sort the window in ascending time order. | 0b  
+countTrigger | long | The number of buffered records at which the buffer will be flushed automatically. | 0W  
+skipEmptyWindows | boolean | Only emit non-empty windows. This can increase performance on sparse historical data. | 0b  
+acceptDictionaries | boolean | If batches will never be dictionaries, this can be 0b to increase performance. | 1b  
+  
+> For all common arguments, refer to [configuring operators](configuring-
+> operators.html)
+
+This operator will split the stream into windows based on the records'
+timestamps. Windows are based solely on the event time, not the processing
+time.
+
+Period is the time between starting a new window, and duration is how long a
+window runs for.
+
+  * If the period and duration are the same, the result is tumbling windows.
+  * If the duration is longer than the period, the result will be overlapping windows.
+  * If the period is longer than the duration, the result is hopping windows. Hopping windows are currently not supported.
+
+Note that to avoid running out of memory when too much late data is buffered,
+or when the current window has too many records, the `countTrigger` option can
+be used to emit buffered records for the current window and flush late data
+when the number of buffered events reaches a given threshold. Buffer counts
+are calculated per-key, and only the records for the key exceeding the limit
+will be emitted.
+
+Batches of tables
+
+A window is triggered when a timestamp is encountered past the end of that
+window. After that, subsequent events with a timestamp within that window will
+be discarded.
+
+Including late data
+
+Any partial windows will be emitted on teardown.
+
+This creates a pipeline that fires a window every 5 seconds, containing the
+previous 10 seconds of data
+
+    
+    
+    .qsp.run
+      .qsp.read.fromCallback[`publish]
+      .qsp.window.sliding[00:00:05; 00:00:10; `time]
+      .qsp.write.toConsole[]
+    
+
+This sends data to the pipeline
+
+    
+    
+    // Five minutes of historical data from an hour ago
+    // This will emit 60 windows when the timer fires
+    publish ([] time: (.z.p - 01:00) + 00:00:01 * til 300; data: 300?1f)
+    
+    // Data from one minute ago
+    // This will be emitted as a single window when the timer fires
+    publish ([] time: .z.p - 00:01; data: 10?1f)
+    
+    // Current window stays open till a timestamp is seen past the end of the window
+    // The timer will emit the entire in-progress window if there are any changes,
+    // potentially emitting records multiple times
+    time: .z.p
+    // This emits a window with the data points 0 1 2
+    publish ([] time: time; data: 0 1 2)
+    // Wait five seconds, then this emits a window with data points 0 1 2 3 4 5
+    publish ([] time: time; data: 3 4 5)
+    // Wait five seconds, then this emits a window with data points 0 1 2 3 4 5 6 7 8
+    publish ([] time: time; data: 6 7 8)
+    // Wait five seconds, then this emits a new window containing 9 10 11
+    publish ([] time: time + 00:01; data: 9 10 11)
+    
+
+[Custom configuration options](configuring-operators.html)
+
+## `.qsp.window.timer`
+
+_Aggregate the stream by processing time_
+
+    
+    
+    .qsp.window.timer[period]
+    .qsp.window.timer[period; .qsp.use (!) . flip (
+        (`countTrigger    ; countTrigger);
+        (`skipEmptyWindows; skipEmptyWindows);
+        (`acceptDictionaries; acceptDictionaries))];
+    
+
+**Parameters:**
+
+name | type | description | default  
+---|---|---|---  
+period | timespan, time, second or minute | How frequently windows should fire. | Required  
+  
+_options:_
+
+name | type | description | default  
+---|---|---|---  
+countTrigger | long | The number of buffered records at which the buffer will be flushed automatically. | 0W  
+skipEmptyWindows | boolean | Only emit non-empty windows. This can increase performance when windowing sparse streams. | 0b  
+acceptDictionaries | boolean | If batches will never be dictionaries, this can be 0b to increase performance. | 1b  
+  
+> For all common arguments, refer to [configuring operators](configuring-
+> operators.html)
+
+Timer windows aggregate the stream by processing time, with much less overhead
+than event-time based windowing operators. Any data in the buffer will be
+emitted each period. As records are not timestamped, there is no notion of
+late data. Because these windows ignore event time, this will work on streams
+that do not have event times.
+
+If the timer fires and the buffer is empty, an empty batch with the schema of
+the previous window will be emitted. However, if no batches have been received
+yet, then nothing will be emitted, as the schema is unknown.
+
+The start time for each window is in the emitted batches' metadata. Due to
+variance in when the timer fires, window durations may not be exactly equal,
+as is the case for sliding and tumbling windows.
+
+Note that to avoid running out of memory when too much data is buffered, the
+`countTrigger` option can be used to emit buffered records for the current
+window and flush late data when the number of buffered events reaches a given
+threshold. Buffer counts are calculated per-key, and only the records for the
+key exceeding the limit will be emitted.
+
+On teardown, any buffered records will be emitted.
+
+Emit a window every 5 seconds, or when the buffered data exceeds 10,000
+records:
+
+    
+    
+    .qsp.run
+      .qsp.read.fromCallback[`publish]
+      .qsp.window.timer[00:00:05; .qsp.use enlist[`countTrigger]!enlist 10000]
+      .qsp.map[count]
+      .qsp.write.toConsole[]
+    
+    // As the timestamps are not read, these records will all be emitted together,
+    // within five seconds of being received.
+    publish ([] time: .z.p + 00:00:00 00:00:30 00:00:02; data: 3?1f);
+    
+    // As the number of records exceeds the countTrigger,
+    // this will cause the buffer to be emitted immediately.
+    // As the windowing is based on processing time, timestamps are not required.
+    publish ([] data: 10001?1f);
+    
+
+## `.qsp.window.tumbling`
+
+_Aggregate stream into non-overlapping windows based on event time_
+
+    
+    
+    .qsp.window.tumbling[period; timeColumn]
+    .qsp.window.tumbling[period; timeColumn; .qsp.use (!) . flip (
+        (`lateness        ; lateness);
+        (`timeAssigner    ; timeAssigner);
+        (`passthrough     ; passthrough);
+        (`sort            ; sort);
+        (`countTrigger    ; countTrigger);
+        (`skipEmptyWindows; skipEmptyWindows);
+        (`acceptDictionaries; acceptDictionaries))]
+    
+
+**Parameters:**
+
+name | type | description | default  
+---|---|---|---  
+period | timespan, time, second or minute | The length of each window. | Required  
+timeColumn | symbol | The column containing the timestamps to window on. | Required, unless timeAssigner is specified  
+  
+_options:_
+
+name | type | description | default  
+---|---|---|---  
+lateness | timespan, time, second or minute | Time delay before emitting a window to allow late events to arrive. | 0D  
+timeAssigner | function | A time-assigner function. | None  
+passthrough | boolean | Emit late events as a separate batch, rather than dropping them. | 0b  
+sort | boolean | Sort the window in ascending time order. | 0b  
+countTrigger | long | The number of buffered records at which the buffer will be flushed automatically. Note, this does not specify the size of the partial windows emitted, only the threshold at which the entire buffer will be flushed. | 0W  
+skipEmptyWindows | boolean | Only emit non-empty windows. This can increase performance on sparse historical data. | 0b  
+  
+> For all common arguments, refer to [configuring operators](configuring-
+> operators.html)
+
+This operator will split the stream into windows based on the records'
+timestamps. Windows are based solely on the event time, not the processing
+time.
+
+Batches of tables
+
+A window is triggered when a timestamp is encountered past the end of that
+window. After that, subsequent events with a timestamp within that window will
+be discarded.
+
+Note that to avoid running out of memory when too much late data is buffered,
+or when the current window has too many records, the `countTrigger` option can
+be used to emit buffered records for the current window and flush late data
+when the number of buffered events reaches a given threshold. Buffer counts
+are calculated per-key, and only the records for the key exceeding the limit
+will be emitted.
+
+Including late data
+
+On teardown, any buffered records will be emitted.
+
+Create 2-second tumbling windows:
+
+    
+    
+    // The `timeAssigner` pulls the time from the event-time column `time`
+    
+    .qsp.run
+      .qsp.read.fromCallback[`publish]
+      .qsp.window.tumbling[00:00:10; `time]
+      .qsp.map[{ select avg val from x }]
+      .qsp.write.toConsole[]
+    
+    publish ([] time: .z.p + 00:00:10 + til 100; val: 100?1f)
+    
+
+[Custom configuration options](configuring-operators.html)
+
+* * *
+
+## Time-assigner functions
+
+If preprocessing is required to extract the times from each record or from a
+batch's metadata, a time assigners function can be used. The time assigner
+takes an incoming batch as an argument, and returns a list of timestamps or
+timespans with a value for every record in that batch. Alternatively, it can
+return a timestamp or timespan atom, to be used for all records in the batch.
+
+This example parses the time from a string, and applies a timezone offset,
+without changing the value of the underlying column.
+
+    
+    
+    .qsp.window.tumbling[period;
+        .qsp.use ``timeAssigner!(::; {-05:00:00 + "P"$x`start})]
+    
+
+To reference metadata from the time assigner, the `params` option can be used.
+The symbols `data`, `metadata`, and `operator` can be used to pass in the
+corresponding value for a message's data, metadata, and the underlying
+operator.
+
+    
+    
+    .qsp.window.tumbling[period;
+        .qsp.use `timeAssigner`params!({[x;y;z] y `start}; `data`metadata`operator)]
+    
+
+## Performance
+
+Throughput is higher if batches are tables, rather than a list of tuples.
+
+## Including late data
+
+To include late data, the acceptable lateness can be set with the `lateness`
+option. A new timestamp will then trigger a window only when that timestamp
+exceeds the sum of the start time, the window duration, and the lateness.
+
+This only applies to tumbling and sliding windows.
+
+    
+    
+    .qsp.run
+      .qsp.read.fromCallback[`publish]
+      .qsp.window.tumbling[00:00:10; `time;
+        .qsp.use enlist[`lateness]!enlist 00:00:02]
+      .qsp.write.toConsole[]
+    
+    // The 1 is read one second into the second window, so it gets included in the first window.
+    // Once the 12 is read though, it closes out the earlier window.
+    // As such, the 9 will be discarded.
+    publish each enlist each ([] time: 0p + 00:00:01 * 0 4 3 8 10 1 12 9 20 18 25)
+    
+    // If the same pattern comes in as a single batch however, all records are included
+    publish ([] time: 1p + 00:00:01 * 0 4 3 8 11 1 12 9 20 18 25)
+    
+
+## Late data passthrough
+
+By default, windows are emitted when the most recent timestamp is greater or
+equal to the current window's end time + allowed lateness. Thus, with 10
+seconds of lateness allowed, a window ending at `14:00:00` will be emitted
+once a record is seen timestamped at or after `14:00:10`.
+
+With passthrough enabled, windows are emitted as soon as they end, and no data
+will be discarded due to lateness. Any late data will be buffered until the
+next window is triggered, then emitted in a single batch, even when it spans
+more than one duration. This batch will be separate from the one that
+triggered the window, and will have the `isLatePassthrough` flag set in the
+metadata.
+
+This only applies to tumbling and sliding windows.
+
+    
+    
+    time: `timestamp$`date$.z.p;
+    
+    .qsp.run
+      .qsp.read.fromCallback[`publish]
+      .qsp.window.tumbling[00:00:10; `timestamp; .qsp.use enlist[`passthrough]!enlist 1b]
+      .qsp.write.toConsole[]
+    
+    // The first window starts at time + 60 seconds
+    publish ([] timestamp: time + 00:00:01 * 60 68 70; val: 1 2 3)
+    // Late data is buffered
+    publish ([] timestamp: time + 00:00:01 * 0 15 30; val: 5 4 6)
+    // When the next window is emitted, the late data is emitted first, in a single batch
+    publish ([] timestamp: time + 00:00:01 * 83 84; val: 7 8)
+    
+
+## To sort batches
+
+To sort the emitted records ascending by timestamp, use the `sort` option.
+
+This does not apply to `.qsp.window.timer`, as it has no time-assigner.
+
+This pipeline sorts records by timestamp to calculate the deltas. State is
+used so the delta can be calculated across window boundaries.
+
+    
+    
+    .qsp.run
+      .qsp.read.fromCallback[`publish]
+      .qsp.window.tumbling[00:00:15; `timestamp; .qsp.use ``sort!11b]
+      .qsp.map[{[op; md; data]
+          previous: .qsp.get[op; md];
+          .qsp.set[op; md; last data `val];
+          1 _ deltas previous , data `val
+        };
+        .qsp.use ``state!(::; 0)]
+      .qsp.write.toConsole[]
+    
+    shuffled: {neg[count x]?x} til 35;
+    publish ([] timestamp: .z.p + 00:00:01 * shuffled; val: shuffled)
+    
+
+## Window start times
+
+Window start times are included in the metadata for windowed batches as
+`window`.
+
+This only applies to tumbling and sliding windows.
+
+This pipeline displays the average value for each window, along with when that
+window started:
+
+    
+    
+    .qsp.run
+      .qsp.read.fromCallback[`publish]
+      .qsp.window.sliding[00:00:02; 00:00:05; `timestamp]
+      .qsp.map[
+        {[md; data] select avg val, windowStart: md`window from data};
+        .qsp.use ``params!(::; `metadata`data)]
+      .qsp.write.toConsole[]
+    
+    publish ([] timestamp: .z.p + 00:00:00.1 * til 200; val: 200?1f)
+    
+
+## Temporal timeouts for windows with idle streams
+
+For tumbling and sliding windows, buffered records are normally emitted when a
+new timestamp is seen past the end of the current window. In the event that a
+stream goes idle the window thus far will be emitted, triggered by a timer
+with a frequency matching the window's period.
+
+When the timer fires, if there are buffered records and if the time since the
+last window was emitted exceeds the period, all data buffered for the current
+window will be emitted. As such, multiple batches can be emitted for the same
+window. Batches emitted by the timer will have `isPartial` set to true in
+their metadata.
+
+## Triggering windows on buffer size
+
+A window will automatically be triggered when the number of buffered records
+exceeds a given threshold. This also triggers a cleanup of any late data. This
+value can be set using the `countTrigger` option.
+
+Note that this can lead to multiple windows being emitted with the same start
+time. Batches emitted by the count trigger will have `isPartial` set to true
+in their metadata.
+
+    
+    
+    .qsp.run
+      .qsp.read.fromCallback[`publish]
+      .qsp.window.tumbling[00:00:05; `timestamp;
+          .qsp.use (enlist `countTrigger)!enlist 10000]
+      .qsp.map[{count x}]
+      .qsp.write.toConsole[]
+    
+    // As this batch exceeds the count trigger threshold, all buffered records will immediately
+    // be emitted, and flushed from the buffer.
+    publish ([] timestamp: .z.p + 00:00:00.00001 * til 35000; val: 35000?1f)
+    
+    // This adds 8000 late records to the buffer
+    publish ([] timestamp: (.z.p - 1D) + 8000#00:00:01; val: 8000?1f)
+    
+    // Adding another 2500 records triggers a cleanup of late data,
+    // after which the buffer size is back under the threshold, and no records will be emitted.
+    publish ([] timestamp: .z.p + 2500#00:00:01; val: 2500?1f)
+    
+
+## Reducing partial windows
+
+When a countTrigger or idle-stream timeout causes a partial window to be
+emitted, those windows can be aggregated using the
+[reduce](operators.html#qspreduce) operator.
+

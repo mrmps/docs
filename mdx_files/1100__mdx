@@ -1,0 +1,238 @@
+https://code.kx.com/platform/stream/dw_qr_streaming/
+
+# Streaming Analytics - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/stream/dw_qr_streaming/
+
+# Streaming analytics
+
+## Summary
+
+Streaming analytics is a subscription-based method of streaming data to
+clients in realtime. The Query Manager (_QM_) manages client subscriptions and
+database connections. Once subscription is made, data is published to clients
+on a timer or when triggered by an event.
+
+[Streaming Analytics](../../streaming_analytics/)
+
+## Setting up the analytic
+
+### Subscription analytic
+
+To leverage for the _KX Connect_ client sample, use the _KX Connect_
+conventions to write the subscription analytic.
+
+This analytic registers the subscriber's indentifier ID and parameters. It
+gets called once upon client subscription.
+
+  * Create an analytic within the `.monPublic` group and name it `.monPublic.sub`.
+
+  * In the _Analytic Details_ , add the _Description_ and an unique _Alias_. Set _Connection_ and _Type_ to be `mon_agg` and _streaming_ respectively. 
+
+  * In the _Parameters_ subtab, set _param_ to type _Dict_ and add the following values.
+
+[![Screenshot](../img/serviceclass/qr_sub_params.jpg)](../img/serviceclass/qr_sub_params.jpg
+"click to expand")
+
+[![Screenshot](../img/serviceclass/qr_sub_dict_params.jpg)](../img/serviceclass/qr_sub_dict_params.jpg
+"click to expand")
+
+  * Set the return value as a _table_ and use the `monAvgLoad` schema
+
+  * In the _Content_ subtab, copy and paste the following code. 
+
+    
+    
+    {[param]
+      syms:(), param`syms;
+      .mon.streamingID+:1j;
+      `.mon.streamingSubs upsert `id`syms!(.mon.streamingID; syms); 
+      .mon.streamingID
+     }
+    
+
+  * Add _Read_ permission to `kxwUsers` user group
+
+### Write an instruction
+
+[Streaming Logic](../dw_qr_streaming_appendix/#monstreaminglogic)
+
+  * This includes the publish, unsubscribe and snapshot functions.
+
+### Add the analytic to the _aggregation RTE_
+
+  * Use the `mon_agg` _RTE_ created in the data warehouse section.
+
+[Aggregation Engine](../dw_agg/)
+
+  * Add the `monPublic` analytic group to the _RTE_.
+
+  * In the `.mon.initAgg` function, also load the `.mon.streamingLogic` instruction. 
+
+    
+    
+    {[]
+      // load instruction
+      .al.loadinstruction[`.mon.aggLogic];
+      .al.loadinstruction[`.mon.streamingLogic]; // Add this to the existing logic
+    
+      // initialize aggregated tables
+      .mon.initAggTables[];
+     }
+    
+
+  * In the `.mon.aggLogic` instruction, add this line `.mon.pubStreaming[data];` inside the `.mon.updAvg` function as shown below.
+
+    
+    
+    .mon.updAvg: {[]
+      // add times column  
+      monAvgLoad::update time:.z.p from (select avgCPU: first total%size by sym from aggMonCPU) uj 
+        (select avgMemV: first totalV%size, avgMemP: first totalP%size by sym from aggMonMem) uj 
+        (select avgDisk: first total%size by sym from aggMonDisk);
+    
+      // select columns + remove attribute from sym to match schema
+      // 0! to unkey joined tables
+      data: select time, sym:`#sym, avgCPU, avgMemV, avgMemP, avgDisk from 0!monAvgLoad;
+    
+      // upsert to and publish monAvgLoad 
+      upsert[`monAvgLoad;data];
+      .d.pub[`monAvgLoad;data];
+    
+      //*** Add this line for streaming analytics ***
+      .mon.pubStreaming[data];
+    
+      // set values of aggregated tables to 0
+      .mon.initAggTables[];
+     };
+    
+
+## Calling the analytic
+
+  * Run the default QM process, `ds_qm_ops_a.1`.
+
+  * If not already, run the `kxw_tp`, `mon_feed` processes.
+
+  * Kill and re-run the `mon_agg` process as the analytic called upon startup has been changed.
+
+### Kdb+ client
+
+[![Screenshot](../img/serviceclass/qr_qm_port.jpg)](../img/serviceclass/qr_qm_port.jpg
+"click to expand")
+
+    
+    
+    // open a handle to the port of QM process
+    qm:hopen 21058;
+    qm(`registerDevice;`name;0);
+    
+    ids:();
+    
+    getoid:{[] string "j"$.z.p}
+    addSaSub:{[sa;p;targ;user] -1"Adding SA"; mySubID:getoid[]; neg[abs qm](`saAddSub;mySubID;sa;p;targ;user); ids,:enlist mySubID};
+    upd:{[ids;x] 0N!(ids; x); };
+    
+    addSaSub[`.monPublic.sub; enlist  enlist[`syms]!enlist`server_A; `mon_streaming; `Administrator];
+    
+
+[![Screenshot](../img/serviceclass/qr_streaming_kdb_result.jpg)](../img/serviceclass/qr_streaming_kdb_result.jpg
+"click to expand")
+
+### KX Connect via websockets
+
+There is a three-step process in order to access streaming analytics using the
+_KX Connect_ API. This example uses Node JS.
+
+KX Connect Document
+
+Details of authentication for KX Connect can be found in your deployed system
+at `http://host:port/connect/authentication.html`
+
+  1. Authenticate login and get a session ID
+  2. Use the session ID to make an authorized connection to the websocket
+     * For the initial websocket authentication message, content-MD5 is not required in the StringToSign. Thus StringToSign will look differently in the initial and subsequent messages
+  3. Call the streaming analytic through the websocket. 
+     * Upon successful subscription, the client will receive streaming updates in the format defined in the analytic. 
+
+#### Code
+
+  * Install the required dependencies beforehand.
+
+[Dependencies](../dw_qr_kxc_js_appendix/#js-dependencies)
+
+  * Use the code given below as a sample. 
+
+[Sample Code](../dw_qr_streaming_appendix/#monstreamingwsjs)
+
+#### Running code
+
+From where your JS script is located.
+
+  * To run with default parameters:
+
+`node <script>.js`
+
+  * To run with override parameters:
+
+`node monStreamingWS.js <host:port> <username> <password> <method>`
+
+If working properly, it should maintain a connection and stream data.
+
+[![Screenshot](../img/serviceclass/qr_streaming_js_result.jpg)](../img/serviceclass/qr_streaming_js_result.jpg
+"click to expand")
+
+### Dashboards
+
+In this section, add a `data grid` of streaming analytics to your
+**Dashboard**.
+
+  * Drag a `data grid` from the icon on the left-hand side, and adjust the size.
+
+  * To configure the data source, click on the `data source` on the right-hand side menu.
+
+[![Screenshot](../img/serviceclass/qr_db_datagrid_menu.jpg)](../img/serviceclass/qr_db_datagrid_menu.jpg
+"click to expand")
+
+  * A pop up will appear. Click on _New_ and create a data source named _Streaming_. Select the `Analytic` radio button and the `.monPublic.sub` analytic from the menu. Set the target process to `mon_agg`. 
+
+  * As we've defined this analytic to take in a dictionary as the parameter, select `dict`. Click on the _eye_ icon to create a `View State`. 
+
+  * Click on _New_ and name it _symsList_. Add the following properties. 
+
+[![Screenshot](../img/serviceclass/qr_db_viewstate_symslist.jpg)](../img/serviceclass/qr_db_viewstate_symslist.jpg
+"click to expand")
+
+  * Create another `View State` named _symsDict_ and add _symsList_ to its properties.
+
+[![Screenshot](../img/serviceclass/qr_db_viewstate_symsdict.jpg)](../img/serviceclass/qr_db_viewstate_symsdict.jpg
+"click to expand")
+
+  * Set the `Subscription` to `Streaming`.
+
+  * Now, execute the query to see if you get data back. If successful, you should see a table returned on the bottom: 
+
+[![Screenshot](../img/serviceclass/qr_db_datasource_sub_exec.jpg)](../img/serviceclass/qr_db_datasource_sub_exec.jpg
+"click to expand")
+
+Execution Order
+
+It is important to execute the data source in this order: Execute > Apply >
+Select Item.
+
+  * Now add some highlighting rules.
+
+  * From the righ-hand menu, select _Highlight rules_ and add a rule to color the current `avgCPU` value green when it is lower than the previous value. 
+
+[![Screenshot](../img/serviceclass/qr_db_highlight_low.jpg)](../img/serviceclass/qr_db_datagrid_streaming.jpg
+"click to expand")
+
+  * Similarly, add a highlight rule for the opposite condition and color it red.
+
+[![Screenshot](../img/serviceclass/qr_db_highlight_high.jpg)](../img/serviceclass/qr_db_datagrid_streaming.jpg
+"click to expand")
+
+  * Create the same highlighting rule for each of the columns excluding _time_ and _sym_.
+
+[![Screenshot](../img/serviceclass/qr_db_datagrid_streaming.jpg)](../img/serviceclass/qr_db_datagrid_streaming.jpg
+"click to expand")
+

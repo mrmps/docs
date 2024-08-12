@@ -1,0 +1,127 @@
+https://code.kx.com/insights/microservices/database/configuration/custom-api.html
+
+# Custom APIs - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/database/configuration/custom-api.html
+
+# Installing Custom API
+
+Custom APIs may be used to add new functions to the databases, or define new
+aggregation functions.
+
+Custom APIs are housed within a folder referred to as a `package`.
+
+The package must contain `manifest.json`, which configures the `entrypoints`
+for each of the `storage-manager`, `data-access` and `aggregator` components.
+
+An example package layout would be:
+
+    
+    
+    packages/
+        custom/
+            1.0.0/
+              manifest.json
+              common.q
+              agg.q
+              da.q
+              sm.q
+    
+
+Where `manifest.json` would be:
+
+    
+    
+    {
+        "name": "custom",
+        "version": "1.0.0",
+        "dependencies": [],
+        "metadata": {
+            "authors": [
+                {
+                    "name": "me"
+                }
+            ]
+        },
+        "entrypoints": {
+            "aggregator": "agg.q",
+            "data-access": "da.q",
+            "storage-manager": "sm.q"
+        }
+    }
+    
+
+For each component loading custom code, environment variables must be set for
+`KXI_PACKAGES` and `KX_PACKAGE_PATH`.
+
+    
+    
+    env:
+      - name: KXI_PACKAGES
+        value: "custom:1.0.0"
+      - name: KX_PACKAGE_PATH
+        value: "/opt/kx/packages"
+    
+
+The package should be mounted as a volume to the folder set in
+`KX_PACKAGE_PATH` above.
+
+Use `-v` to supply a volume:
+
+    
+    
+    docker run -e KX_PACKAGE_PATH=/opt/kx/packages\
+        -e KXI_PACKAGES="custom:1.0.0"\
+        -v /path/to/package:/opt/kx/packages
+    
+
+Set `volumes` and `environment`:
+
+    
+    
+    services:
+      rdb:
+        image: dap
+        command: -p 5000
+        environment:
+          - KXI_PACKAGES=custom:1.0.0
+          - KX_PACKAGE_PATH=/opt/kx/packages/
+        volumes:
+          - /path/to/package:/opt/kx/packages
+    
+
+Mount a volume under the container:
+
+`hostPath` is used an example. This may be a persistent volume of any type.
+
+    
+    
+    spec:
+      spec:
+        containers:
+          - name: dap
+            image: dap
+            env:
+              - name: KXI_PACKAGES
+                value: "custom:1.0.0"
+              - name: KX_PACKAGE_PATH
+                value: "/opt/kx/packages"
+            volumeMounts:
+            - mountPath: /opt/kx/packages
+              name: custom-mount
+        volumes:
+          - name: custom-mount
+            hostPath:
+              path: /opt/kx/packages
+    
+
+Common code
+
+The utility function `.kxi.packages.file.load` can be used to load other
+files:
+
+    
+    
+    .kxi.packages.file.load "common.q"
+    
+

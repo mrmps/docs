@@ -1,0 +1,85 @@
+https://code.kx.com/platform/qr_sync/
+
+# Sync requests - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/qr_sync/
+
+# Sync requests
+
+For clients that can't utilise the supported interface or can't support async
+communication, support for sync requests is provided through the use of the
+`DS_QR_GW` process. Clients can use this to act as an access point as into the
+QR framework. The process is used to run any permissioned analytics or lambda
+queries. The analytics must make the calls to `.qr.client.sendSyncRequest` to
+execute on the QR.
+
+![Screenshot](../img/qr/qrsynccycle.png)
+
+A sync request will be directed towards the `DS_QR_GW` process from the
+client. The request should invoke the `.qr.client.sendSyncRequest` API. The
+API uses the deferred sync functionality in kdb+ 3.6.
+
+The `DS_QR_GW` process receives the request from clients and defers the
+response. It executes a request asynchronously through the _QR_ framework and
+returns the result to the waiting client once complete.
+
+To create a new instance of the `DS_QR_GW` template \- The instance template
+can be used as default \- Run the instance
+
+**Note** : The client requires the details of the process or processes (hosts
+and ports)
+
+![Screenshot](../img/qr/qrsync.png) ![Screenshot](../img/qr/qrgw.png)
+
+## `.qr.client.sendSyncRequest`
+
+Send sync request to _QR_ framework for execution.
+
+**Parameter(s):**
+
+Name | Type | Description  
+---|---|---  
+request | string|untyped | Request object to be executed{string | untyped}  
+targets | symbol | symbol[] | One or more instances, connections or groups to target  
+opts | dict | Dictionary of optional parameters  
+callback | lambda|functional | Function or lambda to receive result callback.  
+  
+Executing a sync query :
+
+    
+    
+    // From the a process (dhtDemo) execute the following 
+    // request with no callback
+    qrGwPort:(`::32045);
+    qrGwPort(`.qr.client.sendSyncRequest;"10#select from dfxTrade"; `ds_rdb_fx_eval; (); (::));
+    
+    // request with callback
+    qrGwPort(`.qr.client.sendSyncRequest;"10#select from dfxTrade"; `ds_rdb_fx_eval; (); {[res] :update time:.z.p from res});
+    
+
+Below is an example of how sync requests can be used through analytics.
+`dfxSyncBucketQuote` is the analytic which will use deferred sync
+functionality of kdb to give a sync response for an async call.
+`dfxBucketQuote` returns a table for each individual symbol the open bid and
+ask of specified intervals over a configurable time range.
+
+![Screenshot](../img/qr/qranalytic.png)
+
+The callback which will be applied to returned query
+![Screenshot](../img/qr/qrcallback.png)
+
+To replicate a client call execute the code below on the dhtDemo process.
+
+**Note** : Ensure `DS_QR_GW` process is running.
+
+    
+    
+    // 32045 = The port of the DS_QR_GW process update if necessary
+    // Execute query on rdb data
+    qrGwPort:(`::32045);
+    qrGwPort(`dfxSyncBucketQuote;`$"EUR/GBP" ;.z.Z-1f ;.z.Z ;50 ; `ds_rdb_fx_eval)
+    
+    // Execute query on hdb data
+    qrGwPort(`dfxSyncBucketQuote;`$"EUR/GBP" ;`datetime$2010.12.06D20:49:00.688299000 ;`datetime$2010.12.06D20:49:08.688104000 ;50 ; `ds_hdb_fx_eval)
+    
+

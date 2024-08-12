@@ -1,0 +1,569 @@
+https://code.kx.com/insights/microservices/database/configuration/assembly/schema.html
+
+# Schema - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/database/configuration/assembly/schema.html
+
+# Schema configuration
+
+A schema describes a collection of tables. Schemas are used to describe all of
+the tables within a kdb Insights Database.
+
+Schemas are defined in static YAML configuration in an assembly file. Within
+an [assembly file](database.html#assembly), this configuration sits under the
+`tables` key. Each table within a schema is a collection of columns,
+attributes and metadata information.
+
+User interface configuration
+
+This guide discusses configuration using YAML files. If you are using kdb
+Insights Enterprise, you can configure your system using the [kdb Insights
+user
+interface](../../../../enterprise/database/configuration/ui/database.html#writedown-
+settings)
+
+Partitioned tables
+
+A schema **must** have at least one table that is a _partitioned_ table.
+
+    
+    
+    tables:
+      trace:
+        description: Manufacturing trace data
+        type: partitioned
+        blockSize: 10000
+        prtnCol: updateTS
+        sortColsOrd: [sensorID]
+        sortColsDisk: [sensorID]
+        columns:
+          - name: sensorID
+            description: Sensor Identifier
+            type: int
+            attrMem: grouped
+            attrOrd: parted
+            attrDisk: parted
+          - name: readTS
+            description: Reading timestamp
+            type: timestamp
+          - name: captureTS
+            description: Capture timestamp
+            type: timestamp
+          - name: valFloat
+            description: Sensor value
+            type: float
+          - name: qual
+            description: Reading quality
+            type: byte
+          - name: alarm
+            description: Enumerated alarm flag
+            type: byte
+          - name: updateTS
+            description: Ingestion timestamp
+            type: timestamp
+    
+
+## Fields
+
+For each table in a schema, the following fields can be configured.
+
+name | type | required | description  
+---|---|---|---  
+`description` | `string` | No | A textual description for the table. This can be used to provide an overview of the data collected in the current table.  
+`type` | `string` | Yes | The type of the table is how the table is managed on disk. For time based tables, use `partitioned`. For supplementary data, use `splayed`, `basic`, or `splayed_mem`. Note that at least one of your tables must be `partitioned`. See Table types.  
+`blockSize` | `int` | No | This value indicates when data should be written to disk. After this many records are received, data is written to disk. Writing more frequently increases disk IO but will use less memory. If omitted, the default value is 12 million records.  
+`prtnCol` | `string` | No | The name of the column within the table to use to partition the content. The column type it points to must be a `timestamp`. This value is required if the table type is set to `partitioned`.  
+`sortColsMem` | `string[]` | No | A list of columns to use for sorting columns in a memory tier. Setting this value will sort data as it arrives in memory. If you want data to also have the sorted attribute, set `attrMem` to `sorted`. This typically corresponds to the data sort of the RDB tier.  
+`sortColsOrd` | `string[]` | No | A list of columns to use for sorting columns in an ordinal partitioned tier. Setting this value will sort data as it migrates into ordinal partitions. If you want data to also have the sorted attribute, set `attrOrd` to `sorted`. This typically corresponds to the data sort of the IDB tier.  
+`sortColsDisk` | `string[]` | No | A list of columns to use for sorting columns in a normal disk tier. Settings this value will sort data as it is migrated into disk partitions. If you want data to also have the sorted attribute, set `attrDisk` to `sorted`. This typically corresponds to the data sort of the HDB tier.  
+`primaryKeys` | `string[]` | No | Names of columns to use as primary keys for this table. Primary keys are used for indicating unique data within a table. When provided, the table is keyed by these columns and any updates that have matching keys will update records with matching keys.  
+`isSharded` | `boolean` | No | Specifies if this table is split across multiple assemblies. When using this property, it must be consistent for all instances of this table in all assemblies.  
+`columns` | `object[]` | Yes | A list of the columns in the table. The order of this list of columns is the order they will be organized as. See below for column configuration.  
+`oldName` | `string` | No | The name of a previous version of this table. This field can be used when changing the name of a table within a schema. See schema modifications below for details.  
+  
+### Table types
+
+The list of supported table types is as follows:
+
+type | description  
+---|---  
+`partitioned` | Data is stored in date partitions, and distributed across RDB, IDB, and HDB.  
+`splayed` | Data is stored as a single directory (each column an individual file therein) in the IDB directory. The same copy of the data is memory mapped in RDB, IDB, and HDB (within an assembly).  
+`basic` | Data is stored as a single file in the IDB directory. The same copy of the data is memory mapped in RDB, IDB, and HDB (within an assembly).  
+`splayed_mem` | Data is stored as a single directory (each column an individual file therein) in the IDB directory. The same copy of the data is loaded into memory in RDB, IDB, and HDB (within an assembly).  
+  
+Splayed and basic table name restrictions
+
+Splayed and basic table names MUST begin with a letter (`[a-zA-Z]`).
+
+## Columns
+
+For each column in a table, the following fields can be configured.
+
+name | type | required | description  
+---|---|---|---  
+`name` | `string` | Yes | The name of the column in the table. The name must be unique within a single table and should be a single word that represents the purpose of the data within the column. This name must conform to kdb+ naming restrictions:  
+• Should not use any reserved kdb+ primitives. See
+[`.Q.id`](https://code.kx.com/q/ref/dotq/#qid-sanitize) for details.  
+• Should not use reserved word '`date`' or '`int`'.  
+• Should not use reserved word/prefix: '`label_`'.  
+`type` | `string` | Yes | The type of the column. See types below for more details.  
+`description` | `string` | No | A textual description of the column for documentation purposes.  
+`attrMem` | `string` | No | Column attributes to apply when the table is in memory. This typically only applies to the RDB tier. See attribute details below for more information.  
+`attrOrd` | `string` | No | Column attributes to apply when the table is ordinal partitioned. This typically only applies to the IDB tier. See attribute details below for more information.  
+`attrDisk` | `string` | No | Column attributes to apply when the table is partitioned on disk. This typically only applies to the HDB tier. See attribute details below for more information.  
+`foreign` | `string` | No | Indicates the values of this column are a foreign key into a column in another table. This value should be in the form of `table.column`, where the table is another table in the same schema and the column is in that table. If the foreign key value is provided, the column type must match the type of the column in the other table.  
+`anymap` | `boolean` | No | Indicates if nested data can be stored as a memory mapped 'anymap' file. An anymap file allows lists of lists to be stored in a column. Using this settings reduces the amount of memory used when loading table with this column as loading is deferred until the column is specifically used. Note that compression is not currently supported for columns that have `anymap` specified. See the [release notes](https://code.kx.com/q/releases/ChangesIn3.6/#anymap) for more details on anymap files.  
+`oldName` | `string` | No | Indicates the name of a previous version of this column. This is used when renaming a column. See schema modification below for details.  
+`backfill` | `string` | No | The name of the function to call to get the value for the column when backfilling it. See schema modification below for details.  
+  
+## Types
+
+Column types support all of the base
+[datatypes](https://code.kx.com/q/ref/#datatypes) supported in kdb+. For
+columns containing only atom values, use the singular form of the data type.
+To indicate that a column is intended to support vectors of a given type, use
+the plural of the type name, except for `char`, whose vector equivalent is
+`string`.
+
+Type example
+
+For a column of long numbers, use the type `long`.
+
+For a column of vectors of long integers, use `longs`.
+
+    
+    
+    x
+    -----
+    0 1 2
+    4 5 6
+    7 8 9
+    
+
+For a column of vectors of characters, use `string`.
+
+    
+    
+    x
+    ------
+    "abc"
+    "de"
+    "fghi"
+    
+
+name | type | description  
+---|---|---  
+`boolean` | `1h` | True or false values.  
+`guid` | `2h` | Unique identifiers in the form of `00000000-0000-0000-0000-000000000000`.  
+`byte` | `4h` | Individual byte values on the range of `0x00` to `0xFF`.  
+`short` | `5h` | A 2 byte short integer value in the range of `-32767h` to `32767h`.  
+`int` | `6h` | A 4 byte integer value value in the range of `-2147483647` to `2147483647`.  
+`long` | `7h` | An 8 byte integer value with the maximum unsigned integer byte range.  
+`real` | `8h` | A 4 byte floating point value.  
+`float` | `9h` | An 8 byte floating point value.  
+`char` | `10h` | A byte value representing a character value.  
+`symbol` | `11h` | A symbol is a string of characters that is stored as an enumeration on disk. Reserve this datatype for repeated character values. Using this for unique character data will incur significant query performance overhead.  
+`timestamp` | `12h` | Stores a date and time as the number of nanoseconds since 2000.01.01. All partitioned tables should have at least one column that is a timestamp for partitioning its data on.  
+`month` | `13h` | Represents a month and year value without a day.  
+`date` | `14h` | Represents a month, year and day value as a date.  
+`datetime` | `15h` | A deprecated format for storing temporal values that uses a float as its underlying data structure. When using this datatype, it is possible to have two datetimes point to the same day but not be equivalent due to float precision. Use a timestamp over datetime whenever possible.  
+`timespan` | `16h` | Stores a time duration as a number of nanoseconds.  
+`minute` | `17h` | Stores hours and minutes of a timestamp.  
+`second` | `18h` | Stores hours, minutes and seconds of a timestamp.  
+`time` | `19h` | Stores hours, minutes, seconds and sub-seconds to nanosecond precision.  
+  
+To indicate a mixed type of `0h`, provide the `type` field with an empty
+string.
+
+    
+    
+    - name: mixedData
+      type: ""
+    
+
+## Attributes
+
+Attributes are used to tune the performance of queries in a kdb Insights
+database. You can set attributes differently depending on the different tiers
+of your database and you can tune attributes to optimize performance at each
+tier. Using attributes slightly increases storage space usage, RAM usage and
+processing required during ingest. Note that the _sorted_ attribute is not the
+same as the _sorting_ setting (`sortColsOrd`/`sortColsDisk`). The following
+column attributes are available:
+
+  * _no attributes_ \- requires a linear scan for filters against the column
+  * [sorted](https://code.kx.com/q/ref/set-attribute/#sorted) (_requires sorting_) - ascending values - allows binary search for filters against the column
+  * [parted](https://code.kx.com/q/ref/set-attribute/#grouped-and-parted) (_requires sorting_) - maintains an index allowing constant time access to the start of a group of identical values
+  * [grouped](https://code.kx.com/q/ref/set-attribute/#grouped-and-parted) (_does not require sorting_) maintains a separate index for the column, identifying the positions of each distinct value. _note_ \- this index can take up significant storage space.
+  * [unique](https://code.kx.com/q/ref/set-attribute/#unique) \- (_requires all values be distinct_) allows a constant-time lookup - typically used for primary keys
+
+More information about attributes, their use, and tradeoffs is available in
+the [kdb+ documentation](https://code.kx.com/q/wp/data-management/#attributes-
+on-splayed-partitioned-tables).
+
+Within the table configuration, an attribute property can be set on particular
+columns within the table. There are three levels of attributes that can be
+set, `attrMem`, `attrOrd` and `attrDisk`. The memory level attribute applies
+when data is in memory which is used for any real-time tiers (RDB) in your
+database configuration. The ordinal level attribute is used for data that is
+stored intermittently throughout the day. This applies to the IDB tier of a
+database. Lastly, the disk attribute applies to all disk tiers including the
+HDB and subsequent tiers such as object storage.
+
+KX recommends that you use the `parted` attribute on the column that will be
+used for filtering most frequently. You can only have one column in a table
+with the `sorted` or `parted` attribute. You can apply the `grouped` attribute
+to any column without needing to sort it. Setting the `parted` attribute
+requires sorting, which requires a significant amount of memory. Ensure that
+the Storage Manager has enough memory allocated for a full day's worth of data
+for the largest column that is sorted.
+
+## Modifications
+
+Offline modifications to schemas are supported when using an assembly file.
+You can make the following modifications:
+
+  * Adding tables
+  * Renaming tables
+  * Deleting tables
+  * Adding columns
+  * Renaming columns
+  * Removing columns
+  * Reordering columns
+  * Changing column attributes
+  * Changing data types of columns
+  * Enabling and disabling encryption
+
+Changing column sort is not supported
+
+Changes to the sort columns of data on disk is currently not supported. This
+includes modifying `sortColsOrd` and `sortColsDisk`. Modifications to the sort
+order of a database would require the entire database to loaded, reordered and
+rewritten. This restriction implies that changing the parted and sorted
+attributes for columns that do not already have a sort applied will fail. In
+order to make this type of modification, the database must be manually
+exported, sorted and then re-imported using an [initial
+import](../../storage/initial-import.html) with the re-ordered data.
+
+The Storage Manager performs schema modification during initialization. To
+trigger this process, you must first stop your assembly or Storage Manager,
+make the desired modification and then start it again. If SM detects a
+difference in the schema of the table currently stored on disk and the
+provided schema, it will start a schema conversion. SM will not accept any new
+data until the schema conversion is complete.
+
+Blocking change
+
+The Storage Manager will not accept any new data while a schema conversion is
+taking place. When performing a schema upgrade on a large database, this
+process can take some time to finish. This is especially true when an object
+storage tier is used. During a schema conversion, it is recommended that all
+data publishers are stopped until the schema conversion is complete. This will
+avoid accumulating back pressure on any streams in the system. Once the schema
+conversion is complete, SM will process any messages that were buffered in the
+stream while the conversion was taking place.
+
+### Modifying the assembly file
+
+Conversion operations are triggered by changing the schema in the assembly
+file. Most schema changes can be expressed in a straightforward way by
+modifying the `tables` section. Table and column renames need to be specified
+explicitly to link tables and columns to their previous names by setting the
+`oldName` attribute. If a table or column is found that matches the `oldName`
+of a table or column, a rename takes place. To avoid confusing scenarios,
+`oldName` values for different tables or columns must not match, nor may they
+match the current name of another table or column. The restriction on columns
+applies within the columns of a table. Therefore more complex operations such
+as swapping two columns requires a multi-step process where a swap is
+performed in one upgrade and a rename in a subsequent upgrade. Once the
+renaming is complete, it is recommended to update the schema again to remove
+the `oldName` values.
+
+### Step-by-step process
+
+  1. Teardown the assembly by stopping all containers.
+  2. Update the assembly configuration.
+  3. Start SM and DA containers (Before 1.4.0, wait for the conversion to end before starting DAPs).
+  4. Check the logs of EOI for conversion status. When the conversion starts, `Performing on-disk conversion` is logged by EOI. Then each operation is logged as it is performed. Upon successful completion, `On-disk conversion complete, elapsed=XXX` is logged with the actual elapsed time.
+
+If there is an object storage tier, the conversion will first check if the
+object storage matches the schema in the assembly. Any discrepancies are
+printed out and the EOI process aborts.
+
+### Examples
+
+#### Backfilling a column
+
+When adding a new column, by default it is populated with the null values for
+its type. However, it may be desirable to populate it with calculated values
+instead. The `backfill` property can be used for this purpose.
+
+See an example schema definition below. In this example, `colB` and `colC` are
+assumed to be newly-defined columns in your schema. The custom functions you
+wish to run to generate your new `colB` and `colC` are referenced in the
+`backfill` field.
+
+    
+    
+      tbl:
+        columns:
+          - name: sym
+            description: Symbol name
+            type: symbol
+          - name: realTime
+            description: Time
+            type: timestamp
+          - name: colA
+            description: colA
+            type: long
+          - name: colB
+            description: colB
+            type: long
+            backfill: .my.calcColB
+          - name: colC
+            description: colC
+            type: float
+            backfill: .my.calcColC
+      trade:
+        columns:
+          - name: sym
+            description: Symbol name
+            type: symbol
+          - name: realTime
+            description: Time
+            type: timestamp
+          - name: size
+            description: size
+            type: long
+          - name: price
+            description: price
+            type: float
+    
+
+With the custom function referenced, `.my.calcColB` and `.my.calcColC` will be
+called for every partition (for intraday data, this means every interval
+individually) during the database conversion that will add your new column.
+
+To provide the definition of the two functions, we must first create a
+[package](../../../../api/packaging/index.html) with a `storage-manager`
+entrypoint. The `manifest.yaml` file would look like:
+
+    
+    
+    name: test-package
+    version: 0.0.1
+    metadata:
+      description: ''
+      authors:
+      - name: root
+        email: ''
+    entrypoints:
+      storage-manager: convert.q
+    
+
+And in the `convert.q` file we can define the function:
+
+    
+    
+    .my.calcColB:{[tn;part;data]
+      exec `long$4 mavg colA from data
+      }
+    
+    .my.calcColC:{[tn;part;data]
+      exec `float$sum size*price from .kxi.db.getTableData[`trade;part]
+      }
+    
+
+To load the package we have to add it to the list of packages loaded by SM
+using the `KXI_PACKAGES` environment variable in the assembly:
+
+    
+    
+        sm:
+        [...]
+          env:
+            - name: KXI_PACKAGES
+              value: "test-package:0.0.1"
+    
+
+The function is called with the following parameters:
+
+  * `tn` (symbol): the table name
+  * `part` (opaque): a unique partition identifier
+  * `data` (table): the contents of the table for the given partition
+
+The function must return an atom or list of the correct type. If the return
+value is a list, it must be the same length as the other columns in `data`.
+Failing to meet these requirements results in a failure during conversion.
+
+If the value of the new column depends only on the other columns in the same
+table, the `data` parameter can be used to inspect the other columns. If the
+data comes from another table, the function `.kxi.db.getTableData[tn;part]`
+can be used to retrieve a partition from an arbitrary table in the same
+assembly. The `part` parameter to `.kxi.db.getTableData` should be the same
+`part` as the one received by the backfill function.
+
+Advanced operations like making the column depend on data from mismatching
+partitions (such as partition `d` depending on data from partition `d+1` or
+`d-1`) or other assemblies is not supported via the `backfill` property.
+Furthermore tables or columns that are being renamed in the same conversion
+should not be accessed, as either the old or the new name may be invalid at
+the point the backfill function is called.
+
+#### Renaming a column
+
+Starting with the following schema:
+
+    
+    
+      tbl:
+        columns:
+          - name: sym
+            description: Symbol name
+            type: symbol
+          - name: realTime
+            description: Time
+            type: timestamp
+          - name: colA
+            description: colA
+            type: long
+          - name: colB
+            description: colB
+            type: long
+    
+
+To rename `colB` to `colC`, we need to change the name in the schema from
+`colB` to `colC`, as well as add the `oldName` attribute to `colC` with the
+value of `colB` to ensure that SM sees this as a rename and not the deletion
+and addition of a column:
+
+    
+    
+      tbl:
+        columns:
+          - name: sym
+            description: Symbol name
+            type: symbol
+          - name: realTime
+            description: Time
+            type: timestamp
+          - name: colA
+            description: colA
+            type: long
+          - name: colC
+            description: colC
+            type: long
+            oldName: colB
+    
+
+After the conversion is finished, the schema can be updated again to remove
+the `oldName` attribute:
+
+    
+    
+      tbl:
+        columns:
+          - name: sym
+            description: Symbol name
+            type: symbol
+          - name: realTime
+            description: Time
+            type: timestamp
+          - name: colA
+            description: colA
+            type: long
+          - name: colC
+            description: colC
+            type: long
+    
+
+This is in fact a necessary intermediate step if we also want to reintroduce
+the name `colB` (either by adding a new column or renaming `colA`). SM
+wouldn't allow a column named `colB` to be added as long as there is a column
+with an `oldName` of `colB`.
+
+#### Renaming a table
+
+Renaming a table works similarly to renaming a column, except we are adding
+the `oldName` attribute to the table itself.
+
+Starting from the following schema:
+
+    
+    
+      tbl:
+        description: Example table
+        type: partitioned
+        blockSize: 10000
+        prtnCol: realTime
+        sortColsOrd: sym
+        sortColsDisk: sym
+        columns:
+          - name: sym
+            description: Symbol name
+            type: symbol
+          - name: realTime
+            description: Time
+            type: timestamp
+          - name: colA
+            description: colA
+            type: long
+          - name: colB
+            description: colB
+            type: long
+    
+
+To rename `tbl` to `tbl2`, we need to change the name in the schema from `tbl`
+to `tbl2`, as well as add the `oldName` attribute to `tbl2` with a value of
+`tbl` to ensure that SM sees this as a rename and not the deletion and
+addition of a table:
+
+    
+    
+      tbl2:
+        description: Example table
+        type: partitioned
+        blockSize: 10000
+        prtnCol: realTime
+        sortColsOrd: sym
+        sortColsDisk: sym
+        oldName: tbl
+        columns:
+          - name: sym
+            description: Symbol name
+            type: symbol
+          - name: realTime
+            description: Time
+            type: timestamp
+          - name: colA
+            description: colA
+            type: long
+          - name: colB
+            description: colB
+            type: long
+    
+
+Once the conversion is done we can remove the `oldName` attribute.
+
+#### Enabling encryption
+
+To enable encryption, the following must be added at the top level:
+
+    
+    
+    dbSettings:
+      encryptAll: true
+    
+
+This will cause all tables to be encrypted both retroactively and for new
+data. To disable encryption, change `true` to `false` or remove this setting.
+This will cause all data to be decrypted retroactively and keep new data
+unencrypted.
+
+### Known issues
+
+In version earlier than 1.4, DAPs could load the database while conversion was
+in progress resulting in errors. After 1.4, DAPs now wait until the conversion
+is complete before connecting to SM.
+

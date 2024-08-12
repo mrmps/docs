@@ -1,0 +1,104 @@
+https://code.kx.com/insights/core/sql/functions.html
+
+# Functions - kdb products
+
+Original URL: https://code.kx.com/insights/core/sql/functions.html
+
+# Functions
+
+## String functions
+
+The following string functions are supported:
+
+    
+    
+    ||          position(x in y)
+    left        position(x,y)
+    right       substring(x from y)
+    lower       substring(x from y for z)
+    upper       substring(x,y,z)
+    length      concat
+    trim        ltrim
+    rtrim
+    
+
+substring
+
+There is no pattern matching on `substring`.
+
+## Datetime functions
+
+The following datetime functions are supported:
+
+    
+    
+    extract(field from x)   current_date
+    current_time            current_timestamp
+    localtime               localtimestamp
+    date_trun               now
+    unnest                  xbar
+    
+
+**Examples**
+
+  * Using `extract`: 
+    
+        s)select extract(hour from timestamp '2002-09-17 19:27:45')
+    
+    extract
+    -------
+    19
+    
+
+  * Using `date_trunc`:
+    
+        s)select date_trunc('hour', timestamp '2017-03-17 02:09:30');
+    
+    date_trunc
+    -----------------------------
+    2017.03.17D02:00:00.000000000
+    
+
+  * Using `xbar`:
+    
+        s)select xbar(10,x) from qt('([]1 12 23)')
+    s)select xbar('0D00:10',x) from qt('([]0D+10:21 11:32 13:43)')
+    
+
+## Math functions
+
+The following math functions are supported:
+
+    
+    
+    div
+    floor
+    power
+    round
+    stddev
+    trunc
+    
+
+**Examples**
+
+  * `round`: 
+    
+        t:([] a:1.123 1.456 2.532)
+    s)select round(a) from t
+    
+    round
+    -----
+    1
+    1
+    3
+    
+
+## Cast
+
+Using `cast` converts from one data type to another.
+
+    
+    
+    cast(x as typename) x::typename
+    
+

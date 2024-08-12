@@ -1,0 +1,133 @@
+https://code.kx.com/insights/enterprise/cli/configuration.html
+
+# kdb Insights Enterprise CLI - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/cli/configuration.html
+
+KX Nexus
+
+The KX Nexus repository will be sunsetted in the future. Nexus links on this
+page are provided as a temporary alternative to the KX Downloads Portal for
+existing users. The KX Downloads Portal is the preferred repository for all
+use cases and KX Nexus links will be removed once the KX Nexus repository is
+decommissioned.
+
+# CLI Configuration
+
+`kxi` is configured using a configuration file `~/.insights/cli-config`
+
+Many commands require options that don't change often, such as the host that
+you're interacting with.
+
+Run `kxi configure` to create the `~/.insights/cli-config` configuration file.
+
+The configuration file allows these values to be defaulted so you don't need
+to pass them every time.
+
+## Supported Settings
+
+The supported settings are
+
+setting | default | description  
+---|---|---  
+hostname |  | Hostname for the kdb Insights Enterprise installation to interact with  
+namespace | kxi | Namespace for the kdb Insights Enterprise installation to interact with  
+auth.serviceaccount.id |  | Name of the default client  
+auth.serviceaccount.secret |  | Default client secret used to request access tokens  
+license.secret | kxi-license | Secret containing kdb+ license  
+license.as-env-var | False | Mount kdb+ license secret as an environment variable  
+license.filepath |  | File path and file name of kdb+ license file  
+chart.repo.name | kx-insights | Name for chart repository  
+chart.repo.url | https://portal.dl.kx.com/assets/helm/ | Repository URL to pull charts from  
+chart.repo.username |  | Username for the chart repository  
+chart.repo.password |  | Password for the chart repository  
+image.pullSecret | kxi-image-pull-secret | Secret containing credentials for the image repository  
+image.repository |  | Repository to pull images from  
+image.repository.user |  | User name for image repository  
+image.repository.password |  | Password for image repository  
+keycloak.secret | kxi-keycloak | Secret containing Keycloak admin password  
+keycloak.admin.password |  | [Keycloak admin password](../security/authentication.html#administration-passwords)  
+keycloak.management.password |  | [Keycloak WildFly management password](../security/authentication.html#administration-passwords)  
+keycloak.postgresqlSecret | kxi-postgresql | Secret containing Keycloak postgresql passwords  
+postgresql.postgres.password |  | [Postgresql postgres password](../security/authentication.html#administration-passwords)  
+postgresql.user.password |  | [Postgresql user password](../security/authentication.html#administration-passwords)  
+keycloak.authURL |  | Auth URL for Keycloak  
+admin.user | user | [Keycloak admin user used by the kxi user command](../security/authentication.html#administration-console)  
+admin.password |  | [Keycloak admin password used by the kxi user command](../security/authentication.html#administration-passwords)  
+realm | insights | Name of Keycloak realm  
+ingress.cert.secret | kxi-ingress-cert | Secret containing self-managed TLS cert and key for the ingress  
+ingress.certmanager.disabled | False | Flag to disable usage of TLS certmanager  
+ingress.cert |  | File path to TLS certificate for the ingress  
+ingress.key |  | File path to TLS private key for the ingress  
+install.outputFile | values.yaml | Name for the generated values file  
+assembly.backup.file | kxi-assembly-state.yaml | Filepath to store state of running assemblies  
+release.name | insights | Release name for the install  
+client.cert.secret | kxi-certificate | Secret containing TLS cert and key for client issuer  
+guiClientSecret |  | Keycloak client secret for GUI service account  
+operatorClientSecret |  | Keycloak client secret for operator service account  
+install.filepath |  | Values file to install with  
+version |  | Version to install  
+operator.version |  | Version of the operator to install  
+  
+Existing users can use the following links to access KX Nexus until Nexus is
+removed in the future:
+
+setting | default | description  
+---|---|---  
+chart.repo.url | https://nexus.dl.kx.com/repository/kx-insights-charts | Repository URL to pull charts from  
+image.repository | registry.dl.kx.com | Repository to pull images from  
+image.pullSecret | kxi-nexus-pull-secret | Secret containing credentials for the image repository  
+  
+Override the default by explicitly passing the value, or by editing the
+`~/.insights/cli-config` file directly.
+
+When a setting is omitted from the file, the default value is used.
+
+Azure namespaces
+
+If you deployed from the Azure Marketplace then your namespace must be
+"insights".
+
+## Profiles
+
+`kxi` has a global `--profile` parameter to support multiple sets of
+configuration values.
+
+Run `kxi configure --profile <name of new profile>` to create a profile.
+
+Use a profile with the `--profile` parameter.
+
+    
+    
+    kxi --profile <name of new profile> <subcommand> [OPTIONS]
+    
+
+The values under the `default` profile are used when you do not supply a
+--profile parameter. Each profile is independent of each other i.e. `default`
+values are not used if you supply a --profile parameter.
+
+Profile parameter order
+
+The order of parameters in the command is important. Ensure that you add the
+--profile parameter and the name of the profile before the  and any additional
+options.
+
+## Example
+
+An example configuration file:
+
+`~/.insights/cli-config`
+
+    
+    
+    [default]
+    hostname = https://my-host.kx.com
+    auth.serviceaccount.id = my-publisher
+    auth.serviceaccount.secret = my-secret
+    
+    [profile-1]
+    hostname = https://profile-1.kx.com
+    auth.serviceaccount.id = profile-1-publisher
+    auth.serviceaccount.secret = profile-1-secret
+    
+

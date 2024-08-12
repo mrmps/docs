@@ -1,0 +1,294 @@
+https://code.kx.com/insights/core/rest-server/quickstart.html
+
+# REST server | Quickstart | kdb Insights Core - kdb products
+
+Original URL: https://code.kx.com/insights/core/rest-server/quickstart.html
+
+# REST server quickstart
+
+_Expose a RESTful interface to a kdb+ based system_
+
+We load the REST server library and create a simple API and async query
+server.
+
+## Example customers API
+
+Create `customers.q` from the [source in the
+appendix](appendix/customers.html).
+
+Run `q` in the current directory and load `rest.q_` followed by `customers.q`:
+
+    
+    
+    q -p 8080
+    \l rest.q_
+    \l customers.q
+    
+
+In another terminal run:
+
+    
+    
+    curl http://localhost:8080/customers
+    [{"id":1,"name":"milglie"},{"id":2,"name":"igfbage"},{"id":3,"name":"kaodhbe"},{"id":4,"name":"bafclbi"},{"id":5,"name":"kfhogjn"},{"id":6,"name":"jecpaen"},{"id":7,"name":"kfmohpi"},{"id":8,"name":"lkklcoi"},{"id":9,"name":"kfifpag"},{"id":10,"name":"fglgofj"}]
+    
+    curl http://localhost:8080/db/customers/meta
+    [{"c":"id","t":"j","f":"","a":""},{"c":"name","t":"s","f":"","a":""}]
+    
+    curl http://localhost:8080/getCustomers
+    [{"id":0,"nm":"mpnan"},{"id":1,"nm":"nogel"},{"id":2,"nm":"holpj"},{"id":3,"nm":"kkfpn"},{"id":4,"nm":"pegin"},{"id":5,"nm":"jcgnm"},{"id":6,"nm":"dlhep"},{"id":7,"nm":"cmejl"},{"id":8,"nm":"bfmjf"},{"id":9,"nm":"lcicg"}]
+    
+
+For a full overview of the server and the concepts introduced see [the
+customer example server](appendix/queryserver.html).
+
+## Async query server
+
+_A REST server to run asynchronous query jobs_
+
+Jobs are run in worker processes that execute arbitrary
+[qSQL](https://code.kx.com/q/basics/qsql/) and trigger a callback when done.
+(A REST client is expected to poll for async job results.)
+
+Create a new directory called `code`
+
+Copy the linked examples to create
+[`queryserver.q`](appendix/queryserver.html),
+[`queryclient.q`](appendix/queryclient.html), and
+[`queryworker.q`](appendix/queryworker.html). in the new directory `code`.
+
+Create file `code/init-server.q` as follows:
+
+    
+    
+    cat <<EOF > code/init-server.q
+    \l rest.q_
+    \l queryserver.q
+    EOF
+    
+
+Set license env variable
+
+Configure docker-compose.yml
+
+    
+    
+    version: "3.7"
+    networks:
+      kx:
+        name: kx
+        driver: bridge
+    services:
+      server:
+        image: kdb-insights:X.Y.Z
+        # Expose port 8080 locally
+        ports:
+          - 8080:8080
+        volumes:
+          - $QLIC:/tmp/qlic:ro
+          - ./code:/opt/kx/code
+        command: init-server.q -p 8080
+        working_dir: /opt/kx/code
+        networks:
+          - kx
+        tty: true
+        stdin_open: true
+        user: root
+      client:
+        image: kdb-insights:X.Y.Z
+        volumes:
+          - $QLIC:/tmp/qlic:ro
+          - ./code:/opt/kx/code
+        # Change hostname below to the hostname/IPV4 of your VM or local machine.
+        command: queryclient.q -server http://hostname:8080
+        working_dir: /opt/kx/code
+        networks:
+          - kx
+        tty: true
+        stdin_open: true
+        user: root
+    
+
+It starts a REST server example and client. It forwards the server’s port 8080
+so, besides the client being able to access it, you can access it outside the
+Docker environment.
+
+Run.
+
+In another terminal verify that you can `curl` the endpoint as follows:
+
+    
+    
+    curl http://hostname:8080/v1/projects
+    [{"name":"myProject","id":0,"dir":"/opt/kx/code/exampleProjects/projFolder1","created":"2022-11-30T01:46:43.159087597"}]
+    
+
+## Protecting a backend API
+
+We can provision a protected public gateway to allow access to the private
+HTTP backend.
+
+[With the customers API example](appendix/customers.html), you should have
+your server exposed on port 8080.
+
+The guides below will look for an HTTP backend endpoint, this is the host and
+port of the Customers example.
+
+To follow along, run the HTTP customers example on a VM instance and expose
+port 8080. We will then use a gateway to secure access to the REST server
+running on 8080.
+
+In practice you will want 8080 exposed to the virtual network the gateway is
+on, but not externally to the wider Web.
+
+Custom HTTP headers
+
+Your HTTP backend and Gateway should also consider requiring custom headers of
+your own design to quickly ignore foreign requests. This is not covered by the
+guides below.
+
+### Amazon API Gateway
+
+Amazon API Gateway can be used to secure a REST API backend.
+
+Start up a VM instance and run the [customers
+example](appendix/customers.html) on port 8080 and expose port 8080 on the
+VM’s network.
+
+Now use Amazon API Gateway to secure access to the customers API backend by
+importing an API configuration:
+
+[Setting up Amazon API
+Gateway](https://docs.aws.amazon.com/apigateway/latest/developerguide/getting-
+started.html)
+
+A [sample OpenAPI 2.0 configuration](appendix/sample-openapi.html) for the
+customers API is included from the appendix.
+
+After importing the API configuration, create a stage and name it _kxce-
+stage_.
+
+The _kxce-stage_ should define a single stage variable `httpUrl`, and the
+value should be the URL of the customers backend.
+
+Set this variable to the URL without the protocol prefix
+
+For example, set `httpUrl` to `myserver.com`, not `http://myserver.com`.
+
+After deploying the stage, your API will be accessible over HTTPS using the
+Stage URL; however it will not require authentication.
+
+To require authentication to use an API, see [Amazon API Gateway
+Authentication](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-
+control-access-to-api.html).
+
+To use IAM for authentication, attach an IAM Authenticator under _Develop >
+Routes_.
+
+### Azure API Management
+
+Azure API Management service instances can be used to create a gateway to
+allow access to one or more REST endpoints.
+
+[Azure API Management Key Concepts](https://docs.microsoft.com/en-
+us/azure/api-management/api-management-key-concepts)
+
+To protect your API backend, we recommend using _Azure Active Directory_ as
+the OAuth2 provider when using the API Management Service.
+
+If you do not already have an Azure Active Directory tenant, and an Azure API
+Management service instance running, create new ones. This will take a while.
+The name of your Azure API Management service instance will become part of the
+gateway URL.
+
+Start up a VM instance and run the [customers
+example](appendix/customers.html) on port 8080 and expose port 8080 on the
+VM’s network.
+
+We will use Azure API Management to secure access to the customers API
+backend.
+
+Once the Azure API Management Instance is up, import the [sample OpenAPI
+JSON](appendix/sample-openapi.html) from the appendix.
+
+After importing the API, click on the API’s _Design_ tab, and enter the
+Customer examples HTTP backend endpoint URL for all operations.
+
+With this alone, you should now be able to access your REST server from the
+API Management gateway URL, which at the time of writing is shown in the _API
+Management Overview_.
+
+The APIs are still unauthenticated at this point, however the Gateway should
+be functional.
+
+Once you have an Azure AD tenant running, go to _App Registrations_ and follow
+the instructions for [making an API and a client
+app](https://docs.microsoft.com/en-us/azure/api-management/api-management-
+howto-protect-backend-with-aad).
+
+Be sure to follow the [last step](https://docs.microsoft.com/en-us/azure/api-
+management/api-management-howto-protect-backend-with-aad#configure-a-jwt-
+validation-policy-to-pre-authorize-requests): without it OAuth2 will be
+confusingly enabled, yet not required. At the time of writing, that last step
+mentions editing a policy in raw XML. You may also edit the policy visually in
+the current UI, under _Inbound Processing_ , in the _Design_ tab, adding a
+`validate-jwt` type policy.
+
+After you have the backend protected as described in the Azure walkthrough,
+you might want to replace the step where you treat the Azure API Portal as the
+app, instead using something like `kurl` as the client app.
+
+### Google Cloud API Gateway
+
+Google API Gateway can be used to secure a REST API backend.
+
+Start up a VM instance and run the [customers
+example](appendix/customers.html) on port 8080 and expose port 8080 on the
+VM’s network.
+
+We will now use Google API Gateway to secure access to the customers API
+backend by importing a configuration.
+
+[Setting up Google API Gateway](https://cloud.google.com/api-
+gateway/docs/quickstart-console)
+
+Installing Google API Gateway in the Console
+
+If you have not done so before, opening Google API Gateway in the Cloud
+Console will have you “install” and accept a user agreement.
+
+Once you have Google API Gateway opened in the Google Console, you can import
+an API config.
+
+When asked to import a configuration, you can use the [sample OpenAPI 2.0
+configuration](appendix/sample-openapi.html) for the customers API. Take care
+to replace the `x-google-backend` address with the address of your VM running
+the REST server demo.
+
+When asked to create a Gateway, you name it `kxce-gateway`, and choose a
+region.
+
+Once Google finishes uploading your API, make a request to
+
+    
+    
+    https://GATEWAY_URL/customers
+    
+
+to use the customers API, where `GATEWAY_URL` is the URL listed in the Google
+Console’s _Gateway_ tab.
+
+For example, the generated gateway URL would look like:
+
+    
+    
+    https://kxce-gateway-5uoiifib.ue.gateway.dev/customers
+    
+
+Your API will now be accessible over HTTPS using the Gateway; however it is
+not yet secured.
+
+To secure the API, read about the options Google provides.
+
+  *[IAM]: Identity and Access Management
+

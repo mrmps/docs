@@ -1,0 +1,227 @@
+https://code.kx.com/insights/microservices/database/deploy/kubernetes/gateway.html
+
+# Service Gateway - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/database/deploy/kubernetes/gateway.html
+
+# Service Gateway
+
+## Quickstart
+
+Using `helm install`, you may install the `sg-gateway` chart with
+authentication and encryption disabled by default:
+
+`values.yml`:
+
+    
+    
+    imagePullSecrets:
+      - name: kx-repo-access
+    
+
+Install the gateway chart provided the above `values.yml`:
+
+    
+    
+    helm install sg-gateway kxi-repo/sg-gateway -f values.yml
+    
+
+The gateway will be configured as a `ClusterIP` type service with port 8080
+accepting internal HTTP requests.
+
+The gateway by itself will do nothing without any worker pods to utilize. The
+Stream Processor workers should be deployed for it do any meaningful work.
+
+However, you may port-forward the gateway and perform a readiness check with
+`curl` to `/ready`:
+
+    
+    
+    curl localhost:8080/ready
+    
+
+## Helm setup
+
+Add the KX Helm chart repository to your helm install:
+
+    
+    
+    helm repo add --username <username> --password <password> \
+        kxi-repo https://nexus.dl.kx.com/repository/kx-insights-charts/
+    
+    
+    
+    "kxi-repo" has been added to your repositories
+    
+
+Update your helm repository local chart cache:
+
+    
+    
+    Hang tight while we grab the latest from your chart repositories...
+    ...Successfully got an update from the "kxi-repo" chart repository
+    Update Complete. ⎈Happy Helming!⎈
+    
+
+Add a secret to your cluster to allow access to the image:
+
+    
+    
+    kubectl create secret docker-registry kx-repo-access \
+        --docker-username=<username> \
+        --docker-password=<password> \
+        --docker-server=portal.dl.kx.com
+    
+
+## Configuration
+
+Configuration is done by specifying values in a YAML file.
+
+Global options
+
+Globals are documented under enterprise, as they apply to all of KX
+microservices
+
+### values
+
+name | description | default  
+---|---|---  
+`auth.enabled` | If true, integrate with Keycloak authorization | `false`  
+`ssl.enabled` | If true, integrate with cert-manager for `tcps://` encryption | `false`  
+`autoscaling.enabled` | If true, use a horizontal pod auto-scaler | `false`  
+`autoscaling.minReplicas` | Minimum number of replicas to keep around | `1`  
+`autoscaling.maxReplicas` | Maximum number of replicas that can be scaled to | `100`  
+`autoScaling.targetCPUUtilizationPercentage` | Threshold CPU utilization percentage for when a replica should be made | `80`  
+`autoScaling.stabilizationWindowSeconds` | Window of seconds to wait after threshold is crossed before scaling occurs | `300`  
+`caIssuer.create` | If true create a new CA Issuer | `false`  
+`caIssuer.name` | Name of the CA Issuer | `N/A`  
+`caIssuer.secretName` | Name of the secret containing the Certificate and Private key | `N/A`  
+`env` | Key value pairs of environment variables | `KXI_SG_NO_RC: "true"`  
+`ipcPort` | Port Number to use for internal q IPC protocol requests | `5050`  
+`secureIpcPort` | Port Number to use for external q IPC protocol requests that may use authorization | `6050`  
+`httpPort` | Port number to use for HTTP requests | `8080`  
+`imagePullSecrets` | Array of `name` keyed secrets | `imagePullSecrets: [{ name: kxi-image-secret }]`  
+`image.component` | The name of the image. Unlikely this should be updated! | `kxi-sg-gw`  
+`image.repository` | The repository to fetch the image from. | `portal.dl.kx.com`  
+`image.pullPolicy` | The image pull policy. One of `IfNotPresent` or `Always` | `IfNotPresent`  
+`image.tag` | The image tag | `0.0.0`  
+`replicaCount` | Only used when `autoscaling.enabled` is false. Sets a constant number of replicas | `2`  
+`externalService.enabled` | Used for configuring a `LoadBalancer` (or other type) that is meant to receive external TCPS requests | `false`  
+`externalService.type` | One of `LoadBalancer`, `ClusterIP` | `LoadBalancer`  
+`externalService.secureIPCPort` | Must match `secureIpcPort` | `6050`  
+`resources.limits.cpu` | CPU Limit | `1000m`  
+`resources.limits.memory` | Memory Limit | `4096Mi`  
+`resources.requests.cpu` | Initially requested CPU | `250m`  
+`resources.requests.memory` | Initially requested Memory | `512Mi`  
+  
+Common and Global values
+
+Common values used by all Kx Helm charts like `fullnameOverride`, and
+`service` are omitted here.
+
+License
+
+The sg-gateway chart does _not_ require a license to run, unlike most
+microservices images. A license will be required for the database/worker
+charts.
+
+### Authorization
+
+The Service Gateway can be configured to work with Keycloak for Authorization
+of requests via `JWT` Bearer tokens in the HTTP Authorization header, or as
+the password of q IPC request.
+
+The chart does not deploy Keycloak and it must be preconfigured.
+
+The Keycloak configuration settings go under the `global` key and are
+[configured using the same keys as in our enterprise
+offering](https://code.kx.com/insights/enterprise/configuration/security.html).
+
+The name of a `realm` is required, as well as an URL for the `auth/` landing
+page.
+
+For example:
+
+    
+    
+    auth:
+      enabled: true
+    global:
+      keycloak:
+        realm: insights
+        authURL: http://example.keycloak.com:8080/auth
+    
+
+Once this is deployed, access tokens acquired from Keycloak can be provided in
+the `Authorization:` header of HTTP requests.
+
+    
+    
+    TOKEN=replaceMe
+    curl -X POST --header "Content-Type: application/json"\
+        --header "Accepted: application/json"\
+        --header "Authorization: Bearer $TOKEN"\
+        --data '{"table":"trace"}'\
+        "https://example.com/data"
+    
+
+Or as the password for a q IPC request, given the username `token`:
+
+    
+    
+    h:hopen `$":tcps://example.com:6050:token:",getenv `TOKEN;
+    resp:h (`.kxi.getData;enlist[`table]!enlist`trace;`;()!());
+    
+
+For further details on how to configure Keycloak, view the [enterprise
+documentation for Keycloak and
+Helm](https://code.kx.com/insights/enterprise/configuration/security.html).
+
+### Encryption
+
+The `global.encryption.enabled` may be set to enable end to end encryption for
+a microservice.
+
+If custom resources for `istio` have been configured, use the following
+values:
+
+    
+    
+    global:
+      encryption:
+        enabled: true
+    
+
+If custom resources have not been configured, you will see an error indicating
+you need them:
+
+    
+    
+    Encryption may not be enabled as the required CRDs are not installed - "security.istio.io/v1beta1"
+    
+
+### `SSL` for q IPC
+
+We recommend using `istio` to proxy requests to the Service Gateway and
+terminate `SSL` before it reaches the pod, using `encryption.enabled: true`
+over using this option as it will cover both `q IPC` and `http` protocols.
+
+However, `sg-gateway` can be configured to use Java `Keystore` files for
+`tcps://` requests by setting `ssl.enabled: true`.
+
+This option requires the [Kubernetes cert-manager](https://cert-manager.io/)
+to configure `Keystore` files.
+
+The configuration must define an existing CA Issuer and the chart will take
+care of requesting a `Keystore` on deployment.
+
+    
+    
+    ssl:
+      enabled: true
+    global:
+      caIssuer:
+        name: kxi-certificate
+        secretName: kxi-certificate
+    
+

@@ -1,0 +1,47 @@
+https://code.kx.com/insights/enterprise/monitoring/alerts-reference.html
+
+# Alerts reference - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/monitoring/alerts-reference.html
+
+CriticalNodeCPUUsage | critical | Node CPU utilization % for the last 5 minutes | > 90% | node  
+CriticalNodeMemoryUsage | critical | Node Memory usage for the last 5 minutes | > 90% | node  
+CriticalPVCDiskUsage | critical | Percentage disk utilization of Non-RT PVC connected to one or multiple pods | > 80% | pvc  
+CriticalRookCephDiskUsage | critical | Percentage rook-ceph disk utilization across the cluster | > 80% | cluster  
+CriticalRTPVCDiskUsage | warning | Percentage disk utilization of RT PVC connected to one or multiple pods | > 95% | pvc  
+DAPIsNotReceivingData | warning | A previously active DAP has not received any data in the last minute |  | pod  
+DAPPurgeIncomplete | warning | At the last EOI the DAP purged less than 50% of the records written to the Storage Manager | > 50% | assembly  
+HighAggErrors | warning | Aggregator errors for the last minute | > 20 | pod  
+HighAggQueueSize | warning | Aggregator request queue size for the last minute | > 20 | pod  
+HighCPUThrottling | warning | CPU throttling issues for a process in container for the last minute |  | container  
+HighNodeCPUUsage | warning | Node CPU utilization % for the last 5 minutes | > 80% | node  
+HighNodeMemoryUsage | warning | Node Memory usage for the last 5 minutes | > 80% | node  
+HighPVCDiskUsage | warning | Percentage disk utilization of Non-RT PVC connected to one or multiple pods | > 60% | pvc  
+HighRCQueueSize | warning | Resource Coordinator queue size | > 20 | pod  
+HighRCRetries | warning | Resource Coordinator request retries | > 20 | pod  
+HighRookCephDiskUsage | warning | Percentage rook-ceph disk utilization across the cluster | > 90% | cluster  
+HighSGPendingQueries | warning | Service Gateway pending queries for the last minute | > 20 | container  
+HighSMEODTime | info | Time take for an EOD | > 4h | database  
+HighSymFileGrowth | info | Daily sym file growth as a percentage of the total sym file size, where the sym file is larger than 50MB | > 25 % | pod  
+KeycloakContainerFailed | warning | Pod responsible for Keycloak failing to restart in the last 5 minutes |  | pod  
+NoAggsPresent | warning | At least one assembly is deployed, but no Resource Coordinator Aggregators exist |  | container  
+NoDAPsPresent | warning | At least one assembly is deployed, but no Resource Coordinator DAPs exist |  | container  
+NodeNotInReadyState | warning | A node is not in a ready state |  | node  
+NoRDBGrowth | warning | Rate of rdb growth is 0% | = 0% | pod  
+NoRTLeader | critical | There is no leader for the Stream and therefore no messages will be merged and available for the subscribers |  | RT stream  
+PodCrashing | critical | Pod in a CrashLoopBackoff for the last minute |  | pod  
+PodCrashLoopBackOff | warning | Pod failing to restart on for the last minute |  | pod  
+PodInFailedState | warning | Pod in Failed state for the last minute |  | pod  
+PodInUnknownState | warning | Pod in Unknown state for the last minute |  | pod  
+PodNotReady | warning | Pod is in NotReady state for the last minute |  | pod  
+PodOOMKilled | warning | Container is Out of memory (OOM) killed and restarting |  | container  
+PodTargetDown | warning | A target is down |  | pod  
+PostgreSQLContainerFailed | warning | PostgreSQL container which supports Keycloak is no longer running |  | pod  
+RCsWithoutDAPs | critical | Resource Coordinators have connected clients but there are no Data Access Processes connected to them |  | container  
+RTContainerDown | warning | A Reliable Transport container has either failed, or been stopped manually |  | container  
+RookCephLimitedDiskAvailable | warning | Limited Rook-Ceph disk storage available in MBs | < 2000 MB | node  
+SGWithoutAggs | warning | Service Gateway has connected client but there are no Aggregators connected |  | container  
+SMContainerDown | warning | Storage Manager container has either failed, or been stopped manually |  | container  
+SMNoRecordsWrittenDuringEOI | warning | An End of Interval ran but no records were written |  | pod  
+SMPendingEOIs | warning | Storage Manager has pending End of Interval requests |  | pod
+

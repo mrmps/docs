@@ -1,0 +1,229 @@
+https://code.kx.com/insights/microservices/database/storage/index.html
+
+# Overview - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/database/storage/index.html
+
+# kdb Insights Database Storage
+
+## Overview
+
+Data storage within the kdb Insights Database is handled by the _Storage
+Manager_ (SM) for on-disk data persistence in conjunction with the Data Access
+Processes which provide data presentation of on-disk data as well as in-memory
+presentation of data not yet persisted to disk. The Storage Manager is
+responsible for writing data down in a resilient way maintaining database
+consistency while moving data from fast to slower and cheaper storage media,
+such as from SSDs to spinning disks to object storage.
+
+In-memory data is persisted in a write-ahead log for recovery
+
+## Current features
+
+  * Data-agnostic in design and implementation
+  * Commits ingested data to disk in an organized, fault-tolerant manner that is resilient against failure at any point during write-down operations and efficient for querying
+  * Supports various types of storage (memory, NVMe, SSD, etc.)
+  * Provides parallelism of maintenance operations where possible, to reduce elapsed time
+  * Supports late data (data arriving on a day different from that with which it is associated)
+  * Supports standard kdb+ table types (basic, splayed, partitioned)
+  * Supports tiered storage with configurable migration and compression policies
+  * Supports starting off from a pre-existing standard kdb+ partitioned database (which gets converted into SM format)
+  * Supports migrating historical data to object storage
+  * Supports offline schema changes by reacting to configuration changes at initialization
+  * Supports large batch data ingest by merging an external kdb+ HDB on-demand
+  * Supports point-in-time snapshot of on-disk databases
+
+## Components
+
+The Storage Manager is comprised of four processes:
+
+  * **SM** is responsible for the coordination of the write-down operations, as well as exposing the front end interface for other microservices to communicate with SM.
+  * **EOI** is responsible for performing the end-of-interval operation that persists a portion of an in-memory data store to disk, stored in IDB partitions.
+  * **EOD** is responsible for performing the end-of-day operation that persists the entirety of the on-disk IDB data to disk, stored in HDB partitions.
+  * **DBM** is responsible for performing the migration of data between HDB storage tiers, which are unique portions of the on-disk database spread across various storage volumes. Such volumes are commonly of various storage types, ranging from high-performance storage (for most-recent, business-critical data) to slower, cheaper storage for data less frequently accessed, possibly in a compressed format.
+
+## Distributed storage
+
+Time-series data is stored horizontally by time across storage media, and
+vertically through labeled assembly shards.
+
+Each horizontal tier of the data allows separate [attributes] to be applied
+for accelerating queries against that tier.
+
+## Storage lifecycle
+
+### Stream partitioning (IDB, EOI)
+
+The Storage Manager splits the incoming data stream into stream partitions by
+injecting signals directly into the data stream. These signals demarcate the
+start and end of intra-day partitions to be written to the IDB (known as
+_intervals_).
+
+All data received within an interval is buffered in-memory, spilling to disk
+if necessary to keep RAM limits under control (controlled by the `blockSize`
+table configuration) and is written down to a new interval partition within
+the IDB upon receipt of the end-of-interval signal. These frequent write-downs
+to the IDB relieve memory pressure from SM (and Data Access Process) by
+quickly getting data to disk.
+
+Query performance impact
+
+Currently, the in-memory Data Access Process (RDB) only holds data that is not
+written to disk. Thus, a longer interval write-down frequency will allow more
+data in-memory for queries, while a shorter writedown frequency allows less
+data in-memory causing more queries to need to read from disk.
+
+### Date partitioning (HDB, EOD)
+
+When the day rolls over to a new UTC date (as determined by SM when generating
+the EOX signal), a configurable amount of time is spent waiting to allow
+pending publishes from the last day to arrive, after which point the stream
+signal produced by SM is an end-of-day signal. Upon receipt of this signal
+from the stream, SM begins collecting all data from the IDB and populating a
+new HDB partition for the last days data. At this point, the IDB is cleared
+for the next days data.
+
+While the HDB is being populated with the previous day's IDB data, the IDB is
+concurrently being updated with new int partitions for the current day so that
+the IDB does not fall behind the ingestion stream.
+
+### Storage tiering
+
+After each EOD completes populating a new partition in the HDB for the
+previous day's data, checks are performed on the HDB for partitions that
+should be migrated to slower storage or object storage based on the age of the
+partition and the tiering configuration.
+
+If used, an object storage must be used as the last HDB storage tier.
+
+Object storage tier is immutable
+
+Note that all date partitions written to object storage are treated as
+immutable, and the late table data targeting any partition already migrated to
+object storage will be discarded (with a warning message in DBM logs).
+
+## Late data
+
+## Resilience and self-healing
+
+### Consistent database view
+
+To achieve the instant reloading of HDB and IDB and full recoverability from
+any write-down failure, SM creates a loadable kdb+ database where the table
+directories are symbolic links to the versioned physical table data. If an
+existing kdb+ database is detected in SM’s configured first HDB-tier directory
+on the first run, it will be enhanced with all the symbolic links SM needs for
+managing writedown.
+
+### Data consistency during writedown
+
+## Logging
+
+### Signal generation
+
+The `SM` process emits EOX signals into the message bus and tracks its
+sequence ID:
+
+    
+    
+    {"time":"2022-12-06T04:13:45.208z","component":"SM","level":"INFO","message":"[sm] Signalling EOIa, seqid=2607, ts=2022.12.06 04:13:45","service":"smc"}
+    {"time":"2022-12-06T04:13:45.237z","component":"SM","level":"INFO","message":"[sm] Pushing eoi signal with payload=(`_prtnEnd;...)","service":"smc"}
+    {"time":"2022-12-06T04:13:45.255z","component":"SM","level":"INFO","message":"[sm] Incremented EOI seq id to 2608 from 2607 (after signal)","service":"smc"}
+    
+
+If the message bus is operational and ingestion is keeping up, the `EOI`
+process will immediately get the EOX signal from the stream and begin a
+writedown.
+
+    
+    
+    {"time":"2022-12-06T04:13:45.270z","component":"SM","level":"INFO","message":"[eoi] Received EOIa trigger event with payload=[...]","service":"eoi"}
+    {"time":"2022-12-06T04:13:45.270z","component":"SM","level":"INFO","message":"[eoi] Set tracked seq id to 2607","service":"eoi"}
+    {"time":"2022-12-06T04:13:45.270z","component":"SM","level":"INFO","message":"[eoi] EOI initiated for 2022.12.06 2022.12.06D04:03:45.000000000 600 2607 [...]","service":"eoi"}
+    {"time":"2022-12-06T04:13:45.270z","component":"SM","level":"INFO","message":"[eoi] Proceeding with EOI writedown","service":"eoi"}
+    
+
+Each writedown will process a set of partitioned tables, with each table
+indicating when it is processed:
+
+    
+    
+    {"time":"2022-12-06T04:13:45.356z","component":"SM","level":"INFO","message":"[eoi] Starting EOI writedown","service":"eoi"}
+    {"time":"2022-12-06T04:13:45.405z","component":"SM","level":"INFO","message":"[eoi] Processing 1 partitioned table","service":"eoi"}
+    {"time":"2022-12-06T04:13:45.405z","component":"SM","level":"INFO","message":"[eoi] Starting write of partitioned table (trace)","service":"eoi"}
+    
+
+The initial locations for the data are primed by writing a 0-row table. These
+0-row writes are expected even if data has been received.
+
+    
+    
+    {"time":"2022-12-06T04:13:45.407z","component":"SM","level":"DEBUG","message":"[eoi] Writing 0 rows to: (`:/data/db/idb/data/2022.12.06/15/trace.ss/;12;0;0)","service":"eoi"}
+    {"time":"2022-12-06T04:13:45.427z","component":"SM","level":"DEBUG","message":"[eoi] Writing 0 rows to: (`:/data/db/idb/data/2022.12.06/15/trace/;12;0;0)","service":"eoi"}
+    {"time":"2022-12-06T04:13:45.443z","component":"SM","level":"DEBUG","message":"[eoi] Writing 0 rows to: (`:/data/db/idb/data/2022.12.06/15/trace.sl/;12;0;0)","service":"eoi"}
+    
+
+Following the 0-row writes, a chunked append of the ingested data to the
+target partitions is performed.
+
+    
+    
+    {"time":"2022-12-06T04:13:45.461z","component":"SM","level":"DEBUG","message":"[eoi] Appending :/data/db/idb/data/2022.12.06/14/trace.ss/ to :/data/db/idb/data/2022.12.06/15/trace/, ind=0, len=0, chunks=0","service":"eoi"}
+    {"time":"2022-12-06T04:13:45.461z","component":"SM","level":"DEBUG","message":"[eoi] Appending :/data/db/idb/data/2022.12.06/14/trace.ss/ to :/data/db/idb/data/2022.12.06/15/trace.ss/, ind=0, len=0, chunks=0","service":"eoi"}
+    {"time":"2022-12-06T04:13:45.462z","component":"SM","level":"DEBUG","message":"[eoi] Appending :/data/db/idb/data/2022.12.06/14/trace.sl/ to :/data/db/idb/data/2022.12.06/15/trace/, ind=0, len=30000, chunks=1","service":"eoi"}
+    
+
+When all chunks are appended, the data is sorted (if applicable) and
+attributes are applied. Note, these operations can be RAM intensive.
+
+    
+    
+    {"time":"2022-12-06T04:13:45.477z","component":"SM","level":"INFO","message":"[eoi] Sorting :/data/db/idb/data/2022.12.06/15/trace, cols=,`sensorID rows=30000, size=1140175 chunks=1 crows=30000","service":"eoi"}
+    {"time":"2022-12-06T04:13:45.517z","component":"SM","level":"DEBUG","message":"[eoi] setAttrs      : applying p# to sensorID in :/data/db/idb/data/2022.12.06/15/trace/","service":"eoi"}
+    
+
+Finally, each table will record the ingested size of the table within that
+interval.
+
+    
+    
+    {"time":"2022-12-06T04:13:45.522z","component":"SM","level":"INFO","message":"[eoi] Finished write of partitioned table (trace)","service":"eoi"}
+    {"time":"2022-12-06T04:13:45.546z","component":"SM","level":"INFO","message":"[eoi] Table size of trace: 1143583","service":"eoi"}
+    
+
+When all tables have been written down, the writedown is complete and data is
+flushed to storage.
+
+    
+    
+    {"time":"2022-12-06T04:13:45.909z","component":"SM","level":"INFO","message":"[eoi] Finished EOI writedown, duration=0D00:00:00.553250257","service":"eoi"}
+    {"time":"2022-12-06T04:13:45.909z","component":"SM","level":"INFO","message":"[eoi] Flushing filesystem with :/data/db/idb/eoxaStatus","service":"eoi"}
+    
+
+Finally, the `EOI` process dispatches to the `SM` process to commit the new
+database view, notify client query processes, and cleanup any data no longer
+required (old views or temporary files used during the write-down).
+
+    
+    
+    {"time":"2022-12-06T04:13:48.913z","component":"SM","level":"INFO","message":"[eoi] EOI metadata: [kxi_sm_eoi_duration_seconds=3.64;kxi_sm_eoi_records=30000]","service":"eoi"}
+    {"time":"2022-12-06T04:13:48.913z","component":"SM","level":"INFO","message":"[eoi] Calling to SM to complete EOI...","service":"eoi"}
+    {"time":"2022-12-06T04:13:48.913z","component":"SM","level":"INFO","message":"[eoi] Requesting completion of EOI 2607 from main SM process","service":"eoi"}
+    {"time":"2022-12-06T04:13:48.914z","component":"SM","level":"INFO","message":"[sm] EOI 2607 complete in EOI process. Finalizing EOI.","service":"smc"}
+    {"time":"2022-12-06T04:13:48.914z","component":"SM","level":"INFO","message":"[sm] Committing EOI...","service":"smc"}
+    {"time":"2022-12-06T04:13:48.914z","component":"SM","level":"INFO","message":"[sm] Flushing filesystem with :/data/db/idb/eoxaStatus","service":"smc"}
+    {"time":"2022-12-06T04:13:48.914z","component":"SM","level":"INFO","message":"[sm] Flushing filesystem with :/data/db/hdb/current/hdbStatus","service":"smc"}
+    {"time":"2022-12-06T04:13:48.915z","component":"SM","level":"INFO","message":"[sm] EOI commit","service":"smc"}
+    {"time":"2022-12-06T04:13:53.904z","component":"SM","level":"INFO","message":"[sm] EOI committed","service":"smc"}
+    {"time":"2022-12-06T04:13:53.909z","component":"SM","level":"INFO","message":"[sm] Notifying client processes of EOI completion for soiTS=2022.12.06D04:03:45.000000000, intv=600, threshold=2022.12.06 04:13:45","service":"smc"}
+    {"time":"2022-12-06T04:13:53.915z","component":"SM","level":"INFO","message":"[sm] Finished sending reload signals, expecting acknowledgment from 1 client","service":"smc"}
+    {"time":"2022-12-06T04:13:54.237z","component":"SM","level":"INFO","message":"[sm] Starting post-reload-notification processing","service":"smc"}
+    {"time":"2022-12-06T04:13:54.237z","component":"SM","level":"INFO","message":"[sm] EOD dispatch requested, but nothing in EOD queue. Ignoring.","service":"smc"}
+    {"time":"2022-12-06T04:13:54.237z","component":"SM","level":"INFO","message":"[sm] EOI 2607 finalized. Next EOI scheduled in 0D00:09:50.970402987 at 2022.12.06D04:23:45.208327841.","service":"smc"}
+    {"time":"2022-12-06T04:13:54.238z","component":"SM","level":"INFO","message":"[eoi] SM EOI completion successful. Setting new partition and cleaning up.","service":"eoi"}
+    {"time":"2022-12-06T04:13:54.490z","component":"SM","level":"INFO","message":"[eoi] Removing old IDB link directory :/data/db/idb/idb.1","service":"eoi"}
+    {"time":"2022-12-06T04:13:54.638z","component":"SM","level":"INFO","message":"[eoi] Reporting metric to licensing server. Key: insights.ingest.bytes bytes: 1143583.","service":"eoi"}
+    {"time":"2022-12-06T04:13:54.639z","component":"SM","level":"INFO","message":"[eoi] Reporting metric to licensing server. Key: insights.md.bytes bytes: 103501.","service":"eoi"}
+    {"time":"2022-12-06T04:13:54.639z","component":"SM","level":"INFO","message":"[eoi] EOI 2607 complete. started: 2022.12.06D04:13:45.272947242 finished: 2022.12.06D04:13:54.639189234 elapsed: 0D00:00:09.366241992 latency: 0D00:10:09.639189234","service":"eoi"}
+    
+

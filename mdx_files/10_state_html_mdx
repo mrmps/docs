@@ -1,0 +1,77 @@
+https://code.kx.com/insights/microservices/stream-processor/concepts/state.html
+
+# State - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/stream-processor/concepts/state.html
+
+# State
+
+The Stream Processor offers high-performance performance stateful stream
+processing by providing an in-memory state store powered by kdb+.
+
+## Managed state
+
+User-defined function and [stream operator](../../../api/stream-
+processor/q/operators.html) state can be managed by using the [state
+API](../../../api/stream-processor/q/state.html), which makes use of an in-
+memory kdb+ data store for high-performance access. Built-in stateful
+operators (such as windows and joins) implicitly manage state within the same
+store.
+
+Any state managed with the state API is [checkpointed](checkpoints-and-
+recovery.html) consistently during periodic checkpoint events, allowing
+Workers to restore state to a recent snapshot upon recovery after any failure.
+
+Durability and performance
+
+Because managed state is stored during checkpoints, there is a trade-off to
+the durability gained by using managed state when very large historical state
+is required. For performance, it can be desirable to manage user state
+explicitly using global state.
+
+### Tracked variables
+
+A special class of Managed state are tracked variables. To allow users store
+information which may be updated throughout the course of an pipelines
+lifecycle such as the number of times an operator has been called or a
+reference table which is updated with new data, the tracking API
+[.qsp.track](../../../api/stream-processor/q/general.html#qsptrack) has been
+added for q global variables and namespaces.
+
+In the same way that the performance and durability considerations should be
+accounted for with other managed state, it is not suggested that large
+historical state be maintained in this manner, rather this should be used to
+for the storage of small amounts of reference data or variables used in
+analytics as multiplicative factors/counts of iterations. This state is
+updated at the same checkpointing interval as as other managed state and will
+be recovered and set prior to pipeline restarting.
+
+q only API
+
+This functionality is only present for the maintenance of q global variables
+and namespaces and is not available for the tracking of Python state.
+
+## Local state
+
+Local state for an operator (local variables within a user-defined function)
+are stored only during the lifetime of the function call, as normal.
+
+## Global state
+
+Global state is not managed by the Stream Processor, but can be useful when
+very large historical state is required, or when using external state storage
+mechanisms.
+
+To facilitate managing global state, [life-cycle hooks](../../../api/stream-
+processor/q/lifecycle.html) can be used to store appropriate markers and
+metadata within managed checkpoints to reset or roll back global state during
+recovery.
+
+As an example, consider explicitly storing global state in an append-only kdb+
+on-disk table. This may be useful where state grows rapidly and indefinitely.
+Rather than storing the entire table within the managed state checkpoints
+through the state API, state could be inserted directly into the on-disk
+table, and life-cycle hooks used to store an index marker for the table, so
+that the on-disk table could be truncated to the point of the checkpoint
+during recovery.
+

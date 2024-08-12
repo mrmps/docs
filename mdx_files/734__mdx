@@ -1,0 +1,265 @@
+https://code.kx.com/dashboards/graph/
+
+# Graph - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/graph/
+
+# Graph
+
+![Screenshot](../img/graph/graphexample.jpg)  
+_Graph showing membership of three asset groups; Forex, Commodities and
+Equities_
+
+Graph maps associations between parent and child groups.
+
+## Set up
+
+  1. Define the nodes with a data source, each of which must have a unique `id`. Optional `Level` and `Group` assignments can be defined for each node. 
+
+  2. Map the _id_ column from the data source.
+
+  3. Assign an optional view state for the selected node; stores the `id` value. 
+
+  4. Map the optional _Level_ and _Group_ columns from the data source.
+
+  5. Set the edges with a data source, defines the to/from connectors by `id`.
+
+## Basics
+
+![Screenshot](../img/graph/graphbasics.png)
+
+_Name_
+
+    A name for the component provided by the user. 
+_Selected Node_
+
+    Map to a [View State Parameter](../viewstateparameters/); used as a column identifier. Click on a Graph element to have the underlying value of the _id (must be unique)_ column from the Graph [datasource](../datasources/) assigned to the viewstate. Use of _Selected Node_ is optional. 
+    Graph selection: click on a parent or child to assign a Graph variable to the _Selected Node_ view state parameter. Use the Control key to make multiple selections.
+_Selected Edge_
+
+    Map to a [View State Parameter](../viewstateparameters/); used as a column identifier. Click on a Graph element to have the underlying value of the _id (must be unique)_ column from the Graph [datasource](../datasources/) assigned to the viewstate. Use of _Selected Edge_ is optional. 
+    Graph selection: click on a child element to assign a Graph variable to the _Selected Edge_ view state parameter.
+
+## Data
+
+![Screenshot](../img/graph/graphdata.png)
+
+### Nodes
+
+Sets organization of graph; vertical or horizontal layout and level
+identifiers
+
+_Source_
+
+    
+
+A [query or analytic](../datasources/)
+
+![Screenshot](../img/graph/nodedatagrid.jpg)
+
+_Labels_
+
+    Data source column to be used for Text labels
+_id (must be unique)_
+
+    Data source column used as a reference selector; this value will be stored in the _Selected Node_ [view state parameter](../viewstateparameters/) if assigned. Each graph point should have a unique reference ID value. 
+_Level (optional)_
+
+_Group (optional)_
+
+    
+
+Optional grouping or level organization, defined by the _Source_. _Group_
+definition required for _Cluster Scale_.
+
+![Screenshot](../img/graph/graphindex.jpg) A five level process layout
+
+![Screenshot](../img/graph/groupedbyrank.jpg) Grouped by rank with color
+coding
+
+### Color sources
+
+_Background Color_
+
+_Border Color_
+
+    Define colors of nodes; set by _Source_ column
+
+#### Hover color
+
+_Background Color_
+
+_Border Color_
+
+    Define colors of nodes; set by _Source_ column
+
+#### Selected color
+
+_Background Color_
+
+_Border Color_
+
+    Define colors of nodes; set by _Source_ column
+
+### Shape
+
+_Custom Shape_
+
+    Define _Source_ column containing shape information; e.g. `circle`, `database`, `diamond`, `square`, `hexagon`, `triangle`
+
+### Edges
+
+Flow of graph; _From_ to _To_ or vice versa
+
+_Source_
+
+    
+
+A [query or analytic](../datasources/)
+
+![Screenshot](../img/graph/edgedatagrid.png)
+
+The Data Source should have three columns; for the parent, the children and an
+assoicated id. Each child will flow to its parent. Parents and children must
+have unique IDs.
+
+_From_
+
+    Data source column for parents
+_To_
+
+    Data source column for children
+_id (must be unique)_
+
+    Data source column used as a reference selector; this value will be stored in the _Selected Edge_ [view state parameter](../viewstateparameters/) if assigned. Each graph edge should have a unique reference ID value. 
+
+## Style
+
+![Screenshot](../img/graph/graphstyle.jpg)
+
+### Nodes style
+
+_Border Width_ , _Selected Border Width_ and _Colors_ to use for the
+connecting graph lines
+
+### Edges style
+
+_Border Width_ , _Selected Border Width_ and _Colors_ and whether _Arrows_ are
+added for the _From_ and _To_ graph connectors
+
+## Interaction
+
+_Draggable Nodes_
+
+    
+
+Allows user to reposition nodes
+
+![Screenshot](../img/graph/draggablenode.jpg)
+
+_Draggable View_
+
+    Supports pan of Graph view
+_Select Connected Edges_
+
+    
+
+Highlights all connectors to children from selected parent
+
+![Screenshot](../img/graph/edgehighlight.jpg)
+
+## Physics
+
+_Enable Physics Animations_
+
+    
+
+Enables a force directed graph with physics animations.
+
+![Screenshot](../img/graph/graphforcedirectedoff.png)
+
+    
+
+When enabled each node can be repositioned and will show the physical effect
+it has on each other node in the graph.
+
+![Screenshot](../img/graph/graphforcedirectedon.png)
+
+_Maximum Node Velocity_
+
+    The physics model limits the maximum velocity of the nodes to increase the time to stabilization. 50 is the maximum value.
+_Minimum Node Velocity_
+
+    Once the minimum velocity is reached for all nodes, the network has been stabilized and the simulation stops.
+_Gravitational Constant_
+
+    The strength of the gravitational forces experienced by each node.
+_Central Gravity Attractor_
+
+    The strength of a central gravity attractor to pull the entire network back to the center.
+_Length of Edges_
+
+    The edges of the graph are modelled as springs and this parameter determines their length at rest.
+_Edge Stiffness_
+
+    Determines the spring constant of each edge.
+
+Physical vs Hierarchical Layout
+
+To use the physical layout correctly, ensure Layout > Hierarchical is
+disabled.
+
+_Show_
+
+    Enable tooltips
+_Template_
+
+     [Templates](../template/)
+
+## Actions
+
+[Actions](../action/)
+
+## Layout
+
+_randomSeed_
+
+    
+
+Defines layout when Hierarchical organization is disabled
+
+![Screenshot](../img/graph/nonhieracharial.jpg)
+
+_Cluster Scale_
+
+    
+
+Determines point at which _grouped_ nodes will cluster together. Move slider
+until desired effect appears.
+
+![Screenshot](../img/graph/clustering.jpg)
+
+### Hierarchical
+
+_enabled_
+
+    
+
+Organize graph relationships by parent-child relationships
+
+![Screenshot](../img/graph/hierachyorganization.jpg)
+
+_levelSeparation_
+
+    pixel height between parent and child levels
+_nodeSpacing_
+
+    pixel width between children (nodes)
+_direction_
+
+    Direction of graph flow. `LR`: left to right; `RL`: right to left; `UD`: up to down; `DU`: down to up. 
+
+## Style, Margins, Format
+
+[Style](../style/#component-style) for common settings
+

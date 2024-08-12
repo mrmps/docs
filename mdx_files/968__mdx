@@ -1,0 +1,46 @@
+https://code.kx.com/platform/stream/dw_troubleshoot/
+
+# Troubleshooting - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/stream/dw_troubleshoot/
+
+# Troubleshooting
+
+If no data is visible in the processes that should be receiving them, try to
+isolate the problem by considering the following;
+
+  1. Are the schemas associated with the relevant processes?
+  2. Is the messaging server `DS_MESSAGING_SERVER:DS` set in the parameters of the _TP_ , _RDB_ , and _RTEs_?
+  3. Is the _TP_ receiving data?
+     * If there are errors in the feed logic, data may not be created
+     * Check the `publishChannel` of the feed
+     * Check the `subscriptionChannel` of the _TP_
+     * Check the TP logs on disk and see if they are increasing in size
+  4. Are the subscribing processes not receiving data although _TP_ is publishing them?
+     * Check if the `subscriptionChannel` is same as the _TP_ `publishChannel`
+  5. Are the subscribers receiving data but not updating the table?
+     * Check the `realTimeMsgFunct`
+  6. If the _RDB_ is receiving data, but the _IHDB_ isn't
+     * Check if the _LR_ and intraday log directory is configured correctly
+  7. If the _HDB_ doesn't have data after EOD
+     * Check if the _LR_ and hdb log directory is configured correctly
+
+Below are useful tables to reference to ensure the correct processes are
+publishing and subscribing to the correct channels.
+
+  * Connect to the messaging server:
+
+table name | return table  
+---|---  
+`.dm.source` | processes signed up with MS for publishing data  
+`.dm.consumer` | processes signed up with MS for receiving data  
+`.dm.qipc` | processes you are connected to  
+`.dm.subscription` | matches between the publisher and subscriber  
+  
+  * Connect to publisher processes:
+
+table name | return table  
+---|---  
+`.dm.filters` | the topics on the publisher  
+`.dm.qipc` | processes you are connected to
+

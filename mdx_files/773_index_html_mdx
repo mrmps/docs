@@ -1,0 +1,76 @@
+https://code.kx.com/insights/enterprise/database/query/index.html
+
+# Overview - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/database/query/index.html
+
+# Data query overview
+
+The kdb Insights data access services handle the functions of accessing the
+data efficiently through routing and APIs. This is done through two
+microservices which can be used together or independently, the Service Gateway
+(SG) and the Data Access Processes (DAPs).
+
+**Data Access Processes** provide read-only access to all data stored in a
+kdb+ database through a [REST and q API](../../../api/database/query/get-
+data.html), a [distributed SQL API](../../../api/database/query/sql.html), and
+a [QSQL API](../../../api/database/query/qsql.html). DAPs react to data
+control messages (typically sent by the kdb Insights _Storage Manager_ in
+order to synchronize [_temporal purviews_](purviews.html) (semantic labels and
+the range of timeseries data in available in a given DAP) in order to
+distribute timeseries queries across multiple DAPs.
+
+The **Service Gateway** provides a unified access point for data that is
+spread across multiple DAPs, providing request queueing, query routing and
+response aggregation capabilities.
+
+At a high level, the Service Gateway component is responsible for:
+
+  * Accepting and validating service requests
+  * Identifying the locale for service execution based on metadata discernible from a combination of previously known configuration information, dynamic system topology information, and data contained in the request instance itself (such as its arguments and potentially other aspects of accompanying [out-of-bound information](../../../api/database/api/header.html))
+  * Selecting one or more DAPs to execute the request
+  * Shepherding the request to and triggering execution on the selected DAPs
+  * Triggering any aggregation of partial results from multiple DAPs
+  * Shepherding results back to original caller
+
+## Architecture
+
+A high-level architecture of the relation between the Service Gateway and the
+Data Access Processes is depicted below, which also introduces the three
+internal services that make up the Service Gateway: the _Gateway (GW)_ ,
+_Resource Coordinator (RC)_ , and _Aggregator (Agg)_.
+
+process | description  
+---|---  
+Client | A client process that connects to Gateway (GW) process to issue API calls.  
+Service Gateway | Receives API requests from clients, forwards to appropriate DAPs, returns results.  
+Resource Coordinator | Makes routing decisions based on DAP data purviews and availability.  
+Aggregator | Aggregates responses from DAPs.  
+RDB | A DAP that has access to the most recent data.  
+IDB | A DAP that has access to today's data excluding the most recent data that is in the RDB.  
+HDB | A DAP that holds all historical data dating.  
+  
+![process diagram](images/query-routing.png)
+
+Unless otherwise specified, the arrows in the diagram represent asynchronous q
+IPC communication between processes. Query flow is as follows.
+
+arrow | description  
+---|---  
+`1` | Client makes API request to a Service Gateway replica. This can be synchronous or asynchronous.  
+`2` | The Service Gateway forwards the request to the Resource Coordinator.  
+`3` | The Resource Coordinator sends partial requests to each DAP relevant to the query based on purview.  
+`4` | DAPs forward their responses to a single Aggregator for aggregation.  
+`5` | The Aggregator sends the response to the same Service Gateway the client connected to.  
+`6` | The Service Gateway sends the response back to client.  
+  
+## Query routing
+
+One of the key features of the Service Gateway is its routing capabilities. It
+uses its [configuration](../configuration/routing.html) and the DAPs [data
+purviews](purviews.html) to route requests exactly where it needs to. Every
+request specifies a temporal range and the labels of interest. The SG
+partitions the request across DAPs that can satisfy it, aggregates the results
+from each, and returns the consolidated response to the client that made the
+call.
+

@@ -1,0 +1,38 @@
+https://code.kx.com/insights/api/stream-processor/rest/worker.html
+
+# Worker - kdb products
+
+Original URL: https://code.kx.com/insights/api/stream-processor/rest/worker.html
+
+Return the state held in a single operator by providing the operator name.
+
+A textual representation of the running pipeline can be obtained with the
+following:
+
+    
+    
+    # digraph pipeline {
+    #     node [fontname = "menlo", margin=.1, fontsize=8, style="rounded,filled,setlinewidth(0)"];
+    #
+    #
+    #     "callback-publish-dd6a24c1" [shape=box, fillcolor="#cce0ff"];
+    #     "expr-270d7db3" [shape=box, fillcolor="#cce0ff"];
+    #     "ipc-d2a49aa1" [shape=box, fillcolor="#cce0ff"];
+    #     "ipc-d2a49aa1-1" [shape=box, fillcolor="#cce0ff"];
+    #
+    #     "callback-publish-dd6a24c1" -> "tumblingWindow-04826017";
+    #     "expr-270d7db3" -> "map-36be3506";
+    #     "tumblingWindow-04826017" -> "merge-5f92ebe7";
+    #     "map-36be3506" -> "merge-5f92ebe7";
+    #     "merge-5f92ebe7" -> "map-c8547844";
+    #     "map-c8547844" -> "map-27f549af";
+    #     "map-27f549af" -> "ipc-d2a49aa1";
+    #     "merge-5f92ebe7" -> "map-fa2492d9";
+    #     "merge-5f92ebe7" -> "map-29eb2d7d";
+    #     "map-fa2492d9" -> "union-068a9526";
+    #     "map-29eb2d7d" -> "union-068a9526";
+    #     "union-068a9526" -> "map-0bdd6c9e";
+    #     "map-0bdd6c9e" -> "ipc-d2a49aa1-1";
+    # }
+    
+

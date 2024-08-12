@@ -1,0 +1,49 @@
+https://code.kx.com/insights/enterprise/use-cases/kafka-fit.html
+
+# Fitting Machine Learning model on Kafka data - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/use-cases/kafka-fit.html
+
+# Machine Learning Clustering on Kafka ingest
+
+_Fitting and applying a clustering model on a Kafka stream_
+
+## Motivation
+
+The purpose of this example is provide you with an example workflow showing an
+online machine learning model fit on the first N records within a stream and
+subsequently is using this model for prediction and online updates. In this
+example we are making use of an streaming implementation of K-Means clustering
+to filter out one of the generated clusters for persistance to the database.
+
+## Example
+
+This example follows closely the Kafka Ingest example provided. This example
+walks through an example use of functionality provided with the SP ML _kdb
+Insights_ integration by:
+
+  1. Deploying a sequential K-Means model to be fit on the first 1000 records provided
+  2. Applying the fit model to subsequent data to make predictions
+  3. Filter the stream based on these predictions and only publish data that meets specified conditions.
+
+This is achieved through filtering the incoming Kafka stream for the `trades`
+topic produced using the example Producer. This stream is decoded and windowed
+before the above analysis is applied.
+
+To run an ingestion pipeline using the _kdb Insights Enterprise_ , first
+[deploy the base system](https://code.kx.com/insights//platform/getting-
+started/index.md). Next, download the `kafka_assembly.yaml` assembly by
+following the [download
+instructions](https://code.kx.com/insights//platform/use-
+cases/overview.md#downloading-assemblies). This assembly file will need to be
+modified to deploy a `q` and `Python` pipeline containing ML functionality as
+follows:
+
+Once the `kafka_assembly.yaml` file have been updated apply it to your _kdb
+Insights Enterprise_ installation.
+
+    
+    
+    kxi assembly deploy --name kafka_assembly.yaml
+    
+

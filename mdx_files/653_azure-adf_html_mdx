@@ -1,0 +1,167 @@
+https://code.kx.com/insights/enterprise/azure-marketplace/azure-adf.html
+
+# Azure data factory integration - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/azure-marketplace/azure-adf.html
+
+# Azure Data Factory
+
+_kdb Insights Enterprise_ can integrate with the [Azure Data
+Factory](https://learn.microsoft.com/en-us/azure/data-factory/introduction)
+(ADF). You can use the ADF to ingest any data into _kdb Insights Enterprise_ ,
+particularly if you have data in a format for which there is no native
+[reader](../ingest/pipeline/operators/readers.html) in _kdb Insights
+Enterprise_ today. Your ADF pipeline can transform the data into a supported
+format and then trigger the ingestion into _kdb Insights Enterprise_.
+
+## Introduction
+
+This example shows you how to use ADF to watch a specific container within an
+Azure Storage Account and trigger when .csv files, containing data to be
+ingested, are uploaded.
+
+When the ADF pipeline is triggered, the following sequence of events occurs:
+
+  1. The ADF pipeline authenticates against a target _kdb Insights Enterprise_.
+  2. If the targeted [assembly](../assemblies/overview.html) is not running, the ADF pipeline starts and monitors the assembly until it is in a ready state before continuing.
+  3. Once the assembly is running, the _kdb Insights Enterprise_ pipeline that is defined as part of the factory definition, is triggered. This _kdb Insights Enterprise_ pipeline does the following:
+    1. Reads the recently uploaded .csv file from blob storage
+    2. Attempts to ingest the data into a specified table within the targeted assembly
+  4. The _kdb Insights Enterprise_ pipeline status is monitored during execution.
+  5. Upon completion of the _kdb Insights Enterprise_ pipeline, it is torn down and you can query it using any of the querying methods available, including the [UI](../visualization/query.html) and [REST](../database/query/rest-vs-qipc.html).
+
+Schemas must match
+
+The schema of the .csv must match the schema of the table being written to.
+Type conversion is not performed by the pipeline.
+
+## Limitations
+
+  * The Azure Data Factory can start a stopped assembly, or work with an already running and ready assembly. It does not currently have the ability to distinguish when an assembly has been started but is _not_ in a ready state. Ensure the assembly is either running and ready, or stopped completely when triggering ingestion.
+
+  * The _kdb Insights Enterprise_ pipeline uses [HDB Direct Write](../database/storage/batch-ingest.html). Historical data will be written directly to disk, but data will not be available to be queried until the pipeline has finished running and postprocessing is completed.
+
+## Prerequisites
+
+The following prerequisites are required before deploying the example:
+
+  * `az` cli should be [configured locally](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli).
+
+  * An Azure storage account and container from which to read .csv files must [exist](https://learn.microsoft.com/en-us/azure/storage/blobs/storage-blobs-introduction#blob-storage-resources).
+
+  * A resource group to deploy the ADF into should exist. The _kdb Insights Enterprise_ resource group may be used for this, or you can create a new group.
+
+Reducing latency when using a separate resource group
+
+If a separate group is required, consider creating it in the same location to
+reduce latency.
+
+The following command can be used to create a new group:
+
+    
+        az group create -l $location -g $adfResourceGroupName
+    
+
+  * The following files need to be downloaded and accessible to the `az` client:
+
+  * Configure the parameters defined in the json file.
+
+  * _kdb Insights Enterprise_ must be deployed and running.
+
+  * The target assembly must either be in a ready state or stopped. As mentioned previously, if it is not running it will be started by the factory.
+
+  * The schema, table and database being written to must [exist](../database/index.html).
+
+Schemas must match
+
+The schema of the .csv must match the schema of the table being written to for
+the ingestion to be successful. Type conversion is not performed by the
+pipeline.
+
+  * A [user](../security/managing-users.html) or [service account](../security/managing-service-accounts.html) must exist. This client is used by the factory to authenticate against _kdb Insights Enterprise_. It must have the following application roles in Keycloak as a minimum:
+
+    * insights.builder.assembly.get
+
+    * insights.builder.assembly.list
+
+    * insights.builder.schema.get
+
+    * insights.builder.schema.list
+
+    * insights.pipeline.get
+
+    * insights.pipeline.create
+
+    * insights.pipeline.delete
+
+    * insights.pipeline.status
+
+    * insights.builder.assembly.deploy
+
+    * insights.query.data
+
+## Parameters
+
+The downloaded version of [main.parameters.json](adf/main.parameters.json)
+needs to be updated with the following parameters. They are divided into two
+main categories:
+
+## Instructions
+
+  1. Ensure the `az` cli is configured to operate on the desired subscription:
+    
+        az account set --subscription $adfSubscriptionId
+    
+
+  2. Deploy the Azure Data Factory. Run the following command to input the parameters using stdin:
+    
+        az deployment group create \
+    --resource-group $adfResourceGroupName \
+    --template-file main.bicep \
+    --parameters main.parameters.json
+    
+
+Remember the resource group name
+
+Keep a note of the resource group name the factory is being deployed to, as it
+is required in the next step.
+
+Alternatively, combine with the `-p` flag to set individual values, or use the
+parameters file with `@main.parameters.json` syntax.
+
+Upon completion, the ADF will be accessible from the Resource Group. Launching
+the studio will allow the pipelines to be inspected in the Author view:
+
+![ADF pipelines](images/adf-pipelines.png)
+
+  3. Activate the trigger. This is required for the ADF to start listening to upload events on the storage account. The resource group needs to be the name of the group used in the previous step.
+    
+        az datafactory trigger start \
+    --factory-name $adfFactoryName \
+    --resource-group $adfResourceGroupName \
+    --name 'csv_blob_created_trigger'
+    
+
+If these steps complete without error, .csv files are ready to be uploaded.
+
+### Monitoring
+
+ADF pipeline runs can be monitored using the Monitor section in ADF:
+
+![ADF pipeline runs](images/adf-pipeline-runs.png)
+
+_kdb Insights Enterprise_ pipeline creation and status can be monitored from
+the Overview page:
+
+![running kdb Insights Enterprise pipeline](images/running-kdbie.png)
+
+The Monitor section of ADF shows the following upon success:
+
+![ADF successful pipeline runs](images/adf-success.png)
+
+Pipelines that remain running
+
+The _kdb Insights Enterprise_ pipeline is torn down upon successful
+completion, if this does not occur, the pipeline remains running in _kdb
+Insights Enterprise_ and logs should be inspected to determine the cause.
+

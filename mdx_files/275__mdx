@@ -1,0 +1,284 @@
+https://code.kx.com/analyst/release-notes/
+
+# Release notes - KX Analyst
+
+Original URL: https://code.kx.com/analyst/release-notes/
+
+# Analyst release notes
+
+## v1.5.2
+
+**General** :
+
+  * Fixed zlib stream errors when trying to clone from some git repositories
+  * Tab names for files now only show the filename instead of the full path
+  * Security improvements
+
+**Libraries**
+
+  * **qcumber** : Improved support for Junit XML output format
+  * **qcumber** : The expected and actual values from .qu.compare are now shown in the results for failing tests
+  * **qcumber** : Passing tests are hidden in the stdout results by default unless the -showAll flag is set
+  * **coverage** : Fixed cases where changing the context in instrumented code wasn't working
+  * **coverage** : Improved handling of 'projection null'
+  * **coverage** : Coverage results are now reported to 3 decimal places
+  * **coverage** : Fixed bugs related to assignments inside loops or conditionals
+
+## v1.5.1
+
+**General** :
+
+  * Fix table flex behaviour in latest Firefox
+  * Renamed right-click "Open" to "Go to Definition", now works with q files
+  * Minor fixes to Find/Replace toolbar behaviour
+
+**Libraries**
+
+  * **qcumber** : `-coverage` CLI option added to run code coverage
+  * **qcumber** : `-out` CLI option can now output to multiple files
+  * **qlint** : added `-quiet`, `-color` CLI flags
+  * **qlint** : CLI now prints a summary of results if not given `-quiet`
+  * **coverage** : HTML output added
+
+## v1.5.0
+
+**General** :
+
+  * KX branding and UI update
+  * Attach a remote kdb+ process to multiple editors at once from _File > Connection Manager_
+  * Editor find/replace dialog usability update
+  * Profiler UI usability update
+  * Symlinks added as a first-class object within the IDE tree (read-only)
+  * Deletion of shared repositories now supported
+  * Added ability to re-map hotkeys
+  * Added ability to customize startup message via a plugin
+
+**Libraries** :
+
+  * **qcumber** `-breakOnFail` CLI option added to open the kdb+ debugger on a failing test
+  * Benchmark blocks no longer require a `baseline` for historical tracking in **qcumber**
+  * `.qu.stub` can now stub any data type rather than only functions in **qcumber**
+  * **qlint** custom reporter added with `-reporter file.q` which defines `write[file; results]`
+  * `@overview` can be used by default in place of `@fileOverview` in **qdoc**
+  * `@type` added to **qdoc** for annotating the type of non-function data
+
+## v1.4.3
+
+**General** :
+
+  * Added _Default Username_ to connection handle by default for IPC connections
+
+## v1.4.2
+
+**General** :
+
+  * Fixed bug preventing remote scratchpad authentication plugins from loading
+
+## v1.4.1
+
+**General** :
+
+  * Fixed bug in Chrome when .z.pw is set post launch causing unnecessary login prompts
+
+## v1.4.0
+
+  * Ubuntu 20.04 support added
+
+**General** :
+
+  * **UI change** : The `Remotes` tab has been moved to a `Git` context menu entry
+  * For authentication on Windows installs, username and password are now requested using Windows native authentication dialog
+  * Option to display pop-up message when uploading a file _(env var`ANALYST_UPLOAD_WARNING_MSG`)_
+  * Added scroll-lock option to console
+  * File browser access restricted by the `-u` flag and the `AXFS_ALLOW_LIST` and `AXFS_DENY_LIST` env vars
+  * Workspace sidebar collapse/expand now behaves recursively
+  * Performance improvements related to large repositories
+  * General UI and library performance improvements and bug fixes
+
+**Development tooling** :
+
+  * Can now customize the Git default branch used by setting env var `ANALYST_DEFAULT_REF`
+  * _Test_ and _Lint_ buttons added to Git Push dialog
+  * Can now `Git > Reset` multiple selected items at once
+  * Setting to trim trailing whitespace in editors on save from `File > Settings`
+  * Option to map Ctrl+E (Execute) to also display results _(env var`ANALYST_EDITOR_DISPLAY_ON_EXECUTE`)_
+  * Backspace in editors will erase soft tabs
+  * Option to customize **Remote Scratchpad** Max Rows for captured results _(env var`ANALYST_REMOTE_MAX_RECORDS`)_
+  * Improved parse support for multiple temporal types
+  * Disabling linting (`File > Settings`) disables all editor syntax checking
+  * Analyst API data structures available in Function Reference _Typdefs_ page
+  * Statements in q files will now execute in the context of the closest `\d .ns` or `system "d .ns"` above the selection. This can be disabled to always execute in `.` in _File > User Settings_.
+
+**Data Analysis/ETL** :
+
+  * Nested columns are now exported in **Table Exporter** and **Transformer**
+
+**Libraries** :
+
+  * Compression options added to `.table` library
+  * **qcumber** now allows custom report writer with `-reporter <file.q>` which defines `write[file; results]`
+  * **qcumber** added new `-breakOnError` flag for debugging test errors
+  * **qdoc** now supports private typedefs with `// @typedef:private` tag
+  * **qdoc** `@desc` tag now works with typedefs
+  * **qdoc** optional dictionary key support added
+  * **qdoc** error flag `-errFile` will export all errors during documentation
+  * **qdoc** added support for `foreign` and `code` types
+  * **qdoc** executed example blocks with new `// @doctest` tag
+  * **qlint** reported line and column errors are now 1-indexed (start at line/column 1 rather than 0)
+  * **axrepo** mode added to run on kxscm folder structure on disk
+
+## v1.3.2
+
+  * q linter results now start at line 1, previously 0-indexed
+  * Symlinks resolved when detecting start directory
+  * Add Ctrl+E hotkey and option to display result to Python editors
+
+## v1.3.1
+
+  * A default username can now be provided when creating connections to pre-fill the Authentication dialog
+  * Error messages longer than the status bar would previously be truncated, can now print the error to the Console
+  * Pre-set environment variables not overwritten during install
+  * Optional Ctrl+E/Ctrl+Enter keybindings to display results to the Analyst console
+  * Optional environment variables for configuring default hostname and authentication for new connections
+  * Running the q linter on the current directory with `.` would previously error, now resolved
+  * Running the q linter with an empty `lint.config` file would previously error, now resolved
+  * `.qdate.resolve` fix for parsing months with leap years using `%b` or `%B`
+
+## v1.3.0
+
+**General** :
+
+  * **Remote Editor** connection search, favorite, and filter
+  * Ability to toggle the Sidebar within the IDE (Windows > Toggle Sidebar)
+  * Accessibility improvements throughout
+  * General fixes and performance improvements
+
+**Development tooling** :
+
+  * Linter configuration improvements from within Analyst (_Right click > Code > Lint > Config_)
+  * Repository changes printed to the console on Pull
+  * _(beta, Linux, kdb+ 4.0)_ Visual flamegraph profiling (_Tools > Profiler_)
+
+**Libraries** :
+
+  * Conditional feature skip with `skip if` block in **qcumber**
+  * `qcumber.q_` unit testing library reporting and usability improvements
+  * `qlint.q_` linting library now checks for `lint.config` files on disk
+  * `qlint.q_` exits with code `1` if there are _error_ class issues
+
+**Visualization** :
+
+  * Area, Interval, Pie, Ribbon, and Segment charts added to **Visual Inspector**
+  * Error Bar geometry added to **Grammar of Graphics** (`.qp.errorbar`, `.qp.herrorbar`)
+
+#### Upgrade considerations
+
+  * The `qcumber.q_` script now always prints a summary of test results to stdout, even if writing results to a file. To recreate the old behaviour where no results were printed in this case, use the new `-quiet` flag.
+  * The `qcumber.q_` script now prints only the failing tests to stdout by default. To recreate the old behavior where it printed all test results, use the new `-showAll` flag.
+  * The operating systems within the `ax-libraries.zip` `ws/lib/<os>` directory have the architecture appended. For example, `ws/lib/rhel7/` has been renamed `ws/lib/rhel7_x64`.
+
+## v1.2.1
+
+  * Added installer option on _osx_ for Analyst to use OpenSSL 1.0 or 1.1
+
+## v1.2.0
+
+  * Connect any editor to a remote q process without loading Analyst in the remote process (`Tools > Remote Scratchpad`)
+  * Git tag support in Analyst workspace
+  * Drag-and-drop files and other artifacts between modules, folders, and repositories
+  * Improved **Workspace Browser** , showing last accessed time for each workspace
+  * 3D point geometry added to **Grammar of Graphics** (`.qp.point3D`)
+  * Shared/linked scaled in **Grammar of Graphics** (`.qp.s.share`)
+  * Added RHEL 8 Linux support
+
+#### Upgrade considerations
+
+  * A new installer option has been added to optionally set the process directory to the workspace, only if Analyst is started in a new process. The directory of existing processes will not be changed.
+  * With the introduction of _Remote Editors_ , a new `.z.pc` handler was added to Analyst to track ports being closed. This calls out to any already defined `.z.pc` in the process. See the `README.md` for more information.
+
+## v1.1.1
+
+  * Fix for failing csv encoding when linting when results contain `CANNOT_PARSE` errors
+  * Remove dependency on libpng from qlint and qcumber
+  * Importing q file as a module could fail if file did not have context switches
+  * Add example of loading .dat output to command line script -help output
+
+## v1.1.0
+
+**General** :
+
+  * All internal namespaces prefixed with `.ax` to mitigate namespace collisions
+  * Load Google Maps key from env var in **Inspector**
+  * Increased performance and efficiency of **Grammar of Graphics** library and **Inspector** charts
+  * Improved workspace load and clone performance
+  * Improved **Coverage** performance
+  * Support for new OpenSSH key format when cloning over SSH (_macOS and Linux only_)
+
+**UI improvements** :
+
+  * Repositories are now collapsible
+  * Support for collapsible folders added
+  * Rename workspaces within the workspace selection dialog
+  * Improved rendered Markdown windows:
+    * Improved styling
+    * q/Python code highlighting
+    * Code block execution
+  * Summary Statistics option added to **Transformer** data preview panes
+  * Multiple argument custom function nodes in **Transformer**
+  * Granular chunking configuration in **Transformer**
+  * **Inspector** node option within **Transformer** dataflows
+  * Sample data panel in **Inspector** charts
+  * Multiple argument reactive charts in **Spreadsheet** using **Grammar of Graphics**
+
+**Development tooling** :
+
+  * "Script-like" evaluation using "display" - no semi-colons required
+  * Load/run q scripts by right clicking editor or sidebar
+  * Disable lint warnings from UI by clicking lint gutter icon
+  * Added in-tab **Inspector** for quick interactive grids and visuals
+  * Git Configuration Defaults added to `File > User Settings`
+  * Added a grid view option within the **Console** tab
+  * Added option in **Console** to display the expression generating each result
+  * Improved public function reference style and usability
+  * Default user git configuration settings can be set in `File > Settings`
+
+**Python (requires embedPy)** :
+
+  * Run Python scripts by right clicking editor or sidebar
+  * In a file ending in `.py` or `.p`, highlight and display/execute Python commands printing results in the Console tab
+  * Enable the following Python integration from `File > Settings > Python Integration`
+    * Move data between kdb+ and Python through UI (editor context-menu and **Process View**)
+
+**Libraries** :
+
+  * Added top-level scripts for **qcumber** , **qlint** , **qdoc** , and **axrepo**
+    * i.e., `q qcumber.q_ -src s.q -test ./tests -out results.csv`
+  * Added JUnit output format for qcumber results for Jenkins integrations
+  * Added `axrepo.q_` library to convert `kxscm` repositories on disk to q scripts
+  * qdoc `mkdocs` mode - generate mkdocs-compatible documentation from q
+    * i.e., `q qdoc.q_ -src ./src -out ./doc -render`
+  * Many qdoc improvements and additional tags
+
+#### Upgrade considerations
+
+  * Loading previous workspaces will prompt to upgrade the workspace for folder support
+  * **qdoc**
+    * API defaults changed to match command-line options
+    * `pandoc` mode support deprecated in favour of new `mkdocs` mode
+  * All _internal_ namespaces prefixed with `.ax` to avoid clashes
+  * Google Maps API key moved to environment variable rather than HTML key
+  * When evaluating code, new expressions start in column 0 (semi-colons no longer required to separate expressions)
+
+## v1.0.2
+
+  * Support for older q versions of 3.4, 3.5, and 3.6
+  * Support for versions of osx back to 10.10
+  * More tolerant to q startup time due to q.k changes
+  * Added optional ANALYST_LOCALREPO_PORT env var which can be used if issues due to changes in q.k persist
+
+## v1.0.1
+
+  * Added Ubuntu 18 support
+  * Q Reference now points to code.kx.com/v2
+  * Fix possible buffer overflow when cloning repositories
+

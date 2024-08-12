@@ -1,0 +1,141 @@
+https://code.kx.com/insights/api/machine-learning/q/analytics/api/online/SGD/secure.html
+
+# Secure Updates - kdb products
+
+Original URL: https://code.kx.com/insights/api/machine-learning/q/analytics/api/online/SGD/secure.html
+
+# Secure Updates
+
+Deploying models to production systems with zero downtime particularly when
+those models can be updated based on streaming data poses a number of
+challenges. Principle among these is that these models don't get polluted with
+'bad' data that could affect the results of the model.
+
+To help mitigate this for the stochastic gradient descent models an
+`updateSecure` function is made available for the [Linear
+Regression](linear.html) and [Logistic Classification](logistic.html) models
+once fit.
+
+The logic used by this function is populated based on the addition of
+`threshFunc` and `deleteRows` to the `paramDict` parameter for each of the
+`.ml.online.sgd` fitting functions.
+
+The following outlines the behaviors supported by the `threshFunc` parameter:
+
+option | format | description  
+---|---|---  
+`max` | `max|(max;val)` | Set the maximum allowed value, by default this is the maximum value within the original fit dataset when using `max`, if using `(max;val)` then the maximum accepted value is `val`  
+`min` | `min|(min;val)` | Set the minimum allowed value, by default this is the minimum value within the original fit dataset when using `min`, if using `(min;val)` then the minimum accepted value is `val`  
+`avg` | `avg|(avg;dev)` | When using `avg` data must be within `avg +/- 2*standard deviation`, when using `(avg;dev)` new data must be within `avg +/- dev*standard deviation`  
+  
+By default the optional parameter `deleteRows` is set to `0b`, in this
+instance the presence of values which fall outside the bounds of `threshFunc`
+will result in an error. If set to `1b` any rows that fall outside the bounds
+of `threshFunc` will be removed and the model updated with any data that does
+conform with requirements.
+
+**Examples:**
+
+The example below makes use of the linear regression model but the same logic
+and workflow also works for the logistic classification model.
+
+**Example 1:** Apply updateSecure after fitting linear model
+
+    
+    
+    // Generate data
+    q)X:10 3#30?10f
+    q)y:10?10f
+    q)X2:5 3#15?10f
+    q)y2:5?10f
+    
+    // Fit linear regression model
+    q)show mdl:.ml.online.sgd.linearRegression.fit[X;y;1b;enlist[`threshFunc]!enlist (min,max)]
+    modelInfo   | `theta`iter`diff`trend`paramDict`inputType!(-0.02693591 0.90007..
+    predict     | {[config;features]
+      config:config`modelInfo;
+      if[config`trend..
+    update      | {[config;secure;features;target]
+      modelInfo:config`modelInfo;
+    ..
+    updateSecure| {[config;secure;features;target]
+      modelInfo:config`modelInfo;
+    ..
+    
+    // Apply updateSecure
+    q)mdl.updateSecure[X2;y2]
+    'Input column(s): 0 have values outside of given threshold bounds: 0.8388858 for function: min
+      [3]  /Users/test/projects/ml/insights/ml-tools/ml-analytics/src/online/sgd/utils.q:530: .ml.online.sgd.util.threshCheck:
+          "threshold bounds: ",bounds," for function: ",string threshFunc;
+        $[not deleteRow;'printCol;-1 printCol];
+                        ^
+        rows:asc distinct raze online.sgd.util.findRow[threshFunc;threshBound;X]each idx;
+      [2]  /Users/test/projects/ml/insights/ml-tools/ml-analytics/src/online/sgd/utils.q:503: .ml.online.sgd.util.checkX:
+      if[0=count threshFunc;:(::)];
+      distinct raze online.sgd.util.threshCheck[features;deleteRow]'[threshFunc;threshBound]
+                                                                ^
+      }
+    
+    // Set default dictionary to delete rows instead of erroring
+    q)show mdl1:.ml.online.sgd.linearRegression.fit[X;y;1b;`threshFunc`deleteRow!(min,max;1b)]
+    modelInfo   | `theta`iter`diff`trend`paramDict`inputType!(-0.05745156 0.97512..
+    predict     | {[config;features]
+      config:config`modelInfo;
+      if[config`trend..
+    update      | {[config;secure;features;target]
+      modelInfo:config`modelInfo;
+    ..
+    updateSecure| {[config;secure;features;target]
+      modelInfo:config`modelInfo;
+    ..
+    
+    // Apply updateSecure
+    q)mdl1.updateSecure[X2;y2]
+    Input column(s): 0,1,2 have values outside of given threshold bounds: 0.8388858 1.780839 2.306385 for function: min
+    Row(s) 2 3 4 removed from dataset
+    
+    Input column(s): 2 have values outside of given threshold bounds: 7.111716 for function: max
+    Row(s) 0 3 removed from dataset
+    
+    modelInfo   | `theta`iter`diff`trend`paramDict`inputType!(-0.1185931 0.920137..
+    predict     | {[config;features]
+      config:config`modelInfo;
+      if[config`trend..
+    update      | {[config;secure;features;target]
+      modelInfo:config`modelInfo;
+    ..
+    updateSecure| {[config;secure;features;target]
+      modelInfo:config`modelInfo;
+    ..
+    
+    // Explicitly set upper and lower bounds of acceptable values
+    q)show mdl1:.ml.online.sgd.linearRegression.fit[X;y;1b;`threshFunc`deleteRow!(((min;0.1);(max;9.9));1b)]
+    modelInfo   | `theta`iter`diff`trend`paramDict`inputType!(-0.02812883 0.41534..
+    predict     | {[config;X]
+      config:config`modelInfo;
+      theta:config`theta;
+      ..
+    update      | {[config;secure;X;y]
+      modelInfo:config`modelInfo;
+      theta:mode..
+    updateSecure| {[config;secure;X;y]
+      modelInfo:config`modelInfo;
+      theta:mode..
+    
+    q)mdl1.updateSecure[X2;y2]
+    Input column(s): 1 have values outside of given threshold bounds: 0.8904193 for function: min
+    Row(s) 3 removed from dataset
+    
+    modelInfo   | `theta`iter`diff`trend`paramDict`inputType!(-0.01304417 0.49747..
+    predict     | {[config;X]
+      config:config`modelInfo;
+      theta:config`theta;
+      ..
+    update      | {[config;secure;X;y]
+      modelInfo:config`modelInfo;
+      theta:mode..
+    updateSecure| {[config;secure;X;y]
+      modelInfo:config`modelInfo;
+      theta:mode..
+    
+

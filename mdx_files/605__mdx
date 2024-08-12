@@ -1,0 +1,271 @@
+https://code.kx.com/platform/release_430/
+
+# 4.3.0 - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/release_430/
+
+# Changes in 4.3.0
+
+## SAML IDP assertion group support
+
+Added support for 3rd party IDPs to provide group information at time of
+authentication. This has extended the support around user creation and group
+assignment within KX Delta Platform.
+
+[SSO user and group configuration](../saml_login/#sso-user-and-group-
+configuration)
+
+## Password policy support for special characters
+
+User and user group password policies now allow the _KX Delta Platform_ to
+enforce special characters are included in the make up of passwords.
+
+[Authentication and access control](../entitlements/#authentication-and-
+access-control)
+
+## User management API
+
+The ability to manage users has been added to the _Template API_. APIs are
+provided to;
+
+  * add, update, delete a user
+  * set groups a user is a member of
+  * lock/unlock a user's account
+  * reset a user's password
+  * change a user's password policy
+
+_User Management_ section of the _KX Control Template API_ for details of the
+API.
+
+## TLS
+
+TLS mixed mode is now supported when configuring instances. Processes with
+this mode set will accept both plain and TLS connections simultaneously. The
+client decides the protocol.
+
+To ensure backward compatability for any APIs and frameworks that handle host-
+port connections, an environment variable has been introduced to default
+connections to TLS or plain system-wide.
+
+    
+    
+    DELTACONTROL_TLSMIXED_DEFAULT=[NO|YES]
+    
+
+  * If set to `NO`, all connections and host-port details will be defaulted to plain. 
+  * If set to `YES`, all will default to TLS
+
+[TLS](../tls/#mixed-mode)
+
+## LDAP
+
+A new mode has been added to the group membership check for LDAP users. The
+default mode checks a user by querying the members for each configured group.
+The new mode gets the list of groups from the user directly.
+
+One advantage of the new mode is that it should be more performant by
+executing one query instead of _n_ , where _n_ is the number of configured
+groups. It might also be more suitable for enviroments where the LDAP
+permissions are stricter, i.e. users may not have permission to query all of
+the groups and the membership check would fail with the old mode.
+
+The table below shows the new fields to be added to the LDAP config file.
+
+Field | Default | Description  
+---|---|---  
+groupsFromUser | no | Use new mode when set to `yes`  
+groupFieldInUser | memberOf | Field which contains group membership in user object  
+  
+## Query router
+
+### kdb+ client
+
+Heartbeat timeouts
+
+In previous versions, heartbeat timeouts would be actioned at both ends: by
+the QR and by the client. If the client wasn't heartbeating to the QR, it
+would get disconnected. This is not the default behavior now; disconnects are
+only actioned by the client if the QR is unresponsive. Previous behavior can
+be re-enabled by setting the `.qr.client.registerHB` instance parameter to
+`true`.
+
+### Multiple responses
+
+Now only processes the first response for a one-shot request. Previously all
+responses would be processed. Fixes a race condition around timeouts and
+results both being received. Logs a warning for any responses after the first.
+
+### QP cache
+
+The QP caches results for a period of time for clients that aren't connected.
+The default interval is two minutes but can be configured by setting the
+`.qr.cacheTimeQP` instance parameter to the number of seconds desired.
+
+## Logging
+
+Enhancements have been made to the logging framework to better handle
+debugging and make use of logging _components_. The first parameter to each of
+the APIs is now treated as a component and by convention each framework should
+have its own component. Debug logging can then be toggled at a component level
+where previously it was only possible for all log messages.
+
+When debug logging is enabled for a component, table and dictionary payloads
+will be printed in a formatted manner (similar to `.q.show`).
+
+Two APIs exist for component debug status; `.log.cmp.setDebug` and
+`.log.cmp.toggleDebug`. See the example below for usage.
+
+    
+    
+    // debug disabled for `Foo component
+    .log.out[`Foo; "Bar"; ([]x:til 3)]
+    /=> <->2018.11.14D15:02:08.481 ### Foo          ### normal ### (7978): Bar ### +(,`x)!,0 1 2
+    .log.debug[`Foo; "Bar"; ([]x:til 3)]
+    /=>
+    
+    // debug enabled for `Foo
+    .log.cmp.setDebug[`Foo; 1b]
+    .log.out[`Foo; "Bar"; ([]x:til 3)]
+    /=> <->2018.11.14D15:06:09.260 ### Foo          ### normal ### (7978): Bar ### 
+    /=> x
+    /=> -
+    /=> 0
+    /=> 1
+    /=> 2
+    .log.debug[`Foo; "Bar"; ([]x:til 3)]
+    /=> <->2018.11.14D15:06:49.606 ### Foo          ### debug. ### (7978): Bar ### 
+    /=> x
+    /=> -
+    /=> 0
+    /=> 1
+    /=> 2
+    
+    // no debug for `Bar component
+    .log.debug[`Bar; "Foo"; ([]x:til 3)]
+    /=>
+    
+    // disable debug for `Foo
+    .log.cmp.toggleDebug[`Foo]
+    .log.debug[`Foo; "Bar"; ([]x:til 3)]
+    /=> 
+    
+
+## Miscellaneous
+
+### Query manager
+
+Warning
+
+The _Query Manager_ process now uses the group mode when targeting a
+connection group. Previously it would default to selecting the first available
+connection in a group.
+
+  * `DEFAULT` will load-balance across connections in the group, assigning to the least-busy one.
+  * `ROUND_ROBIN` groups will attempt to rotate through the list of connections, assigning requests to each in an ordered manner
+
+### Startup instructions
+
+A parameter has been added to allow multiple instructions to be loaded on
+startup of an instance. These get loaded after the template code has executed.
+The parameter is called `.al.startupInstructions` and is a comma-separated
+list _Configuration,Investigations_.
+
+### Security
+
+  * Updated report doc generator to protect against Jackson vulnerability CVE-2017-7525.
+  * Enhanced password-reset service to protect against cross-site scripting attacks.
+
+### Non-Control authenticated users
+
+Users with authentication which is not governed by _KX Control_ , i.e. LDAP or
+SSO users, will have the _Authentication & Access Control_ tab unavailable in
+the _KX Control_ user editor.
+
+### Email for LDAP users
+
+LDAP users can now have an email address which will be saved in _KX Control_.
+This address will be persisted on export and import of LDAP users.
+
+### Control UI remembers window state
+
+The Control UI page now remembers which viewers and editors were open and re-
+opens these tabs on page refresh or when the user logs in with the same
+browser.
+
+### Multiple packages in a Git repo
+
+KX Control now supports multiple packages in one Git repo. When importing a
+new Git package, after the repo has been cloned, there will be the option to
+choose the package to import. For more details
+
+[Git import a new package](../release_management/#import-a-new-git-repository)
+
+### Upload and import from local ZIP
+
+KX Control now supports uploading a ZIP file containing a package structure
+and importing it into the system.
+
+[Import from a local ZIP](../release_management/#import-from-a-local-zip)
+
+### Copy tab name from UI
+
+![Screenshot](../img/control/copytabname.png)
+
+### Wildcards in search
+
+The Navigator, Analytic Viewer, and Parameter search have been improved to
+allow wildcards. Previous to 4.3, whatever wildcards were entered were
+stripped out. Now the position of the wildcards is preserved and the backend
+APIs support the matching. A search for _test*4_ will now match _test4_ ,
+_test1234_ for example.
+
+### Remove multiple items in package exporter list
+
+The list now supports multi-select and the context menu can be used to remove
+multiple items.
+
+![Screenshot](../img/control/removemultipleitemsexporter.png)
+
+### Encoding
+
+APIs added to encode strings as integers and visa versa. These are similar to
+the `.Q.j10`/`.Q.x10` and `.Q.j12`/`.Q.x12` pairs but with a configurable base
+alphabet.
+
+    
+    
+    alphabet:"23456789bcdfghjkmnpqrstvwxyz"
+    str:"grmz49"
+    .utils.encode[alphabet; str]
+    /=> 219189999j
+    
+    .utils.decode[219189999j]
+    /=> "grmz49"
+    
+
+### Function validator
+
+Previous versions had some issues around validating analytics, mainly around
+curly brackets embedded in strings and comments. The use of whitespace and
+comments outside the function definition was also restricted. These issues and
+restrictions have now been fixed, which allows qDoc-style markdown within
+analytics.
+
+    
+    
+    // @fileOverview Adds two numbers
+    // @param x {int|float}
+    // @param y {int|float}
+    {[x;y]
+      :x+y
+     }
+    
+
+The function validator used is `.utils.isfunctionstring` and is available for
+re-use as part of the public _Template API_.
+
+### Action tracker documentation
+
+The Action Tracker documentation has moved from the _KX Control_ documentation
+to the _KX Stream_ documentation.
+

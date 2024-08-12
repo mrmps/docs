@@ -1,0 +1,127 @@
+https://code.kx.com/platform/email_server/
+
+# Email engine - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/email_server/
+
+# Email engine
+
+_KX Control_ supports email notifications for a variety of alerts and actions.
+These are powered by the Java Email Engine.
+
+_KX Stream_ ships with two instances of the Java Email Engine; an `a` and a
+`b` instance; depending on whether high availability is enabled. Like any
+instance, it can be run from the Control UI once configured, and will listen
+for incoming connections on the host and port defined within the instance
+configuration.
+
+![Screenshot](../img/control/emailserverinstancedetails.png)
+
+To configure the email engine, set up some configuration parameters.
+
+## Configuration
+
+The email engine can be configured to connect to a number of SMTP servers
+depending on the configuration. The `DS_LAUNCH_COMMANDLINE_PARAMS:ds_jemail`
+parameter defines the specific configuration in use by the _KX Stream_
+instances.
+
+![Screenshot](../img/control/emailserverlaunchconfig.png)
+
+DS_LAUNCH_COMMANDLINE_PARAMS
+
+Any override of this parameter must define the four variables above, even if
+you are not using snmp notifications. For example, if you have a custom
+package which overwrites the default in Control, all four values must be
+included.
+
+By default this points to the `DS_JEMAIL_SERVER:exchangeAnonymous` parameter.
+This can be updated as necessary to another _KX Control_ configuration for
+common providers as detailed below, or replaced entirely with a new
+configuration parameter for a unique SMTP server.
+
+override | details  
+---|---  
+exchangeAnonymous | Allows connection to MS Exchange SMTP servers which allow anonymous logins; or sendmail servers. Their ability to send mail will depend on domain policies  
+exchangeAuthenticated | Allows connection to MS exchange SMTP servers as an authenticated user. Requires authentication details  
+gmail | Configuration aimed at using gmail as SMTP server. Requires external internal access  
+  
+### `DS_JEMAIL_SERVER` configuration
+
+The email engine is written in Java and uses the JavaMail API to send
+messages. It reads the `DS_JEMAIL_SERVER` parameter configuration and sets up
+the email engine system properties. The necessary properties required depends
+on the SMTP server.
+
+[JavaMail documentation](http://www.oracle.com/technetwork/java/javamail/) for
+the necessary system properties per SMTP server.
+
+All properties within the `DS_JEMAIL_SERVER` override fully support the use of
+KX Delta Platform ENV notation `ENV=##ENV_KEY##=` pointing to an environmental
+variable defined within the deployment.
+
+A subset of properties for the common configurations is shown below; further
+information available from the JavaMail API documentation
+
+propertyKey | propertyValue  
+---|---  
+fromAddress | Default originating address for messages; can be overridden by the incoming API call  
+mail.smtp.host | SMTP server hostname  
+mail.smtp.port | SMTP server port  
+mail.stmp.ssl.trust | SMTP trust server, usually same as host  
+mail.smtp.ssl.protocols | Specifies the SSL protocols that will be enabled for SSL connection, example values TLSv1.2 TLSv1.3  
+mail.smtp.starttls.enable | TLS enabled/disabled; dependant on support  
+mail.smtp.connectiontimeout | Connection timeout  
+mail.smtp.auth | For authenticated SMTP server; enables authentication in JavaMail  
+username | Username for authenticated SMTP server  
+password | Password for authenticated SMTP server  
+  
+## Sending a message
+
+KX Delta Platform processes can interface with the Java email engine using the
+public email APIs.
+
+[Email APIs](../api/email/)
+
+## SNMP notifications
+
+In addition to email messages, the email engine can also send SNMP trap (v2)
+notifications.
+
+### SNMP configuration
+
+The email engine can be configured to connect to a number of SNMP management
+systems depending on the configuration. The
+`DS_LAUNCH_COMMANDLINE_PARAMS:ds_jemail` parameter defines the specific
+configuration in use by the _KX Stream_ instances.
+
+![Screenshot](../img/control/emailserverlaunchconfig.png)
+
+DS_LAUNCH_COMMANDLINE_PARAMS
+
+Any override of this parameter must define the four variables above, even if
+you are not using email notifications. For example, if you have a custom
+package which overwrites the default in Control, all four values must be
+included.
+
+By default this points to the `DS_JEMAIL_SNMP:DEFAULT` parameter. This can be
+updated as necessary to another _KX Control_ configuration or replaced
+entirely with a new configuration parameter for a particular SNMP management
+system.
+
+### `DS_JEMAIL_SNMP` configuration
+
+The `DS_JEMAIL_SNMP` parameter defines the SNMP engine to which SNMP trap
+notifications will be sent.
+
+![Screenshot](../img/control/dsjemailsnmpdefaultconfig.png)
+
+There are four required properties as detailed below:
+
+propertyKey | propertyValue  
+---|---  
+community | The SNMP community string, which must be set to the same value as the target system.  
+oid | The object identifier (OID) which the target system will use to identify this engine. The OID should be defined in the Management Information Base of the target system.  
+ipAddress | IP address of the target system.  
+port | The port on which the target system listens for incoming trap messages. This is usually, but not always, the default port 162.
+

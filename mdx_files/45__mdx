@@ -1,0 +1,157 @@
+https://code.kx.com/platform/release_440/
+
+# 4.4.0 - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/release_440/
+
+# Changes in 4.4.0
+
+## Create SAML users directly in KX Delta Platform
+
+New ability to create a user of authentication type SAML. Provides granular
+control of users authentication workflow.
+
+[Create a user](../entitlements/#create-a-user)
+
+## Service classes
+
+A new entity type, service class, is essentially a scalable version of
+existing _Control_ instances. Whereas an instance runs a single process on a
+single server, a service class can run many processes across many servers. The
+number of processes is not pre-determined and they can be created and
+destroyed on-demand.
+
+Reports
+
+In order to support reports running on services, the report generator now
+executes reports via the Query Router. This can be changed using the
+`qrEnabled` parameter of the report instance definitions.
+
+[Service classes](../sc_overview/)
+
+## Deadlocks
+
+Messaging deadlocks
+
+Previous versions sometimes encountered issues with reconnect functionality in
+messaging causing deadlocks. This has been resolved in this release.
+
+## Query router
+
+[Dynamic routing](../qr_routed/#customizations) of requests has been enhanced
+to support a preference order of targets.
+
+[Sync requests](../qr_sync/) can now be supported for clients wanting to use
+the Query Router framework. A new process template `DS_QR_GW` has been created
+to act as the entry point for the sync client and it will use deferred queries
+to execute the request.
+
+## Automated state recovery
+
+_Control_ persists its state to disk in the `tdir` and `localRepo`
+directories. Corruptions can occur in this data due to disk space, server
+failures or other issues. Automated recovery can be enabled by setting the
+below environment variable in `delta.profile`.
+
+    
+    
+    DELTACONTROL_FAULTRECOVERY=ON
+    
+
+[Fault recovery](../control_persistence/#fault-recovery)
+
+## Host resolution
+
+Support has been added for more configurable host resolution when registering
+with _Control_ and the _Messaging Server_. This assists in environments where
+the default hostname for a server is not always resolvable across the entire
+system. Previously the registeration host used in both cases was derived by
+the system and provided no options to customize.
+
+[Host resolution](../troubleshooting/#host-resolution)
+
+## Cleanup deleted entities on export
+
+The Control UI has a new option when exporting that will clean up any deleted
+entities from the package directory.
+
+[Export to a location](../release_management/#export-to-a-location-on-the-
+server)
+
+## Miscellaneous
+
+### Permissions handlers
+
+For newer releases of kdb+ 3.5 and 3.6 (`.z.k > 2019.01.31`), the `qcon`
+protocol has been given its own input handler, `.z.pq`. This new handler is
+defined in KX Delta Platform and applies permissions to requests using that
+protocol.
+
+Older releases still use `.z.pi`.
+
+### Start instance script
+
+The `startProcessInstance.[sh|bat]` scripts have been enhanced to allow
+additional parameters to be passed to the process. These parameters are
+appended to the process command line when running interactively
+
+    
+    
+    ./startProcessInstance.sh -d -i ds_ms_a -a "-foo bar"
+    
+
+### Performance
+
+Performance has been improved in a couple of areas. The following figures were
+obtained by creating an environment of around six million entities: one
+hundred each of instances, tasks, connections, connection groups, schemas,
+schema groups, users, user groups, config params, config param groups. Each
+group contained one hundred entities.
+
+#### Control UI
+
+The performance of the API to build the workspace tree has been greatly
+improved. Using the workspace described above, the call is 95% faster.
+
+#### Config profiles
+
+Config profiles have been further deprecated under the covers
+
+Previously every change to a child of a config profile caused a version of the
+config profile to be saved, i.e. changing a schema or config param, would re-
+save the full config profile to versioning. This was expensive so has been
+deprecated. The performance improvements for different operations can be seen
+below in percentage terms.
+
+entity | create | delete  
+---|---|---  
+Connections | 40 | 90  
+Connections Groups | 40 | 40  
+Configs params | 35 | 65  
+Schema | 80 | 90  
+Schema Groups | 80 | 90  
+  
+Config profiles have also been excluded from _Control_ checkpoints. The
+checkpoint is hence ~50% faster.
+
+### Process permissions
+
+Upgrade change
+
+Permissions on tasks have been deprecated. In order to operate on tasks as a
+non-admin user, the user must have permission to the parent instance.
+
+Users will only be able to view and operate on running tasks if the user has
+permissions for the parent. This includes
+
+  * Process library and status viewers
+  * Shutdown operations; shutdown, kill, and interrupt
+
+For running services, permissions are inherited from the parent service class.
+
+### Deleting multiple entities
+
+Control UI now supports deleting multiple entities of the same type and
+optimizing the deletes via one call to Control vs several calls to improve
+performance.
+

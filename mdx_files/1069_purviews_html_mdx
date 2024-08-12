@@ -1,0 +1,79 @@
+https://code.kx.com/insights/enterprise/database/query/purviews.html
+
+# Purviews - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/database/query/purviews.html
+
+# Purviews
+
+For the RC to route requests to the appropriate DAPs, it must know what data
+each DAP contains. Thus, on the RC-DAP handshake, the DAP sends the RC the
+following information describing the data it contains:
+
+The labels and time range make up a DAP's _purview_. This is the means by
+which the RC determines data locality when making routing decisions.
+
+## Labels
+
+You define labels in the assembly configuration file. They are arbitrary key-
+value pairs that are meant to be user-friendly tags describing the kind of
+data held in the assembly's DAPs. Labels can be used to target particular
+assemblies in queries (see: [Routing](routing.html)). The examples below show
+the [labels section](../configuration/assembly/database.html#labels) of
+multiple assembly files:
+
+    
+    
+    # Market data assemblies covering different asset classes, exchanges and countries.
+    spec:
+      labels:
+        class: equity
+        exchange: nyse
+        country: usa
+    
+    spec:
+      labels:
+        class: futures
+        exchange: nasdaq
+        country: usa
+    
+    spec:
+      labels:
+        class: equity
+        exchange: tsx
+        country: canada
+    
+    ...
+    
+    # Sensors data assemblies covering different sensor types.
+    spec:
+      labels:
+        sensorType: electric
+    
+    spec:
+      labels:
+        sensorType: gas
+    
+    ...
+    
+
+Labels
+
+  * An assembly must have at least one label, but there is no maximum number.
+  * Two assemblies with the same labels are considered to have the same data (this can be used for redundancy). They can only be disambiguated in a query by using [scope](scope.html).
+  * Labels need not have a consistent set of label keys; the RC treats any missing labels as null (see [Routing](routing.html)).
+  * If `KXI_SG_ALLOW_OLD_LABEL_STYLE` is true, then label names should not match any API parameter names.
+
+## Temporal purview
+
+A DAP's temporal purview refers to the time range which it covers. It is
+expressed as two timestamps.
+
+  * `startTS` \- inclusive start time of the data the DAP covers
+  * `endTS` \- exclusive end time of the data the DAP covers
+
+Unlike labels, the temporal purview of a DAP changes over time as data
+migrates across tiers at end-of-interval (EOI) and end-of-day (EOD) events.
+When such events occur, the DAPs automatically update the RC of the change in
+their temporal purview.
+

@@ -1,0 +1,285 @@
+https://code.kx.com/developer/faq/
+
+# FAQ - KX Developer
+
+Original URL: https://code.kx.com/developer/faq/
+
+#  Frequently asked questions
+
+This page contains a collection of common issues and questions that are
+encountered when configuring and using Developer.
+
+## Starting from an existing process
+
+To load Developer into an existing q process, rather than starting the process
+with the launcher script, define the following environment variables in the
+process. Once set, the launcher can be loaded.
+
+    
+    
+    q)`DEVELOPER_HOME setenv "<path-to-install>"
+    q)`DEVELOPER_DATA setenv "<path-to-data-directory>"
+    \l <path-to-install>/launcher.q_
+    
+
+Set a port before loading the `launcher.q_` script.
+
+Namespaces
+
+Developer reserves the namespace prefix .ax for most of its namespaces. There
+are some namespaces that are part of libraries included with Developer that
+will be loaded.
+
+Currently Developer requires the following namespaces for regular operation:
+
+    
+    
+    .pcre  .pcre2  .im  .table  .gg  .qp  .st  .qd  .qu  .qch  .qlint  .profile  .cov  .qdate
+    
+
+Please refer to the _Developer Function Reference_ for more information on
+these namespaces and their APIs.
+
+## Adding a map API key
+
+To use the Map plot type, a Google Maps key must be provided. Once an API key
+is obtained, it can be used by setting an environment variable. Refreshing the
+Inspector once this has been done will enable the Map chart.
+
+    
+    
+    `AX_GOOGLE_MAPS_KEY setenv "mykey"
+    
+
+## Running qCumber tests
+
+QCumber can be run directly in the Developer environment by selecting a test
+file, right clicking and selecting _Code_ > _Run Tests_. You can also do this
+on a module level or a repository level. QCumber can also run tests using its
+test runner API. This can be done by using the following APIs.
+
+    
+    
+    .qu.runTestFile // pass the path to a file as a string or hsym
+    .qu.runTestFolder // pass the directory of tests that have a .quke extension as a string or hsym
+    
+
+## Automatic initialization when loading a module
+
+Within a module, any function called `onLoad` will fire when the module is
+pulled into the workspace and on workspace load. The `onLoad` function will
+fire after all other functions and data artifacts have been loaded for the
+module. This can be used to set up any initial state or other setup required
+by the module.
+
+## Troubleshooting
+
+This page contains a collection of common issues that are encountered when
+configuring and using Developer. If you are encountering an issue, please try
+some of the solutions below as an initial step. If the problem persists,
+please follow the [bug reporting procedure](../support/).
+
+> Most issues are encountered after an upgrade to the platform.  
+>  Before trying other debugging steps, please first try the following:
+>
+>   1. Clear your browser's cache - see Clearing Cache for details.
+>   2. Refresh Developer.
+>
+
+### Error loading Developer: Library file too short
+
+If Developer fails to load due to an error similar to the following, it is
+likely an installation issue. Developer relies on symbolic links to point to
+specific library versions. If these links are unzipped incorrectly or if
+Developer is copied in an unzipped state without consideration for these
+links, they will be broken.
+
+**Example:**
+
+    
+    
+    Error loading q_pcre2 k_init:/home/kxuser/developer/ws/lib/libpcre2-8.so.0: file too short
+    
+
+**Steps to take**
+
+  * Check if the following symlinks exist under `$DEVELOPER_HOME/ws/lib`
+    * Linux systems `txt libgit2.so -> libgit2.so.25 libgit2.so.25 -> libgit2.so.0.25.1 libpcre2-8.so -> libpcre2-8.so.0.3.0 libpcre2-8.so.0 -> libpcre2-8.so.0.3.0 libssh2.so -> libssh2.so.1 libssh2.so.1 -> libssh2.so.1.0.1`
+    * macOS `txt libgit2.25.dylib -> libgit2.0.25.1.dylib libgit2.dylib -> libgit2.25.dylib libpcre2-8.dylib -> libpcre2-8.0.dylib libssh2.dylib -> libssh2.1.dylib`
+  * If these links do not exist, try to unzip the $Developer package again and see if the links exist
+  * If not, these links can be corrected manually with the following commands under `$DEVELOPER_HOME/ws/lib`
+    * Linux systems `bash rm libgit2.so libgit2.so.25 libpcre2-8.so libpcre2-8.so.0 libssh2.so libssh2.so.1 ln -s libgit2.so.25 libgit2.so ln -s libgit2.so.0.25.1 libgit2.so.25 ln -s libpcre2-8.so.0.3.0 libpcre2-8.so ln -s libpcre2-8.so.0.3.0 libpcre2-8.so.0 ln -s libssh2.so.1 libssh2.so ln -s libssh2.so.1.0.1 libssh2.so.1`
+    * macOS `bash rm libgit2.25.dylib libgit2.dylib libpcre2-8.dylib libssh2.dylib ln -s libgit2.0.25.1.dylib libgit2.25.dylib ln -s libgit2.25.dylib libgit2.dylib ln -s libpcre2-8.0.dylib libpcre2-8.dylib ln -s libssh2.1.dylib libssh2.dylib`
+
+### "Failed to Start Developer: Library Failed to Load" when starting
+Developer
+
+If Developer fails to load and there is a line like the following in the
+output then a library is failing to load.
+
+**Examples:**
+
+    
+    
+    libpng15.so.15: cannot open shared object file: No such file or directory
+    
+    
+    
+    Failed to load Developer: /home/kx/anaconda3/lib/libcurl.so.4: undefined symbol: SSL_CTX_set_srp_password
+    
+
+A library may fail to load a various steps in the Developer process life
+cycle, not just at process creation. If a process fails on startup then you
+will likely see a message similar to the one below at during create.
+
+**Steps to take**
+
+  * Ensure that all the required library dependencies are installed on target system
+  * Ensure that the configuration at `$install/configs/config.{profile,bat}` has been sourced and `DEVELOPER_HOME` is defined
+
+System library paths
+
+In some circumstances, after installing the Anaconda dependency for
+[embedPy](https://github.com/KxSystems/embedPy), the system library paths can
+be modified. This may update the system `PATH` variable to point to incorrect
+versions of libraries and could cause them to fail when loading. Ensure that
+the `PATH` and `LD_LIBRARY_PATH` variables include the locations of the
+required dependencies before any Anaconda or other dependencies.
+
+### "Failed to load workspace: Error creating child process" when opening a
+workspace
+
+It is possible for manual changes to a kdb+ install's `q.k` file to impact
+Developer when loading a workspace. If this happens, a dialog with the above
+error message will appear when loading a workspace. Please attempt to load
+Developer without any changes to `$QHOME/q.k` or `$QHOME/q.q`. Any custom
+prints in these files may cause this issue as it conflicts with the port
+negotiation of the workspace process. If the issue persists, see the [bug
+reporting procedure](../support/).
+
+If necessary edits have been made to the above files, an option is to set the
+following environment variable before starting Developer:
+
+    
+    
+    export DEVELOPER_LOCALREPO_PORT=9876   # or any free port of your choice
+    
+
+The above will set a predetermined port for the background workspace process,
+avoiding the need to negotiate the port.
+
+This will need to be set to a _distinct free port_ for every new running
+instance of Developer
+
+### "OS reports: Protocol not available" when using `.Q.hg` or the Table
+Importer
+
+When making a GET request to an HTTPS server using the Table Importer or
+`.Q.hg`, q fails with:
+
+    
+    
+    conn. OS reports: Protocol not available
+    
+
+and the q console may show errors similar to the following:
+
+    
+    
+    4699334252:error:02001002:system library:fopen:No such file or directory:/BuildRoot/Library/Caches/com.apple.xbs/Sources/libressl/libressl-22.240.1/libressl/crypto/bio/bss_file.c:255:fopen('', 'r')
+    4699334252:error:20074002:BIO routines:FILE_CTRL:system lib:/BuildRoot/Library/Caches/com.apple.xbs/Sources/libressl/libressl-22.240.1/libressl/crypto/bio/bss_file.c:257:
+    4699334252:error:140DC002:SSL routines:SSL_CTX_use_certificate_chain_file:system lib:/BuildRoot/Library/Caches/com.apple.xbs/Sources/libressl/libressl-22.240.1/libressl/ssl/ssl_rsa.c:727:
+    4699334252:error:02001002:system library:fopen:No such file or directory:/BuildRoot/Library/Caches/com.apple.xbs/Sources/libressl/libressl-22.240.1/libressl/crypto/bio/bss_file.c:122:fopen('', 'r')
+    4699334252:error:2006D080:BIO routines:BIO_new_file:no such file:/BuildRoot/Library/Caches/com.apple.xbs/Sources/libressl/libressl-22.240.1/libressl/crypto/bio/bss_file.c:125:
+    4699334252:error:0B084002:x509 certificate routines:X509_load_cert_crl_file:system lib:/BuildRoot/Library/Caches/com.apple.xbs/Sources/libressl/libressl-22.240.1/libressl/crypto/x509/by_file.c:252:
+    
+
+This error occurs when q cannot find a default CA certificate bundle when
+making an SSL/TLS request.
+
+**Steps to take**
+
+  * Set the `KX_SSL_CA_CERT_FILE` environment variable to the location of a valid CA certificate bundle, or disable SSL verification.
+
+Knowledge base: [SSL](https://code.kx.com/q/kb/ssl/).
+
+### Process unresponsive
+
+If your process is performing a long-running operation or is stuck in a read
+loop, Developer will become unresponsive.
+
+    
+    
+    // This will launch an interactive text editor at the command line and defer
+    // all signals to the kdb+ process. This will cause the process to block indefinitely
+    // and cause Developer to be unresponsive.
+    \vi
+    
+
+At this point, the only way to make the process become responsive again is to
+stop the process with a `SIGKILL` or `kill -9`.
+
+### Using PuTTY generated SSH keys to clone repositories
+
+Developer supports OpenSSH keys in the RSA format. If you have an existing
+PuTTY key (.ppk) and want to export it to OpenSSH you may do the following:
+
+The following was written using the 0.71 Release of PuTTY.
+
+  * Open an existing PuTTY key file with puttygen.exe, or generate a new public/private key pair.
+  * Export the public key using the `Conversions > Export OpenSSH` Key option. Do not use the 'Save private key' option.
+  * Copy the public key text and save it to a file of the same name and folder as your private key. It must have the .pub extension.
+  * Be careful not to copy any invisible characters after the public key text. Bitbucket and Github have issues with the extra characters. Copy only the key text.
+  * Be careful that the file extension for the public key is exactly '.pub'. You may need to display Windows file extensions to be certain.
+  * Upload the public key text to the account on the git service you are using.
+  * You may now clone in Developer over SSH by providing the key location, and passphrase (if one was provided)
+
+**Exporting PuTTY private key**
+
+![putty_export_private_key](../img/putty-export-private-key.png)
+
+**Exporting PuTTY public key**
+
+![putty_copy_public_key](../img/putty-copy-public-key.png)
+
+**End Result**
+
+![putty_output_keys](../img/putty-output-keys.png)
+
+### "'os: failed to load workspace, please check data folder permissions" when
+opening workspace
+
+When loading a workspace, the user that is running the q process needs write
+access to the Developer data directory. If the user does not have write
+access, an `'os` permissions error will occur.
+
+**Steps to take**
+
+  * Ensure that the user that is running Developer has write access to the `$DEVELOPER_DATA` directory, give that user permission and try again.
+
+### Failed to start KX Developer: E Invalid
+
+Developer supports the previous three major releases of kdb+. At this time,
+this includes kdb+ 3.4 and greater. Starting Developer on an older version of
+kdb+ will result in an error at startup. To remedy this, update the installed
+version of kdb+ to at least 3.4 and try loading Developer again.
+
+### Error performing operation
+
+![error performing operation](../img/error-performing-operation.png)
+
+This is an unexpected error in Developer. If this error appears in the
+Developer status bar then an unhandled error has occurred. Please refer to our
+[bug reporting procedure](../support/) for steps to send the bug to us. We
+appreciate your help identifying issues that we can fix to make Developer a
+better product for all.
+
+### Clearing browser cache
+
+Most Developer issues occur after upgrading to a new version. After an
+upgrade, your browser may have an older version of Developer cached and will
+fail to load with the newer version. A quick debugging step to eliminate this
+issue is to clear your browser's cache and refresh Developer. To clear your
+browser's cache, please refer to the vendor instructions for your browser.
+Below are the help links for the browsers supported by Developer.
+

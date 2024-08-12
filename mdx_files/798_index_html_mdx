@@ -1,0 +1,89 @@
+https://code.kx.com/insights/api/stream-processor/q/index.html
+
+# Overview - kdb products
+
+Original URL: https://code.kx.com/insights/api/stream-processor/q/index.html
+
+# Stream Processor q API
+
+## Operator syntax
+
+Pipeline API operators are designed to be chained, as in the examples, in a
+form that will be familiar to users of libraries such as
+[jQuery](https://jquery.com).
+
+APIs are executed from left to right (or top to bottom when newlines are
+added) and are designed to be composed for human readability. For example, in
+the following case, data would be read from Kafka, transformed through a JSON
+decoder, windowed and written to an Insights stream.
+
+    
+    
+    .qsp.run
+        .qsp.read.fromKafka[`trades]
+        .qsp.decode.json[]
+        .qsp.window.tumbling[00:00:05; `time]
+        .qsp.write.toStream[]
+    
+
+### Implicit last argument
+
+Each `.qsp` operator returns an object representing a ‘node’ configuration;
+and takes a node configuration as its last argument. That last argument is
+left implicit in the API documentation: each operator therefore has a rank
+higher than documented.
+
+Pipeline API operators are invoked as projections on their implicit last
+arguments and therefore must be applied using bracket notation only, never
+prefix.
+
+### Implicit penultimate argument
+
+Many Pipeline API operators are
+[variadic](https://code.kx.com/q/basics/glossary/#variadic); most take a
+penultimate argument of [custom configuration options](configuring-
+operators.html).
+
+If `.qsp.foo` is a Pipeline API operator that takes arguments `x` and `y` and
+optionally `cco` a dictionary of custom configuration options, its true
+signatures are
+
+    
+    
+    .qsp.foo[x;y;node]
+    .qsp.foo[x;y;cco;node]
+    
+
+To limit duplication in the documentation, neither the `cco` nor the `node`
+arguments are documented. The signature would be documented as
+
+An important consequence is that
+
+    
+    
+    .qsp.foo[x;y]
+    .qsp.foo[x;y;cco]
+    
+
+are _both_ unary projections.
+
+### Order of evaluation
+
+Successive Pipeline API operators modify the node configuration and pass it
+along the chain for eventual evaluation, reversing the apparent evaluation
+order.
+
+In
+
+q evaluates first `til 8`, then the lambda, then `prd`, but in
+
+    
+    
+    .qsp.run
+      .qsp.read.fromExpr["refData"]
+      .qsp.write.toConsole[]
+    
+
+because actual evaluation is handled by `.qsp.run`, the table `refData` is
+read before its contents are written to the console.
+

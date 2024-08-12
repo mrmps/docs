@@ -1,0 +1,56 @@
+https://code.kx.com/insights/enterprise/azure-marketplace/azure-prerequisites.html
+
+# Azure prerequisites - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/azure-marketplace/azure-prerequisites.html
+
+# Prerequisites
+
+Before installing kdb Insights Enterprise on Azure, you need the following:
+
+  * **Permissions** : Please refer to the [Permissions Guidelines](kx-managed-app-permissions.html).
+
+  * **Availability zones** : Ensure that you choose an Azure Region with [Availability Zones](https://docs.microsoft.com/en-us/azure/availability-zones/az-overview#azure-regions-with-availability-zones).
+
+Availability zones and Reliable Transport
+
+By default, the kdb Insights Enterprise deployment runs across 3 Availability
+Zones (AZ) for higher resilience. The [Reliable Transport
+component](../architecture.html) (RT) runs across 3 different RT nodes, but
+each RT node is not set to run in distinct Availability Zones due to
+performance considerations. If you want each RT node to run in a different
+Availability Zones, you can set the [service affinity
+configuration](../configuration/availability.html) to ensure maximum
+resiliency.
+
+  * **IP resources** : The pre-requisites depend on your network connectivity choices as described [here](security.html#ip-address-configuration):
+
+    * Private IP addresses: see the details [here](security.html#private-ip-address) on how to allow clients access to the UI and the API endpoints.
+    * Public IP address: see details [here](security.html#public-ip-address).
+  * **Required Resource Providers** : the Resource Providers listed below must be registered in the subscription; if you are missing any of them, your deployment can fail.
+
+To learn how to register resource providers, follow [Microsoft
+Guidance](https://docs.microsoft.com/en-us/azure/azure-resource-
+manager/management/resource-providers-and-types#register-resource-provider).
+
+Required Resource Providers  
+---  
+Microsoft.Authorization  
+Microsoft.Compute  
+Microsoft.ContainerService  
+Microsoft.Insights  
+Microsoft.ManagedIdentity  
+Microsoft.Network  
+Microsoft.OperationalInsights  
+Microsoft.OperationsManagement  
+Microsoft.Resources  
+Microsoft.Solutions  
+
+To start the installation process, refer to [Start installation](installing-
+kx-insights-platform-on-azure.html) for more information.
+
+Private AKS Cluster
+
+Please be aware that kdb Insights Enterprise on Azure Marketplace does not
+support Private AKS Clusters or air-gapped environments at this time.
+

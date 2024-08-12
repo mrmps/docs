@@ -1,0 +1,240 @@
+https://code.kx.com/insights/enterprise/packaging/package-cli.html
+
+# Command line interface - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/packaging/package-cli.html
+
+# Command Line Interface for Packaging
+
+A package management tool as part of the [kdb Insights CLI](../cli/index.html)
+which should be used to manage packages from development to deployment. Where
+possible, use the tool to make changes to your package as the tool ensures
+everything is validated and correctly formatted.
+
+The kdb Insights CLI allows you to create and modify your packages locally and
+upload them to _kdb Insights Enterprise_ for deployment.
+
+For information on installing the kdb Insights CLI, refer to
+[Install](../cli/install.html).
+
+## Configuration
+
+The CLI can act on files in any of the following locations:
+
+![](images/kxi-package-folders.png)
+
+  * The current working folder.
+  * The package path (`KX_PACKAGE_PATH`) - packages in this location are known to be [installed locally](package-use-local.html).
+  * The `.kxi` package path (`KX_ARTIFACT_PATH`) - the location where `.kxi` packages are stored. Before uploading to kdb Insights Enterprise, packages need to be [packed](package-upload.html#packing) as `.kxi` package files.
+  * The kdb Insights Enterprise URL - packages can be uploaded, deployed, torn down and removed from _kdb Insights Enterprise_. For more information, refer to the kdb Insights Enterprise connection section.
+
+You can specify the packaging specific variables as environment variables or
+in the `~/.insights/pakx-config` file as defined below:
+
+variable | file | key in config | default | description  
+---|---|---|---|---  
+`KX_PACKAGE_PATH` | `pakx-config` | `KX_PACKAGE_PATH` | `/tmp` | Where "installed" packages are stored  
+`KX_ARTIFACT_PATH` | `pakx-config` | `KX_ARTIFACT_PATH` | `/tmp` | Where `.kxi` packages are stored  
+  
+Environment variables take precedence over keys in the configuration file. For
+example: `export KX_PACKAGE_PATH=/some/where`.
+
+Recommendations when setting these variables.
+
+  * If the `KX_PACKAGE_PATH` is not set, it will be set to a temporary directory (which your OS may clean up unexpectedly).
+
+  * `KX_PACKAGE_PATH` and `KX_ARTIFACT_PATH` should not be set to the same folder.
+
+    
+    
+    ❯ cat ~/.insights/pakx-config | head -5
+    [envvars]
+    KX_PACKAGE_PATH = ""
+    KX_ARTIFACT_PATH = ""
+    KX_PACKAGE_FORMAT = ".yaml"
+    
+
+## kxi package help
+
+The `kxi package` command offers a wide range of tools to build, manage and
+deploy packages to _kdb Insights Enterprise_. Run the command with the
+`--help` modifier to access detailed helper documentation. The following
+example is a condensed version of the command:
+
+`kxi package --help`
+
+    
+    
+     Usage: kxi package [OPTIONS] COMMAND [ARGS]...                                 
+    
+     KX Package Import/Export CLI.                                                  
+    
+    ╭─ Options ────────────────────────────────────────────────────────────────────╮
+    │ --artifact-store      DIRECTORY      Directory in which to store packed      │
+    │                                      artifacts;[default] $KX_ARTIFACT_PATH.  │
+    │                                      [env var: KX_ARTIFACT_PATH]             │
+    │ --pkg-lib             DIRECTORY      Directory in which packages will be     │
+    │                                      installed;[default] $KX_PACKAGE_PATH.   │
+    │                                      [env var: KX_PACKAGE_PATH]              │
+    │ --version                            Version information.                    │
+    │ --debug                              Enable stacktrace print statements for  │
+    │                                      easier debugging.                       │
+    │ --verbose         -v  INTEGER RANGE  Increase verbosity level                │
+    │ --quiet           -q                 Disable logs. Only print errors.        │
+    │ --help                               Show this message and exit.             │
+    ╰──────────────────────────────────────────────────────────────────────────────╯
+    ╭─ Commands ───────────────────────────────────────────────────────────────────╮
+    │ add                      Add an entity to the specified package.             │
+    │ checkpoint               Create a package artifact given a source code       │
+    │                          directory.                                          │
+    │ convert                  Converts Assembly specs to packages or changes      │
+    │                          package format.                                     │
+    │ copy                     Copy an entity from the specified package.          │
+    │ deploy                   Deploy a package to an insights instance.           │
+    │ field                    Find, list or mutate fields within a package.       │
+    │ info                     show some info about the package                    │
+    │ init                     Creates a bare package at the specified target      │
+    │                          path.                                               │
+    │ install                  Install a package given a requirement or path.      │
+    │ list                     List all installed packages or artifacts.           │
+    │ lock                     Lock the q files within a source directory. Files   │
+    │                          whose first line is /dnc or //dnc will be ignored.  │
+    │ overlay                  Overlay a package using a spec file containing a    │
+    │                          subset of fields.                                   │
+    │ packit                   Create a package artifact given a source code       │
+    │                          directory.                                          │
+    │ pull                     Download an artifact from the running insights      │
+    │                          package manager service to your local directory.    │
+    │                          Where NAMEVER is the 'name/version' of the artifact │
+    │                          we want to pull from the service.                   │
+    │ push                     Publish an artifact to the running insights package │
+    │                          manager service. Where ARTIFACT is either the       │
+    │                          filepath or the 'name/version' of the artifact.     │
+    │ refresh                  Refresh a package, picking up any available changes │
+    │                          from disk                                           │
+    │ remote                   V2 Remote commands.                                 │
+    │ remote-config            Remote config with KEY=VALUE                        │
+    │ remote-convert           Convert V1/V2 assemblies into Packages with the     │
+    │                          server. Optionally keep the package installed on    │
+    │                          the server.                                         │
+    │ remote-list              List all installed packages or artifacts on the     │
+    │                          running insights package manager service.           │
+    │ remote-migration-backup  Get kxi-controller backup files.                    │
+    │ remote-migration-retry   Get kxi-controller backup files.                    │
+    │ remote-remove            Remove packages or artifacts from the running       │
+    │                          insights package manager service.                   │
+    │ rm                       Remove an entity from the specified package.        │
+    │ teardown                 Teardown a deployed packaged running on an insights │
+    │                          instance                                            │
+    │ uninstall                Uninstall specified locally installed packages and  │
+    │                          artifacts.                                          │
+    │ unpack                   Unpack an artifact to a specified location.         │
+    │ validate                 Validate the contents of a source directory to      │
+    │                          ensure it is a valid package.                       │
+    ╰──────────────────────────────────────────────────────────────────────────────╯
+    
+
+## Naming constraints
+
+There are some constraints on naming of packages and the files and folders
+they contain:
+
+  * Packages are not allowed to have an `_` in their name. This is a constraint of the Kubernetes runtime where packages are deployed.
+
+  * At the root of the package, certain file and folder names are reserved for use by the CLI and should not be used:
+
+    * Folder names: `pipelines`, `reports`, `databases`, `router`, `deployment_config`, `tables`
+    * File names: `udfs.*` and `manifest.*`
+
+### Package search paths
+
+When searching for packages, the CLI searches paths in the following order:
+
+  1. The package path (`KX_PACKAGE_PATH`)
+  2. The `.kxi` package (`KX_ARTIFACT_PATH`)
+
+In the case where you specify something such as, for example,:
+`mypackage-0.0.1.kxi`, the resolver tries to resolve a `.kxi` package first
+but falls back on the package locations as above if no `.kxi` package is
+available.
+
+Package Versioning names
+
+Generally we use "slash" to delimit `package-name/package-version` and the
+tool will split this up and try and resolve it based on the above search path
+precedence.
+
+When dealing with a remote package, you must specify `package-name/package-
+version` using a forward slash to separate them.
+
+This is so that the server can split the name and version and find the package
+on the host in order to return it.
+
+### kdb Insights Enterprise connection
+
+After configuring the tool to connect to a running _kdb Insights Enterprise_
+instance as described in [CLI authentication](../cli/authentication.html), you
+can verify the connection by running the following command:
+
+    
+    
+    ❯ kxi package remote-list
+    {}
+    
+
+This command returns all available packages in your _kdb Insights Enterprise_
+deployment.
+
+In the above example, there are no packages on the _kdb Insights Enterprise_
+deployment.
+
+## Debugging and logging
+
+As well as being able to pass in the various directory variables as command
+line arguments, you can pass in debug and log level flags as well. Run the
+`kxi package --help` command defined in the kxi Package help section for more
+information and a full list of possible arguments.
+
+### Log level
+
+To increase log verbosity, add the `-v` modifier to the `kxi package` command.
+You can add this modifier multiple times to increase the log level further.
+The following example demonstrates this:
+
+    
+    
+    kxi package -vvv <subcommand>
+    
+
+### Debug mode
+
+Debug mode controls whether the error traceback will get printed and is
+intended to be helpful for developers:
+
+    
+    
+    kxi package --debug <subcommand>
+    
+
+### Quiet mode
+
+Quiet mode minimises the printout to only the result without any other
+messages - this can be helpful if you need to pipe the output:
+
+    
+    
+    kxi package -q <subcommand>
+    
+
+Debug and log level flags need to be directly after `kxi package` when running
+the command
+
+For example:
+
+    
+    
+    kxi package --debug --add databsae 
+    
+
+## Next steps
+

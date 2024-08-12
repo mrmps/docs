@@ -1,0 +1,150 @@
+https://code.kx.com/insights/core/qpacker/quickstart.html
+
+# Packaging | Quickstart | kdb Insights Core - kdb products
+
+Original URL: https://code.kx.com/insights/core/qpacker/quickstart.html
+
+# Packaging quickstart
+
+_Install QPacker and work through some examples of using it to build
+applications_
+
+## Install QPacker
+
+QPacker installers are delivered via
+[Nexus](https://nexus.dl.kx.com/#browse/browse:kx-insights-packages:qpacker):
+
+    
+    
+    └── qpacker
+        ├── qpacker-install-2.0.14-4.0.0.sh
+        ├── qpacker-2.0.14-4.0.0.deb
+        └── qpacker-2.0.14-4.0.0.x86_64.rpm
+    
+
+To install using the shell installer run:
+
+    
+    
+    sh qpacker-install-2.0.14-4.0.0.sh
+    
+
+The installer will also prompt for an installation directory.
+
+    
+    
+    Installation Directory [default /home/user]
+    Installed.
+    
+
+Set your Git username and email:
+
+    
+    
+    git config --global user.name "John Smith"
+    git config --global user.email "jsmith@email.com"
+    
+
+This completes the successful installation and configuration of QPacker.
+
+## C example
+
+_Combine q and C code_
+
+Download the `qpacker-examples.tgz` package via
+[Nexus](https://nexus.dl.kx.com/#browse/browse:kx-insights-packages:qpacker):
+
+Extract and examine the `cloud-c-sample` folder.
+
+From the `qp.json` file you can see that the entry point of the application
+that is being built is the `hello.q` script, which has a dependency on `clib`.
+The `clib` dependency has been included as a subfolder of the application,
+which has its own `qp.json` file defining its entrypoint and dependencies.
+
+The share object library is built from the underlying `clib`. Inspect the
+chained build dependencies as defined in the `qp.json` files. `qp` will
+
+  1. Run `make` in `clib` to create `libihello.so`
+  2. Link functions in `hello.q` to `libhello.so`
+  3. Create an application that loads the `clib` library and executes the entry point `hello.q`, which contains a call to the hello C function.
+
+Run `qp build` to build the project. You will see something like
+
+    
+    
+    user@instance:~/qpacker-examples/cloud-c-sample$ qp build
+    INFO  | Build   | Starting build for application [default]
+    INFO  | Build   | Dependency [so]
+    INFO  | Main    | (18646-4) Finished.
+    INFO  | Build   | Dependency [clib]
+    INFO  | Build   | Docker build --build-arg base=alpine:3.9.6 -f /home/user/qpacker-examples/cloud-c-sample/qpbuild/dep/so/Dockerfile.alpine -t sobuilder /home/user/qpacker-examples/cloud-c-sample/qpbuild/dep/so
+    INFO  | Build   | docker run --rm -v /home/user/qpacker-examples/cloud-c-sample/clib:/opt/qpacker/ -v /home/user/qpacker-examples/cloud-c-sample:/opt/qpbuildroot -v /home/user/qpacker-examples/cloud-c-sample/qpbuild/dep/so:/opt/so/ -w /opt/qpacker -e CFLAGS=-I/opt/so/kx-c-lib/c/c sobuilder qpmake clib libhello.so
+    INFO  | Build   | Creating clib.0.20210226.75658.qpk
+    INFO  | Main    | (18612-3) Finished.
+    INFO  | Build   | Dependency [q]
+    INFO  | Main    | (19011-3) Finished.
+    INFO  | Build   | App [default]
+    INFO  | Build   | [docker build -t qlocker /home/user/qpacker-examples/cloud-c-sample/qpbuild/dep/q]
+    INFO  | Build   | Building with docker...
+    INFO  | Build   | [docker run --env-file /tmp/qp.19047.env.list --rm -v /home/user/qpacker-examples/cloud-c-sample:/opt/kx/data -v /tmp/qp.19047.qpignore:/opt/kx/qpconfig/.qpignore -v /home/user/.qp.licenses:/opt/kx/lic-out -w /opt/kx/data qlocker]
+    INFO  | Build   | Write loaders for locked q files
+    INFO  | Build   | Creating cloud-c-sample.0.20210226.75662.qpk
+    INFO  | Build   | Creating Dockerfile [Dockerfile.default]
+    INFO  | Build   | [docker build -f Dockerfile.default .]
+    INFO  | Main    | (18582-2) Finished.
+    
+
+Notice that the application has been packaged as an artifact called `cloud-c-
+sample.qpk` in the `qpbuild/qpk/` folder which can be used in other projects.
+
+Next step is to run the application by executing `qp run`. A call has been
+executed print a `hello` message via the clib library.
+
+    
+    
+    INFO  | Run     | Target [default]
+    INFO  | Run     | docker run --rm --env-file /home/user/qpacker-examples/cloud-c-sample/qpbuild/.env  -v /home/user/.config/gcloud/:/root/.config/gcloud:ro -it 4bdafcfbde8e98b5f8d431fc3217a90f10f67e7a1756b86ce0c42d3408d83a5d
+    INFO: Get kdb+ license from KDB_LICENSE_B64 environment variable
+    INFO: testing and installing kc.lic
+    INFO: successful
+    RUN [q startq.q ]
+    KDB+ 4.0 Cloud Edition 2021.03.12 Copyright (C) 1993-2021 Kx Systems
+    l64/ 2()core 3735MB root 3b3147e22fc8 172.17.0.2 EXPIRE 2022.02.23 user@kx.com KXCE #????????
+    
+    hello from q test
+    hello from C!
+    INFO  | Main    | (20510-2) Finished.
+    
+
+Reset the project with `qp clean`.
+
+## Basic tick system
+
+_An application that consists of a feed, a tickerplant, a realtime database, a
+historical database and a gateway_
+
+Download the `qpacker-examples.tgz` package via
+[Nexus](https://nexus.dl.kx.com/#browse/browse:kx-insights-packages:qpacker):
+
+Extract and examine the `basic-tick-example` folder.
+
+The entrypoint for each of the processes can be seen in `qp.json`. The
+`README.md` describes the contents of the package.
+
+Run `qp build` to build the images, following instructions in the README file.
+
+In this example we see how easy it is to configure and run a multiprocess
+system using QPacker.
+
+make use of the `QPPATH` environment variable for future examples in the
+quickstart guide
+
+`QPPATH` items are separated by colon `:` on Linux and macOS, but by semicolon
+`;` on Windows.
+
+See extra details in [qp.json documentation](qpacker.html#qpjson)
+
+* * *
+
+[QPacker documentation](qpacker.html)
+

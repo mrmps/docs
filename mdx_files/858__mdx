@@ -1,0 +1,59 @@
+https://code.kx.com/platform/sc_mgmt/
+
+# Management - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/sc_mgmt/
+
+# Service class management
+
+## Create service class
+
+  1. From the _File_ menu, pick _New Service Class_
+
+  2. Give the service class a name; e.g. `FileWatcher_ServiceClass`
+
+![Screenshot](../img/control/createserviceclass.png)
+
+  3. Associate it with a package
+
+  4. Select the `DS_FILEWATCHER` template
+
+  5. Press the `Add` button to create it
+
+  6. In the _Details_ tab, the description can be changed and the cluster mode set to `DEFAULT`, `LEADER_CLUSTER`, or `ROUND_ROBIN`. Save the new Service class.
+
+![Screenshot](../img/control/serviceclassdetails.png)
+
+  7. The _Alerts_ tab can be used to set the expected actions to take for Normal and Unexpected shutdowns, or Heartbeat timeouts.
+
+![Screenshot](../img/control/serviceclassalerts.png)
+
+  8. The _Reserved Params_ tab can be used to set various reserved parameters. Unlike instances, the `host`, `port`. and `taskset` are not configured here. They can be assigned automatically or overriden when the service is run.
+
+![Screenshot](../img/control/serviceclassreservedparams.png)
+
+  9. The _Service Params_ tab shows the same parameters as seen for an instance.
+
+![Screenshot](../img/control/serviceclassserviceparams.png)
+
+  10. The _History_ tab shows all the past and current running services for the class. The names may be the auto-generated ones or any name manually entered when running the Service class. There may be multiple instances running at one time.
+
+![Screenshot](../img/control/serviceclasshistory.png)
+
+Uniqueness
+
+Service class names must be unique with respect to instances and connection
+groups. A service class can't be created using the same name as an instance or
+connection group and vice versa.
+
+## Other considerations
+
+Service classes are **versioned** , **packaged** , included in **checkpoints**
+, and are handled like any other entity type.
+
+**Non-admin** users can interact with services and service classes by being
+given entitlements for the `UxProcess`, `UxInterrogation` and `UxRuntime`
+roles.
+
+[Control UI non-admin](../controlui_api_permissions/)
+

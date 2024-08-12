@@ -1,0 +1,70 @@
+https://code.kx.com/insights/enterprise/entitlements/quickstart.html
+
+# Data entitlements quickstart - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/entitlements/quickstart.html
+
+# Data entitlements quickstart
+
+This page guides you through an example of entitling users to query data from
+an assembly called `sdk-sample-assembly`. It assumes that two sample groups,
+_dataScience_ and _dashboardUsers_ , have been created.
+
+Make sure that you have completed the [prerequisites](prerequisites.html)
+before using this quickstart.
+
+### Creating an entitlement
+
+  1. Find the Group IDs provided by Keycloak for the _dataScience_ and _dashboardUsers_ groups.
+
+To do this, call the `kxi entitlement actors` command:
+
+    
+        [
+        {
+            "id": "4745c0ae-4ef0-4bba-a310-bd2fc7236484",
+            "name": "dataScience",
+            "path": "/dataScience"
+        },
+        {
+            "id": "7dcd08d8-28d9-40ae-9d9a-399a3ccc688f",
+            "name": "dashboardUsers",
+            "path": "/dashboardUsers"
+        }
+    ]
+    
+
+  2. Store each group ID to a variable called `$GROUPID1`,`$GROUPID2`.
+
+  3. Store an access level permission for each group to a variable called `$ACCESS`. This example uses `RWX` for both groups.
+  4. Create a ID for the `sdk-sample-assembly`. In this example we have generated one `a3f7be9f-8bd3-41b0-8c29-c50e19ac3914`.
+  5. Call the `kxi entitlement create` command as follows:
+    
+        ID=a3f7be9f-8bd3-41b0-8c29-c50e19ac3914
+    NAME=sdk-sample-assembly
+    TYPE=assembly
+    ACCESS=RWX
+    kxi entitlement create $ID $NAME $TYPE --groups $GROUPIDs:$ACCESS
+    
+
+  6. Check the entitlement was created by calling `kxi entitlement list` or `kxi entitlement get`.
+
+In this example we call the `get` command, passing in the ID of the newly
+created entity.
+
+    
+        kxi entitlement list
+    kxi entitlement get $ID
+    
+
+See [here](configuration.html#change-synchronization) for details about the
+time _kdb Insights Enterprise_ takes to action any updates
+
+See the kdb Insights CLI documentation for full details on the [`kxi
+entitlements`](../kxi-cli/cli.html#kxi-entitlement) command and
+[here](configuration.html#entitlement-fields) for an explanation of the fields
+returned by the commands executed above.
+
+For details on how to modifying entitlements, refer to the
+[configuration](configuration.html) guide.
+

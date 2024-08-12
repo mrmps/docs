@@ -1,0 +1,95 @@
+https://code.kx.com/platform/deployment/install_scripts/
+
+# Installation scripts - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/deployment/install_scripts/
+
+# Installation scripts
+
+## install.sh
+
+The `install.sh` script is a user friendly wrapper around the
+`installKxPlatform.sh` script for Bundle deployments. Recommended for new
+users getting started.
+
+### install.sh usage
+
+    
+    
+    OPTIONS:
+       -e      Use elastic KX license (kc.lic)
+       -i      Load instance csv file
+       -p      Load custom install config file
+       -r      Reinstall failed deploy
+       -s      Skip post deploy startup
+       -h      Skip host check
+       -n      Skip env check
+       -?      Show this message
+    
+
+### install.sh deploy modes
+
+When running the `install.sh` script in interactive mode, you will be prompt
+to choose the deployment type.
+
+    
+    
+    +-----------------------------------------------------------+
+     [1] Single
+     [2] Control
+     [3] Web Server
+     [4] Daemon
+     [5] Control + Web Server
+    +-----------------------------------------------------------+
+     Select Node Type [1-5]: 
+    
+
+  1. **Single** : A single server installation, all processes will be run on the same host.
+  2. **Control** : A Control only installation, will only install Control + kdb+ packages - excluding any front-end packages such as Tomcat/Appserver etc. Option to be used for when the kdb-node and the web-node will be installed on different servers.
+  3. **Web Server** : A Web server only install, will only web packages such as Tomcat/Appserver/Dashboard etc. You will be required to point the deployment to an existing backend (Control node). See [Web Server Deploy](../lin_multi_node_deploy/#web-server-deploy) for more details.
+  4. **Daemon** : Daemon only install, you will be required to point the deployment to an existing Control node.
+  5. **Control + Web Server** : Cluster install, will install all components on the same server. Configure Leader/Follower control nodes. See [KX Delta Platform Cluster (A/B)](../lin_multi_node_deploy/#kx-platform-cluster-ab) for more details.
+
+## installKxPlatform.sh
+
+`installKxPlatform.sh` is the core installation script. The script can
+executed manually, where the user can respond to a series of prompts to
+configure a deployment. The script can also be executed in [non-interactive
+mode](../non_interactive_install/) by providing an [Install config
+file](../install_config/).
+
+Install script renamed
+
+As of version 4.6.0 of the _KX Delta Platform_ , the core install script has
+been renamed from `installDeltaXML.sh` -> `installKxPlatform.sh`.
+
+`installDeltaXML.sh` will continue to be used for KX Delta Platform
+deployments pre 4.6.0 release.
+
+### installKxPlatform.sh usage
+
+    
+    
+    OPTIONS:
+       -a      Always upgrade/overwrite package without prompting user
+       -c      Package directory. Location install tgz files
+       -d      Debug mode
+       -e      License Dir
+       -f      Force KDB+ Upgrade (For KDB+ 3.6 and later)
+       -i      Load instance CSV configuration file
+       -k      Default KDB+ version i.e. -d 3_6_0
+       -l      Print a list of the installed package versions
+       -m      Name of a single package to deploy
+       -n      Don't get a list of ports which are in use via `netstat`
+       -o      Comma separated list of environment package SVN URLs
+       -p      Load profile file for install
+       -q      Quiet mode. Reduce output to screen
+       -r      Reinstall mode. Write new env variables for package
+       -s      Install with TLS Encryption
+       -t      No taskset. Do not set taskset option during install
+       -u      Skip removal of tmp directories during cleanup
+       -v      Print version and exit
+       -w      Write install profile
+       -?      Show this message
+    
+

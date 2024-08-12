@@ -1,0 +1,314 @@
+https://code.kx.com/developer/qcumber/
+
+# QCumber - KX Developer
+
+Original URL: https://code.kx.com/developer/qcumber/
+
+# qCumber
+
+_qCumber_ is a unit testing library for q, which offers assertion testing,
+benchmark testing, and property-based testing. This library is provided both
+as a q API and as a q command line script. Additionally, there is integration
+within Developer which provides _Right-click > Test_ capabilities on
+repositories and test files.
+
+Tests are stored in files with the `.quke` extension. An example of a simple
+test file (`count.quke`) is shown below.
+
+    
+    
+    feature Count
+    
+        should return the count of its input
+            expect count on an atom to return 1
+                1 ~ count `a
+    
+            expect count of 1 drop list to return n - 1
+                n:1 + first 1?10;
+                l:1 _ n?`8;
+                count[l] ~ n - 1
+    
+
+The above feature test (`feature`) contains one described behavior (`should`)
+which contains two assertions (`expect`) to check the the validity of the
+behavior. The `feature`, `should`, and `expect` blocks contain natural
+language, allowing simple organization and structure of tests, as well as
+clear specification of intent in human-readable terms.
+
+`expect` assertions are always contained in a `should`, and `should`
+declarations are always contained in a `feature`. Each `.quke` test file can
+have one or more `feature`s.
+
+`expect` assertions contain q code. The final statement in the code block
+should be true (`1b`) to result in a passing test. For all other return
+values, it fails. Local assignments made within an `expect` block do not
+impact other `expect` blocks.
+
+## Running tests
+
+There are three ways of executing tests in _qCumber_ : command line, API, or
+within the Developer IDE.
+
+### Command line
+
+_qCumber_ tests can be run at the command line by using the `qcumber.q_`
+library packaged in `ax-libraries`. This is useful for both q developers and
+for automated q builds. Test results can be printed to the console, or written
+to serialized q, JSON, or JUnit XML formats. See the
+[Libraries](../libraries/) section for more information.
+
+    
+    
+    $ q $AXLIBRARIES_HOME/ws/qcumber.q_ -help
+    
+    qCumber: q test runner
+    
+    Usage: q qcumber.q_ <flags>
+    
+    Flags:
+        -help                - display this help
+        -src      <dir>      - path to a q script to load before running tests
+        -test     <dir/file> - path to a quke file or directory of quke files to test
+        [-out]    <dir>      - path to a file to store results
+                               files supported: .json, .xml (junit), .dat (q: get `:file.dat)
+        [-insert] <key=val>  - add columns to the output: col1=val1,col2=val2,... 
+        [-times]  <number>   - number of times to run each property block
+        [-color]             - colorize the output
+        [-showAll]           - print passed and skipped tests as well as failures to stdout
+        [-quiet]             - do not print any results to stdout
+        [-reporter] <file.q> - custom report from a q file defining a function 'write[file; results]'
+        [-errorsAsFailures]          - convert all errors to failures in final output
+                                       useful for systems which only look at 'failure'
+        [-exitFailuresWith] <number> - exit code to use when script terminates and there are failing tests
+                                       defaults to '1'
+        [-breakOnErrors]             - propagate errors in unit tests to facilitate debugging
+        [-version]                   - print the library version
+    
+
+### API
+
+The `qcumber.q_` library, if loaded into a q process from another script or
+from a running process provides `.qu.runTestFile` and `.qu.runTestFolder`
+functions, returning a table of test results.
+
+### IDE
+
+Tests can also be executed within the IDE by right-clicking on an artifact in
+the artifact tree, and clicking _Code > Run Tests_.
+
+Using _Code > Run Tests_ on:
+
+  * a repository or module will run all the `.quke` files contained
+  * a `.quke` file will run that file
+  * functions or data will run associated test files
+
+![testSearchpane.png](../img/testing/testSearchpane.png)
+
+Tests can be associated with functions, data or modules (See `Conventions,
+namespaces, and contexts` below). Multiple files, modules, and repositories
+may be tested simultaneously by multi-selecting artifacts. It is also possible
+to test an individual file by right clicking an open editor window and
+clicking _Test_.
+
+## Output
+
+The output for _qCumber_ tests reports the tests that failed, as well as any
+malformed test files and any skipped tests.
+
+If running from the command line, test results can be exported to a number of
+on-disk formats, or printed to the console, as shown below:
+
+![qcumber.png](../img/libraries/qcumber.png)
+
+If running within the Developer IDE, the failed tests, malformed files, and
+skipped tests are nested in the output as expandable lists that can be opened
+by clicking the arrow.
+
+![failedTest.png](../img/testing/failedTest.png)
+
+The failed tests section will display the test blocks that failed, the file
+name and line number where the failed test occurred, and, depending on the
+type of test, details as to the reason that the test failed. These could be
+failed test conditions or errors in the q code. Clicking the line number where
+the error occurred will open the failed test file directly to the test that
+failed.
+
+The malformed files section displays a list of formatting errors as well as
+the file name and line number where the error occurred. These can also be
+clicked to open the location of the error.
+
+![malformedTest.png](../img/testing/malformedTest.png)
+
+Skipped tests show only the identity and location of the skipped tests (see
+below).
+
+## Test setup and teardown
+
+_qCumber_ provides several optional blocks which can be used to initialize
+state prior to running tests, and to clean up the environment after tests have
+run. Each are defined under a `feature`.
+
+  * `before` will execute arbitrary code before running the first `should`, `bench`, or `property` block for a `feature`
+  * `after` will execute arbitrary code after running the first `should`, `bench`, or `property` block for a `feature`
+  * `before each` will execute arbitrary code before running each `should`, `bench`, or `property` block for a `feature`
+  * `after each` will execute arbitrary code after running each `should`, `bench`, or `property` block for a `feature`
+
+As with `expect` blocks, assignments made in a `before` or `before each` block
+will not impact other blocks. Thus, to set state visible to the `expect`
+blocks, globally assign to identifiers with `::`, as the examples below
+demonstrate.
+
+As an example, the below test sets initial state and deletes the state after
+running the `should` checks.
+
+    
+    
+    feature demoBeforeAndAfter
+        before
+            randomNumbers :: 50?50i;
+    
+        after
+            delete randomNumbers from `.
+    
+        should use data created in our before block
+            expect its count to be 50
+                50 ~ count randomNumbers
+            expect it to be integers
+                `ints ~ typeOf randomNumbers
+    
+
+The example below runs the `before each` block before _each_ should:
+
+    
+    
+    feature demoBeforeEach
+        before each
+            $[`randomList in key system "d";
+                randomList ,: 1?`8;
+                randomList :: 1?`8];
+    
+        after each
+            delete randomList from (system "d")
+    
+        should showcase that our list is growing
+            expect the count to be 1
+                1 ~ count randomList
+    
+        should showcase that our list is still growing
+            expect the count to be 2
+                2 ~ count randomList
+    
+        should showcase that our list is still growing again
+            expect the count to be 3
+                3 ~ count randomList
+    
+
+## Comparing values
+
+To show the expected and actual values in the test output, the `.qu.compare`
+function can be used. The function accepts two arguments, the expected result
+and the actual result. If these two results match, then the function returns
+boolean true (`1b`), and the test passes. If the results do not match, then a
+dictionary will be passed to the `expect` block containing the expected and
+actual results.
+
+    
+    
+    feature flip
+    
+        should test flip operator
+            expect flip to produce a table
+                l : til 6;
+                .qu.compare[
+                    ([] a: 0 1 2 3 4 5; b: 5 4 3 2 1 0);
+                    flip `a`b!(l; reverse l)]
+    
+
+## Skipping tests
+
+_qCumber_ supports ignoring tests by prepending an `x` to the front of a given
+test block. _qCumber_ supports skipping `feature`, `should`, `expect`,
+`bench`, and `property` blocks.
+
+For example, in the following test the first `expect` block is skipped. In the
+Developer IDE, the skipped section is grayed out.
+
+    
+    
+    feature count
+    
+        should return the count of its input
+    
+            xexpect to skip this test
+                1 ~ count `a
+    
+            expect correct count of list of length 2
+                2 ~ count `a`b
+    
+
+The output from this test would report the skipped test. To view the skipped
+tests in the output, click the arrow to the right of the _Skipped Tests_
+header.
+
+![skippedTest.png](../img/testing/skippedTest.png)
+
+### Skipping tests conditionally
+
+A `skip if` blocks allow a feature to be skipped if a condition is true. If
+the `skip if` block returns boolean false (`0b`), then the `feature` is
+executed. If a non-boolean value is returned or if an error is thrown the
+`feature` aborts.
+
+    
+    
+    feature loadFile
+       skip if
+           not .z.o ~ `w64
+    
+        ...
+    
+    feature loadFile
+       skip if
+           not .z.o like "m*"
+    
+        ...
+    
+
+## Benchmark blocks
+
+_qCumber_ provides a facility for benchmarking and comparing code run time. A
+simple example is the following:
+
+    
+    
+    feature benchmark 1
+        bench
+            baseline
+                til 100000000
+            behaviour
+                til 1
+    
+
+Benchmark blocks appear at the same level as `should` blocks. The simple case
+above states that the code `til 1` should be at least as fast as `til
+100000000`.
+
+Setup and teardown of a benchmark is allowed as well, as in:
+
+    
+    
+    feature benchmark 2
+       bench
+           setup
+               .ab.num : 1
+           baseline
+               til 100000000
+           behaviour
+               til .ab.num
+           teardown
+               delete num from `.ab
+    
+
+For more information about benchmark blocks, refer to `qu` in the _Function
+Reference_ available from the _Help_ menu.
+

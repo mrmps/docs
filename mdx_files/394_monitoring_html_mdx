@@ -1,0 +1,73 @@
+https://code.kx.com/insights/enterprise/database/monitoring.html
+
+# Monitoring - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/database/monitoring.html
+
+# Monitoring
+
+The kdb Insights Database can be configured to report metrics about data
+ingested and queries serviced, which can be reported to a monitoring endpoint.
+The actual scraping of these metrics is done by the kdb Insights sidecar
+container which uses the `kxi-sidecar` image, and can be be set to report to
+an event monitoring and alerting application such as _Prometheus_.
+
+## Query Metrics
+
+Component | Name | Type | Description  
+---|---|---|---  
+SG | `kxi_sg_ipc_requests_total` | counter | Total QIPC requests  
+SG | `kxi_sg_ipc_responses_total` | counter | Total QIPC responses  
+SG | `kxi_sg_http_requests_total` | counter | Total HTTP requests  
+SG | `kxi_sg_http_responses_total` | counter | Total HTTP responses  
+SG | `kxi_sg_pending` | gauge | Number of pending queries (Both HTTP/IPC)  
+SG | `kxi_sg_connected_aggregators` | gauge | Number of connected aggregators  
+SG | `kxi_sg_connected_coordinators` | gauge | Number of connected coordinators  
+SG | `kxi_sg_connected_clients` | gauge | Number of connected q clients  
+RC | `kxi_rc_reqs_total` | counter | Service requests received  
+RC | `kxi_rc_queue_length` | gauge | Length of the outstanding request queue  
+RC | `kxi_rc_connected_daps` | gauge | Number of connected target DAPs  
+RC | `kxi_rc_connected_aggs` | gauge | Number of connected Aggs  
+RC | `kxi_rc_retry_count` | counter | Total number of request retry attempts  
+RC | `kxi_rc_req_complete_time` | histogram | Histogram of request completion times  
+Agg | `kxi_agg_fn_time` | histogram | Histogram of duration of aggregation functions  
+Agg | `kxi_agg_errors` | counter | Number of errors from aggregation functions  
+Agg | `kxi_agg_timeouts` | counter | Number of timeouts for requests for this agg  
+Agg | `kxi_agg_partials_received` | counter | Number of partial responses received  
+Agg | `kxi_agg_requests_held` | counter | Number of requests in progress  
+Agg | `kxi_agg_http_json_reqs` | counter | Number of HTTP JSON requests  
+Agg | `kxi_agg_http_octet_reqs` | counter | Number of HTTP octet stream requests  
+Agg | `kxi_agg_ipc_reqs` | counter | Number of IPC requests  
+DA | `kxi_da_pending_reloads` | gauge | Number of expected reloads pending  
+DA | `kxi_da_purview_start` | gauge | Start timestamp of DA purview  
+DA | `kxi_da_purview_end` | gauge | End timestamp of DA purview  
+DA | `kxi_da_records_after_purge` | gauge | Total records remaining after a purge  
+DA | `kxi_da_stream_msgs` | counter | Number of inbound messages received  
+DA | `kxi_da_stream_records` | counter | Number of inbound records received  
+DA | `kxi_da_stream_pos` | counter | Current RT stream position  
+DA | `kxi_da_requests` | counter | Count of requests received in interval  
+DA | `kxi_da_failed_requests` | counter | Count of failed requests received in interval  
+DA | `kxi_da_request_time` | histogram | Duration of requests in milliseconds received in interval. Buckets can be set with `KXI_REQUEST_METRIC_BUCKETS` environment var. Default "50 100 500 1000 2000 10000"  
+  
+## Storage Metrics
+
+When integrating with the monitoring sidecar, the following metrics will be
+available.
+
+component | type | name | description  
+---|---|---|---  
+SM | gauge | `kxi_sm_clients` | Currently connected clients  
+SM | gauge | `kxi_sm_stream_records` | Number of records read from RT stream  
+SM | gauge | `kxi_sm_msgs` | Number of messages read from RT stream  
+SM | gauge | `kxi_sm_eoi_requests_pending` | EOI requests awaiting completion  
+SM | gauge | `kxi_sm_eod_requests_pending` | EOD requests awaiting completion  
+SM | counter | `kxi_sm_eoi_count` | Number of completed End of Interval runs  
+SM | counter | `kxi_sm_eod_count` | Number of completed End of Day runs  
+SM | gauge | `kxi_sm_eoi_duration_seconds` | Duration of the most recent End of Interval  
+SM | gauge | `kxi_sm_eod_duration_seconds` | Duration of the most recent End of Day  
+SM | gauge | `kxi_sm_eoi_stream_pos` | Current RT stream position  
+SM | gauge | `kxi_sm_eoi_records` | Number of records written during EOI  
+SM | gauge | `kxi_sm_hdb_date_records` | Number of total records in latest EOD partition  
+SM | gauge | `kxi_sm_hdb_size` | Size of HDB (in MB)  
+SM | gauge | `kxi_sm_hdb_partitions` | Number of partitions in HDB
+

@@ -1,0 +1,104 @@
+https://code.kx.com/platform/control_resilience/
+
+# Resilience - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/control_resilience/
+
+# Resilience
+
+## Reconnection tuning
+
+How quickly a process reacts to reconnect after a failure can be tuned to suit
+an application's requirements. The values are configurable by functional area,
+usually with settings for how often to try (the interval) and how long to wait
+at each attempt (the timeout).
+
+The table below shows the settings for the different components with default
+values in brackets. The _env_ types are parameters in `delta.profile` and the
+instance params are available through configuration.
+
+area | interval | timeout | type  
+---|---|---|---  
+Control cluster | DELTACONTROL_CLUSTER_RECONNFREQ (10000) | DELTACONTROL_CLUSTER_OPENTIMEOUT (1000) | env  
+Client to Control | `.pl.r.reconnInterval` (10000) | `.pl.r.reconnTimeout` (3000) | instance param  
+MS cluster | `.rpl.reconnFreq` (10000) | `.rpl.openTimeout` (1000) | instance param  
+Client to MS | `.dm.i.reconnFreq` (10000) | `.dm.i.openTimeout` (250) | instance param  
+MS client to client | `.dm.i.retryInterval` (10000) | `.dm.i.retryTimeout` (500) | instance param  
+QR cluster | `.rpl.reconnFreq` (10000) | `.rpl.openTimeout` (1000) | instance param  
+Client to QR & QP | `.rpl.reconnFreq` (1000) | `.qr.openTimeout` (500) | instance param  
+  
+[Instance params](../enhanced_instance_configuration/)
+
+## Process to Control connection
+
+Additionally processes contain many APIs that depend on the _Control_
+connection being available. If this connection is lost, these APIs will throw
+an exception. For some applications it might be desireable for the process to
+try to reconnect for a period of time before failing. This behavior is
+disabled by default but is configurable by setting `.pl.r.reconnRetryTimeout`
+\- an integer number of milliseconds to retry for.
+
+## Parallel hopen
+
+By default _KX Delta Platform_ processes are set up and report a single host
+or IP address to communicate. In multi-homed environments this means they
+don't take advantage of the other network interfaces, especially when a
+failover occurs. _KX Delta Platform_ can be configured to utilise additional
+interfaces in this type of situation. This is underpinned by a parallel hopen,
+_phopen_ , function provided by a shared library.
+
+![Screenshot](../img/control/phopen_env.png)
+
+In the above scenario, the default interface has been lost. With the addition
+of _phopen_ , the other interface is used and connectivity is restored.
+
+One of the other benefits of _phopen_ is that it's capable of reconnecting
+many processes at the same time in parallel whereas regular _hopen_ does each
+process sequentially. Where reconnectivity must be established quickly, this
+can provide a major performance gain.
+
+### Setup
+
+In order to utilise _phopen_ , a host to IP alternates mapping file must be
+setup. An example is given below;
+
+    
+    
+    perf01.example.com,192.168.1.1 172.131.1.1
+    perf02.example.com,192.168.1.2 172.131.1.2
+    perf01,192.168.1.1 172.131.1.1
+    perf02,192.168.1.2 172.131.1.2
+    
+
+The first column corresponds to the host or IP the process will be running on,
+with the second column containing the corresponding network addresses for
+each. A `delta.profile` environment variable configures the _KX Delta
+Platform_ to use this file. It will automatically be parsed and read into
+memory.
+
+    
+    
+    export DELTACONTROL_HOSTALTERNATES_FILE=${DELTA_CONFIG}/alternates.csv
+    
+
+When setup and loaded correctly, the `.px.ipc.useAlternates` variable will be
+set to true on the process. Some components will use this variable to
+determine whether to use _phopen_ , others have specific instance parameters.
+These are summarized in the table below.
+
+area | setting | default  
+---|---|---  
+Control cluster | `.px.ipc.useAlternates` | -  
+Client to Control | `.pl.r.reconnParallel` | off  
+MS cluster | `.px.ipc.useAlternates` | -  
+Client to MS | `.dm.i.retryParallel` | off  
+MS client to client | `.dm.i.retryParallel` | off  
+QR cluster | `.px.ipc.useAlternates` | -  
+Client to QR & QP | `.px.ipc.useAlternates` | -  
+  
+Caveats
+
+  * TLS is not supported - will default back to regular _hopen_ for TLS connections
+  * Messaging clients - MS host resolution must be disabled [link](../troubleshooting/#messaging)
+  * Control cluster - Host resolution must be disabled [link](../troubleshooting/#control-cluster)
+

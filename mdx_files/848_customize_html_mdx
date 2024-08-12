@@ -1,0 +1,493 @@
+https://code.kx.com/insights/accelerators/fsi/customize.html
+
+# Customize - kdb products
+
+Original URL: https://code.kx.com/insights/accelerators/fsi/customize.html
+
+# Customizing the FSI Accelerator
+
+It is possible to customize an FSI accelerator by unpacking and updating the
+contents of the package. Let's go through some examples using a generic fsi-
+data-assembly.
+
+## Overlaying a Schema with Custom Columns
+
+The `fsi-data-assembly` package comes with a set of base schemas. If you'd
+like to append additional custom columns to these schemas, carry out the
+following:
+
+### Unpack fsi-data-assembly
+
+Unpack the `fsi-data-assembly` package.
+
+    
+    
+     > kxi package unpack fsi-data-assembly-1.0.0.kxi
+     >
+     > ls
+    fsi-data-assembly fsi-data-assembly-1.0.0.kxi
+     >
+    
+
+### Add a Patch
+
+Add an overlay patch to `fsi-data-assembly`. In this case we're calling the
+patch "FuturesOverlay".
+
+    
+    
+     > kxi package add --to fsi-data-assembly patch --name FuturesOverlay
+    Writing fsi-data-assembly/manifest.yaml
+     >
+     >
+     > ls fsi-data-assembly/patches/
+    FuturesOverlay.yaml
+     >
+     >
+     > cat fsi-data-assembly/patches/FuturesOverlay.yaml
+    kind: Package
+    apiVersion: pakx/v1
+    metadata:
+      name: target
+    spec:
+      manifest: {}
+      databases: []
+      pipelines: []
+      router: null
+      deployment_config: null
+     >
+    
+
+### Add in Additional Columns to the Overlay yaml
+
+Overlay the base `FutQuotes` table in `fsi-data-assembly/databases/fsi-data-
+assembly-db/schema.yaml` with some additional columns. Do this by updating
+FuturesOverlay.yaml to the following:
+
+    
+    
+    kind: Package
+    apiVersion: pakx/v1
+    metadata:
+      name: target
+    spec:
+      databases:
+      - name: fsi-data-assembly-db
+        tables:
+          schemas:
+          - name: FutQuote
+            columns:
+            - name: contractID
+              type: string
+            - name: openInterest
+              type: long
+            - name: settlePrice
+              type: float
+    
+
+In this example 3 new columns are being added to the `FutQuotes` table,
+`contractID`, `openInterest` and `settlePrice`.
+
+### Overlay the fsi-data-assembly Package
+
+Apply the overlay to the package using the `kxi package overlay` command.
+
+    
+    
+     > cd fsi-data-assembly/
+     >
+     > kxi package overlay . patches/FuturesOverlay.yaml
+    Writing /tmp/artifacts/fsi-data-assembly/manifest.yaml
+     >
+    
+
+### Re-package
+
+Re-package the `fsi-data-assembly` package. It's recommended that the package
+is renamed during repackaging so that it can be distinguished as a custom
+package. In this example it's renamed to `client-assembly`.
+
+    
+    
+     > kxi package packit fsi-data-assembly --tag --package-name client-assembly --version 1.0.0
+    Refreshing package before packing...
+    Writing fsi-data-assembly/manifest.yaml
+    Creating package from fsi-data-assembly
+    Package created: /tmp/artifacts/client-assembly-1.0.0.kxi
+    client-assembly-1.0.0.kxi
+     >
+    
+
+### Deploy
+
+Finally, deploy the `client-assembly` package with the new changes. See [How
+to Deploy the FSI Accelerator](deploy.html#how-to-deploy-the-fsi-accelerator)
+for these steps.
+
+## Adding a New Schema
+
+If you'd like to add a new schema to `fsi-data-assembly`, carry out the
+following:
+
+### Unpack fsi-data-assembly
+
+Unpack the `fsi-data-assembly` package.
+
+    
+    
+     > kxi package unpack fsi-data-assembly-1.0.0.kxi
+     >
+     > ls
+    fsi-data-assembly fsi-data-assembly-1.0.0.kxi
+     >
+    
+
+### Add a Patch
+
+Add an overlay patch to `fsi-data-assembly`. In this case we're calling the
+patch "FIOverlay".
+
+    
+    
+     > kxi package add --to fsi-data-assembly patch --name FIOverlay
+    Writing fsi-data-assembly/manifest.yaml
+     >
+     >
+     > ls fsi-data-assembly/patches/
+    FIOverlay.yaml
+     >
+     >
+     > cat fsi-data-assembly/patches/FIOverlay.yaml
+    kind: Package
+    apiVersion: pakx/v1
+    metadata:
+      name: target
+    spec:
+      manifest: {}
+      databases: []
+      pipelines: []
+      router: null
+      deployment_config: null
+     >
+    
+
+### Add the New Schema to the Overlay yaml
+
+Add a new schema to the FIOverlay.yaml file. In this example the new table
+added is called `FIQuote`. Do this by updating FIOverlay.yaml to the
+following:
+
+    
+    
+    kind: Package
+    apiVersion: pakx/v1
+    metadata:
+      name: target
+    spec:
+      databases:
+      - name: fsi-data-assembly-db
+        tables:
+          schemas:
+          - name: FIQuote
+            columns:
+            - name: eventTimestamp
+              type: timestamp
+              attrDisk: parted
+              attrOrd: parted          
+            - name: instrumentID
+              type: symbol
+            - name: bidPrice
+              type: float
+            - name: bidSize
+              type: long
+            - name: askPrice
+              type: float
+            - name: askSize
+              type: long
+            - name: bidYield
+              type: float
+            - name: askYield
+              type: float
+            - name: srcSys
+              type: symbol
+            description: Fixed Income Quote Schema
+            prtnCol: eventTimestamp
+            sortColsDisk:
+            - eventTimestamp
+            sortColsMem:
+            - eventTimestamp
+            sortColsOrd:
+            - eventTimestamp
+            type: partitioned
+    
+
+### Overlay the fsi-data-assembly Package
+
+Apply the overlay to the package using the `kxi package overlay` command.
+
+    
+    
+     > cd fsi-data-assembly/
+     >
+     > kxi package overlay . patches/FIOverlay.yaml
+    Writing /tmp/artifacts/fsi-data-assembly/manifest.yaml
+     >
+    
+
+### Re-package
+
+Re-package the `fsi-data-assembly` package. It's recommended that the package
+is renamed during repackaging so that it can be distinguished as a custom
+package. In this example it's renamed to `client-assembly`.
+
+    
+    
+     > kxi package packit fsi-data-assembly --tag --package-name client-assembly --version 1.0.0
+    Refreshing package before packing...
+    Writing fsi-data-assembly/manifest.yaml
+    Creating package from fsi-data-assembly
+    Package created: /tmp/artifacts/client-assembly-1.0.0.kxi
+    client-assembly-1.0.0.kxi
+     >
+    
+
+### Deploy
+
+Finally, deploy the `client-assembly` package with the new changes. See [How
+to Deploy the FSI Accelerator](deploy.html#how-to-deploy-the-fsi-accelerator)
+for these steps.
+
+## Adding Custom Configuration or Code
+
+Custom configuration can be added to load before the `fsi-lib` package. This
+could be necessary to customize [getStats
+analytics](getStatsCustomize.html#customizing-getStats) or [getBars
+aggregations](generateGetBarsData.html#adding-custom-aggregations), for
+example.
+
+This involves two steps: \- Create a package in order to deploy the
+configuration \- Add the package name and version to the KXI_PACKAGES
+environment variable
+
+### Creating a Package
+
+To create a package for the custom configuration/code follow the steps in
+these articles:
+
+[Create a package via CLI](../../enterprise/packaging/package-create.html)
+
+[Packaging quickstart
+guide](../../enterprise/packaging/quickstart.html#create-a-package)
+
+It is only necessary to include a single q file in the package with the
+required configuration/code. This could be in a `src/sp.q` file, which is
+loaded in the package `init.q` file, as suggested in the above links, or the
+default `init.q` file in the package could be updated to add the
+configuration.
+
+### Adding the Package to KXI_PACKAGES
+
+Add the package name and version number to the KXI_PACKAGES environment
+variable that should be added under every aggregator in the values.yaml. To
+ensure the new package containing configuration loads before `fsi-lib`, place
+it first in the list of packages. This should be done before installing kdb
+Insights Enterprise  [Pre-requisites](setup.html#pre-requisites).
+
+    
+    
+      aggregator:
+        env:
+          KXI_PACKAGES: your-package-name:1.0.0,fsi-lib:1.0.0
+    
+
+If kdb Insights Enterprise is already installed you can edit the stateful set
+of the aggregators to update KXI_PACKAGES.
+
+You may also want to add your package name to KXI_PACKAGES on the resource
+coordinators if any of your configuration or code applies to resource
+coordinator functionality. This can be accomplished in the same way as for the
+aggregator.
+
+The new configuration package should be pushed to your _kdb Insights
+Enterprise_ install along with the `fsi-lib` and `fsi-data-assembly` packages
+[Push the packages](deploy.html#push-the-packages).
+
+### Example
+
+#### Initialize Package
+
+Initialize a new package using `kxi package init`. In this example the package
+is called `client-lib`.
+
+    
+    
+     > kxi package init client-lib
+    Creating package at location: client-lib
+    Writing client-lib/manifest.yaml
+     >
+     > ls
+    client-lib
+     >
+     > ls client-lib/
+    init.q  manifest.yaml
+     >
+    
+
+##### Create client-da.q File
+
+Create a `src` directory.
+
+    
+    
+     > mkdir client-lib/src
+     >
+     > ls client-lib/
+    init.q  manifest.yaml  src
+     >
+    
+
+Within that `src` directory create a file called `client-da.q` and add the
+following code to register an example API in the [Data Access
+Processes](https://code.kx.com/insights/microservices/database/query/index.html#data-
+access):
+
+    
+    
+    .client.testAPI:{[args]
+    
+        startDate:"d"$args`startTS;
+        endDate:"d"$args`endTS;
+        //Drop null inbound args
+        select from FutQuote where date>=startDate, date<=endDate
+        };
+    
+    .da.registerAPI[`.client.testAPI;
+        .sapi.metaDescription["Test API"],
+        .sapi.metaReturn[`type`description!(98h;"Results table")], 
+        .sapi.metaMisc[enlist[`safe]!enlist 1b] // allow retries in the event of failure
+        ];    
+    
+
+##### Create client-agg.q
+
+Create a file called `client-agg.q` and add the following:
+
+    
+    
+    .client.join:{[returns]
+        if[@[get;`.debug.active;0b];.debug.clientjoin:(`time`returns)!(.z.p;returns)];
+        .sapi.ok {$[0h=type x;raze;{x}]} returns
+        };
+    
+    .sgagg.registerAggFn[`.client.join;
+        .sapi.metaDescription["join test API results"],
+        .sapi.metaParam[`name`type`description!(`returns;0h;"tables of results")],
+        .sapi.metaReturn`type`description!(98h;"join of the tables");
+        enlist `client.testAPI
+        ];  
+    
+
+For more on creating and registering custom APIs see [Custom
+APIs](https://code.kx.com/insights/api/database/custom/index.html).
+
+##### Update manifest.yaml
+
+Add the following entrypoints to the manifest.yaml:
+
+    
+    
+      aggregator: src/client-agg.q
+      data-access: src/client-da.q  
+    
+
+#### Package client-lib
+
+    
+    
+     > kxi package packit client-lib --tag
+    Refreshing package before packing...
+    Writing client-lib/manifest.yaml
+    Creating package from client-lib
+    Package created: /tmp/artifacts/client-lib-0.0.1.kxi
+    client-lib-0.0.1.kxi
+     >
+    
+
+#### Update fsi-data-assembly to Load client-lib
+
+In the `fsi-data-assembly` package, update the `KXI_PACKAGES` env in `fsi-
+data-assembly/databases/shards/fsi-data-assembly-db-shard.yaml` to the
+following:
+
+    
+    
+          - name: KXI_PACKAGES
+            value: client-lib:0.0.1,fsi-lib:1.0.0
+    
+
+#### Update Aggregator KXI_PACKAGES Variable
+
+As discussed here, the `KXI_PACKAGES` env needs to be updated to this in the
+aggregator:
+
+    
+    
+      aggregator:
+        env:
+          KXI_PACKAGES: client-lib:0.0.1,fsi-lib:1.0.0
+    
+
+#### Update Resource Coordinator KXI_PACKAGES Variable
+
+As discussed here, you may want to update the `KXI_PACKAGES` env on the
+resource coordinator:
+
+    
+    
+      resource-coordinator:
+        env:
+          KXI_PACKAGES: client-lib:0.0.1,fsi-lib:1.0.0
+    
+
+#### Push the Package
+
+    
+    
+     > kxi package push --force client-lib/0.0.1
+    {
+        "client-lib": [
+            {
+                "version": "0.0.1",
+                "_status": "InstallationStatus.SUCCESS"
+            }
+        ]
+    }
+     >
+    
+
+#### .client.testAPI REST call
+
+Given the `fsi-data-assembly` package has been deployed (or a customized
+renamed version of `fsi-data-assembly` as recommended here), generate a token
+for REST call:
+
+    
+    
+    export INSIGHTS_TOKEN=$(curl --header "Content-Type: application/x-www-form-urlencoded" -d "grant_type=client_credentials&client_id=$INSIGHTS_CLIENT_ID&client_secret=$INSIGHTS_CLIENT_SECRET" "${INSIGHTS_URL}/auth/realms/insights/protocol/openid-connect/token" | jq -r '.access_token');
+    
+
+and then make the REST call using the custom API `.client.testAPI`:
+
+    
+    
+    curl -X POST "${INSIGHTS_URL}/servicegateway/client/testAPI" \
+            -H "Content-Type: application/json" \
+            -H "Accepted: application/json" \
+            -H "Authorization: Bearer $INSIGHTS_TOKEN" \
+            --data "$(jq -n \
+            '{
+                    startTS : "2023.04.19D00:00:00.000000000",
+                    endTS   : "2023.04.20D00:00:00.000000000"
+            }' | jq -cr .)" 
+    
+

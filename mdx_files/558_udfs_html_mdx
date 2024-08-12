@@ -1,0 +1,299 @@
+https://code.kx.com/insights/api/packaging/q/udfs.html
+
+# User-Defined Functions - kdb products
+
+Original URL: https://code.kx.com/insights/api/packaging/q/udfs.html
+
+# User-Defined Functions
+
+User-defined functions are essential functions to be called within the stream
+processor or data access layers. These functions can be written in q/Python
+and are referenced by assigned name rather than function name. Below are the
+details of the API used to load, list, and search for user-defined functions.
+
+## `.kxi.udfs.load`
+
+_Load a UDF into memory_
+
+    
+    
+    .kxi.udfs.load[name;package]
+    .kxi.udfs.load[name;package;version;force]
+    
+
+**Parameters:**
+
+name | type | description | default  
+---|---|---|---  
+`name` | `string` | Name of the UDF to be loaded. | Required  
+`package` | `string` | Name of the package from which to load the UDF. | Required  
+  
+_options:_
+
+name | type | description | default  
+---|---|---|---  
+`version` | `string or ::` | Version of the package from which to load the UDF. Can also be `::` to use the latest version of the specified package. | `::`  
+`force` | `boolean` | Whether to load the UDF regardless of whether a UDF of the same name has been loaded previously from a differently versioned package. | `0b`  
+  
+**Returns:**
+
+type | description  
+---|---  
+`function` | User-defined function as a callable function.  
+  
+Loads the file associated with a UDF in order to retrieve the User-Defined
+Function for use.
+
+Load the UDF "my_udf" from the "ml" package
+
+    
+    
+    q).kxi.udfs.list.all[]
+    name         function                       language file_path               ..
+    -----------------------------------------------------------------------------..
+    "ml_udf"     ".test.test_udf"               ,"q"     "test/test-packages/ml/1..
+    "py_udf"     "func"                         "py"     "test/test-packages/ml/1..
+    "map_udf"    ".test.map_udf"                ,"q"     "test/test-packages/ml/1..
+    "filter_udf" ".test.filter_udf"             ,"q"     "test/test-packages/ml/1..
+    "merge_udf"  ".test.merge_udf"              ,"q"     "test/test-packages/ml/1..
+    "myudf"      ".test.sub_namespace.test_udf" ,"q"     "test/test-packages/ml/2..
+    "my_udf"     ".ml.testing.func"             ,"q"     "test/test-packages/ml/2..
+    "test_udf"   ".ml.sub_namespace.test_udf"   ,"q"     "test/test-packages/ml/2..
+    "myudf"      ".test.sub_namespace.test_udf" ,"q"     "test/test-packages/ml/2..
+    "my_udf"     ".ml.testing.func"             ,"q"     "test/test-packages/ml/2..
+    "test_udf"   ".ml.sub_namespace.test_udf"   ,"q"     "test/test-packages/ml/2..
+    "test"       ".test.function"               ,"q"     "test/test-packages/test..
+    
+    q).kxi.udfs.load["my_udf";"ml"]
+    {[table;params]
+      1+table
+      }
+    
+
+Load the UDF "test" from the "1.2.0" version of the "test" package
+
+    
+    
+    q).kxi.udfs.load["test";"test";"1.2.0"]
+    {[table;params]table+params`test}
+    
+
+Load a UDF multiple times
+
+    
+    
+    q)udf1:.kxi.udfs.load["test";"test";"1.1.0";.var.kw[`force; 1b]];
+    q)udf2:.kxi.udfs.load["test";"test";"1.1.0";.var.kw[`force; 1b]];
+    
+
+## `.kxi.udfs.list.all`
+
+_List all UDFs defined at the path under`KX_PACKAGE_PATH` with udf symbol in a
+list_
+
+    
+    
+    .kxi.udfs.list.all[]
+    .kxi.udfs.list.all[udfSyms]
+    
+
+**Parameters:**
+
+name | type | description  
+---|---|---  
+`udfSyms` | `string[]` | Symbols for user-defined function e.g. ("udf"; "my_udf"; "myudf")  
+  
+**Returns:**
+
+type | description  
+---|---  
+`table` | Table containing all the UDFs defined under `KX_PACKAGE_PATH` which match the presented search criteria.  
+      
+    
+    q)setenv[`KX_PACKAGE_PATH;"test/test-packages"]
+    q).kxi.udfs.list.all[]
+    name         function                       language file_path               ..
+    -----------------------------------------------------------------------------..
+    "ml_udf"     ".test.test_udf"               ,"q"     "test/test-packages/ml/1..
+    "py_udf"     "func"                         "py"     "test/test-packages/ml/1..
+    "map_udf"    ".test.map_udf"                ,"q"     "test/test-packages/ml/1..
+    "filter_udf" ".test.filter_udf"             ,"q"     "test/test-packages/ml/1..
+    "merge_udf"  ".test.merge_udf"              ,"q"     "test/test-packages/ml/1..
+    "myudf"      ".test.sub_namespace.test_udf" ,"q"     "test/test-packages/ml/2..
+    
+
+## `.kxi.udfs.list.file`
+
+_List all the UDFs defined in a specific file_
+
+    
+    
+    .kxi.udfs.list.file[path]
+    
+
+**Parameters:**
+
+name | type | description  
+---|---|---  
+`path` | `string` | Path to the file that is to be searched for UDFs. Can be an absolute or relative path.  
+`udfSym` | `string` | Symbol for user-defined function e.g. udf, my_udf, myudf, ...  
+  
+**Returns:**
+
+type | description  
+---|---  
+`table` | Table outlining all the UDFs defined within the specified file.  
+  
+List a summary of all the UDFs defined within a specified file
+
+    
+    
+    q).kxi.udfs.list.file["test/test-packages/ml/1.0.0/ml.q";"udf"]
+    name     function         language file_path                          descrip..
+    -----------------------------------------------------------------------------..
+    "ml_udf" ".test.test_udf" ,"q"     "test/test-packages/ml/1.0.0/ml.q" "Additi..
+    
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+file |  |   
+udfSym |  |   
+  
+## `.kxi.udfs.list.folder`
+
+_List all the UDFs defined in the files within a specific folder_
+
+    
+    
+    .kxi.udfs.list.folder[path]
+    
+
+**Parameters:**
+
+name | type | description  
+---|---|---  
+`path` | `string` | Path to the folder that is to be searched for UDFs. Can be an absolute or relative path.  
+`udfSym` | `string` | Symbol for user-defined function e.g. udf, my_udf, myudf, ...  
+  
+**Returns:**
+
+type | description  
+---|---  
+`table` | Table outlining all the UDFs defined within the files in the specified folder.  
+  
+List a summary of all the UDFs defined within the files in a specified folder
+
+    
+    
+    q).kxi.udfs.list.folder["test/test-packages/ml";"udf"]
+    name         function                       language file_path               ..
+    -----------------------------------------------------------------------------..
+    "ml_udf"     ".test.test_udf"               ,"q"     "test/test-packages/ml/1..
+    "py_udf"     "func"                         "py"     "test/test-packages/ml/1..
+    "map_udf"    ".test.map_udf"                ,"q"     "test/test-packages/ml/1..
+    "filter_udf" ".test.filter_udf"             ,"q"     "test/test-packages/ml/1..
+    "merge_udf"  ".test.merge_udf"              ,"q"     "test/test-packages/ml/1..
+    "myudf"      ".test.sub_namespace.test_udf" ,"q"     "test/test-packages/ml/2..
+    "my_udf"     ".ml.testing.func"             ,"q"     "test/test-packages/ml/2..
+    "test_udf"   ".ml.sub_namespace.test_udf"   ,"q"     "test/test-packages/ml/2..
+    "myudf"      ".test.sub_namespace.test_udf" ,"q"     "test/test-packages/ml/2..
+    "my_udf"     ".ml.testing.func"             ,"q"     "test/test-packages/ml/2..
+    "test_udf"   ".ml.sub_namespace.test_udf"   ,"q"     "test/test-packages/ml/2..
+    
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+path |  |   
+udfSym |  |   
+  
+## `.kxi.udfs.list.search`
+
+_List all UDFs defined at the path under`KX_PACKAGE_PATH` with udf symbol in a
+list_
+
+    
+    
+    .kxi.udfs.list.search[name;package;version]
+    .kxi.udfs.list.search[name;package;version;udfSyms]
+    
+
+**Parameters:**
+
+name | type | description  
+---|---|---  
+`name` | `string or ::` | Regex filter string used to search for specific UDF name patterns. Can also be `::` to include all UDF names.  
+`package` | `string or ::` | Regex filter string used to search for specific package name patterns. Can also be `::` to include all package names.  
+`version` | `string or ::` | Regex filter string used to search for specific package version patterns. Can also be `::` to include all package versions.  
+`udfSyms` | `string[]` | Symbols for user-defined function e.g. ("udf"; "my_udf"; "myudf")  
+  
+**Returns:**
+
+type | description  
+---|---  
+`table` | Table containing all the UDFs defined under `KX_PACKAGE_PATH` which match the presented search criteria.  
+  
+List a summary of all UDFs defined under `KX_PACKAGE_PATH` which match the
+presented search criteria
+
+    
+    
+    q)setenv[`KX_PACKAGE_PATH;"test/test-packages"]
+    q).kxi.udfs.list.searchPrep[::;::;::]
+    name         function                       language file_path               ..
+    -----------------------------------------------------------------------------..
+    "ml_udf"     ".test.test_udf"               ,"q"     "test/test-packages/ml/1..
+    "py_udf"     "func"                         "py"     "test/test-packages/ml/1..
+    "map_udf"    ".test.map_udf"                ,"q"     "test/test-packages/ml/1..
+    "filter_udf" ".test.filter_udf"             ,"q"     "test/test-packages/ml/1..
+    "merge_udf"  ".test.merge_udf"              ,"q"     "test/test-packages/ml/1..
+    "myudf"      ".test.sub_namespace.test_udf" ,"q"     "test/test-packages/ml/2..
+    "my_udf"     ".ml.testing.func"             ,"q"     "test/test-packages/ml/2..
+    "test_udf"   ".ml.sub_namespace.test_udf"   ,"q"     "test/test-packages/ml/2..
+    "myudf"      ".test.sub_namespace.test_udf" ,"q"     "test/test-packages/ml/2..
+    "my_udf"     ".ml.testing.func"             ,"q"     "test/test-packages/ml/2..
+    "test_udf"   ".ml.sub_namespace.test_udf"   ,"q"     "test/test-packages/ml/2..
+    "test"       ".test.function"               ,"q"     "test/test-packages/test..
+    
+
+Search for all UDFs associated with the `ml` package
+
+    
+    
+    q)setenv[`KX_PACKAGE_PATH;"test/test-packages"]
+    q).kxi.udfs.list.searchPrep[::;"ml";::]
+    name         function                       language file_path               ..
+    -----------------------------------------------------------------------------..
+    "ml_udf"     ".test.test_udf"               ,"q"     "test/test-packages/ml/1..
+    "py_udf"     "func"                         "py"     "test/test-packages/ml/1..
+    "map_udf"    ".test.map_udf"                ,"q"     "test/test-packages/ml/1..
+    "filter_udf" ".test.filter_udf"             ,"q"     "test/test-packages/ml/1..
+    "merge_udf"  ".test.merge_udf"              ,"q"     "test/test-packages/ml/1..
+    "myudf"      ".test.sub_namespace.test_udf" ,"q"     "test/test-packages/ml/2..
+    "my_udf"     ".ml.testing.func"             ,"q"     "test/test-packages/ml/2..
+    "test_udf"   ".ml.sub_namespace.test_udf"   ,"q"     "test/test-packages/ml/2..
+    "myudf"      ".test.sub_namespace.test_udf" ,"q"     "test/test-packages/ml/2..
+    "my_udf"     ".ml.testing.func"             ,"q"     "test/test-packages/ml/2..
+    "test_udf"   ".ml.sub_namespace.test_udf"   ,"q"     "test/test-packages/ml/2..
+    
+
+Search for all UDFs that start with the letter named "m"
+
+    
+    
+    q)setenv[`KX_PACKAGE_PATH;"test/test-packages"]
+    q).kxi.udfs.list.search["m*";::;::]
+    name        function                       language file_path                ..
+    -----------------------------------------------------------------------------..
+    "ml_udf"    ".test.test_udf"               ,"q"     "test/test-packages/ml/1...
+    "map_udf"   ".test.map_udf"                ,"q"     "test/test-packages/ml/1...
+    "merge_udf" ".test.merge_udf"              ,"q"     "test/test-packages/ml/1...
+    "myudf"     ".test.sub_namespace.test_udf" ,"q"     "test/test-packages/ml/2...
+    "my_udf"    ".ml.testing.func"             ,"q"     "test/test-packages/ml/2...
+    "myudf"     ".test.sub_namespace.test_udf" ,"q"     "test/test-packages/ml/2...
+    "my_udf"    ".ml.testing.func"             ,"q"     "test/test-packages/ml/2...
+    
+

@@ -1,0 +1,588 @@
+https://code.kx.com/platform/api/entitysubs/
+
+# Entity subscriptions - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/api/entitysubs/
+
+# Entity subscriptions
+
+This module is used for accessing Control entities and subscribing to updates.
+Once a subscription for an entity is initialized, the associated entity data
+will be cached locally in the process. If the entity updates in _Control_ , an
+update will be pushed to the process.
+
+APIs exist to manage subscriptions to individual or multiple entities. The
+`ALL` keyword can be used to subscribe to all entities in a class.
+
+Accessor functions are provided for each of the entity classes.
+
+As of version 4.0.2, the supported subscription classes are;
+
+  * instance
+  * analytic
+  * dataconnectiongroup
+  * connection
+  * user
+  * email
+  * emaillist
+
+By default the latter three classes are loaded into processes by default to
+support the email client.
+
+## `.px.upd.addSub`
+
+Add a single subscription for an entity
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+class | symbol | Entity class  
+entity | symbol | Name  
+  
+**Example:**
+
+    
+    
+     .px.upd.addSub[`instance; `ALL]
+     .px.upd.addSub[`emaillist; `DS_LOG_RECOVERY_EMAILLIST]
+    
+
+## `.px.upd.addSubs`
+
+Add a bulk subscription for entities. Can include a mix of entity classes
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+subs | table | Table of subscriptions  
+subs.class | symbol |   
+subs.entity | symbol |   
+  
+**Example:**
+
+    
+    
+     subs:([] class:`emaillist`emaillist`instance; entity:`DS_LOG_RECOVERY_EMAILLIST`DS_LOG_RECOVERY_ERROR_EMAILLIST`ALL)
+     .px.upd.addSubs[subs];
+    
+
+## `.px.upd.removeSub`
+
+Remove a single entity subscription
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+classn | symbol |   
+entityn | symbol |   
+  
+**Example:**
+
+    
+    
+     .px.upd.removeSub[`instance; `ALL]
+     .px.upd.removeSub[`emaillist; `DS_LOG_RECOVERY_EMAILLIST]
+    
+
+## `.px.upd.removeSubs`
+
+Remove multiple entity subscriptions.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+subs | table |   
+subs.class | symbol |   
+subs.entity | symbol |   
+  
+**Example:**
+
+    
+    
+     subs:([] class:`emaillist`emaillist`instance; entity:`DS_LOG_RECOVERY_EMAILLIST`DS_LOG_RECOVERY_ERROR_EMAILLIST`ALL)
+     .px.upd.removeSubs[subs];
+    
+
+## `.px.upd.getAnalytic`
+
+Gets analytic details
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+name | symbol | Analytic name  
+  
+**Returns:**
+
+Name | Type | Description  
+---|---|---  
+<returns> | dict | Payload  
+<returns>.atype | symbol |   
+<returns>.code | string |   
+  
+**Example:**
+
+    
+    
+     .px.upd.getAnalytic[`dxEmptyFunction]
+     /=> atype| `Analytic
+     /=> code | "{[x;y]\n }"
+    
+
+## `.px.upd.getAnalytics`
+
+Gets details for multiple analytics. Use `ALL` for every cached entity.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+names | symbol[] | Instance names  
+  
+**Returns:**
+
+Name | Type | Description  
+---|---|---  
+<returns> | table | Payloads  
+<returns>.name | symbol |   
+<returns>.atype | symbol |   
+<returns>.code | string |   
+  
+**Example:**
+
+    
+    
+     .px.upd.getAnalytics[`dxEmptyFunction`dxUpdInsert]
+     /=> name            atype    code
+     /=> ----------------------------------------------------------------------
+     /=> dxEmptyFunction Analytic "{[x;y]\n }"
+     /=> dxUpdInsert     Analytic "{[tabName;data]\n upsert[tabName;data];\n }"
+    
+
+## `.px.upd.getConnectionGroup`
+
+Gets connection group details
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+name | symbol | Connection group name  
+  
+**Returns:**
+
+Name | Type | Description  
+---|---|---  
+<returns> | dict | Payload  
+<returns>.gtype | symbol |   
+<returns>.connections | symbol[] |   
+<returns>.primary | boolean[] |   
+  
+**Example:**
+
+    
+    
+     .px.upd.getConnectionGroup[`ds_rdb_alert]
+     /=> gtype      | `DEFAULT
+     /=> connections| `ds_rdb_alert_a`ds_rdb_alert_b
+     /=> primary    | 11b
+    
+
+## `.px.upd.getConnectionGroups`
+
+Gets details for multiple connection groups. Use `ALL` for every cached
+entity.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+names | symbol[] | Connection group names  
+  
+**Returns:**
+
+Name | Type | Description  
+---|---|---  
+<returns> | table | Payloads  
+<returns>.name | symbol |   
+<returns>.gtype | symbol |   
+<returns>.connections | symbol[] |   
+  
+**Example:**
+
+    
+    
+     .px.upd.getConnectionGroups[`ALL]
+     /=> name                gtype            connections
+     /=> -------------------------------------------------------------------------------
+     /=> ds_action_tracker   LEADER_CLUSTER `ds_action_tracker_a`ds_action_tracker_b
+     /=> ds_charts           DEFAULT        ,`instance.ds_charts_a
+     /=> ds_gw_actiontracker LEADER_CLUSTER `ds_gw_actiontracker_a`ds_gw_actiontracker_b
+     /=> ..
+    
+
+## `.px.upd.getConnection`
+
+Gets connection details
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+name | symbol | Connection name  
+  
+**Returns:**
+
+Name | Type | Description  
+---|---|---  
+<returns> | dict | Payload  
+<returns>.host | symbol |   
+<returns>.port | integer |   
+<returns>.user | symbol |   
+<returns>.password | string |   
+<returns>.tls | symbol |   
+  
+**Example:**
+
+    
+    
+     .px.upd.getConnection[`ds_rdb_alert_a]
+     /=> host    | `coredev1
+     /=> port    | 6052i
+     /=> user    | `
+     /=> password| ""
+     /=> tls     | `
+    
+
+## `.px.upd.getConnections`
+
+Gets details for multiple connections. Use `ALL` for every cached entity.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+names | symbol[] | Connection names  
+  
+**Returns:**
+
+Name | Type | Description  
+---|---|---  
+<returns> | table | Payloads  
+<returns>.name | symbol |   
+<returns>.host | symbol |   
+<returns>.port | integer |   
+<returns>.user | symbol |   
+<returns>.password | string |   
+<returns>.tls | symbol |   
+  
+**Example:**
+
+    
+    
+     .px.upd.getConnections[`ds_rdb_alert_a`ds_rdb_alert_b]
+     /=> name           host     port user password tls
+     /=> ----------------------------------------------
+     /=> ds_rdb_alert_a coredev1 6052      ""
+     /=> ds_rdb_alert_b coredev1 6031      ""
+    
+
+## `.px.upd.getInstance`
+
+Gets instance details
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+name | symbol | Instance name  
+  
+**Returns:**
+
+Name | Type | Description  
+---|---|---  
+<returns> | dict | Payload  
+<returns>.host | symbol |   
+<returns>.port | integer |   
+<returns>.tls | symbol |   
+  
+**Example:**
+
+    
+    
+     .px.upd.getInstance[`ds_rdb_alert_a]
+     /=> host| `coredev1
+     /=> port| 6052i
+     /=> tls | `
+    
+
+## `.px.upd.getInstances`
+
+Gets details for multiple instances. Use `ALL` for every cached entity.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+names | symbol[] | Instance names  
+  
+**Returns:**
+
+Name | Type | Description  
+---|---|---  
+<returns> | table | Payloads  
+<returns>.name | symbol |   
+<returns>.host | symbol |   
+<returns>.port | integer |   
+<returns>.tls | symbol |   
+  
+**Example:**
+
+    
+    
+     .px.upd.getInstances[`ds_rdb_alert_a`ds_rdb_ops_a]
+     /=> name           host     port tls
+     /=> --------------------------------
+     /=> ds_rdb_alert_a coredev1 6052
+     /=> ds_rdb_ops_a   coredev1 6053
+    
+
+## `.px.upd.getMailList`
+
+Gets email list details
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+name | symbol | List name  
+  
+**Returns:**
+
+Name | Type | Description  
+---|---|---  
+<returns> | dict | Payload  
+<returns>.members | symbol[] |   
+  
+**Example:**
+
+    
+    
+     .px.upd.getMailList[`DS_LOG_RECOVERY_ERROR_EMAILLIST]
+     /=> members| DeltaMonAdministrator
+    
+
+## `.px.upd.getMailLists`
+
+Gets details for multiple mail lists. Use `ALL` for every cached entity.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+names | symbol[] | Mail list names  
+  
+**Returns:**
+
+Name | Type | Description  
+---|---|---  
+<returns> | table | Payloads  
+<returns>.name | symbol |   
+<returns>.members | symbol[] |   
+  
+**Example:**
+
+    
+    
+     .px.upd.getMailLists[`ALL]
+     /=> name                            members
+     /=> -----------------------------------------------------------
+     /=> DS_LOG_RECOVERY_EMAILLIST       `DeltaMonAdministrator`jdoe
+     /=> DS_LOG_RECOVERY_ERROR_EMAILLIST ,`DeltaMonAdministrator
+     /=> ..
+    
+
+## `.px.upd.getMail`
+
+Gets email template details
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+name | symbol | Template name  
+  
+**Returns:**
+
+Name | Type | Description  
+---|---|---  
+<returns> | dict | Payload  
+<returns>.subject | string |   
+<returns>.body | string |   
+  
+**Example:**
+
+    
+    
+     .px.upd.getMail[`PasswordReset]
+     /=> subject| "$SYSTEM$ Password Reset"
+     /=> body   | "Hi $USER$,<br>\r<br>\rYour password has been reset, please login with your new credentials<br>\rPassword: $PASSWORD$<br>\r<br>\rIf you didn't request this reset please let us know $RESPONDTO$\r\r<br>\r<br>\r<br>"
+    
+
+## `.px.upd.getMails`
+
+Gets details for multiple mail templates. Use `ALL` for every cached entity.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+names | symbol[] | Mail template names  
+  
+**Returns:**
+
+Name | Type | Description  
+---|---|---  
+<returns> | table | Payloads  
+<returns>.name | symbol |   
+<returns>.subject | string |   
+<returns>.body | string |   
+  
+**Example:**
+
+    
+    
+     .px.upd.getMails[`PasswordReset`PasswordResetRequest]
+     /=> name                 subject                           body
+     /=> ------------------------------------------------------------------------------------------------------..
+     /=> PasswordReset        "$SYSTEM$ Password Reset"         "Hi $USER$,<br>\r<br>\rYour password has been r..
+     /=> PasswordResetRequest "$SYSTEM$ Password Reset Request" "Hi $USER$,<br>\r<br>\rA password reset request..
+     /=> ..
+    
+
+## `.px.upd.getServiceClass`
+
+Gets service class details
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+name | symbol | Service class name  
+  
+**Returns:**
+
+Name | Type | Description  
+---|---|---  
+<returns> | dict | Payload  
+<returns>.process | symbol |   
+<returns>.description | string |   
+<returns>.mode | symbol |   
+  
+**Example:**
+
+    
+    
+     .px.upd.getServiceClass[`kx_qr]
+     /=> process    | `DS_QR
+     /=> description| ""
+     /=> mode       | `DEFAULT
+    
+
+## `.px.upd.getServiceClasses`
+
+Gets details for multiple service classes. Use `ALL` for every cached entity.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+names | symbol[] | Service class names  
+  
+**Returns:**
+
+Name | Type | Description  
+---|---|---  
+<returns> | table | Payloads  
+<returns>.name | symbol |   
+<returns>.process | symbol |   
+<returns>.description | integer |   
+<returns>.mode | symbol |   
+  
+**Example:**
+
+    
+    
+     .px.upd.getServiceClasses[`kx_qp`kx_qr]
+     /=> name           process  description mode
+     /=> -------------------------------------------
+     /=> kx_qp          DS_QP    ""          DEFAULT
+     /=> kx_qr          DS_QR    ""          DEFAULT
+    
+
+## `.px.upd.getUser`
+
+Gets user details
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+name | symbol | User  
+  
+**Returns:**
+
+Name | Type | Description  
+---|---|---  
+<returns> | dict | Payload  
+<returns>.email | symbol |   
+<returns>.status | symbol |   
+  
+**Example:**
+
+    
+    
+     .px.upd.getUser[`sdempseyU]
+     /=> email | sdempsey@kx.com
+     /=> status| reset
+    
+
+## `.px.upd.getUsers`
+
+Gets details for multiple users. Use `ALL` for every cached entity.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+names | symbol[] | User names  
+  
+**Returns:**
+
+Name | Type | Description  
+---|---|---  
+<returns> | table | Payloads  
+<returns>.name | symbol |   
+<returns>.email | symbol |   
+<returns>.status | symbol |   
+  
+**Example:**
+
+    
+    
+     .px.upd.getUsers[`ALL]
+     /=> name                  email       status
+     /=> ----------------------------------------
+     /=> jdoe                 jdoe@kx.com  
+     /=> ..
+    
+
+## Accessors
+
+Functions to access individual or multiple entities.
+

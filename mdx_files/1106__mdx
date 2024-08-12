@@ -1,0 +1,91 @@
+https://code.kx.com/platform/debugging/
+
+# Debugging - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/debugging/
+
+# Debugging
+
+Kdb+ supports [error trapping of
+functions](https://code.kx.com/q/ref/apply/#trap) (also called protected
+evaluation) to handle exceptions gracefully. It allows developers to specify
+default values or log errors in case an operation fails. However a limitation
+of this approach is that it can make debugging an issue more difficult,
+especially where there are multiple nested functions. The error might be
+logged but the user can’t locate in the stack where the operation failed.
+
+_KX Control_ provides a set of APIs to support different modes of error
+trapping. The Trapping module is described in the Process Template API and
+implements error trapping with configurable modes. The trapping function is
+`.trp.execute`, which takes a statement to evaluate, and an error expression
+used in case of a failure.
+
+mode | effect  
+---|---  
+Trapped | Evaluates error expression in case of a failure  
+Debug | No protected evaluation used. If a terminal is attached to the process and error trapping (-e 1) is enabled, the session will enter debug mode and developer can examine the stack. Error expression is unused  
+Stack trace | Evaluates the error expression and prints a stack trace.  
+  
+The stack-trace mode uses [stack-trace
+functionality](https://code.kx.com/q/basics/debug/#trap) introduced in kdb+
+V3.5. This should give an indication of where an error occurred, including a
+caret pointing at the exact operation that failed.
+
+## Example
+
+    
+    
+    q)f:{100*x%y}
+    q)g:{f[x;y]}
+    q).trp.setMode[`trace]
+    q).trp.execute[(`g; 50; 100); {-1"Error executing: ",x; 0n}]
+    50f
+    
+    q).trp.execute[(`g; `50; 100); {-1"Error executing: ",x; 0n}]
+    <->2017.09.11D15:04:17.924 ### Trap         ### warn.. ### (23414): Error during execution, printing stack trace ###
+      [4]  /home/dcore/test.q:1: f:{100*x%y}
+                                         ^
+      [3]  /home/dcore/test.q:2: g:{f[x;y]}
+                                    ^
+      [2]  (.Q.trp)
+    
+      [1]  /home/dcore/core/svn/control/shared/q/utils.q:2276: .trp.i.executeTrace:
+      i.print:1b;
+      res:.Q.trp[value; statement; i.catch[catch]]
+          ^
+     }
+      [0]  .trp.execute[(`g; `50; 100); {-1"Error executing: ",x; 0n}]
+           ^
+    
+    Error executing: type
+    0n
+    
+
+## OEM example
+
+For OEM customers, the stack trace will show function names but no source code
+or failing operations.
+
+    
+    
+    .trp.execute[(`g; `50; 100); {-1"Error executing: ",x; 0n}]
+    <->2017.09.11D14:59:52.957 ### Trap         ### warn.. ### (23204): Error during execution, printing stack trace ###
+      [4]  (f)
+    
+      [3]  (g)
+    
+      [2]  (.Q.trp)
+    
+      [1]  (.trp.i.executeTrace)
+    
+      [0]  .trp.execute[(`g; `50; 100); {-1"Error executing: ",x; 0n}]
+           ^
+    
+    Error executing: type
+    0n
+    
+
+Stack traces can also be printed by setting the error-trap mode to 2 (`-e 2`).
+If an async call to a process fails in this mode, the stack trace will be
+printed to the screen.
+

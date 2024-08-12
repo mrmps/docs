@@ -1,0 +1,451 @@
+https://code.kx.com/insights/enterprise/monitoring/dashboards-reference.html
+
+# kdb Insights Grafana Dashboard reference - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/monitoring/dashboards-reference.html
+
+# kdb Insights Grafana dashboard reference
+
+kdb Insights Grafana dashboards provide visualizations to help you monitor the
+performance and status of a _kdb Insights_ system. The dashboards can be
+automatically deployed alongside each _kdb Insights Enterprise_ instance.
+
+## Getting started
+
+  1. Go to the Grafana homepage, select the Toggle menu and choose **Dashboards**.
+
+  2. The list of folders includes the namespace into which _kdb Insights Enterprise_ is deployed. The following Dashboards are available within the namespace folder:
+
+References to databases
+
+When databases are referenced here and in the dashboards, this refers to both
+[assemblies](../assemblies/overview.html) deployed via the kdb Insights CLI
+and [databases](../database/configuration/ui/database.html) created from the
+_kdb Insights Enterprise_ UI.
+
+## kdb Insights logging summary
+
+Panels shown on this dashboard provide the ability to drill down into the log
+messages to identify issues. The dashboard displays the number of log messages
+by type and then allows you to group those messages using any label that
+Kubernetes uses to distinguish the components logging the messages. For
+example, you could choose to just display the error messages and group them by
+database to see which databases are raising error messages, then you can
+filter on a specific database and see a list of messages for the database you
+have chosen.
+
+### Variables
+
+At the top of the dashboard there is a set of variables that allows you to
+filter some of the panels to show messages that have particular properties.
+
+variable | description  
+---|---  
+Log Status | The log status filters the panels in the second and third row. The states are: FATAL, ERROR, WARN, INFO, DEBUG and TRACE.  
+Group by | Group the second row by any label associated with the messages. This allows you to find components that are logging the messages. For example choosing `insights_kx_com_app` groups the messages by database.  
+Include Messages | Filter **all** rows to only include messages with the specific text included in the message  
++ | Built in Grafana option to filter on any label that is included in the messages  
+  
+### Log messages by type
+
+Count of the number of messages per type. On the left there is the total
+number of messages per type in the selected time range. On the right is a line
+chart showing the total number of messages per type over time.
+
+Variable filters
+
+The 'Include Messages' and '+' variables are the only ones that filter this
+row.
+
+## Log type details
+
+Count of the number of messages grouped by the selected `View by` label. On
+the left there is the count of the number of messages per label value across
+the selected time range. On the right is a line chart showing the number of
+messages per label value over time.
+
+This allows you to find which databases or components are logging the errors
+and warnings to assist you in determining the root cause of an issue.
+
+Variable filters
+
+All filters are applied to this row.
+
+### Messages
+
+Detailed list of all the messages that match the variables selected.
+
+Click on the '>' error to drill into a specific log message.
+
+Variable filters
+
+All filters are applied to this row.
+
+### Kubernetes Events
+
+List of Kubernetes events raised in the namespace in the time range.
+
+metrics | description  
+---|---  
+Time | Time of event  
+Reason | Reason for the event  
+Object | Object raising the event  
+Message | Message details  
+  
+Variable filters
+
+The 'Include Messages' filter is the only variable that is applied to this
+row.
+
+## kdb Insights Enterprise Database
+
+This dashboard is intended to assist in monitoring the CPU, memory and disk of
+each database as well as giving details on the logs and alerts associated with
+the whole namespace.
+
+### Variables
+
+At the top of the dashboard there is a set of variables that allows you to
+filter some of the panels to show messages that have particular properties.
+
+variable | description  
+---|---  
+Database | A list of all deployed databases. Filters the panels in all except the first row.  
+Filters + | Built in Grafana option to filter on any label that is included in the records.  
+  
+### Alerts and logs summary
+
+This row shows a high level overview of all the alerts and logs for the whole
+namespace. This allows you to view information from for all databases and
+components that are shared between the databases, for example, the Service
+Gateway and kdb Insights CLI.
+
+panels | description  
+---|---  
+Critical Alerts | Total number of critical alerts that have occurred in the time range  
+Warning Alerts | Total number of warning alerts that have occurred in the time range  
+Info Alerts | Total number of information alerts that have occurred in the time range  
+Logs | Total number of log messages per type that have occurred in the time range  
+Alerts | Detailed list of all the messages that match the variables selected. Click on the '>' error to drill into a specific alert.  
+Database Status | Status of each database including Ready and NotReady. If the database is not ready, a reason is included  
+  
+### Overview
+
+This row shows a high-level overview of the database selected in the
+**Database** variable above.
+
+panels | description  
+---|---  
+HDB Size | Current size of the HDB  
+Stream Ingestion | Rate of ingestion of data into each stream associated with the database  
+Pods CPU above Requested | Number of pods with CPU above their requested values *  
+Pods CPU above Limit | Number of pods with CPU above their limit values *  
+Memory CPU above Requested | Number of pods with memory above their requested values *  
+Memory CPU above Limit | Number of pods with memory above their limit values *  
+  
+*On the dashboard,the CPU and Memory rows provide details of each pod that has breached these limits.
+
+### CPU
+
+This row shows the CPU details of each pod in the selected database and a
+chart that is populated with the details over time for the selected pod. To
+select a pod, click on the pod name in the grid.
+
+metrics | description | color thresholds  
+---|---|---  
+CPU Usage | CPU utilization in seconds |   
+CPU Requested | CPU seconds requested |   
+CPU Req % | Percentage of requested CPU currently being used | Yellow: 80% // Orange: 90% // Red: 100%  
+CPU Limit | CPU seconds limit |   
+CPU Limit % | Percentage of requested CPU currently being used | Yellow: 80% // Orange: 90% // Red: 100%  
+  
+### Memory
+
+This row shows the memory details of each pod in the selected database and a
+chart that is populated with the details of the selected pod over time. To
+select a pod, click on the pod name in the grid.
+
+metrics | description | color thresholds  
+---|---|---  
+Memory Usage (MB) | Memory utilization in MBs |   
+Memory Requested (MB) | Memory requested in MBs |   
+Memory Req (%) | Percentage of requested memory currently being used | Yellow: 80% // Orange: 90% // Red: 100%  
+Memory Limit (MB) | Memory limit in MBs |   
+Memory Limit (%) | Percentage of memory limit currently being used | Yellow: 80% // Orange: 90% // Red: 100%  
+  
+### Disk
+
+This row shows the persistent volume claim (PVC) disk usage of each PVC in the
+selected database and a chart that is populated with the details of the
+selected PVC over time. To select a PVC, click on the PVC name in the grid.
+
+metrics | description | color thresholds  
+---|---|---  
+PVC (GB) | PVC size |   
+PVC Used (GB) | Amount of the PVC being used |   
+Used % | Percentage of the PVC being used | Yellow: 80% // Orange: 90% // Red: 100%  
+1 Day Growth (GB) | Growth in the last 24 hours |   
+2 Day Growth (GB) | Growth in the last 48 hours |   
+  
+## kdb Insights detail
+
+This dashboard is intended to assist in monitoring the whole of your kdb
+Insights deployment. It provides in depth details on the components, and gives
+information about the logs and alerts associated with the namespace.
+
+### Alerts
+
+This row shows all the alerts raised in the whole namespace.
+
+panels | description  
+---|---  
+Critical Alerts | Total number of critical alerts that have occurred in the time range  
+Warning Alerts | Total number of warning alerts that have occurred in the time range  
+Info Alerts | Total number of information alerts that have occurred in the time range  
+Alerts | Detailed list of all the alerts. Click on the '>' error to drill into a specific alert. The alerts list is ordered alphabetically.  
+  
+### Base infrastructure
+
+This row shows general information about the status of the databases and pods.
+
+#### Deployment status
+
+This panel provides a list of databases / assemblies and reasons why they are
+not ready. Each query environment has its own record.
+
+metrics | description  
+---|---  
+Database | Name of database  
+Ready | `true` if the database is ready  
+Not Ready | `true` if the database is not ready  
+Reason | The reason the database is not ready  
+  
+#### License status
+
+This panel allows you to see if any of your pod licenses are expiring.
+
+metrics | description  
+---|---  
+Pod | Pod linked to the license  
+Process Cores | Number of CPU cores running in the cluster  
+Release Date | Date when the license was issued  
+Release Version | Version the license was released on  
+License Expiry | Date when the license expires  
+  
+#### StatefulSet status
+
+StatefulSets are workload API objects used to manage stateful applications.
+They manage the deployment and scaling of a set of pods that are based on an
+identical container and provides guarantees about the ordering and uniqueness
+of these Pods.
+
+This panel shows StatefulSets that may not have all the requested replicas
+available.
+
+metrics | description  
+---|---  
+StatefulSet | Name of the StatefulSet  
+Requested | The number of replicas requested  
+Available | The number of replicas available  
+  
+#### Deployment status
+
+Deployments provide declarative updates for pods and ReplicaSets.
+
+This panel shows deployments that may not have all the requested replicas
+available.
+
+metrics | description  
+---|---  
+Deployment | Name of the resource object responsible for keeping a set of pods running  
+Requested | The number of replicas requested  
+Available | The number of replicas available  
+  
+#### Pods not available
+
+This panel shows details of all the pods that are not available and the
+reason.
+
+metrics | description  
+---|---  
+Pod | Pod identifier name  
+Ready | Readiness of the pod. 0 means the pod is not ready.  
+Restarts | Number of times the pod has restarted, trying to successfully become ready.  
+Reason 1 | Short summary on the reason why the pod is not available  
+Reason 2 | Detailed technical reason why the pod is not available  
+  
+#### Persistent volume claim usage
+
+This panel shows details of all disk usage for all PVCs.
+
+metrics | description  
+---|---  
+PVC | Name of the persistent volume claim  
+Used (GB) | Disk space used  
+Capacity (GB) | Disk space available  
+Used (%) | Percentage of the disk space used  
+  
+### Ingest
+
+This row shows details of each pod involved in data ingestion and how much
+data they are processing.
+
+#### RT Services
+
+This panel shows details of the messages being ingested by each RT pod.
+
+metrics | description  
+---|---  
+RT Pod | Name of the specific reliable transport pod  
+Leader | Leadership status of the pod, there should always be one leader per RT service  
+Node Index | The node index from the hostname  
+In Msg/s | Incoming messages per second. *  
+Message Queue Size | Number of messages in the queue *  
+In Bytes/s | Incoming bytes per second *  
+  
+  * These metrics are only recorded for the leader node
+
+#### RT Publishers Messages In
+
+This panel shows details of the messages being ingested by each RT pod per
+publisher.
+
+metrics | description  
+---|---  
+RT Pod | Name of the specific reliable transport pod  
+Publisher | Name of the directory the publisher is publishing to  
+In Bytes/s | Incoming bytes per second from the publisher  
+  
+#### RT Publishers Messages Out
+
+This panel shows details of the messages being sent by each RT pod to each
+subscriber.
+
+metrics | description  
+---|---  
+RT Pod | Name of the specific reliable transport pod  
+Publisher | Name of the directory the subscriber is subscribing to  
+Out Msg/s | Outgoing messages per second to the subscriber  
+  
+#### DAP ingest
+
+This panel shows details of the DAPs including their purview time range, their
+ingestion rate and how many records they retain after a purge.
+
+metrics | description  
+---|---  
+Pod | DAP pod identifier  
+Instance Type | Data Access Processor type of instance (rdb, idb, hdb)  
+Purview Start | Start timestamp of Data Access Purview  
+Purview End | End timestamp of Data Access Purview  
+Records/s | Inbound records received by the Data Access Processor per second  
+Stream Pos | Current subscriber stream position  
+Records Post Purge | Number of records left in the Data Access Processor after purge  
+  
+#### Storage Manager ingest
+
+This panel shows details of the Storage Manager clients, ingestion and EOI and
+EOD status.
+
+metrics | description  
+---|---  
+Pod | Storage Manager pod identifier  
+Connected Clients | Number of connected clients  
+Stream Records | Number of records held by the stream  
+Stream Msgs | Number of messages streamed by the stream  
+EOI Stream position | End of interval stream position  
+EODs Pending | Number of end of day requests pending  
+  
+### Data persistence
+
+This row shows details of each pod storing symbols and the symbol growth rate.
+
+#### Symbols
+
+metrics | description  
+---|---  
+Pod | Pod identifier name  
+Symbols | Number of symbols for the component container  
+Sym growth (1d) | Daily growth of symbols for the component container  
+Sym growth (7d) | Weekly growth of symbols for the component container  
+  
+#### EOI by shard
+
+metrics | description  
+---|---  
+Pod | Pod identifier name  
+Last EOI duration (s) | Number of seconds the last end of interval lasted  
+Last EOI records written | Number of records written during the last end of interval  
+Pending EOIs | Number of EOI requests awaiting completion  
+  
+#### EOD by shard
+
+metrics | description  
+---|---  
+Pod | Pod identifier name  
+Last EOD duration (s) | Number of seconds the last end of day lasted  
+Last EOD records written | Number of records written into hdb at end of day  
+HDB Partitions | Number of partitions in the historical database  
+HDB Size (MB) | Size in MB of the historical database  
+Pending EODs | Amount of EOD requests awaiting completion  
+  
+### Query
+
+#### Gateway query status
+
+metrics | description  
+---|---  
+Pod | Pod identifier name  
+Service | Service identifier name  
+Pending Queries | Number of pending queries (Both HTTP/IPC)  
+IPC Requests/s | Number of incoming IPC requests per second  
+Connected Clients | Number of connected clients  
+Connected Aggs | Number of connected aggregators  
+Connected DAPs | Number of connected Data Access Processors  
+  
+#### Resource coordinator query status
+
+metrics | description  
+---|---  
+Service | Service identifier name  
+Pod | Pod identifier name  
+Queue size | Length of the outstanding request queue  
+Avg Response (ms) | Average response time in milliseconds  
+Requests/s | Number of incoming requests per second  
+Success Query/s | Number of successful queries per second  
+Retry Rate/s | Number of retries per second  
+Connected Aggs | Number of connected Aggregators  
+Connected DAPs | Number of connected Data Access Processes  
+  
+#### Agg Query Status
+
+metrics | description  
+---|---  
+Pod | Pod identifier name  
+Request/s | Number of incoming requests per second  
+Errors/s | Number of errors received per second  
+Timeouts/s | Number of timeouts per second  
+Active Queries | Number of queries being executed now  
+Avg Response (ms) | Average response time in milliseconds  
+  
+#### DAP Request Status
+
+metrics | description  
+---|---  
+Pod | Pod identifier name  
+Endpoint | Database type where the Data Access Process is pointing at  
+Success Query/s | Number of successful queries per second  
+Failed Query/s | Number of failed queries per second  
+Failure (%) | Percentage of queries that failed  
+  
+### Kubernetes Events
+
+List of Kubernetes events raised in the namespace in the time range.
+
+metrics | description  
+---|---  
+Time | Time of event  
+Reason | Reason for the event  
+Object | Object raising the event  
+Message | Message details
+

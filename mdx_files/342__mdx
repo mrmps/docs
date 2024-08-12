@@ -1,0 +1,132 @@
+https://code.kx.com/platform/control_heartbeats/
+
+# Heartbeats - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/control_heartbeats/
+
+# Heartbeats
+
+In _KX Control_ , long-lived connections are maintained between processes and
+used as a way to determine whether a process is still running. In the case of
+some failover events (server or network failures), a process can no longer be
+reachable but the connection isn’t terminated [1]. The client may still send
+messages across that handle without knowing there is an issue.
+
+To protect against failures and improve recovery time, heartbeats are used
+between business-critical processes to raise an alert in case one stops
+responding. Heartbeats can be configured as one- or two-way
+
+## One-way heartbeats
+
+In this mode, a client process is configured to send heartbeats to another at
+a frequency. The server expects to receive heartbeats at that frequency and to
+take action if a timeout occurs. The timeout value is usually more than 1.5
+times the frequency. This mode is used when the server cares about the state
+of the client but not vice versa.
+
+An example:
+
+  * Feedhandler (FH) is connected to a subscriber
+  * If one subscriber goes down, the FH wants to failover and publish to another instead
+  * The subscriber doesn’t care if the FH is unresponsive
+  * Subscriber acts as the client and initiates heartbeats every 10 seconds
+  * FH will close the connection if no heartbeats received within 20 seconds
+  * If this occurs, FH knows the subscriber is no longer connected and initiates a failover
+
+### Two-way heartbeats
+
+In this mode, both the client and server need to know the state of the other
+so each is configured to take action if the other fails. The recommended way
+to configure this is for the client to configure heartbeats but every
+heartbeat sent should result in an async heartbeat response from the server.
+Both processes will then use the same frequency and timeout. The set-up is
+usually configured with the client (heartbeat sender) as the less-critical
+process so the server doesn’t need to maintain a timer job to send heartbeats
+[2].
+
+An example:
+
+  * _KX Control_ launches a process
+  * Both need to know if the other is responsive
+  * _KX Control_ needs to know if the process is unresponsive so it can take failover actions (launch process/workflow, send alerts etc)
+  * Process needs to know so it can failover to a backup _KX Control_ process
+  * Process acts as the client and sends heartbeats to _KX Control_
+  * _KX Control_ echoes those heartbeats back to the process
+  * Both processes check for timeouts
+
+## KX Control failover
+
+If _KX Control_ is installed in a cluster configuration, heartbeats should be
+configured via the environment variables below. If one server fails, the rest
+of the cluster will time-out that process and elect a new leader.
+
+    
+    
+    export DELTACONTROL_HEARTBEAT_TIMEOUT=60
+    export DELTACONTROL_HEARTBEAT_FREQUENCY=30
+    
+
+Process instances can be configured to heart-beat to _KX Control_ by setting
+the heartbeat fields in their reserved parameters. By default these heartbeats
+will be one-way and _KX Control_ can be configured to take action when a
+timeout happens. The action _KX Control_ takes is configured in the Alerts
+table of the instance configuration.
+
+![Screenshot](../img/control/process_heartbeat_setting.png)
+![Screenshot](../img/control/process_heartbeat_action.png)
+
+To enable two-way heartbeats, the `CONTROL_HEARTBEATS:<DEFAULT>` parameter
+should be updated. It dictates whether the process should expect responses and
+what action to take if a failure occurs on the leader _KX Control_ process.
+
+## Other components
+
+Some of the _KX Control_ and _KX Stream_ frameworks also require protection
+against failover events. This usually involves setting heartbeats between
+critical components.
+
+### Query router
+
+The Query Routing (QR) component protects against failures in a couple of
+ways. If a process doesn’t respond to a query, and a timeout occurs, processes
+will be pinged or disconnected to ensure they don’t cause continual failures.
+Between QR processes in a cluster, two-way heartbeats are used to ensure there
+is always an active leader process available to service queries.
+
+Some kdb+ processes can act as clients in the QR framework. If a process
+registers with heartbeats enabled, these will be two-way between it and the
+QR, with the client acting as the source. This ensures both sides are aware of
+any failures of the other. The client will failover to another QR if the
+leader times out.
+
+The `hopen` timeout and repeat interval for connections between QR processes
+in a cluster or between clients and the QR framework can be configured.
+
+[Connection Timeouts](../qr_overview/#connection-timeouts)
+
+### Messaging
+
+The messaging server (MS) relies on all processes maintaining a long-lived
+connection in order to publish any subscription changes. Processes connect to
+the primary on startup and receive any changes as processes come online and
+register topics. If the MS is unavailable, new subscriptions sent onto a stale
+handle won’t be acted upon and new processes will connect to the secondary MS.
+In both cases, existing processes won’t receive subscription updates.
+
+To mitigate this, the MS can be configured with a heartbeat frequency in the
+Instance Params. If configured, processes will send two-way heartbeats to the
+server and disconnect it in the event of a failure.
+
+![Screenshot](../img/control/messaging_heartbeat.png)
+
+## Notes
+
+  1. The connection will eventually close but the length of time this takes depends on the kernel TCP keepalive settings.
+
+  2. This setup could be configured using two sets of one-way heartbeats but this is less efficient as both processes need to run a heartbeat timer job.
+
+The `hopen` timeout and repeat interval for connections between clients and
+the MS process can be configured.
+
+[Connection Timeouts](../stream/messaging/#connection-from-client-to-ms)
+

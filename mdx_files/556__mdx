@@ -1,0 +1,118 @@
+https://code.kx.com/dashboards/helper-number/
+
+# Numbers - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/helper-number/
+
+# Number helpers
+
+## `addCommas`
+
+Add commas to numbers
+
+Parameters:
+
+Returns {String}
+
+Example: `{{addCommas "1234567"}}` => `1,234,567`
+
+## `bytes`
+
+_Format a number to its equivalent in bytes, or a string as its length in
+bytes._
+
+Examples:
+
+    
+    
+    "foo"     "3 B"
+    13661855  "3.66 MB"
+    825399    "825.39 kB"
+    1396      "1.4 kB"
+    
+
+Parameters:
+
+Returns {String}
+
+## `phoneNumber`
+
+_Convert a string or number to a formatted phone number._
+
+Parameters:
+
+  * `num` {Number|String}: The phone number to format, e.g. 8005551212
+
+Returns {String}
+
+Example: `{{phoneNumber "8005551212"}}` => `(800) 555-1212`
+
+## `toAbbr`
+
+_Returns the number in abbreviation formats based on a value. The number is
+rounded to a particular decimal place. This is for general numbers, not size
+in bytes._
+
+Parameters:
+
+  * `number` {Number}
+  * `precision` {Number}: An integer specifying the number of digists to appear after the decimal point (Optional); default is 2. 
+
+Returns {String}
+
+Example: `{{toAbbr "1234567"}}` => `1.23m`
+
+## `toExponential`
+
+_Returns a string representing a number in exponential notation. One digit
+before the decimal point, rounded to`fractionDigits` after the decimal point_
+
+Parameters:
+
+  * `number` {Number}
+  * `fractionDigits` {Number}: Optional. An integer specifying the number of digits to appear after the decimal point. Defaults to as many digits as necessary to specify the number.
+
+Returns {String}
+
+Example: `{{toExponential "5" 2}}` => `5.00e+0`
+
+## `toFixed`
+
+_Formats the given number using fixed-point notation._
+
+Parameters:
+
+  * `number` {Number}
+  * `digits` {Number}: (Optional) The number of digits to appear after the decimal point; this may be a value between 0 and 20. If this argument is omitted, it is treated as 0.
+
+Returns {String}: A string representing the given number using fixed-point
+notation.
+
+Example: `{{toFixed "1.1234" 2}}` => `1.12`
+
+## `toFloat`
+
+Parameters:
+
+Returns {Number}
+
+## `toInt`
+
+Parameters:
+
+Returns {Number}
+
+## `toPrecision`
+
+_Returns a string representing`number` to the specified precision._
+
+Parameters:
+
+  * `number` {Number}
+  * `precision` {Number}: (Optional) An integer specifying the number of significant digits. If precison is not between 1 and 100 (inclusive), it will be coerced to 0.
+
+Returns {String}: A string representing `number` in fixed-point or exponential
+notation rounded to `precision` significant digits.
+
+Example: `{{toPrecision "1.1234" 2}}` => `1.1`
+

@@ -1,0 +1,292 @@
+https://code.kx.com/analyst/developer-walkthrough/
+
+# Developer walkthrough - KX Analyst
+
+Original URL: https://code.kx.com/analyst/developer-walkthrough/
+
+# Developer walkthrough
+
+_A simple workflow for q development._
+
+## Pre-flight
+
+Read the [Getting Started](../getting-started/) section.
+
+Log in to Analyst and create a workspace.
+
+![](../img/intro/explorer.png)
+
+Create a repository. Repositories allow you to save versions of your work in a
+repository to share with other people and allow them to work on items in the
+repository as well. People who have access to the repository can push changes
+to it and pull changes from it. Right-click in the left tree pane of the
+window. A context menu will appear. Select _New > Repository…_ from the
+context menu.
+
+![](../img/intro/newRepoMenu.png)
+
+The _New Repository_ dialog will appear. If this walkthrough is being done
+collaboratively, use a name that is unlikely to have been used before and is
+unique - for example: `usernameDevWalkthrough`, replacing `username` with your
+Analyst username. Going forward, the walkthrough will refer to the repository
+as `exampleRepository`.
+
+![](../img/intro/newRepoDialog.png)
+
+The repository will now appear in the tree.
+
+![](../img/intro/newRepo.png)
+
+## Create a module in the workspace
+
+Create a module in the repository. Right-click on the repository and select
+_New… > Module…_ from the menu. Modules are packages of artifacts and may
+contain code functions, code scripts, transformations, visualizations, and
+more.
+
+![](../img/intro/newModuleMenu.png)
+
+Type `.myModule` in the dialog box and press _OK_.
+
+![](../img/intro/newModuleDialog.png)
+
+The module will appear in the search pane. The small green plus sign indicates
+that the module has been added to the workspace but not yet committed or
+pushed to the repository. All entities are managed by Analyst and saved into
+the Analyst repository.
+
+![](../img/intro/newModule.png)
+
+Right-click on the repository and select _Git > Push_ from the context menu.
+
+![](../img/intro/gitPushMenu.png)
+
+The _Commit Message_ dialog will appear. This dialog allows you to enter a
+commit message, as well as set the Git author and Git email fields for this
+commit. Since you may be pushing changes to the repository on a regular basis,
+it makes sense to provide a meaningful commit message. Leaving the author and
+email fields blank, enter a commit message and click _OK_.
+
+![](../img/intro/commitModule.png)
+
+Notice that the icon disappears from `.myModule`. This means that anyone else
+who has access to the repository is now able to load the repository.
+
+![](../img/intro/publishedModule.png)
+
+Now let’s add some dummy data to our module. Right-click on the module and
+pick _New… > Data…_ from the context menu. The Data type allows you to create
+data (e.g. constants, variables, etc) and have it initialized whenever you
+load the module into your workspace. For example, when you first log on to
+your workspace, if the module is in your workspace, then the data will be
+loaded and ready for use.
+
+![](../img/intro/newDataMenu.png)
+
+Type `myData` in the input field for the data file name and click _OK_.
+
+![](../img/intro/image31.png)
+
+`myData` is now added to the workspace tree, and an editor for the artifact is
+opened. Type the following into the editor for `myData`. In this example, we
+are creating a simple dummy table.
+
+![](../img/intro/image32.png)
+
+## Inspect the dataset using the console and Visual Inspector
+
+Right-click on the line of code and pick _Display_ from the context menu, or
+alternatively place your cursor on that line and use the keyboard combination
+⌘D (macOS) or Ctrl-D (Windows/Linux).
+
+![](../img/intro/image32A.png)
+
+The table data will appear in the console.
+
+![](../img/intro/image33.png)
+
+Right-click on the line of code and pick _Inspect_ from the context menu, or
+use the keyboard combination ⌘I (macOS) or Ctrl-I (Windows/Linux). A new
+window will open showing the table data in the _Visual Inspector_. Analyst
+makes it easy for you to view and manipulate data while you create functions
+and script files. Close the _Inspector_ window after you have looked at the
+data.
+
+![](../img/intro/image34.png)
+
+Save the function by selecting the `.myModule.myData` tab (if it is not
+already selected) and pressing ⌘S (macOS) or Ctrl-S (Windows/Linux). You can
+also use the _File_ menu or the context menu to save the function.
+
+## Add a function to a module
+
+Now let’s add a function to the module. Right-click on the module and pick
+_New > Function…_ from the context menu
+
+![](../img/intro/newFunctionMenu.png)
+
+Enter `myFunction` in the dialog box and click _OK_.
+
+![](../img/intro/image36.png)
+
+The search pane updates. `myFunction` is added to the module. Notice that
+`myData` and `myFunction` are both shown with a green **+** icon, used to
+indicate that these items have been added but not yet committed/pushed. The
+module updates to contain a blue **M** to indicate that the module has been
+modified. The new function body is opened in a tab in the Explorer.
+
+![](../img/intro/newFunction.png)
+
+## Edit a function using the editor
+
+Now let’s edit our first function. You write function parameters between the
+square brackets separated by a semicolon. You write the function body between
+the curly brackets. _QDoc_ for the function goes above the function
+definition. In this simple example, we will be passing a symbol name to the
+function. The function will select all of the price values for a given name
+from our dummy dataset and then sum the values to create a total. It will then
+return a string containing the name and total. Enter the following into the
+`myFunction` tab.
+
+![](../img/intro/image38.png)
+
+## Add a dataset to the function
+
+Now let's switch to the Scratchpad tab. Analyst will by default open a
+Scratchpad for new workspaces, but additional Scratchpads can be opened at any
+time by picking _Tools > Scratchpad_.
+
+![](../img/intro/scratchpadMenu.png)
+
+## Run the function
+
+If you remember, our dataset contained the names ``tom`dick`harry` and
+``sally`. To test our function, type `.myModule.myFunction `harry` into the
+Scratchpad and press ⌘D (macOS) or Ctrl-D (Windows/Linux).
+
+![](../img/intro/image40.png)
+
+## Debug the function using the Quick Debugger
+
+The console should display a similar output. Note that the amount spent is
+likely to be different, as `myData` is randomly generated.
+
+![](../img/intro/image41.png)
+
+Now let’s cause the function to error and use the _Quick Debugger_ to discover
+the error. Replace one of the `,` from line 6 with a `+` and save the
+function. Trying to use `+` to join strings will cause an error.
+
+![](../img/intro/image42.png)
+
+Let’s use the _Quick Debugger_ to track down the problem. Highlight the
+function, right-click and pick _Quick Debugger_ from the context menu.
+
+![](../img/intro/image44.png)
+
+The _Quick Debugger_ will open in a separate tab. The function definition is
+loaded, and you can see that ``harry` has been assigned to the parameter, and
+what the value assigned to `total` is. The _Quick Debugger_ prints where the
+error occurred and why at the bottom of the frame, and we can clearly see that
+the error is originating from our use of `+`.
+
+![](../img/intro/image45.png)
+
+## Save and publish the module to the shared repository
+
+Now that we know what the issue is, we can go back and fix our function to use
+`,` instead of `+`. Replace the `+` with `,` on line 6 of `myFunction`, and
+then save the change. Now that we've fixed our function, we should push the
+module to the shared repository to make it available for other developers to
+use and modify. Right-click your repository in the search pane and pick _Git >
+Push_ .
+
+![](../img/intro/gitPushMenu2.png)
+
+The _Commit Message_ dialog will appear. Type an appropriate message and click
+_OK_.
+
+![](../img/intro/commitChildren.png)
+
+The tree will update and the modification icons will disappear.
+
+![](../img/intro/committedModule.png)
+
+## Write a test for the function
+
+Now we should write a test for our function. Analyst supports behavior-driven
+test development using _qCumber_ and _QuickCheck_. To add a _qCumber_ test,
+right-click on the repository in the search pane and add a new module. Keep in
+mind that if you wish to take advantage of Analyst’s built-in testing
+framework you should name your test module the same name as the module you are
+going to test and suffix the name with `.test`. So in the case of `.myModule`,
+we would create a test module called `.myModule.test` as shown below.
+
+![](../img/intro/image50.png)
+
+Now we create a test file by right-clicking on the test module and picking
+_New > Test…_ from the context menu.
+
+![](../img/intro/newTestMenu.png)
+
+In the function-name dialog, you would match your test file with your code
+function by using the same name for your test file as your code function. Type
+`.myFunction` into the dialog and click _OK_.
+
+![](../img/intro/image52.png)
+
+The test will populate the tree with the appropriate `.quke` extension and the
+file will open in the explorer with the basic test template.
+
+![](../img/intro/newTest.png)
+
+Once the file has been created, enter the following simple _qCumber_ test.
+When executed, this test will use the symbols ``tom` and ``dick` to pass to
+`myFunction`. The test expects the return type to be string. Please see the
+[Testing](../testing/) section for more information about testing with
+_qCumber_ and _QuickCheck_.
+
+![](../img/intro/image53.png)
+
+## Run the test
+
+Now right-click on the module (`.myModule`), or the test module
+(`.myModule.test`) or the function, or the test itself, and pick _Code > Run
+Tests_ from the context menu. If you select a module, all of the tests for
+that module are run. If you select just the function or test, only the
+associated test file is run.
+
+![](../img/intro/runTestMenu.png)
+
+## Save and publish the test module to the shared repository
+
+The console should report how many tests passed. When you are satisfied with
+the test, push it to the repository.
+
+![](../img/intro/image90.png)
+
+Now that we are done with the repository, it can be unloaded from your
+workspace by right-clicking the repository and picking _Unload_.
+
+![](../img/intro/unloadMenu.png)
+
+To clone your repository into your workspace, click on the _Git > Shared
+Repositories_ context menu option to view a list of available repositories.
+You will see your repository listed here, as well as any other repositories
+other users have created and pushed. This list can be searched by name and
+branch name. Pick your repo and click _Clone_.
+
+![](../img/intro/cloneShared.png)
+
+The _Pull Repository_ dialog appears. It allows you to pull a specific branch
+of the repository, or rename the repository. Leave the defaults and Click
+_OK_.
+
+![](../img/intro/pullDialog.png)
+
+## Summary
+
+From this walkthrough, you can see how a developer might write, organize,
+debug, and test their code. For more information about the various components,
+please see other sections of this user guide.
+

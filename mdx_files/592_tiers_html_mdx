@@ -1,0 +1,250 @@
+https://code.kx.com/insights/microservices/database/storage/tiers.html
+
+# Storage tiering - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/database/storage/tiers.html
+
+# Storage tiers
+
+_Tiers_ describe the locality, segmentation format, and rollover configuration
+of each storage tier. Storage tiers are used to migrate data over time from
+fast, expensive storage to slower, less-expensive storage. Depending on your
+use case, this configuration can be tuned to either have more data in memory
+for faster query performance, or have more data on disk to reduce costs.
+
+Tier configuration
+
+Refer to [tier configuration](../configuration/assembly/storage.html#tiers)
+for the full list of configuration options.
+
+![](images/database-tiers.png)
+
+## Tier types
+
+Tiers differ in performance and cost. As data ages, its value decreases and it
+can be transitioned to slower, less-expensive storage. Tiers for a database
+are split into a single stream tier, a single ordinal tier and one or more
+date tiers. The type of the tier is determined based on the configuration of
+the tier's [mount](../configuration/assembly/database.html#mounts).
+
+    
+    
+    sm:
+      tiers:
+        - name: rdb
+          mount: rdb
+        - name: idb
+          mount: idb
+          schedule:
+            freq: 0D00:10:00 # every 10 minutes
+        - name: hdb
+          mount: hdb
+          schedule:
+            freq: 1D00:00:00 # every day
+            snap:   01:35:00 # at 1:35 AM
+          retain:
+            time: 2 days
+    
+
+### Stream tier
+
+A stream tier is responsible for in-memory data that is received between
+write-down events. This tier is used to hold the most recent data available in
+memory for the fastest possible query results. This tier is typically referred
+to as the real-time database or RDB. This tier has no persisted data, so it
+must have enough memory capacity to hold data for the interval between writes
+to disk. This interval has a default of 10 minutes. There can only be one
+stream tier in a tier configuration and it must always be the first tier.
+
+A stream tier is configured by using a stream mount with no partitioning
+scheme.
+
+    
+    
+    mounts:
+      rdb:
+        type: stream
+        partition: none
+    elements:
+      sm:
+        tiers:
+          - name: rdb
+            mount: rdb
+    
+
+### Ordinal tier
+
+An ordinal tier is responsible for data written to disk after migrating out of
+the stream tier. This tier holds data that has been written periodically
+throughout the day after flushing the data from the stream tier. As a result,
+it is typically referred to as the intra-day database or IDB. Data in this
+tier is stored on disk in a partitioned table that is sequenced in order of
+the intervals written throughout the day. There can only be one ordinal based
+tier in a tier configuration and it must always follow the stream tier.
+
+An ordinal tier is configured using a `local` mount with an `ordinal`
+partitioning scheme. The frequency for how often data is flushed from the
+stream tier and written to disk here is configurable, and has a default of 10
+minutes.
+
+    
+    
+    mounts:
+      rdb:
+        type: stream
+        partition: none
+      idb:
+        type: local
+        partition: ordinal
+      sm:
+        tiers:
+          - name: rdb
+            mount: rdb
+          - name: idb
+            mount: idb
+            schedule:
+              freq: 0D00:10:00  # interval every 10 minutes
+    
+
+### Date tier
+
+A tier configuration can have one or more date tiers following an `ordinal`
+tier. Date tiers hold historical data partitioned by date, and you can choose
+to have one or many of them. Date tiers can be configured to hold data for a
+set duration before either migrating it to the next tier, or discarding it.
+This is based on your desired configuration and data retention requirements.
+Data is migrated exactly once per day from the `ordinal` tier to the first
+`date` tier, and between tiers. A `snap` value can be set to configure what
+time of day the migration happens relative to midnight. Note: when
+configuration is changed, data is moved between tiers to reach the desired
+distribution. This means that data might be moved in the "reverse direction",
+if retain time of e.g. the first tier is increased, data will be moved from
+the second tier to the first. Data in the object store are not subject to
+relocation.
+
+A date tier is configured by using a `local` mount with a `date` partitioning
+scheme. Multiple date tiers can be added sequentially with slower, less-
+expensive disks as data ages. Note that there can only be one `mount` added
+with `date` partitioning. Too add a second tier with `date` partitioning(see
+`hdb1b` in example below): \- a new tier should be added to the
+`elements.sm.tiers` section with unique `name` \- the mount should be set to
+the name of the `date` partitioned mount in `mounts` section \- the `store`
+set to the location where the next tier of data should be stored(see
+[store](../configuration/assembly/storage.html#store))
+
+Date tiers in object storage
+
+For data that is very old and/or infrequently queried, a date object storage
+tier can be added. This is configured using a normal date mount, with extra
+tier configuration to point to the object storage bucket. See object storage
+tier below for details.
+
+    
+    
+    mounts:
+      rdb:
+        type: stream
+        partition: none
+        baseURI: none
+      idb:
+        type: local
+        partition: ordinal
+        baseURI: file:///data/db/idb
+      hdb:
+        type: local
+        partition: date
+        baseURI: file:///data_ssd/db/hdb
+    
+    elements:
+      sm:
+        source: stream
+        tiers:
+          - name: rdb
+            mount: rdb
+          - name: idb
+            mount: idb
+            schedule:
+              freq: 0D00:10:00 # every 10 minutes
+          - name: hdb1a
+            mount: hdb
+            schedule:
+              freq: 1D00:00:00 # every day
+              snap:   01:35:00 # at 1:35 AM
+            retain:
+              time: 2 days
+          - name: hdb1b
+            mount: hdb
+            retain: 2 weeks
+            store: file:///data_hdd/db/hdb
+    
+
+## Object storage tier
+
+For data that needs to be preserved on very inexpensive storage, it can be
+migrated to an object storage tier. Object storage tiers offer the benefit of
+being endlessly scalable and highly available. An object storage tier is a
+final destination for data in the tier lifecycle.
+
+Object storage tiers vs mounting an object storage database
+
+An object storage tier is a read-write location and is configured differently
+than a read-only database. See [querying object storage](../query/object-
+storage.html) for an example of how to query an existing object storage
+database.
+
+An object storage tier is a date tier with extra details about the object
+storage location. To configure an object storage tier, add a `store` field
+with the remote data location. To improve query performance, a cache index
+called an [inventory file](../configuration/assembly/storage.html#object-
+storage-inventory-files) can be configured.
+
+In the example below, data flows from the normal `hdb` disk to the `odb`
+object storage tier after being on disk for 2 weeks. Both the `hdb` and the
+`odb` tier use the same `hdb` mount, but the `odb` tier overrides the `store`
+location to point to an AWS S3 location.
+
+    
+    
+    mounts:
+      rdb:
+        type: stream
+        partition: none
+        baseURI: none
+      idb:
+        type: local
+        partition: ordinal
+        baseURI: file:///data/db/idb
+      hdb:
+        type: local
+        partition: date
+        baseURI: file:///data/db/hdb
+    
+    elements:
+      sm:
+        source: stream
+        tiers:
+          - name: rdb
+            mount: rdb
+          - name: idb
+            mount: idb
+          - name: hdb
+            mount: hdb
+            retain:
+              time: 2 weeks
+          - name: odb
+            mount: hdb
+            store: s3://kxi-example-data/db
+            inventory:
+              enabled: true
+              location: inventory/test-db-inventory.tgz
+    
+
+Data must persist to disk before migrating to object storage
+
+Before data can be migrated to an object storage tier, it must be persisted in
+a date tier for at least one full day. This implies that the minimum retention
+period for the HDB tier is 1 day.
+
+To learn more about configuring object storage tiers, see the guide on [object
+storage](object-storage.html) configuration.
+

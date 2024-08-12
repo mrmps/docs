@@ -1,0 +1,66 @@
+https://code.kx.com/dashboards/apiintro/
+
+# Introduction - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/apiintro/
+
+# Introduction
+
+Dashboard components are defined as
+[AMD](https://requirejs.org/docs/whyamd.html#amd) modules that return a
+constructor function. This function is invoked with the initialization
+parameters including a [DOM](https://developer.mozilla.org/en-
+US/docs/Web/API/Document_Object_Model) element.
+
+Download [Dashboards Direct](https://code.kx.com/dashboards/gettingstarted/)
+for free to use as an SDK to develop components. Once complete, see
+[Deployment](apideploy.md) for instructions on adding a component to your
+Dashboards installation.
+
+## Hello World
+
+### 1\. Five lines of Javascript
+
+Create a `HelloWorld` folder in **www/modules/** including a `main.js` file
+with the code below.
+
+    
+    
+    define(function () {
+        return function (options) {
+            options.el.textContent = "Hello World";
+        }
+    });
+    
+
+### 2\. Add component definition
+
+Add a component definition to `components.json` inside the **www** folder.
+
+    
+    
+     {
+        "id": 10001,
+        "componentName": "Hello",
+        "componentDescription": "Simple component",
+        "size": [400,600],
+        "appKey": "HelloWorld/main",
+        "listViewThumb": "<i class=\"fa fa-fw fa-smile-o\" />"
+      },
+    
+
+### 3\. Refresh and drag
+
+Refresh Dashboards in `Design` mode and drag your new component to the canvas.
+
+    
+
+![Screenshot](../img/apiintro/hellocomponent.jpg)
+
+## Sample Download
+
+A number of sample projects are available to downloads and try. Please read
+more about these samples in the following tutorials.
+
+[ Download Samples](../assets/projects.zip)
+

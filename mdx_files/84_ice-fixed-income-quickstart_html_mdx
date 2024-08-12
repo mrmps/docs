@@ -1,0 +1,207 @@
+https://code.kx.com/insights/accelerators/fsi/ice-fixed-income-quickstart.html
+
+# ICE Fixed Income Quickstart Guide - kdb products
+
+Original URL: https://code.kx.com/insights/accelerators/fsi/ice-fixed-income-quickstart.html
+
+# ICE Fixed Income Accelerator Quickstart Guide
+
+The ICE Fixed Income Accelerator is an FSI Accelerator package which comes
+with ready made Pipelines, Views, and Schemas out of the box.
+
+## Prerequisites
+
+This quickstart guide is **not** intended to be a comprehensive KDB Insights
+Install Guide, for more information regarding KDB Insights installation refer
+to the [kdb Insights Enterprise
+documentation](https://code.kx.com/insights/1.9/enterprise/index.html).
+
+This guide assumes the following pre-requisites:
+
+  * KDB Insights Enterprise 1.9.0 (minimum version) installed
+  * _Credentials obtained and configured_ :
+    * Insights Users: 
+    * S3/blob storage secret
+  * KX Downloads Portal bearer token to download packages/charts (represented by BEARER in this guide).
+  * ICE Credentials:
+    * ICE Consolidated Feed Username & Password
+    * ICE Consolidated Feed IP Address & Port Number _Tools Used_ :
+    * Access to *nix command-line
+    * KDB Insights CLI - `kxi`
+  * _Kubernetes tools_ : 
+  * Helm installed and logged in to nexus
+  * _VSCode plugins_ : 
+  * ICE data drops to your S3 bucket/blob storage set up for:
+    * Ratings data
+    * Instrument data
+
+## Quick Start Guide
+
+Download the required FSI packages from the kx download portal:
+
+    
+    
+    # Download fsi-lib - the Core FSI Library
+    curl -s --fail-with-body -D /dev/stderr --oauth2-bearer ${BEARER} -L -OJ https://portal.dl.kx.com/assets/raw/kxi-accelerators/fsi/fsi-lib/packages/1.1.0/fsi-lib-1.1.0.kxi
+    
+    
+    # Download fsi-app-ice-fi - the ICE Fixed Income Accelerator
+    curl -s --fail-with-body -D /dev/stderr --oauth2-bearer ${BEARER} -L -OJ https://portal.dl.kx.com/assets/raw/kxi-accelerators/fsi/fsi-ice-fi/packages/1.0.0/fsi-app-ice-fi-1.0.0.kxi
+    
+
+Unpack fsi-app-ice-fi:
+
+    
+    
+    kxi package unpack fsi-app-ice-fi-1.0.0.kxi
+    
+
+Update the s3/blob storage location of your ICE ratings and Instrument data
+pipelines, for example:
+
+Using a single bash sed command
+
+    
+    
+    sed -i 's|\.fsi\.filePath\:.*|.fsi.filePath:`$"YOUR_FILE_LOCATION";|g' fsi-app-ice-fi/src/icecorereference-pipeline-spec.q
+    
+    
+    
+    sed -i 's|\.fsi\.filePath\:.*|.fsi.filePath:`$"YOUR_FILE_LOCATION";|g' fsi-app-ice-fi/src/iceratings-pipeline-spec.q
+    
+    
+    
+    sed -i 's|\.fsi\.filePath\:.*|.fsi.filePath:`$"YOUR_FILE_LOCATION";|g' fsi-app-ice-fi/src/icecrossreference-pipeline-spec.q
+    
+
+Or using a text editor and editing the line of config at the top with
+`.fsi.filePath`, for example:
+
+    
+    
+    vi fsi-app-ice-fi/src/iceratings-pipeline-spec.q
+    
+
+Likewise, configure the pipeline to watch for new files. This is by default on
+a five minute interval
+
+    
+    
+    sed -i 's/\.fsi.reader\:\.qsp\.read\.fromAmazonS3.*/.fsi.reader:.qsp.read.fromAmazonS3[.fsi.filePath;.qsp.use `mode`region`watch!(`binary;.fsi.region;1b)];/' fsi-app-ice-fi/src/iceratings-pipeline-spec.q
+    
+    
+    
+    sed -i 's/\.fsi.reader\:\.qsp\.read\.fromAmazonS3.*/.fsi.reader:.qsp.read.fromAmazonS3[.fsi.filePath;.qsp.use `mode`region`watch!(`binary;.fsi.region;1b)];/' fsi-app-ice-fi/src/icecorereference-pipeline-spec.q
+    
+    
+    
+    sed -i 's/\.fsi.reader\:\.qsp\.read\.fromAmazonS3.*/.fsi.reader:.qsp.read.fromAmazonS3[.fsi.filePath;.qsp.use `mode`region`watch!(`binary;.fsi.region;1b)];/' fsi-app-ice-fi/src/icecrossreference-pipeline-spec.q
+    
+
+Note
+
+The `iceratings` pipeline uses the ISIN number ingested by the
+`icecrossreference` pipeline to join the APEX GSM data to the existing
+reference data. The ISIN numbers should already be populated in the
+`Instrument` table before the `iceratings` pipeline is run.
+
+Update the example ICE Feedhandler Config File to include your credentials and
+preferences.
+
+Note
+
+  * The config file contains a lot of commonly pre-populated default values.
+  * Any values that are expected to require updating on a per-deployment bases have been marked with a **TODO** comment, for example:
+    * Connection Details
+    * Subscription List
+
+    
+    
+    vi fsi-app-ice-fi/config/feed/ice-fi-feed-values.yaml
+    
+
+Repack the edited package
+
+    
+    
+    kxi package packit fsi-app-ice-fi --tag --version 1.0.0
+    
+
+Push the packages to Insights and Deploy the fsi-ice-fixed-income-assembly:
+
+    
+    
+    # Install the packages
+    kxi package push --force fsi-lib-1.1.0.kxi
+    kxi package push --force /tmp/artifacts/fsi-app-ice-fi-1.0.0.kxi
+    
+    # Deploy the assembly
+    kxi package deploy /tmp/artifacts/fsi-app-ice-fi/1.0.0
+    
+
+Add the KX helm repository from the KX downloads portal.
+
+Info
+
+For information on how to set up your downloads bearer token, refer to
+https://portal.dl.kx.com/auth/token
+
+    
+    
+    helm repo add kx https://portal.dl.kx.com/assets/helm --username <INSERT_EMAIL> --password <INSERT_BEARER_TOKEN>
+    
+
+Download the ICE Feedhandler from helm:
+
+    
+    
+    helm fetch kx/rt-ice-pub --version 1.0.0 --untar
+    
+
+Add your ICE Username & Password as a kubernetes secret:
+
+Note
+
+The secret name, in this case `my-ice-secrets`, should match the
+`ice.secrets.name` value in the example config file you previously edited -
+`fsi-app-ice-fi/config/feed/ice-fi-feed-values.yaml`.
+
+    
+    
+    kubectl create secret generic my-ice-secrets --from-literal=username=<INSERT_ICE_USERNAME> --from-literal=password=<INSERT_ICE_PASSWORD> -n <YOUR_NAMESPACE>
+    
+
+Install the ICE Feedhandler Helm Chart using your updated config file:
+
+    
+    
+    helm install rt-ice-pub ./rt-ice-pub -f fsi-app-ice-fi/config/feed/ice-fi-feed-values.yaml -n <INSERT_YOUR_NAMESPACE>
+    
+
+Verify the ICE FH is running using kubectl:
+
+    
+    
+    kubectl describe pod rt-ice-pub-0
+    
+
+Expected Output from above command on successful install:
+
+    
+    
+    Events:
+      Type    Reason                  Age   From                     Message
+      ----    ------                  ----  ----                     -------
+      Normal  Created                 24s   kubelet                  Created container rt-ice-pub
+      Normal  Started                 24s   kubelet                  Started container rt-ice-pub
+    
+
+Now that you have reference data ingested from your cloud storage and the ICE
+Feedhandler running you should be able to see data flowing in via the bond
+screener View. The historical data will not be populated yet.
+
+To populate the historical data there must be bar data for the relevant
+period. A bar generation pipeline is included to generate this. For more
+detail on historic data and bar generation refer to the [Historic Fixed Income
+Data](ice-fi-historic-data.html) documentation.
+

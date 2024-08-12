@@ -1,0 +1,40 @@
+https://code.kx.com/platform/deployment/install_config_options/
+
+# Install config options - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/deployment/install_config_options/
+
+install-dashboard-nodc | 1 (Enabled)  
+0 (Disabled) | Install Delta Dashboards into a standalone Tomcat deploy which does not connect to a Delta Control instance.  
+tomcat-install-type | 1 (Development Install)  
+2 (Production Install) | Set the JVM Java Heap Size.  
+Development install: 2560m  
+Production install: 5120m  
+tomcat-add-cors-filter | 1 (Enabled)  
+0 (Disabled) | Enable the Cors filter in the tomcat installation.  
+tomcat-keystore-file | Path | Path to Java RSA Keystore file for Tomcat SSL deploy  
+tomcat-keystore-password | String | Keystore RSA password  
+tomcat-keystore-alias | String | Keystore RSA alias, default is `tomcat`  
+app-server-install-type | 1 (HTTP)  
+2 (HTTPS)  
+3 (HTTPS with SSL Offloaded to Netscaler) | Set the configuration for HTTP, HTTPS with a certificate in the tomcat install and HTTP Offloaded where a netscaler handles the SSL traffic.  
+tomcat-use-apr-connector | 1 (Enabled)  
+0 (Disabled) | Use Tomcat native APR connector with HTTPS  
+tomcat-ssl-cert-file | Path | Path to Tomcat server certificate file (server-crt.pem) (APR connector only)  
+tomcat-ssl-key-file | Path | Path to Tomcat server certificate key file (server-key.pem) (APR connector only)  
+tomcat-ssl-ca-cert-file | Path | Path to Tomcat server certificate authority file (ca.pem) (APR connector only)  
+dashboards-use-captcha | 1 (Enabled)  
+0 (Disabled) | Enable CAPTCHA on dashboard login  
+dashboard-install-type | 1 (Red 5)  
+2 (BlazeDS) | Select the messaging type for flex dashboards  
+app-server-jvm-initial-memory | Integer | Initial and minimum heap size for JVM (Megabytes) Default 1280  
+app-server-jvm-max-memory | Integer | Maximum heap size for JVM. (Megabytes) Default 2048  
+production-tomcat-install | 1 (Enabled)  
+0 (Disabled) | Set Maximum heap size for JVM to 8192 (Megabytes)  
+app-server-beans-buffer-size-limit | Integer | Adjust the value of bufferSizeLimit in App Server server-beans.xml  
+app-server-allow-from-uri | URI | Allow listed URIs when antiClickJackingOption is enabled in Tomcat.  
+Format is [URI1][URI2][URI3]  
+tomcat-connection-timeout | Integer | Modify default connection timeout (20000) in tomcat connectors  
+copy-tomcat-keystore-file | 1 (Enabled)  
+0 (Disabled) | Copy the tomcat HTTPS connector keystore file into the ${DELTA_CONFIG}/ssl-certs/ directory
+

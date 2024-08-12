@@ -1,0 +1,49 @@
+https://code.kx.com/insights/accelerators/fsi/orderbookData.html
+
+# Order Book Data - kdb products
+
+Original URL: https://code.kx.com/insights/accelerators/fsi/orderbookData.html
+
+# Order Book Data
+
+The FSI accelerator contains an Order Book Pipeline which is used to generate
+Order Book data from Realtime Level 2 Data.
+
+## How the Order Book Pipeline Works:
+
+  1. The `*-orderbook-*` SP subscribes to `OrderbookUpdates` table from the `*fsi-data*` RT South.
+
+     * OrderbookUpdates:
+       * The `OrderbookUpdates` schema contains all information Level 2 Quote that is required to build Order Book data including:
+         * side = BID | ASK
+         * action = Add | Update | Delete
+  2. Using the `OrderbookUpdates` data the Orderbook SP populates two tables:
+
+     * OrderbookSnapshots:
+       * The `OrderbookSnapshots` schema is a table of market-by-price orderbook data which represents the depth of an instrument using enlisted bids and asks bucketed by the configured snapshot size.
+     * Depth:
+       * The `Depth` schema is a table of market-by-price orderbook data which represents the depth of an order using values in an explicit `depth` column.
+
+Both the `OrderbookSnapshots` and `Depth` tables are published back to the
+`*fsi-data*` RT South to be stored by the FSI SM.
+
+## Top of Book (TOB) Logic
+
+To help customers keep accurate order books on their own systems, some feeds
+use both top-of-book (TOB) indicators as a way to flush invalid orderIDs from
+the orderbook.
+
+A new TOB order is represented by containing a non-null value in the tobMarker
+column in the L2Quote schema.
+
+If a new TOB is received then any orders that are higher than the TOB are
+removed from the book, i.e. \- For the bid-side of the book orders with price
+greater than the new TOB price are removed. \- For the ask-side of the book
+orders with price less than the new TOB price are removed.
+
+## Configurations
+
+  1. .fsi.isAllLevelTotalSize When totalAsk/BidSize columns are populated in `Depth` and `OrderbookSnapshots`, they are depending on `.fsi.isAllLevelTotalSize` value.
+     * 1b: The total size is the aggregation of the all the level of size. 
+     * 0b: The total size is considered only the streamed level, which is configured in `.ob.levels`. The default value of `.fsi.isAllLevelTotalSize` is 1b.
+

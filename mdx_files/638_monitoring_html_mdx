@@ -1,0 +1,36 @@
+https://code.kx.com/insights/microservices/rt/monitoring.html
+
+# Monitoring - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/rt/monitoring.html
+
+# Reliable Transport Monitoring
+
+## Metrics
+
+The table below includes a list of all the metrics available:
+
+metric name | type | description | component | node  
+---|---|---|---|---  
+`kxi_rt_seq_leader` | `gauge` | Leadership status of node | sequencer | all  
+`kxi_rt_in_bytes_total` | `counter` | Count of input bytes sequenced | sequencer | leader  
+`kxi_rt_in_messages_total` | `counter` | Count of input messages sequenced | sequencer | leader  
+`kxi_rt_in_bytes` | `counter` | Count of input bytes sequenced per directory | sequencer | leader  
+`kxi_rt_in_messages` | `counter` | Count of input messages sequenced per directory | sequencer | leader  
+`kxi_rt_out_bytes_total` | `counter` | Count of bytes merged | merger | all  
+`kxi_rt_out_messages_total` | `counter` | Count of messages merged | merger | all  
+`kxi_out_bytes` | `counter` | Count of bytes merged per directory | merger | all  
+`kxi_out_messages` | `counter` | Count of messages merged per directory | merger | all  
+`kxi_rt_merge_queue_size` | `gauge` | Merge instructions waiting in queue | merger | all  
+`kxi_rt_truncated_log_age` | `gauge` | Age of the last truncated log file in minutes | archiver | all  
+  
+Note
+
+  * As well as exporting the total number of messages and bytes transferred (`*_total` metrics), RT exports the number of messages and bytes transferred per publisher, using a `directory` label set to [`session name`](index.html#definitions).
+
+  * The sequencer `leader` metric is set on restart/leader change, therefore it is always up to date. The other sequencer metrics are updated every second, but only on the leader node and should be ignored for all other nodes.
+
+  * The merger metrics are all updated every second for all nodes.
+
+  * The value -1 of the `truncated_log_age` means that there is no garbage collected merged log file yet.
+

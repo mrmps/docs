@@ -1,0 +1,477 @@
+https://code.kx.com/insights/api/machine-learning/q/analytics/api/variadic/clust.html
+
+# Clustering models - kdb products
+
+Original URL: https://code.kx.com/insights/api/machine-learning/q/analytics/api/variadic/clust.html
+
+# Clustering
+
+The following outlines the variadic function definitions provided with the kdb
+Insights ML Analytics library for Clustering. Full breakdowns of the
+algorithms represented can be found
+[here](https://code.kx.com/q/ml/toolkit/clustering/algos/), this includes, via
+examples, the use of the function returns for prediction/update, this is not
+outlined below explicitly.
+
+Note
+
+All arguments marked with an asterisk are optional and can be input using the
+notation defined in the [function calls section](function-calls.html) of the
+model monitoring documentation.
+
+## K-Means
+
+### `.ml.kxi.clust.kmeans.fit`
+
+_Fit a K Means model_
+
+    
+    
+    .ml.kxi.clust.kmeans.fit[X]
+    
+
+**Parameters:**
+
+name | type | description  
+---|---|---  
+`X` | `any` | Input/training data of N dimensions.  
+  
+_options:_
+
+name | type | description | default  
+---|---|---|---  
+`df` | `symbol` | Distance function used in clustering. | `edist`  
+`k` | `long` | The number of clusters. | `8`  
+`centers` | `dictionary|null` | Initial cluster centers. If null, initial centers are calculated using k++/random initialisation. If dictionary, must contain `num` and `centroids` which define the number of points in a cluster and the cluster location often calculated from a previous 'fit' phase. | `::`  
+`config` | `dictionary` | Any additional configuration required for application of clustering, supported options defined [here](https://code.kx.com/q/ml/toolkit/clustering/algos/#mlclustkmeansfit). | `::`  
+  
+**Returns:**
+
+type | description  
+---|---  
+`dictionary` | All information collected during the fitting of a model, along with prediction and update functionality.  
+  
+**Examples:**
+
+**Example 1:** Fit a model in default configuration using only required
+arguments
+
+    
+    
+    // Generate feature data
+    q)data:([]100?1f;100?1f;100?1f)
+    
+    // Fit model
+    q)show mdl1:.ml.kxi.clust.kmeans.fit data
+    modelInfo| `repPts`clust`data`inputs!((0.8139576 0.09132079 0.2219031;0.67699..
+    predict  | {[config;data]
+      config:config[`modelInfo];
+      data:clust.util.floatCo..
+    update   | {[config;data]
+      modelConfig:config[`modelInfo];
+      data:clust.util.fl..
+    q)mdl1[`modelInfo;`inputs]
+    df  | `e2dist
+    k   | 8
+    iter| 100
+    kpp | 1b
+    
+
+**Example 2:** Fit model modifying the default behavior using additional
+arguments
+
+    
+    
+    // Generate feature data
+    q)data:([]100?1f;100?1f;100?1f)
+    
+    // Fit model
+    q)show mdl2:.ml.kxi.clust.kmeans.fit[data;.var.kwargs`df`k!(`edist;3)]
+    modelInfo| `repPts`clust`data`inputs!((0.8148896 0.3256995 0.5313307;0.236372..
+    predict  | {[config;data]
+      config:config[`modelInfo];
+      data:clust.util.floatCo..
+    update   | {[config;data]
+      modelConfig:config[`modelInfo];
+      data:clust.util.fl..
+    q)mdl2[`modelInfo;`inputs]
+    df  | `edist
+    k   | 3
+    iter| 100
+    kpp | 1b
+    
+
+## Affinity Propagation
+
+### `.ml.kxi.clust.ap.fit`
+
+_Fit a Affinity Propagation model_
+
+**Parameters:**
+
+name | type | description  
+---|---|---  
+`X` | `any` | Input/training data of N dimensions.  
+  
+_options:_
+
+name | type | description | default  
+---|---|---|---  
+`df` | `symbol` | Distance function used in clustering. | `nege2dist`  
+`damp` | `float` | Damping coefficient. | `0.5`  
+`diag` | `function` | Preference function for the diagonal of the similarity matrix. | `med`  
+`iter` | `dictionary` | Max allowed iterations and the max iterations without a change in clusters. When null is passed in ``total`noChange!200 50` are used. | `::`  
+  
+**Returns:**
+
+type | description  
+---|---  
+`dictionary` | All information collected during the fitting of a model, along with prediction functionality.  
+  
+**Examples:**
+
+**Example 1:**
+
+    
+    
+    // Generate feature data
+    q)data:([]100?1f;100?1f;100?1f)
+    
+    // Fit a model in default configuration using only required arguments
+    q)show mdl1:.ml.kxi.clust.ap.fit data
+    modelInfo| `data`inputs`clust`exemplars!((0.8599461 0.2452222 0.6070236 0.686..
+    predict  | {[config;data]
+      config:config`modelInfo;
+      data:clust.util.floatConv..
+    q)mdl1[`modelInfo;`inputs]
+    df  | `nege2dist
+    damp| 0.5
+    diag| k){avg x(<x)@_.5*-1 0+#x,:()}
+    iter| `run`total`noChange!0 200 15
+    
+
+**Example 2:**
+
+    
+    
+    // Generate feature data
+    q)data:([]100?1f;100?1f;100?1f)
+    
+    // Fit a model modifying the default behavior using a mix of positional and keyword arguments
+    q)damp:.75
+    q)show mdl2:.ml.kxi.clust.ap.fit[data;damp;.var.kw[`diag;max]]
+    modelInfo| `data`inputs`clust`exemplars!((0.8599461 0.2452222 0.6070236 0.686..
+    predict  | {[config;data]
+      config:config`modelInfo;
+      data:clust.util.floatConv..
+    q)mdl2[`modelInfo;`inputs]
+    df  | `nege2dist
+    damp| 0.75
+    diag| max
+    iter| `run`total`noChange!0 200 15
+    
+
+## DBSCAN
+
+### `.ml.kxi.clust.dbscan.fit`
+
+_Fit a DBSCAN model_
+
+    
+    
+    .ml.kxi.clust.dbscan.fit[X]
+    
+
+**Parameters:**
+
+name | type | description  
+---|---|---  
+`X` | `any` | Input/training data of N dimensions.  
+  
+_options:_
+
+name | type | description | default  
+---|---|---|---  
+`df` | `symbol` | Distance function used in clustering. | `e2dist`  
+`minPts` | `long` | Minimum number of points required in a given neighborhood to define a cluster. | `5`  
+`eps` | `float` | Epsilon radius. | `0.5`  
+  
+**Returns:**
+
+type | description  
+---|---  
+`dictionary` | All information collected during the fitting of a model, along with prediction and update functionality.  
+  
+**Examples:**
+
+**Example 1:**
+
+    
+    
+    // Generate feature data
+    q)data:([]100?1f;100?1f;100?1f)
+    
+    // Fit a model in default configuration using only required arguments
+    q)show mdl1:.ml.kxi.clust.dbscan.fit data
+    modelInfo| `data`inputs`clust`tab!((0.8599461 0.2452222 0.6070236 0.6868635 0..
+    predict  | {[config;data]
+      config:config[`modelInfo];
+      data:clust.util.floatCo..
+    update   | {[config;data]
+      modelConfig:config[`modelInfo];
+      data:clust.util.fl..
+    q)mdl1[`modelInfo;`inputs]
+    df    | `e2dist
+    minPts| 5
+    eps   | 0.5
+    
+
+**Example 2:**
+
+    
+    
+    // Generate feature data
+    q)data:([]100?1f;100?1f;100?1f)
+    
+    // Fit a model modifying the default behavior using positional arguments
+    q)df:`edist
+    q)eps:.75
+    q)show mdl2:.ml.kxi.clust.dbscan.fit[data;df;eps]
+    modelInfo| `data`inputs`clust`tab!((0.8599461 0.2452222 0.6070236 0.6868635 0..
+    predict  | {[config;data]
+      config:config[`modelInfo];
+      data:clust.util.floatCo..
+    update   | {[config;data]
+      modelConfig:config[`modelInfo];
+      data:clust.util.fl..
+    q)mdl2[`modelInfo;`inputs]
+    df    | `edist
+    minPts| 5
+    eps   | 0.75
+    
+
+## CURE
+
+### `.ml.kxi.clust.cure.fit`
+
+_Fit a CURE model_
+
+    
+    
+    .ml.kxi.clust.cure.fit[X]
+    
+
+**Parameters:**
+
+name | type | description  
+---|---|---  
+`X` | `any` | Input/training data of N dimensions.  
+  
+_options:_
+
+name | type | description | default  
+---|---|---|---  
+`df` | `symbol` | Distance function used in clustering. | `e2dist`  
+`n` | `long` | Number of representative points. | `5`  
+`c` | `float` | Compression ratio. | `0`  
+  
+**Returns:**
+
+type | description  
+---|---  
+`dictionary` | All information collected during the fitting of a model, along with prediction functionality.  
+  
+**Examples:**
+
+**Example 1:**
+
+    
+    
+    // Generate feature data
+    q)data:([]100?1f;100?1f;100?1f)
+    
+    // Fit a model in default configuration using only required arguments
+    q)show mdl1:.ml.kxi.clust.cure.fit data
+    modelInfo| `data`inputs`dgram!((0.8599461 0.2452222 0.6070236 0.6868635 0.837..
+    predict  | {[config;data;cutDict]
+      data:clust.util.floatConversion util.tabConvert..
+    q)mdl1[`modelInfo;`inputs]
+    df| `e2dist
+    n | 5
+    c | 0
+    
+
+**Example 2:**
+
+    
+    
+    // Generate feature data
+    q)data:([]100?1f;100?1f;100?1f)
+    
+    // Fit a model modifying the default behavior using additional arguments
+    q)show mdl2:.ml.kxi.clust.cure.fit[data;.var.kwargs`n`c!(4;.1)]
+    modelInfo| `data`inputs`dgram!((0.8599461 0.2452222 0.6070236 0.6868635 0.837..
+    predict  | {[config;data;cutDict]
+      data:clust.util.floatConversion util.tabConvert..
+    q)mdl2[`modelInfo;`inputs]
+    df| `e2dist
+    n | 4
+    c | 0.1
+    
+
+### `.ml.kxi.clust.cure.fitPredict`
+
+_Fit and predict on CURE model_
+
+    
+    
+    .ml.kxi.clust.cure.fitPredict[X]
+    
+
+**Parameters:**
+
+name | type | description  
+---|---|---  
+`X` | `any` | Input/training data of N dimensions.  
+  
+_options:_
+
+name | type | description | default  
+---|---|---|---  
+`df` | `symbol` | Distance function used in clustering. | `e2dist`  
+`n` | `long` | Number of representative points. | `5`  
+`c` | `float` | Compression ratio. | `0`  
+`cutDict` | `dictionary` | Cutting algo to use when splitting the data into clusters (``k/`dist`) and a value defining the cutting threshold. | `enlist[`k]!enlist 5`  
+  
+**Returns:**
+
+type | description  
+---|---  
+`dictionary` | All information collected during the fitting of a model, along with predicted clusters and prediction functionality.  
+  
+**Examples:**
+
+**Example 1:**
+
+    
+    
+    // Generate feature data
+    q)show data:2 10#20?10.
+    1.473702 4.080537 3.03448  9.659883  7.874197 4.734442 8.423141 2.7..
+    0.72077  5.450964 4.625792 0.6486378 6.951865 9.674697 7.26315  2.4..
+    
+    // Fit a CURE model and cut the dendrogram into 3 clusters
+    // Use a mix of positional and keyword arguments
+    q).ml.kxi.clust.cure.fitPredict[data;.var.kw[`df;`edist];.var.kw[`cutDict;enlist[`k]!enlist 3]]
+    modelInfo| `data`inputs`dgram!((1.473702 4.080537 3.03448 9.659883 ..
+    predict  | {[config;data;cutDict]
+      updConfig:clust.i.prepPred[config;cutDict..
+    clust    | 0 0 0 1 1 2 1 0 1 0
+    
+
+## Hierarchical Clustering
+
+### `.ml.kxi.clust.hc.fit`
+
+_Fit a Hierarchical clustering model_
+
+**Parameters:**
+
+name | type | description  
+---|---|---  
+`X` | `any` | Input/training data of N dimensions.  
+  
+_options:_
+
+name | type | description | default  
+---|---|---|---  
+`df` | `symbol` | Distance function. | `e2dist`  
+`lf` | `symbol` | Linkage function. | `ward`  
+  
+**Returns:**
+
+type | description  
+---|---  
+`dictionary` | All information collected during the fitting of a model, along with prediction functionality.  
+  
+**Examples:**
+
+**Example 1:**
+
+    
+    
+    // Generate feature data
+    q)data:([]100?1f;100?1f;100?1f)
+    
+    // Fit a model in default configuration using only required arguments
+    q)show mdl1:.ml.kxi.clust.hc.fit[data]
+    modelInfo| `data`inputs`dgram!((0.8599461 0.2452222 0.6070236 0.6868635 0.837..
+    predict  | {[config;data;cutDict]
+      data:clust.util.floatConversion util.tabConvert..
+    q)mdl1[`modelInfo;`inputs]
+    df| e2dist
+    lf| ward
+    
+
+**Example 2:**
+
+    
+    
+    // Generate feature data
+    q)data:([]100?1f;100?1f;100?1f)
+    
+    // Fit a model modifying the default behavior using only positional arguments
+    q)df:`mdist
+    q)show mdl2:.ml.kxi.clust.hc.fit[data;df]
+    modelInfo| `data`inputs`dgram!((0.8599461 0.2452222 0.6070236 0.6868635 0.837..
+    predict  | {[config;data;cutDict]
+      data:clust.util.floatConversion util.tabConvert..
+    q)mdl2[`modelInfo;`inputs]
+    df| mdist
+    lf| complete
+    
+
+### `.ml.kxi.clust.hc.fitPredict`
+
+_Fit and predict on a hierarchical clustering model_
+
+**Parameters:**
+
+name | type | description  
+---|---|---  
+`X` | `any` | Input/training data of N dimensions.  
+  
+_options:_
+
+name | type | description | default  
+---|---|---|---  
+`df` | `symbol` | Distance function. | `e2dist`  
+`lf` | `symbol` | Linkage function. | `ward`  
+`cutDict` | `dictionary` | Cutting algo to use when splitting the data into clusters (``k/`dist`) and a value defining the cutting threshold. | `enlist[`k]!enlist 5`  
+  
+**Returns:**
+
+type | description  
+---|---  
+`dictionary` | All information collected during the fitting of a model, along with prediction functionality.  
+  
+**Examples:**
+
+**Example 1:**
+
+    
+    
+    // Generate feature data
+    q)show data:2 10#20?10.
+    6.01551  9.775468 9.809354 4.237163 5.424916 1.994707 2.496307 2.599..
+    1.046143 7.154895 8.098937 2.546309 6.298331 0.249301 5.341463 4.106..
+    
+    // Fit a HC model and cut the dendrogram into 4 clusters
+    // Use only keyword arguments
+    q).ml.clust.hc.fitPredict[data;.var.kwargs`lf`k!(`single;4)]
+    modelInfo| `data`inputs`dgram!((6.01551 9.775468 9.809354 4.237163 5..
+    predict  | {[config;data;cutDict]
+      updConfig:clust.i.prepPred[config;cutDict..
+    clust    | 0 2 2 0 1 3 0 0 0 1
+    
+

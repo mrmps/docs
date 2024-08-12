@@ -1,0 +1,286 @@
+https://code.kx.com/insights/enterprise/packaging/package-overlays.html
+
+# Overlays & Patches - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/packaging/package-overlays.html
+
+# Overlays and patches
+
+## Introduction
+
+Patches are partial configuration blocks that can be overlaid onto a given
+package.
+
+You can store them and ship them with a package to provide a quick way to
+modify settings and generate different packages from a given base package,
+overlaying patches on top until you get your desired state.
+
+Patches work by utilizing the `Package` object model and manipulating it using
+[`kustomize`](https://kustomize.io/).
+
+The `name` parameter of the object being overlaid (for example: a database or
+table) is used as a key and array types will be merged according to the
+[strategic merge
+mechanism](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-
+api-machinery/strategic-merge-patch.md).
+
+There is no mechanism to patch code files currently, only configuration files
+i.e. databases and pipelines.
+
+### Using patches
+
+#### Adding a pipeline
+
+  1. To create a patch, use the `add` command and specify `patch` as your new object:
+    
+        kxi package -q init mypkg --force
+    kxi package -q add --to mypkg patch --name my-first-patch
+    cat mypkg/patches/my-first-patch.yaml
+    
+    
+        uuid: 47d8a685-722f-45aa-9c59-fb149c4ea621
+    kind: Package
+    apiVersion: pakx/v1
+    metadata:
+      name: target
+    spec:
+      uuid: f194e623-da78-42b8-9ff9-51ab119ed1ba
+      manifest: {}
+      tables:
+        uuid: e22119fc-6865-4215-b3d6-6a027eed0e50
+        schemas: []
+      databases: []
+      pipelines: []
+      router: null
+      views: []
+      deployment_config: null
+      data_files: {}
+    
+
+This adds a `patch` file to the `patches` directory. The new file includes the
+structure required for a patch file, but no pipeline.
+
+Be careful when you modify the `patch` file
+
+     * Do not modify the headers above the `spec:` field
+     * It is good practice to remove everything inside `spec:` except what you want to patch
+
+  2. You can see the patch object is now present in the manifest file:
+    
+        ==PATH==
+    /builds/kxdev/documentation/insights/mypkg
+    
+    ==OBJECT==
+    Package
+    
+    ==Manifest==
+    uuid: 0eb7c9dc-9fcd-4dc5-b9f4-1df6dfb79a3f
+    name: mypkg
+    version: 0.0.1
+    metadata:
+      description: ''
+      authors:
+      - {}
+    entrypoints:
+      default: init.q
+    patches:
+    - uuid: 6414ee3a-e240-4cfb-a1d2-523708a86304
+      name: my-first-patch
+    
+
+  3. Modify the `patch` to add a new `pipeline`:
+    
+        patchspec=$(cat mypkg/patches/my-first-patch.yaml | grep spec: -B10 | cat - <(echo "  pipelines: [{name: mynewpipeline, spec: init.q}]"))
+    echo "$patchspec" > mypkg/patches/my-first-patch.yaml
+    cat mypkg/patches/my-first-patch.yaml
+    
+    
+        uuid: 47d8a685-722f-45aa-9c59-fb149c4ea621
+    kind: Package
+    apiVersion: pakx/v1
+    metadata:
+      name: target
+    spec:
+      pipelines: [{name: mynewpipeline, spec: init.q}]
+    
+
+  4. Apply or "overlay" this patch onto your current package using the `overlay` command:
+
+ImplicitExplicit
+
+Without specifying any other information, the overlay command resolves _All_
+the patches found in the manifest:
+
+    
+        kxi package overlay mypkg
+    kxi package info mypkg | grep pipelines: -A5
+    
+    
+        Found patch to overlay: mypkg/patches/my-first-patch.yaml
+    Writing /builds/kxdev/documentation/insights/mypkg/manifest.yaml
+    pipelines:
+      mynewpipeline:
+        file: pipelines/mynewpipeline.yaml
+    router: ''
+    views: {}
+    deployment_config: ''
+    
+
+When you specify patches after the package name, you can select any valid
+patch file, they dont even need to be located inside a package.
+
+    
+        kxi package overlay mypkg mypkg/patches/my-first-patch.yaml
+    kxi package info mypkg | grep pipelines: -A5
+    
+    
+        Writing /builds/kxdev/documentation/insights/mypkg/manifest.yaml
+    pipelines:
+      mynewpipeline:
+        file: pipelines/mynewpipeline.yaml
+    router: ''
+    views: {}
+    deployment_config: ''
+    
+
+#### Modifying tables
+
+To modify a table, you must patch the Database because tables are contained
+inside the `Database` construct :
+
+    
+    
+    kxi package -q init mypkg --force
+    kxi package -q add --to mypkg database --name mydb 
+    # This automatically populates a "default" table
+    
+    kxi package -q add --to mypkg patch --name my-db-patch
+    
+    read -r -d '' dbspec <<'EOF'
+        databases:
+          - name: mydb
+            tables:
+              schemas: 
+                - name: default
+                  description: We've changed the default table's description too!
+                  type: basic 
+                  columns:
+                    - name: myfloat
+                      type: float
+                      description: we've added a new float column called myfloat 
+                    - name: x2 
+                      type: symbol
+                      description: The default x2 column has changed type
+    EOF
+    
+    # The patch might look a little complex, but it's just a few nested structs 
+    # N.B We have indented it here to nest it under the `spec` field
+    
+    patchspec=$(cat mypkg/patches/my-db-patch.yaml | grep spec: -B10 | cat - <(echo "  $dbspec"))
+    echo "$patchspec" > mypkg/patches/my-db-patch.yaml
+    # This is just to stitch the header with the dbspec we wrote
+    
+    cat mypkg/patches/my-db-patch.yaml
+    kxi package overlay mypkg
+    
+    echo""
+    echo "----Resultant schema for 'default' table----"
+    echo "--------------------------------------------"
+    cat mypkg/databases/mydb/tables/default.yaml
+    
+    
+    
+    uuid: e2b9c5ea-8dde-4786-9512-19cc04470df2
+    kind: Package
+    apiVersion: pakx/v1
+    metadata:
+      name: target
+    spec:
+      databases:
+          - name: mydb
+            tables:
+              schemas: 
+                - name: default
+                  description: We've changed the default table's description too!
+                  type: basic 
+                  columns:
+                    - name: myfloat
+                      type: float
+                      description: we've added a new float column called myfloat 
+                    - name: x2 
+                      type: symbol
+                      description: The default x2 column has changed type
+    Found patch to overlay: mypkg/patches/my-db-patch.yaml
+    Writing /builds/kxdev/documentation/insights/mypkg/manifest.yaml
+    
+    ----Resultant schema for 'default' table----
+    --------------------------------------------
+    uuid: 5bc19760-8625-477f-9032-dd5f9debf5ea
+    columns:
+    - description: we've added a new float column called myfloat
+      name: myfloat
+      type: float
+    - description: The default x2 column has changed type
+      name: x2
+      type: symbol
+    description: We've changed the default table's description too!
+    name: default
+    type: basic
+    
+
+Column ordering
+
+After patching you can observe the columns have changed order. The new column
+has been added in at the top. If your application requires specific column
+ordering, then you need to do this manually.
+
+### Referencing dependency patches
+
+You can also reference patches held in other packages to minimize the need to
+copy patch specs that you use regularly.
+
+Referenced dependencies must already be installed.
+
+Referencing a patch from a dependency can only be done _after_ that dependency
+is installed.
+
+In the below example you explicitly run: `kxi package install myotherdep`.
+This allows the `kxi package` to resolve it properly when you then call
+overlay.
+
+You do this in the following way:
+
+    
+    
+    kxi package -q init myotherpkg --force
+    # setup
+    
+    kxi package -q add --to myotherpkg patch --name patch-from-afar
+    patchspec=$(cat myotherpkg/patches/patch-from-afar.yaml | grep spec: -B10 | cat - <(echo "  pipelines: [{name: mynewpipeline, spec: init.q}]"))
+    echo "$patchspec" > myotherpkg/patches/patch-from-afar.yaml
+    # add a patch to myother pkg
+    
+    _=$(kxi package -q install myotherpkg)
+    # install myotherpkg so that you can reference it 
+    
+    kxi package -q add --to mypkg dep --name myotherpkg --version 0.0.1 
+    # add a dependency on myotherpkg to mypkg
+    
+    kxi package -q add --to mypkg patch --name patch-from-afar --dep myotherpkg
+    # add a patch in mypkg referencing a patch in myotherpkg
+    
+    kxi package -q overlay mypkg
+    
+    # see that you have successfully used the patch adding a new pipeline from myotherpkg
+    kxi package info mypkg | grep pipelines: -A5
+    
+    
+    
+    pipelines:
+      mynewpipeline:
+        file: pipelines/mynewpipeline.yaml
+    router: ''
+    views: {}
+    deployment_config: ''
+    
+

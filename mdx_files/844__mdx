@@ -1,0 +1,33 @@
+https://code.kx.com/platform/entity_subscriptions/
+
+# Entity subscriptions - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/entity_subscriptions/
+
+# Entity subscriptions
+
+Entities stored in _KX Control_ are often loaded into processes and used
+during runtime. The entity payload is usually downloaded on initialization and
+cached for re-use. In certain circumstances, the entity might get updated in
+_KX Control_ and the process would then be using an out-of-date version.
+
+When a change goes through the _KX Control_ versioning, the updated version
+will be pushed to any subscribed processes. A subscription framework is
+bundled with the template API so processes can subscribe for these changes and
+update the locally-cached versions.
+
+Subscriptions can be managed by entity or by class. The subscription functions
+use the keyword ``ALL` to subscribe to every entity for a given class. The
+Template API documentation describes the various APIs in detail.
+
+Bulk and single-accessor APIs exist for each entity class. The supported
+entity classes are:
+
+  * `instance`
+  * `analytic`
+  * `dataconnectiongroup`
+  * `connection`
+  * `user`
+  * `email`
+  * `emaillist`
+

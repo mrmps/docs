@@ -1,0 +1,191 @@
+https://code.kx.com/dashboards/action/
+
+# Actions - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/action/
+
+# Actions
+
+_This section describes Actions which are a common property set used to
+configure a[view state](../viewstateparameters/), run a
+[query](../datasources/) or open an URL._
+
+This section provides information on:
+
+To add an action, click ![Screenshot](../img/action/actionbutton.jpg) in one
+of the following components which support Actions.
+
+## Action Types
+
+The following types of actions are supported:
+
+Additional component-specific actions are available for each of the components
+that support Actions.
+
+See here for details on the order of execution of actions.
+
+### View State Mapping
+
+The **View State Mapping** action maps values of [View State
+parameters](../viewstateparameters/) from the source dashboard to View State
+parameters in the destination Dashboard.
+
+![Screenshot](../img/action/mapbuttonvalue.jpg)
+
+Supported view state mapping actions include:
+
+**Action** | **Description**  
+---|---  
+1 | Map value of view state A to view state B in the current dashboard  
+2 | Map value of view state A to view state B in the target dashboard, where "B" is the name of the view state in the destination dashboard (case sensitive)  
+3 | Map the literal string 'A' to view state B in the current dashboard  
+4 | Map the literal string 'A' to view state B in the target dashboard, where "B" is the name of the view state in the destination dashboard (case sensitive)  
+  
+Prepare targets
+
+Before mapping View State parameters across dashboards, create the target View
+State Parameter in the destination dashboard. View state Mapping can map only
+to existing View State Parameters; mapping actions does not create them.
+
+### Open dashboard/screen
+
+The **Open dashboard/screen** action lets you specify a dashboard and screen
+to open on button click.
+
+![Screenshot](../img/action/actionhtmllight.jpg)
+
+Dashboard names can be assigned to a viewstate. If assigned to a text
+variable, for example of type String, then it navigates to the dashboard with
+that name.
+
+![Screenshot](../img/action/destinationdashboard.jpg)
+
+![Screenshot](../img/action/viewstatedestination.jpg)
+
+Dashboard and screen reference can also be set using view states
+
+![Screenshot](../img/action/dashboardnav.jpg)
+
+![Screenshot](../img/action/screendash.jpg)
+
+![Screenshot](../img/action/dashboarddirect.jpg)
+
+### Run Query
+
+The **Run Query** action means the linked query is executed on click.
+
+![Run Query](../img/action/buttonquery.jpg).
+
+Set the following property:
+
+**Name** | **Description**  
+---|---  
+**Data Source** | Select the [data source](../datasources/) to run on action click.  
+  
+### Open URL
+
+The **Open URL** action means a click redirects to a new web page.
+
+![Open URL](../img/action/buttonurl.jpg)
+
+Set the following properties:
+
+**Name** | **Description**  
+---|---  
+**Url** | The destination site.  
+**Target** | Open in current tab, **This Window** or new tab, **New Window**.  
+  
+### Apply Rolling Syntax/View State Default
+
+If a view state has [rolling syntax](../viewstateparameters/#rolling-syntax),
+this action updates the view states's value using the rolling syntax.
+Otherwise, it updates the view state's value with the value specified in the
+view state's [Default](../viewstateparameters/#creating-a-view-state)
+attribute.
+
+![Apply Rolling Syntax](../img/action/apply-rolling.png)
+
+Set the following property:
+
+**Name** | **Description**  
+---|---  
+**View State** | The View State containing the rolling syntax.  
+  
+For example:
+
+  * Create a view state called **tomorrow** with rolling syntax set to **NOW+24:00** ![Setup view state](../img/action/action-eg1.png)
+
+  * Add a Date Picker component to a Dashboard and set its **Selected Date** to the tomorrow view state. This shows the current value of the view state and allows you to change it. ![Set Selected Date](../img/action/action-eg2.png)
+
+  * Add a Button component to a dashboard and add an Action so that the tomorrow view state is updated using the rolling syntax every time the button is clicked. 
+
+![Setup action](../img/action/action-eg3.png)
+
+  * Switch to **Preview** mode and click the Button. Every time the button is clicked it either applies the rolling syntax to the view state's value or it resets the value of the view state using its default value when there is no rolling syntax.
+
+![Preview Action](../img/action/action-eg4.gif)
+
+## Component configuration
+
+The following sections describe component specific actions for:
+
+### Canvas Chart
+
+Canvas chart actions include `Trigger Action` and `Source Column`
+
+![Screenshot](../img/action/canvachartaction.jpg)
+
+Set the following properties:
+
+**Name** | **Description**  
+---|---  
+**Trigger Action** | Select either **Click** or **Hover** as the event to trigger the action.  
+**Source Column** | For view state mapping, determine which value is mapped; either ****,****** or from the[data source](../datasources/).  
+  
+### Data Grid & Pivot Grid
+
+Actions for data grid include **Trigger Column** and **Trigger Action**.
+
+![Screenshot](../img/action/datagridaction.jpg)
+
+Set the following properties:
+
+**Name** | **Description**  
+---|---  
+**Trigger Column** | Column on which **Trigger Action** executes the action  
+**Trigger Action** | Select one of the following as the event to trigger the action; **mouse in** , **mouse out** , **click** , **double click** , **right click** or **hover**.  
+  
+### Navigation
+
+Only view state mapping is tied to Actions; opening dashboards and URLs is
+done by [buttons](../button/).
+
+### Pie Chart
+
+Set the following properties:
+
+**Name** | **Description**  
+---|---  
+**Source** | For view state mapping, determine which value is mapped from the [data source](../datasources/)  
+  
+### Upload
+
+Set the following properties:
+
+**Name** | **Description**  
+---|---  
+**Trigger Action** | Select the event to trigger the action;  
+**Click** , **Double click** or **Hover** |   
+  
+## Action execution
+
+Actions are run in their listed order with the exception of navigation actions
+which are executed last irrespective of their position in the sequence. If
+there is more than one navigation action, then only the last of those
+navigation actions is executed.
+
+While actions are run in order, each action does not require the prior one to
+finish before starting the next action.
+
+## Further Reading
+

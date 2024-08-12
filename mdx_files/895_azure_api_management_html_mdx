@@ -1,0 +1,67 @@
+https://code.kx.com/insights/core/kurl/appendix/azure_api_management.html
+
+# Azure API management | Examples | REST client | kdb Insights Core - kdb products
+
+Original URL: https://code.kx.com/insights/core/kurl/appendix/azure_api_management.html
+
+# Azure API management
+
+These resources are required:
+
+  * You have created an API Management Service Instance and given it a REST API
+  * You have available an OAuth2 client ID and client secret: provide as
+
+`-client /path/to/client_secret.json`
+
+  * You have a GET query provided as `-api`, e.g.
+
+`https://yourapi.azure-api.net/foo?var=x`
+
+  * To protect an Azure API Management Instance you may need to set up Azure Active Directory (Identity Management), if you have not already
+
+[Protect a web API backend](https://docs.microsoft.com/en-us/azure/api-
+management/api-management-howto-protect-backend-with-aad)
+
+Example:
+
+    
+    
+    q azure.q -api https://yourapi.azure-api.net/foo?var=x \
+        -client ~/Downloads/client_secret_azure.json
+    
+
+`azure.q`
+
+    
+    
+    args:.Q.opt .z.x
+    if[not all `client`api in key args;
+      '"-api <https://yourapi.azure-api.net/foo?var=x> -client </path/to/client_secret.json> is required"]
+    
+    client:.j.k "c"$read1 hsym `$first args `client
+    api:first args `api
+    split:"/" vs api
+    baseurl:split[0],"//",split 2
+    
+    // Callback takes in tenant and auth_response.
+    // Project in any state useful to you,
+    // in this case the REST query to follow up with
+    callback:{[api;tenant;auth_response]
+      -1 "Login is now finished, making a sync call to REST service";
+      resp:.kurl.sync (api;`GET;``tenant!(::;tenant));
+      show resp; }[api;]
+    
+    // Authenticate to Azure as yourself, with a callback to make GET rest call
+    //
+    // access_type=offline is required for Azure to return a refresh_token,
+    //   needed for continual access renewal
+    // prompt=consent is required to force Azure to return the refresh_token,
+    //   in the event you already have it
+    // scope=openid email is the minimum scopes needed for OpenID Connect
+    .kurl.oauth2.startLoginFlow[
+        baseurl;
+        client; // Leave this field null if you are using KX_OAUTH2_CLIENT_JSON env var
+        `scope`access_type`prompt!("openid email";"offline";"consent");
+        callback]
+    
+

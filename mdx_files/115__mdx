@@ -1,0 +1,230 @@
+https://code.kx.com/dashboards/visualquerybuilder/
+
+# Visual Query Builder - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/visualquerybuilder/
+
+# Visual Query Builder
+
+A graphical tool enabling users to quickly build and visualize database
+queries without requiring knowledge of kdb or q.
+
+    
+
+Visual Query Builder is best used in conjunction with another component, such
+as Data grid. To see this in action, check out the _Demo Data_ dashboard and
+switch to the _Visual Query Builder_ tab.
+
+![Screenshot](../img/visualquery/visualquerybuilder.jpg)
+
+## Set up
+
+  1. Define the _Connection_ which will populate the list of available data sources to build the query.
+
+  2. Define the _Data Source_ which is the output for the query, and used in other components. 
+
+## Basics
+
+![Screenshot](../img/visualquery/visualquerybuilderbasics.png)
+
+_Name_
+
+    A name for the component provided by the user. 
+_Data Source_
+
+    This should match the data source used as the output (where _Selected Node_ and _KDB_ are assigned [view state parameters](../viewstateparameters/)). Any errors returned by the data source will be highlighted in the query builder on the node where the error occurs.
+     [Data sources](../datasources/)
+_Connection_
+
+    Select a kdb database.
+     [Connections](../datasources/#connections)
+_Direction_
+
+    Define order flow of visual query: left-to-right, right-to-left, top-to-bottom, bottom-to-top. 
+_Dialog Placement_
+
+    Configuration dialogs can appear to the `left` or `right` of the query builder interface, or as a `popup`
+_Auto Save Dialogs_
+
+    Automatically save value changes made in `left` or `right` dialog menus, but not for `popup` dialogs.
+_Read only_
+
+    Disables dialogs, preventing changes from being made to the query.
+_Force Selection_
+
+    Prevents Visual Query Builder from a no-node-selection state. Selecting a node runs the query to that point - ignoring nodes beyond it. If no nodes are selected, then all node are factored; when _Force Selection_ is enabled, a single node must be selected, which is the last node if no other node is selected (default). 
+_Selected Node_
+
+    A [view state parameter](../viewstateparameters/) assigned to the selected node within the visual query.
+_Source_
+
+    
+
+A [view state parameter](../viewstateparameters/) storing the complete
+structure of the query as JSON. It is best used in conjunction with the
+Editable list component to toggle between several different queries. See the
+_Demo Data_ dashboard for an example of this.
+
+![Screenshot](../img/visualquery/visualquerysource.jpg)
+
+_KDB_
+
+    
+
+A [view state parameter](../viewstateparameters/) storing the output kdb
+string. This is used in the output data source, which is generally rendered
+inside a [data grid](../datagrid/).
+
+![Screenshot](../img/visualquery/outputvisualquery.jpg)
+
+## Bindings
+
+![Screenshot](../img/visualquery/visualquerybindings.jpg)
+
+Allows node functions to be assigned to [view state
+parameters](../viewstateparameters/).
+
+_Key_
+
+    The Name of the assigned binding, this will appear in the function dropdown. 
+_Viewstate_
+
+    
+
+The viewstate to link to the function:
+
+Check View State _Type_
+
+The [view state](../viewstateparameters/) type must be of the same type as the
+parameter you plan to assign it to, or else it won't be available to select in
+the function parameter dropdown.
+
+    
+
+Create the binding
+
+![Screenshot](../img/visualquery/functionviewstate.jpg)
+
+    
+
+Set the view state
+
+![Screenshot](../img/visualquery/functionbind1.jpg)
+
+    
+
+Edit the function
+
+![Screenshot](../img/visualquery/editfunction.jpg)
+
+![Screenshot](../img/visualquery/functionyear.jpg)
+
+    
+
+Bind the parameter to the created view state
+
+![Screenshot](../img/visualquery/functionbinding.jpg)
+
+## Build query
+
+Users start by adding a [data source](../datasources/) to query; this can be
+done with a right-click on the empty _Data_ node.
+
+![Screenshot](../img/visualquery/adddatasource.jpg)
+
+Once a data source is assigned, right clicking inside the query builder will
+offer additional options:
+
+![Screenshot](../img/visualquery/availablenodes.jpg)
+
+Streaming queries
+
+Support for streaming queries is available with
+[Builder](../datasources/#streaming-query) of the data editor.
+
+### Add data source
+
+Select a data source from the drop down. Available data sources will be
+determined by your _Connection_
+
+![Screenshot](../img/visualquery/tradedataadd.jpg)
+
+![Screenshot](../img/visualquery/datasourcevisual.jpg)
+
+### Add filter
+
+Filter against the data source using `equal`, `not equal`, `less`, `less or
+equal`, `greater`, `greater or equal`, `is blank`, `is not blank`, `in`, `not
+in` or use a histogram range selector.
+
+Check `distinct` to pull distinct values from all checked columns; each
+additional distinct column will include all distinct pairing across selected
+columns.
+
+![Screenshot](../img/visualquery/histogramselect.jpg)
+
+![Screenshot](../img/visualquery/addfilter.jpg)
+
+Select columns from the data source. Data Columns can be renamed in the
+`Select - Columns` option.
+
+Shared column names
+
+When creating a Join between different data sources, the joining column(s)
+must share the same name.
+
+Select columns, and filter order can be re-organized using drag-and-drop.
+
+### Add update
+
+![Screenshot](../img/visualquery/updatevisualquery.jpg)
+
+Update values within a column
+
+### Add group-by
+
+![Screenshot](../img/visualquery/addgroupby.jpg)
+
+Create aggregate groupings for data columns; options include: `avg`, `cor`,
+`count`, `cov`, `dev`, `first`, `last`, `max`, `med`, `min`, `prd`, `scov`,
+`sdev`, `sum`, `svar`, `var`, `wavg` and `wsum`
+
+Column grouping order can be re-organized using drag-and-drop
+
+### Add join
+
+![Screenshot](../img/visualquery/addjoin.jpg)
+
+Join an additional data source or function to an existing data source in your
+visual query. Options include `left`, `inner`, `union`, `asof`, `upsert` and
+`plus`.
+
+![Screenshot](../img/visualquery/unionjoin.jpg)
+
+### Add function
+
+![Screenshot](../img/visualquery/addfunction.jpg)
+
+Add a pre-configured Function into the visual query
+
+Dashboards SDK
+
+Visual Query Functions for Dashboards SDK are added to the `demo.q` file in
+the `Sample` directory.
+
+Example:
+
+    
+    
+    api.mortgageRepaymentCalc:{[res;years]
+      months: years * 12;
+      // rate: (interestRate % 100);
+      update Monthly_repayment: ceiling((Price * 1.06) % months) from res(0);
+    
+
+where `years` is an adjustable view state parameter in the dashboard
+
+## Style, Format, Margins
+
+[Style](../style/#component-style) for common style settings
+

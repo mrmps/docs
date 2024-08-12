@@ -1,0 +1,176 @@
+https://code.kx.com/insights/enterprise/walkthrough/trans.html
+
+# kdb Insights Enterprise guided walkthrough - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/walkthrough/trans.html
+
+# Get Data - Kafka
+
+_The purpose of this walkthrough is to guide you through the steps to ingest
+data from[Apache Kafka](https://kafka.apache.org/) into kdb Insights
+Enterprise._
+
+We have provided a Kafka **subway** feed for use in this walkthrough, which
+generates live alerts for NYC Subway trains; tracking arrival time, station
+location co-ordinates, direction and route details.
+
+No kdb+ knowledge required
+
+No prior experience with q/kdb+ is required to build this
+[pipeline](../glossary.html#pipeline).
+
+Before you import data you must ensure the **insights-demo** database is
+created, as described [here](database.html).
+
+## Import Data
+
+The import process creates a **Pipeline** which is a collection of nodes to
+read data from a source, transform it to a kdb+ compatible format and write
+that data to a kdb Insights Enterprise database.
+
+Open the import wizard by selecting **2\. Import** from the **Overview** page.
+Next, you are prompted to select a reader node.
+
+### Select a Reader
+
+A reader stores details of data to import, including any required
+authentication.
+
+  1. Select the **Kafka** reader and complete the connection details as follows:
+
+setting | value  
+---|---  
+Broker | kafka.trykdb.kx.com:443  
+Topic | subway  
+Offset | End  
+Use TLS | No  
+Use Schema Registry | No  
+  2. Expand the **Advanced** parameters section and add the following key value-pairs into the **Use Advanced Kafka Options** section:
+
+key | value  
+---|---  
+sasl.username | demo  
+sasl.password | demo  
+sasl.mechanism | SCRAM-SHA-512  
+security.protocol | SASL_SSL  
+  
+The following screen shows the **Configure Kafka** screen with the above
+values set.
+
+![Choose the Kafka reader](img/kafkaimport.jpg)
+
+  3. Click **Next**.
+
+### Select a Decoder
+
+Kafka event data is in JSON and has to be decoded to a kdb+ friendly format (a
+kdb+ dictionary).
+
+  1. Select a **JSON** decoder.
+
+![JSON decoder](img/kafkadecoder.jpg)
+
+  2. Keep the default JSON decoder settings.
+
+![Keep default JSON decoder settings](img/configurejson.jpg)
+
+  3. Click **Next**.
+
+### Define the Schema
+
+Next you need to define a schema which converts data to a type compatible with
+a _kdb Insights Database_. Every imported data table requires a schema; and
+every data table must have a **timestamp** key to be compatible with kdb's
+time series columnar database. **insights-demo** has a predefined schema for
+**subway** data.
+
+  1. Complete the Apply Schema properties as follows:
+
+setting | value  
+---|---  
+Apply a Schema | Checked  
+Data Format | Any  
+  2. Click the **Load Schema** icon ![](img/addschemaicon.jpg) and select **insights-demo** from the database dropdown and **subway** from the table dropdown, as shown below.
+
+![Select the subway table from the insights-demo
+database.](img/loadsubwayschema.jpg)
+
+  3. Click **Load** and then **Next** to open the **Configure Writer** screen.
+
+### Configure Writer
+
+You now need to configure the **Writer** which writes transformed data to the
+kdb Insights Enterprise database.
+
+  1. Specify the following settings:
+
+setting | value  
+---|---  
+Database | insights-demo  
+Table | subway  
+Write Direct to HDB | No  
+Deduplicate Stream | Yes  
+Set Timeout Value | No  
+  2. Click **Open Pipeline** to review the pipeline in the [pipeline viewer](../ingest/pipeline/index.html#building-a-pipeline)
+
+## Add Map node to enlist data
+
+The Kafka pipeline requires an additional piece of functionality to convert
+the decoded data to a kdb+ table prior to deployment. This is done with an
+[enlist of the data](https://code.kx.com/q/ref/enlist/) which is setup using a
+**Map** node. This is described in the next steps.
+
+  1. In the [pipeline template](../glossary.html#pipeline-template) view, click-and-drag into the workspace a **Map** node from the list of **Functions**.
+
+  2. Connect the **Map** node between the **Decoder** and **Transform** node. Remove the existing connection between **Decoder** and **Transform** nodes by right-clicking the link and selecting **Remove Edge** , as shown in the following animation.
+
+![Adding a **Function Map** node to a Kafka data pipeline. Connect edges with
+click-and-drag, right-click a connection to remove.](img/mapfunction.gif)
+
+  3. Click on the **Map** node to edit its properties and set the **enlist data** as shown below.
+
+![Select the Function Map node to edit its properties.](img/configurenode.jpg)
+
+  4. Click **Apply** to apply these changes to the node.
+
+## Save the Pipeline
+
+Once you have configured and reviewed your **Pipeline** you must save it.
+
+  1. Enter a name in the top left of the workspace. The name must be unique to the pipeline; for example, **subway-1**.
+
+  2. Click **Save**.
+
+![Save the pipeline as subway-1.](img/kafkasave.jpg)
+
+  3. The **subway-1** pipeline is available under _Pipelines_ in the left-hand menu.
+
+![A Kafka pipeline built using the import wizard.](img/kafkapipeline.jpg)
+
+## Deploy the Pipeline
+
+You can now deploy the **Pipeline**. This will read the data from its source,
+transforms it to a kdb+ compatible format, and writes it to the **insights-
+demo** database.
+
+  1. Click on **Save & Deploy** in the top panel. ![Save and deploy the pipeline](img/pipelinedeploy.jpg)
+
+  2. Check the progress of the pipeline under the **Running Pipelines** panel of the **Overview** tab, which may take several minutes. The data is ready to query when **Status** is set to **Running**.
+
+![A running crime pipeline available for querying.](img/runningsubway.jpg)
+
+Pipeline warnings
+
+Once the pipeline is running some warnings may be displayed in the **Running
+Pipelines** panel of the **Overview** tab, these are expected and can be
+ignored.
+
+## Next Steps
+
+Now that your **Pipeline** is up and running you can:
+
+### Further Reading
+
+Use the following links to learn more about specific topics mentioned in this
+page:
+

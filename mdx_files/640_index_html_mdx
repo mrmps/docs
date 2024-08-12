@@ -1,0 +1,38 @@
+https://code.kx.com/insights/licensing/index.html
+
+# Licensing - kdb products
+
+Original URL: https://code.kx.com/insights/licensing/index.html
+
+# Licensing overview
+
+All KX products require a license.
+
+Environments where KX software runs are licensed based on provisioned RAM
+capacity. KX require that self-managed commercial customers audit their RAM
+capacity for their deployment type, to comply with the [KX Software Usage
+Terms](https://kx.com/legal/software-usage-terms-03-24/).
+
+  * For physical hosts/VMs this is the entire, provisioned RAM available 
+  * For containerized environments this is RAM available to pods/containers/cgroups 
+
+If an environment is not formally containerized, the recommendation is to
+formally containerize or use Control Groups
+([cgroups](https://en.wikipedia.org/wiki/Cgroups)) so that the provisioned RAM
+capacity for KX processes can be limited to them. Otherwise, the full RAM
+available to the environment will be used as the measure.
+
+The self-service licensing model previously in use for KX products has been
+deprecated. Contact your sales representative if you have questions about
+this, and wish to discuss moving to the new model.
+
+## License types
+
+  * **Trial** \- these are generated automatically during the sign-up process. They require a public internet connection in order to work and are not issued for use in Production environments. After sign-up, you should receive a welcome email that includes a link to download the license file to your local environment. It also contains a Base64 encoded string that can be used in conjunction with an environment variable. The license is a file named **kc.lic**.
+
+  * **Commercial** \- these are distributed by KX's license administration service. They do not require a public internet connection and so are suitable for air-gapped, fire-walled deployments. The term of a commercial license is agreed as part of the product purchase. Upon agreement, you should receive a welcome email with a link to your license. This license is a file named **k4.lic**.
+
+  * **Proofs of concept** or **emergency licenses** \- a short-term license can be provided in proof of concept or emergency situations. Contact your sales representative to get this type of license. These are provided by KX's license administration team.
+
+Go [here](installing.html) for details on licenses installation.
+

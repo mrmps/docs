@@ -1,0 +1,126 @@
+https://code.kx.com/insights/accelerators/fsi/kx-flow-quickstart-guide.html
+
+# KX Flow Quickstart - kdb products
+
+Original URL: https://code.kx.com/insights/accelerators/fsi/kx-flow-quickstart-guide.html
+
+# KX Flow Quickstart Guide
+
+The KX Flow Accelerator is an FSI Accelerator package which comes with ready
+made Pipelines, Views, and Schemas out of the box. It provides a real time
+streaming integration with the [KX Flow](https://kx.com/solutions/fx-
+solutions/) application.
+
+## Prerequisites
+
+This quickstart guide is **not** intended to be a comprehensive KDB Insights
+Install Guide, for more information regarding KDB Insights installation refer
+to the [kdb Insights Enterprise
+documentation](https://code.kx.com/insights/1.9/enterprise/index.html)). This
+guide assumes the following pre-requisites:
+
+  * KDB Insights Enterprise 1.9.0 (minimum version) installed
+  * Necessary credentials obtained and configured: 
+  * kx download portal bearer token to download packages/charts (represented by BEARER in this guide). 
+  * Necessary Tools Used:
+    * Access to *nix command-line
+    * KDB Insights CLI - `kxi`
+  * Kubernetes tools: 
+  * Helm installed and logged in to nexus
+  * VSCode with the following plugins: 
+
+## Quick Start Guide
+
+Download the required FSI packages from the kx download portal:
+
+    
+    
+    # Download fsi-lib - the Core FSI Library
+    curl -s --fail-with-body -D /dev/stderr --oauth2-bearer ${BEARER} -L -OJ https://portal.dl.kx.com/assets/raw/kxi-accelerators/fsi/fsi-lib/packages/1.0.0/fsi-lib-1.0.0.kxi
+    
+    
+    # Download fsi-app-kx-flow - the KX Flow Accelerator
+    curl -s --fail-with-body -D /dev/stderr --oauth2-bearer ${BEARER} -L -OJ https://portal.dl.kx.com/assets/raw/kxi-accelerators/fsi/fsi-kx-flow/packages/1.0.0/fsi-app-kx-flow-1.0.0.kxi
+    
+
+If using static ips these need to be configured prior to pushing the package
+to insights.
+
+Unpack fsi-app-kx-flow:
+
+    
+    
+    kxi package unpack fsi-app-kx-flow-1.0.0.kxi
+    
+
+Edit the file `fsi-data-assembly-db-shard.yaml` in `../fsi-app-kx-
+flow/databases/fsi-data-assembly-db/shards` to include the static ips:
+
+    
+    
+    sequencers:
+    
+      fsifx-north:
+        external: true
+        staticIPs:
+        - 4.212.242.231
+        - 4.212.243.147
+        - 4.212.241.204
+    
+
+Package the change:
+
+    
+    
+    kxi package packit fsi-app-kx-flow --tag --version 1.0.0
+    
+
+Push the packages to Insights and deploy the fsi-kx-flow-assembly:
+
+    
+    
+    # Install the packages
+    kxi package push --force fsi-lib/1.0.0
+    kxi package push --force fsi-app-kx-flow/1.0.0
+    
+    # Deploy the assembly
+    kxi package deploy fsi-app-kx-flow/1.0.0
+    
+
+Note
+
+At this point you should be able to see the pipelines booting up on the GUI or
+on k9s.
+
+## Data Ingestion
+
+The KX Flow package contains ready to use pipelines for ingesting data via a
+flowbridge. See [FX Data Ingestion](FxDataIngestion.html) for more information
+on the preconfigured pipelines.
+
+The flowbridge will be managed by KX and requires a service account client
+enrolled on the insights assembly. Create a service account client with the
+role `insights.role.maintainer` via keycloak.
+
+    
+    
+    # Enrol client
+    kxi client enrol --name <CLIENT_NAME> --insert-topic fsiassembly
+    
+    
+    {
+      "message": "success",
+      "detail": "Client enrolled",
+      "url": "4087a3e7991beb212681ea78e2e91744",
+      "config_url": "https://kdbinsightsent7958602a.francecentral.cloudapp.azure.com/informationservice/details/4087a3e7991beb212681ea78e2e91744"
+    }
+    
+
+This url will need to be shared with the KX Flow team for the flowbridge
+connection.
+
+Once the flowbridge is connected and publishing you should be able to see data
+flowing in realtime via the FxChart View:
+
+![FxChart-View](images/FxChartScreenshot.PNG)
+

@@ -1,0 +1,296 @@
+https://code.kx.com/insights/api/packaging/python/udfs.html
+
+# User Defined Functions - kdb products
+
+Original URL: https://code.kx.com/insights/api/packaging/python/udfs.html
+
+# kxi.packages.udfs
+
+Listing and loading User-Defined Functions.
+
+The `kxi.packages.udfs` module provides all the callable functions used for
+listing and loading user-defined functions.
+
+All functionality within this module is described below.
+
+#### list_udfs_in_file
+
+    
+    
+    def list_udfs_in_file(path: str,
+                          udf_sym: Optional[str] = None) -> pd.DataFrame
+    
+
+List all the UDFs defined in a specific file.
+
+**Arguments** :
+
+  * `path` \- string - Path to the file that is to be searched for UDFs. Can be an absolute or relative path.
+  * `udf_sym` \- Optional[string] - Keyword used for defining the udfs.
+
+**Returns** :
+
+pd.DataFrame - Table detailing all the UDFs defined within the specified file.
+
+**Examples** :
+
+List a summary of all the UDFs defined within a specified file.
+
+    
+    
+    >>> # import the necessary modules
+    >>> import kxi.packages as pakx
+    >>> pakx.init()
+    >>> # list all UDFs in the file "test/test-packages/ml/1.0.0/ml.q"
+    >>> pakx.udfs.list_udfs_in_file("test/test-packages/ml/1.0.0/ml.q")
+    name        function language                         file_path  ...
+    0  ml_udf  .test.test_udf        q  test/test-packages/ml/1.0.0/ml.q  ...
+    
+    List a summary of all the UDFs defined within a specified file with alternative udf_sym.
+    
+    >>> # import the necessary modules
+    >>> import kxi.packages as pakx
+    >>> pakx.init()
+    >>> # list all UDFs in the file "test/test-packages/ml/1.0.0/ml.q"
+    >>> pakx.udfs.list_udfs_in_file("test/test-packages/test/0.0.4/init.q", udf_sym="myudf")
+    name     function language                             file_path  ...
+    0  testudf  .tester.udf        q  test/test-packages/test/0.0.4/init.q  ...
+    
+
+#### list_udfs_in_folder
+
+    
+    
+    def list_udfs_in_folder(path: str,
+                            udf_sym: Optional[str] = None) -> pd.DataFrame
+    
+
+List all the UDFs defined in the files within a specific folder.
+
+**Arguments** :
+
+  * `path` \- string - Path to the folder that is to be searched for UDFs. Can be an absolute or relative path.
+  * `udf_sym` \- Optional[string] - Keyword used for defining the udfs.
+
+**Returns** :
+
+pd.DataFrame - Table detailing all the UDFs defined in the files in the
+specified folder.
+
+**Examples** :
+
+List a summary of all the UDFs defined within the files in a specified folder.
+
+    
+    
+    >>> # import the necessary modules
+    >>> import kxi.packages as pakx
+    >>> # initialize the package
+    >>> pakx.init()
+    >>> # list all UDFs in the "test/test-packages/ml" folder
+    >>> pakx.udfs.list_udfs_in_folder("test/test-packages/ml")
+    name        function language                                        file_path ...
+    0   ml_udf  .test.test_udf        q                 test/test-packages/ml/1.0.0/ml.q ...
+    1   test21           func2       py  test/test-packages/ml/1.0.0/src/example_udfs.py ...
+    2   test12           func1       py  test/test-packages/ml/1.0.0/src/example_udfs.py ...
+    3   py_udf            func       py          test/test-packages/ml/1.0.0/src/test.py ...
+    4   map_udf  .test.map_udf        q          test/test-packages/ml/1.0.0/src/test1.q ...
+    .    ...          ...           ...                          ...                     ...
+    .    ...          ...           ...                          ...                     ...
+    
+    List a summary of all the UDFs defined within the files with a specific udf_sym.
+    
+    >>> pakx.udfs.list_udfs_in_folder("test/test-packages/test/0.0.4",udf_sym="myudf")
+    name     function language                             file_path  ...
+    0  testudf  .tester.udf        q  test/test-packages/test/0.0.4/init.q  ...
+    
+
+#### list
+
+    
+    
+    def list(*, udf_syms: Optional[List[str]] = None) -> pd.DataFrame
+    
+
+List all the UDFs defined at the path stored under the environment variable
+`KX_PACKAGE_PATH`.
+
+**Arguments** :
+
+  * `udf_sym` \- Optional[List[string]] - List of keywords used for defining the udfs.
+
+**Returns** :
+
+pd.DataFrame - Table detailing all the UDFs defined under `KX_PACKAGE_PATH`.
+
+**Examples** :
+
+List a summary of all UDFs defined under `KX_PACKAGE_PATH`.
+
+    
+    
+    >>> # import the necessary modules
+    >>> import kxi.packages as pakx
+    >>> # initialize the package
+    >>> pakx.init()
+    >>> # set the `KX_PACKAGE_PATH` environment variable
+    >>> pakx.setup_env.set_package_path("test/test-packages")
+    >>> # list all UDFs defined under `KX_PACKAGE_PATH`
+    >>> pakx.udfs.list()
+    name                      function language  ...
+    0   my_udf  .test.sub_namespace.test_udf        q  ...
+    1   my_udf  .test.sub_namespace.test_udf        q  ...
+    2   ml_udf                .test.test_udf        q  ...
+    3   test21                         func2       py  ...
+    4   test12                         func1       py  ...
+    .    ...                        ...           ...  ...
+    .    ...                        ...           ...  ...
+    
+    List a summary of all UDFs defined under `KX_PACKAGE_PATH` with alternative udf_sym.
+    
+    >>> # import the necessary modules
+    >>> import kxi.packages as pakx
+    >>> # initialize the package
+    >>> pakx.init()
+    >>> # set the `KX_PACKAGE_PATH` environment variable
+    >>> pakx.setup_env.set_package_path("test/test-packages")
+    >>> # list all UDFs defined under `KX_PACKAGE_PATH`
+    >>> pakx.udfs.list((udf_syms=["myudf"])
+    name             function language  ...
+    0    testudf          .tester.udf        q  ...
+    1  superudf3  .test.example.func3        q  ...
+    
+
+#### search
+
+    
+    
+    def search(udf_name: Optional[str] = None,
+               package_name: Optional[str] = None,
+               package_version: Optional[str] = None,
+               *,
+               udf_syms: Optional[List[str]] = None) -> pd.DataFrame
+    
+
+List all the UDFs defined at the path stored under the environment variable
+`KX_PACKAGE_PATH` that match a presented search criteria.
+
+**Arguments** :
+
+  * `udf_name` \- Optional[string] - Regex filter string used to search for specific UDF name patterns. Can also be `None` to include all UDF names.
+  * `package_name` \- Optional[string] - Regex filter string used to search for specific package name patterns. Can also be `None` to include all package names.
+  * `package_version` \- Optional[string] - Regex filter string used to search for specific package version patterns. Can also be `None` to include all package versions.
+  * `udf_sym` \- Optional[string] - List of keywords used for defining the udfs.
+
+**Returns** :
+
+pd.DataFrame - Table detailing all the UDFs defined under `KX_PACKAGE_PATH`
+which match the presented search criteria.
+
+**Examples** :
+
+List a summary of all UDFs defined under `KX_PACKAGE_PATH` which match the
+presented search criteria.
+
+    
+    
+    >>> # import the necessary modules
+    >>> import kxi.packages as pakx
+    >>> # initialize the package
+    >>> pakx.init()
+    >>> # set the `KX_PACKAGE_PATH` environment variable
+    >>> pakx.setup_env.set_package_path("test/test-packages")
+    >>> # list all UDFs defined under `KX_PACKAGE_PATH`
+    >>> pakx.udfs.search()
+    name                      function language  ...
+    0       my_udf  .test.sub_namespace.test_udf        q  ...
+    1       my_udf  .test.sub_namespace.test_udf        q  ...
+    2       ml_udf                .test.test_udf        q  ...
+    3       test21                         func2       py  ...
+    4       test12                         func1       py  ...
+    .         ...                       ...           ...  ...
+    .         ...                       ...           ...  ...
+    >>> # search for all UDFs associated with the "ml" package
+    >>> pakx.udfs.search(package_name="*ml*")
+    name                      function language  ...
+    0   ml_udf                .test.test_udf        q  ...
+    1   test21                         func2       py  ...
+    2   test12                         func1       py  ...
+    3   py_udf                          func       py  ...
+    4  map_udf                 .test.map_udf        q  ...
+    .    ...                        ...           ...  ...
+    .    ...                        ...           ...  ...
+    >>> # search for all UDFs that start with the letter "m"
+    >>> pakx.udfs.search("m*")
+    name                      function language  ...
+    0     my_udf  .test.sub_namespace.test_udf        q  ...
+    1     my_udf  .test.sub_namespace.test_udf        q  ...
+    2     ml_udf                .test.test_udf        q  ...
+    3    map_udf                 .test.map_udf        q  ...
+    4  merge_udf               .test.merge_udf        q  ...
+    .      ...                     ...              ...  ...
+    .      ...                     ...              ...  ...
+    >>> # search for all UDFs with udf_sym "myudf"
+    >>> pakx.udfs.search(udf_syms=["myudf"])
+    name             function language  ...
+    0    testudf          .tester.udf        q  ...
+    1  superudf3  .test.example.func3        q  ...
+    
+
+#### load
+
+    
+    
+    def load(udf_name: str,
+             package_name: str,
+             package_version: Optional[str] = None,
+             *,
+             udf_syms: Optional[List[str]] = None,
+             force: bool = False) -> Callable
+    
+
+Load a UDF into memory.
+
+**Arguments** :
+
+  * `udf_name` \- string - Name of the UDF to be loaded.
+  * `package_name` \- string - Name of the package from which to load the UDF.
+  * `package_version` \- Optional[string] - Version of the package from which to load the UDF. Can also be `None` to use the latest version of the specified package.
+  * `udf_sym` \- Optional[string] - Keyword used for defining the udfs.
+  * `force` \- boolean - Whether to load a UDF regardless of whether a UDF of the same name has already been loaded.
+
+**Returns** :
+
+Callable - User-defined function as a callable function.
+
+**Examples** :
+
+Load UDFs from various packages.
+
+    
+    
+    >>> # import the necessary modules
+    >>> import kxi.packages as pakx
+    >>> # initialize the package
+    >>> pakx.init()
+    >>> # set the `KX_PACKAGE_PATH` environment variable
+    >>> pakx.setup_env.set_package_path("test/test-packages")
+    >>> # list all UDFs defined under `KX_PACKAGE_PATH`
+    >>> pakx.udfs.list()
+    name                      function language  ...
+    0   my_udf  .test.sub_namespace.test_udf        q  ...
+    1   my_udf  .test.sub_namespace.test_udf        q  ...
+    2   ml_udf                .test.test_udf        q  ...
+    3   test21                         func2       py  ...
+    4   test12                         func1       py  ...
+    .     ...                       ...           ...  ...
+    .     ...                       ...           ...  ...
+    >>> # load the UDF "my_udf" from the "ml" package
+    >>> pakx.udfs.load("my_udf", "ml")
+    >>> # load the UDF "test" from the "1.2.0" version of the "test" package
+    >>> pakx.udfs.load("test", "test", "1.2.0")
+    >>> # load the UDF "py_udf" from multiple versions of the package "test_package"
+    >>> udf1: pakx.udfs.load("py_udf", "test_package", "1.0.0")
+    >>> udf2: pakx.udfs.load("py_udf", "test_package", "1.1.0", force=True)
+    
+

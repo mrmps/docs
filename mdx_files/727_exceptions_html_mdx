@@ -1,0 +1,76 @@
+https://code.kx.com/pykx/api/exceptions.html
+
+# PyKX Exceptions - PyKX
+
+Original URL: https://code.kx.com/pykx/api/exceptions.html
+
+PyKX exceptions and warnings.
+
+Standard Python exceptions (e.g. `TypeError`, `ValueError`, etc.) are used as
+convention dictates, but for PyKX and q specific issues custom exceptions are
+used.
+
+###  `PyKXWarning`
+
+Bases: `[Warning](https://docs.python.org/3/library/exceptions.html#Warning)`
+
+Warning type for PyKX-specific warnings.
+
+###  `PyKXException`
+
+Bases:
+`[Exception](https://docs.python.org/3/library/exceptions.html#Exception)`
+
+Base exception type for PyKX-specific exceptions.
+
+###  `LicenseException`
+
+    
+    
+    LicenseException(feature_msg='use this feature', *args, **kwargs)
+
+Bases: `PyKXException`
+
+Exception for when a feature that requires a valid q license is used without
+one.
+
+###  `FutureCancelled`
+
+    
+    
+    FutureCancelled(msg='', *args, **kwargs)
+
+Bases: `PyKXException`
+
+Exception for when a QFuture is cancelled.
+
+###  `NoResults`
+
+    
+    
+    NoResults(*args, **kwargs)
+
+Bases: `PyKXException`
+
+Exception for when a QFutures result is not yet ready.
+
+###  `UninitializedConnection`
+
+    
+    
+    UninitializedConnection(*args, **kwargs)
+
+Bases: `PyKXException`
+
+Exception for when a QConnection is used before it is initialized.
+
+###  `PyArrowUnavailable`
+
+    
+    
+    PyArrowUnavailable(msg=None, *args, **kwargs)
+
+Bases: `PyKXException`
+
+Exception for features that depend on PyArrow when PyArrow is not available.
+

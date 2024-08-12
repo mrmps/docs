@@ -1,0 +1,636 @@
+https://code.kx.com/platform/deployment/lin_multi_node_deploy/
+
+# Linux - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/deployment/lin_multi_node_deploy/
+
+# Multi-node deploy - Linux
+
+## Separate KX Control and web application nodes
+
+This section deals with deploying the _KX Delta Platform_ with 2 nodes
+including 1 KX Control Node and 1 Web Application Node.
+
+The table below details each of the nodes in the deploy:
+
+Host | Details  
+---|---  
+control-a.fd.com | Leader Control, Daemon and Stream KDB+ Processes  
+web-a.fd.com | Tomcat Web Application (Including Dashboards)  
+  
+The diagram below shows what this deploy would look like and the following
+section describes how this deploy type can be achieved using the bundle
+installer.
+
+![Screenshot](../img/1-control-1-web-linux.png)
+
+Before proceeding with the deploy you will need to copy the packages to each
+node, unpack and copy the license files. Please see the [Prepare
+Deploy](../prepare_deploy/#prepare-linux-deploy) section for further details.
+
+### KX Control deploy
+
+To deploy the KX Control node run the install.sh script from inside the bundle
+contents on the Control node as follows:
+
+    
+    
+    $ ./install.sh
+    
+
+When prompted select option [2]: Control
+
+    
+    
+    +----------------------------------------+
+    Running Pre Deploy Script [checkHost.sh]
+    +----------------------------------------+
+      [1] Single
+      [2] Control
+      [3] Web Server
+      [4] Daemon
+      [5] Control + Web Server
+    +-----------------------------------------------------------+
+     Select Mode [1-5] : 2
+    
+
+To select a non-clustered deploy enter no and hit return:
+
+    
+    
+    +-----------------------------------+
+    Configure Control Clustering [yes]: no
+    +-----------------------------------+
+    
+
+You will now be prompted for the port KX Control will be available on.
+**Note** : The default port (2001) or a custom port can be used.
+
+    
+    
+    Please enter free port to be used by Control [2001] : 2001
+    Using port [2001] for Control
+    
+
+From here we move on to the taskset configuration of the Control Node. In this
+case we are entering the number of CPU Cores on which we are licensed to run
+KDB+ on the KX Control nodes.
+
+    
+    
+    Number of [Licensed KDB+] [CPU cores] on [Control] Node(s): 10
+    
+
+The Webserver will be started by Control so the hostname and taskset values
+for the web node must be entered when deploying the KX Control node. **Note**
+: we are only deploying a single web node so enter no when prompted to add
+another. see below:
+
+    
+    
+    FQDN of [Web Server A] Node: web-a.fd.com
+    Configure [Web Server B] [yes]: no
+    Number of [CPU cores] on [Web Server] Node(s): 5
+    
+
+_KX Delta Platform_ deployments run various pre-configured processes which
+bind to ports on the deployment nodes. Instead of configuring each of these
+ports in turn the script prompts for a port value which will be used as a
+starting port for each of these processes.
+
+    
+    
+    Please enter starting value for deploy port range [3000]: 5000
+    Using starting port [5000]
+    
+
+The TLS configuration is dealt with in the [TLS overview](../tls_overview/)
+section. For the purposes of this section we are deploying without TLS:
+
+    
+    
+     Encryption
+      Deploy with TLS/SSL Encryption Enabled [no]:
+    
+
+The installer should now deploy the packages and you should see the following
+on a successful deploy:
+
+    
+    
+    +-----------------------------------------------------------+
+     Running Deploy
+     Installing [9] Packages
+     [**********]
+    +-----------------------------------------------------------+
+     [Tue 10 Dec 14:52:37 UTC 2019]
+    Installation complete.
+    install.sh Finished.
+    
+
+### Web server deploy
+
+To deploy the Web Layer run the install.sh script from inside the bundle
+contents on each Web node as follows:
+
+    
+    
+    $ ./install.sh
+    
+
+When prompted select option [3]: Web Server
+
+    
+    
+    +----------------------------------------+
+    Running Pre Deploy Script [checkHost.sh]
+    +----------------------------------------+
+      [1] Single
+      [2] Control
+      [3] Web Server
+      [4] Daemon
+      [5] Control + Web Server
+    +-----------------------------------------------------------+
+     Select Mode [1-5] : 3
+    
+
+**Note** : For more information on Deploy modes, see
+[here](../install_scripts/#installsh-deploy-modes)
+
+In this deploy configuration the Web Layer is connecting a single _KX Control_
+instance see below:
+
+    
+    
+    Configuring Web Server Deploy
+    Is this Deploy connecting to a Control Cluster [no] : no
+    
+
+Now enter the details of the KX Control node into the installer.
+
+    
+    
+    FQDN of Control Node: control-a.fd.com
+    Control Port: 2001
+    
+
+With the KX Control configuration completed we move on to the Web specific
+configuration options.
+
+The Webserver can be fronted by HTTP or HTTP/HTTPS connectors and the
+configuration must be chosen at deploy time.
+
+HTTPS configuration is covered in the [Securing
+Tomcat/AppServer](../securing_tomcat/) section of this guide. For the purpose
+of this deploy we will be using HTTP only.
+
+    
+    
+    +-----------------------------------------------------------+
+     [1] HTTP
+     [2] HTTPS
+    +-----------------------------------------------------------+
+     Select App Server Deploy Type [1-2]: 1
+    +-----------------------------------------------------------+
+    
+
+Choose a free port for you HTTP connector. This is the port you will use to
+connect to your dashboards from your web browser.
+
+    
+    
+     App Server HTTP port [8080]: 8080
+    
+
+We are not connecting to a TLS enabled KX Control cluster so answer no to the
+next prompt
+
+    
+    
+    Encryption
+     Deploy with TLS/SSL Encryption Enabled [no]: no
+    
+
+The installer should now deploy the packages and you should see the following
+on a successful deploy:
+
+    
+    
+     Running Deploy
+     Installing [9] Packages
+     [**********]
+    +-----------------------------------------------------------+
+     [Tue 10 Dec 14:21:54 UTC 2019]
+    Installation complete.
+    install.sh Finished.
+    
+
+The deploy should now be complete. The process for bringing up a multi host
+deploy is details in the [Linux Administration](../lin_administration/)
+section.
+
+## KX Delta Platform cluster (A/B)
+
+This section deals with deploying the _KX Delta Platform_ with across 2 nodes,
+with _KX Control_ and Web Application Nodes running on both.
+
+The table below details each of the nodes in the deploy:
+
+Host | Details  
+---|---  
+control-a.fd.com | Leader Control, Daemon, Stream KDB+ Processes, Tomcat Web Application (Including Dashboards)  
+control-b.fd.com | Follower Control, Daemon, Stream KDB+ Processes, Tomcat Web Application (Including Dashboards)  
+  
+The diagram below shows what this deploy would look like and the following
+section describes how this deploy type can be achieved using the bundle
+installer.
+
+![Screenshot](../img/2-control-and-web-linux.png)
+
+Before proceeding with the deploy you will need to copy the packages to each
+node, unpack and copy the license files. Please see the [Prepare
+Deploy](../prepare_deploy/#prepare-linux-deploy) section for further details.
+
+To deploy the _KX Control_ Cluster run the install.sh script from inside the
+bundle contents on each Cluster node as follows:
+
+    
+    
+    $ ./install.sh
+    
+
+When prompted select option [5]: Control + Web Server
+
+    
+    
+    +----------------------------------------+
+    Running Pre Deploy Script [checkHost.sh]
+    +----------------------------------------+
+      [1] Single
+      [2] Control
+      [3] Web Server
+      [4] Daemon
+      [5] Control + Web Server
+    +-----------------------------------------------------------+
+     Select Mode [1-5] : 5
+    
+
+To select a cluster deploy hit return (default is clustered) or type yes:
+
+    
+    
+    +-----------------------------------+
+    Configure Control Clustering [yes]:
+    +-----------------------------------+
+    
+
+You will now be prompted for the port _KX Control_ will be available on on
+each _KX Control_ node. **Note** : The default port (2001) or a custom port
+can be used but the same port should be used on each node
+
+    
+    
+    Please enter free port to be used by Control [2001] : 2001
+    Using port [2001] for Control
+    
+
+For the next bit of configuration we will use the details from the table
+above. The script will prompt for a hostname (in FQDN format) and CPU core
+settings.
+
+#### Leader node
+
+    
+    
+    Is this the [Leader Control] Node [yes]: yes
+    FQDN of [Follower Control] Node: control-b.fd.com
+    
+
+#### Follower node
+
+    
+    
+    Is this the [Leader Control] Node [yes]: no
+    FQDN of [Leader Control] Node: control-a.fd.com
+    
+
+From here we move on to the taskset configuration of the Control Cluster. In
+this case we are entering the number of CPU Cores on which we are licensed to
+run KDB+ on both of the _KX Control_ nodes.
+
+    
+    
+    Number of [Licensed KDB+] [CPU cores] on [Control] Node(s): 10
+    
+
+The Web Servers are started by Control so their taskset values must be entered
+when deploying the _KX Control_ cluster
+
+    
+    
+    Number of [CPU cores] on [Web Server] Node(s): 5
+    
+
+The Webserver can be fronted by HTTP or HTTP/HTTPS connectors and the
+configuration must be chosen at deploy time.
+
+HTTPS configuration is covered in the [Securing
+Tomcat/AppServer](../securing_tomcat/) section of this guide. For the purpose
+of this deploy we will be using HTTP only.
+
+    
+    
+    +-----------------------------------------------------------+
+     [1] HTTP
+     [2] HTTPS
+    +-----------------------------------------------------------+
+     Select App Server Deploy Type [1-2]: 1
+    +-----------------------------------------------------------+
+    
+
+Choose a free port for you HTTP connector. This is the port you will use to
+connect to your dashboards from your web browser.
+
+    
+    
+     App Server HTTP port [8080]: 8080
+    
+
+We are not connecting to a TLS enabled _KX Control_ cluster so answer no to
+the next prompt
+
+    
+    
+    Encryption
+     Deploy with TLS/SSL Encryption Enabled [no]: no
+    
+
+The installer should now deploy the packages and you should see the following
+on a successful deploy:
+
+    
+    
+    +-----------------------------------------------------------+
+     Running Deploy
+     Installing [16] Packages
+     [*****************]
+    +-----------------------------------------------------------+
+     [Tue 10 Dec 15:21:58 UTC 2019]
+    Installation complete.
+    install.sh Finished.
+    
+
+The deploy should now be complete. The process for bringing up a multi host
+deploy is given in the [Linux Administration](../lin_administration/) section.
+
+## Separate KX Control and web cluster nodes
+
+This section deals with deploying the _KX Delta Platform_ with 4 nodes
+including 2 Clustered _KX Control_ Nodes and 2 Web Application Nodes.
+
+The table below details each of the nodes in the deploy:
+
+Host | Details  
+---|---  
+control-a.fd.com | Leader Control, Daemon and Stream KDB+ Processes  
+control-b.fd.com | Follower Control, Daemon and Stream KDB+ Processes  
+web-a.fd.com | Tomcat Web Application (Including Dashboards)  
+web-b.fd.com | Tomcat Web Application (Including Dashboards)  
+  
+The diagram below shows what this deploy would look like and the following
+section describes how this deploy type can be achieved using the bundle
+installer.
+
+![Screenshot](../img/2-control-2-web-linux.png)
+
+Before proceeding with the deploy you will need to copy the packages to each
+node, unpack and copy the license files. Please see the [Prepare
+Deploy](../prepare_deploy/#prepare-linux-deploy) section for further details.
+
+### KX Control cluster deploy
+
+The deploy will be done in 2 sections, first the _KX Control_ cluster deploy
+and second the Webserver deploy.
+
+![Screenshot](../img/2-control-2-web-linux-control-layer.png)
+
+To deploy the _KX Control_ Cluster run the install.sh script from inside the
+bundle contents on each Cluster node as follows:
+
+    
+    
+    $ ./install.sh
+    
+
+When prompted select option [2]: Control
+
+    
+    
+    +----------------------------------------+
+    Running Pre Deploy Script [checkHost.sh]
+    +----------------------------------------+
+      [1] Single
+      [2] Control
+      [3] Web Server
+      [4] Daemon
+      [5] Control + Web Server
+    +-----------------------------------------------------------+
+     Select Mode [1-5] : 2
+    
+
+To select a cluster deploy hit return (default is clustered) or type yes:
+
+    
+    
+    +-----------------------------------+
+    Configure Control Clustering [yes]:
+    +-----------------------------------+  
+    
+
+You will now be prompted for the port _KX Control_ will be available on on
+each _KX Control_ node. **Note** : The default port (2001) or a custom port
+can be used but the same port should be used on each node
+
+    
+    
+    Please enter free port to be used by Control [2001] : 2001
+    Using port [2001] for Control
+    
+
+For the next bit of configuration we will use the details from the table
+above. The script will prompt for hostname (in FQDN format) and CPU core
+settings.
+
+#### Leader node
+
+    
+    
+    Is this the [Leader Control] Node [yes]: yes
+    FQDN of [Follower Control] Node: control-b.fd.com
+    
+
+#### Follower node
+
+    
+    
+    Is this the [Leader Control] Node [yes]: no
+    FQDN of [Leader Control] Node: control-a.fd.com
+    
+
+From here we move on to the taskset configuration of the Control Cluster. In
+this case we are entering the number of CPU Cores on which we are licensed to
+run KDB+ on both of the _KX Control_ nodes.
+
+    
+    
+    Number of [Licensed KDB+] [CPU cores] on [Control] Node(s): 10
+    
+
+The Web Servers are started by Control so their hostname and taskset values
+must be entered when deploying the _KX Control_ cluster.
+
+    
+    
+    FQDN of [Web Server A] Node : web-a.fd.com
+    Configure [Web Server B][yes]: yes 
+    FQDN of [Web Server B] Node : web-b.fd.com
+    Number of [CPU cores] on [Web Server] Nodes(s): 5
+    
+
+_KX Delta Platform_ Deploys run various pre-configured processes which bind to
+ports on the deployment nodes. Instead of configuring each of these ports in
+turn the script prompts for a port value which will be used as a starting port
+for each of these processes.
+
+    
+    
+    Please enter starting value for deploy port range [3000]: 5000
+    Using starting port [5000]
+    
+
+The TLS configuration is dealt with in the [TLS overview](../tls_overview/)
+section. For the purposes of this section we are deploying without TLS:
+
+    
+    
+     Encryption
+      Deploy with TLS/SSL Encryption Enabled [no]:
+    
+
+The installer should now deploy the packages and you should see the following
+on a successful deploy:
+
+    
+    
+    +-----------------------------------------------------------+
+     Running Deploy
+     Installing [9] Packages
+     [**********]
+    +-----------------------------------------------------------+
+     [Tue 10 Dec 13:58:05 UTC 2019]
+    Installation complete.
+    install.sh Finished.
+    
+
+### Web server deploy
+
+![Screenshot](../img/2-control-2-web-linux-control-layer.png)
+
+To deploy the Web Layer run the install.sh script from inside the bundle
+contents on each Web node as follows:
+
+    
+    
+    $ ./install.sh
+    
+
+When prompted select option [3]: Web Server
+
+    
+    
+    +----------------------------------------+
+    Running Pre Deploy Script [checkHost.sh]
+    +----------------------------------------+
+      [1] Single
+      [2] Control
+      [3] Web Server
+      [4] Daemon
+      [5] Control + Web Server
+    +-----------------------------------------------------------+
+     Select Mode [1-5] : 3
+    
+
+In this deploy configuration the Web Layer is connecting a _KX Control_
+cluster see below:
+
+    
+    
+    Configuring Web Server Deploy
+    Is this Deploy connecting to a Control Cluster [no] : yes
+    
+
+Now enter the details of the _KX Control_ nodes into the installer.
+
+    
+    
+    FQDN of Leader Control Node : control-a.fd.com
+    FQDN of Follower Control Node : control-b.fd.com
+    Now enter a free control cluster port to use:
+    Control Cluster Port : 2001
+    
+
+With the _KX Control_ configuration completed we move on to the Web specific
+configuration options.
+
+The Webserver can be fronted by HTTP or HTTP/HTTPS connectors and the
+configuration must be chosen at deploy time.
+
+HTTPS configuration is covered in the [Securing
+Tomcat/AppServer](../securing_tomcat/) section of this guide. For the purpose
+of this deploy we will be using HTTP only.
+
+    
+    
+    +-----------------------------------------------------------+
+     [1] HTTP
+     [2] HTTPS
+    +-----------------------------------------------------------+
+     Select App Server Deploy Type [1-2]: 1
+    +-----------------------------------------------------------+
+    
+
+Choose a free port for you HTTP connector. This is the port you will use to
+connect to your dashboards from your web browser.
+
+    
+    
+     App Server HTTP port [8080]: 8080
+    
+
+We are not connecting to a TLS enabled _KX Control_ cluster so answer no to
+the next prompt
+
+    
+    
+    Encryption
+     Deploy with TLS/SSL Encryption Enabled [no]: no
+    
+
+The installer should now deploy the packages and you should see the following
+on a successful deploy:
+
+    
+    
+     Running Deploy
+     Installing [9] Packages
+     [**********]
+    +-----------------------------------------------------------+
+     [Tue 10 Dec 14:21:54 UTC 2019]
+    Installation complete.
+    install.sh Finished.
+    
+
+The deploy should now be complete. The process for bringing up a multi host
+deploy is covered in the [Linux Administration](../lin_administration/)
+section of this guide.
+

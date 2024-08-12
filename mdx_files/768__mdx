@@ -1,0 +1,158 @@
+https://code.kx.com/platform/analytics/
+
+# Analytics - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/analytics/
+
+# Analytic functions
+
+Analytics are functions defined in q – the programming language for kdb+.
+Analytics have the following characteristics:
+
+  * Consist of the q code, a description and a set of parameters
+  * Can be grouped; and an analytic can be a member of more than one analytic group
+  * Some analytic groups have special meanings. If an analytic is part of that group, then it can be used in certain places throughout the system. For example, if an analytic is a member of `DxConfigValidationAnalytics`, then it can be used to validate a configuration parameter
+  * Analytics and analytic groups starting `Dx` are core delta and should not be modified. They should be duplicated instead.
+  * It’s a good idea to define a naming convention – try to stick with the analytic having the same prefix as its group
+  * Some example analytics are supplied, and implement some of the core functionality for each of the process templates
+  * HTML documentation can be automatically created from analytic group
+  * An analytic can be marked as “Private” or "Public". Analytics must be public to be available as [Connect API](../kx_connect/#kx-connect-api)
+
+An analytic definition consists of the analytic group membership, a
+description, a set of parameters, and code. When analytics are in the same
+group and have common parameters, it’s easier to duplicate them rather than
+starting over. However, duplicating an analytic doesn’t duplicate its
+permissions.
+
+The Analytic Editor interface in _KX Control_ allows the creation and editing
+of Analytics. A number of tabs allow the user to define the meta, function and
+parameters of an Analytic. A new Analytic can be created via _File > New
+Analytic_
+
+![Screenshot](../img/control/newanalytic.png)
+
+## Analytic details
+
+After giving the analytic a name and selecting a package to include the
+analytic in, you can modify the analytic details
+
+![Screenshot](../img/control/analyticdetails.png)
+
+field | description  
+---|---  
+Description | Description of the analytic  
+Alias | A short name for the analytic  
+Connection | Allows the definition of default connection where the analytic would be executed  
+Type | Polling/streaming analytic  
+Public Analytic | Allows an analytic to be marked for external use, i.e. to be available as [Connect API](../kx_connect/#kx-connect-api)  
+  
+## Analytic parameters
+
+You cannot modify the parameters for an analytic in the code editor, you must
+add/remove/update them in the _Parameters_ tab. You can also change the order
+using the up/down controls.
+
+![Screenshot](../img/control/analyticparams.png)
+
+The changes made in the _Parameters_ tab will be reflected in the parameters
+shown in the _Contents_ tab.
+
+![Screenshot](../img/control/analyticparams2.png)
+
+## Code editing features
+
+The code editors in Analytics, Instructions and Process Templates share some
+common features.
+
+### Content assist
+
+There is content assist using Ctrl+Space. This provides a list of common q
+keywords, the available Process Template APIs, any analytics or instructions
+installed, plus schemas and parameters.
+
+![Screenshot](../img/control/analyticcontentassist.png)
+
+### Hover help
+
+There is hover help for the same list of entities. Hover over a function or
+schema to see the details. This screenshot is of an analytic defined by the
+user.
+
+![Screenshot](../img/control/analytichoverhelp.png)
+
+The following screenshot shows a function from the Process Template API.
+
+![Screenshot](../img/control/analyticbuiltins.png)]
+
+### F3 to navigate to entity
+
+Press F3 to navigate to a supported entity. In the example below, placing the
+cursor in the function and pressing F3 results in the function being opened in
+a new viewer.
+
+![Screenshot](../img/control/navigateusingf3.gif)
+
+### Keyboard shortcuts
+
+The code area supports the following keyboard shortcuts
+
+shortcut | description  
+---|---  
+Ctrl-F / Cmd-F | Start searching  
+Ctrl-G / Cmd-G | Find next  
+Shift-Ctrl-G / Shift-Cmd-G | Find previous  
+Shift-Ctrl-F / Cmd-Option-F | Replace  
+Shift-Ctrl-R / Shift-Cmd-Option-F | Replace all  
+Alt-G | Jump to line  
+Ctrl-P / Cmd-P | Open Push Analytic Dialog  
+  
+### Regex search
+
+When using search within the code editor the search expression can optionally
+be a regex string. For example, if the code contents had both the words _test_
+and _Test_ then the search expression _/test/_ would only find the first
+lowercase version but _/test/i_ would find them all ignoring case.
+
+## Analytic push
+
+Once an analytic is edited the changes made can be applied to a running
+instance, task, template, or service class. The analytic editor will remember
+a previously selected instance, template, task or service class which was
+pushed to, and it will appear selected when the push analytic window is
+reopened. The keyboard shortcuts Ctrl-P / Cmd-P will open the dialog as well.
+
+![Screenshot](../img/control/analyticpush.png)
+
+Push to any running instances created from a template
+
+![Screenshot](../img/control/analyticpushtemplate.png)
+
+Push to the running instance of a particular process instance
+
+![Screenshot](../img/control/analyticpushinstance.png)
+
+Push to the running task of a particular task
+
+![Screenshot](../img/control/analyticpushtask.png)
+
+Push to any running instances of a particular service class
+
+![Screenshot](../img/control/analyticpushserviceclass.png)
+
+## Analytic editing in KX Analyst
+
+Analytics can be maintained in _KX Control's_ Interactive Development
+Environment (IDE) - _KX Analyst_ and exported into _KX Control_.
+
+![Screenshot](../img/control/analyticinanalytics.png)
+
+## Analytic groups
+
+The _Groups_ tab allows modification of which analytic groups an analytic is
+in. Use the arrows or double-click to move between available and assigned
+groups.
+
+![Screenshot](../img/control/analyticgrouptab.png)
+
+[Analytic Groups](../analytic_groups/)
+

@@ -1,0 +1,96 @@
+https://code.kx.com/insights/microservices/stream-processor/examples/kafka-ingest.html
+
+# Streaming Kafka ingestion - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/stream-processor/examples/kafka-ingest.html
+
+# Streaming Kafka Ingest
+
+_Streams data from Kafka and writes to a data sink_
+
+Setting up an example Kafka broker
+
+The example below uses a sample Kafka broker provided as a [how to
+guide](../../../enterprise/ingest/examples/kafka/setup.html).
+
+## Deploying the Stream Processor
+
+Below is an example `spec.q` Stream Processor application that processes the
+`trades` topic that is being produced by the example producer above. The
+stream is decoded and windowed into 5 second buckets before being converted to
+a table and printed to the console for demonstration. This could also publish
+to a kdb+ tickerplant, write a message back to Kafka, or send the data to one
+of the other available [data sinks](../../../api/stream-
+processor/q/writers.html).
+
+    
+    
+    .qsp.run
+      .qsp.read.fromKafka["trades"]
+      .qsp.decode.json[]
+      .qsp.map[{enlist `time`sym`bid`ask!"PSff"$'x}]
+      .qsp.window.timer[00:00:05]
+      .qsp.write.toConsole[]
+    
+
+DockerKubernetes
+
+To deploy the pipeline above to Docker, add a worker to the `docker-
+compose.yaml` configuration.
+
+    
+    
+    services:
+        .. # Indicates excerpt from from previous `docker-compose.yaml` examples
+      worker:
+        image: portal.dl.kx.com/kxi-sp-worker:1.10.0
+        networks:
+          - app
+        depends_on:
+          - kafka
+        volumes:
+          - .:/opt/kx/app/data
+        environment:
+          - KDB_LICENSE_B64
+          - KXI_SP_SPEC=/opt/kx/app/data/spec.q
+          - KXI_SP_KAFKA_BROKERS=kafka:9092
+    
+
+The final configuration for the `docker-compose.yaml` should be one of the
+following depending on the number of workers configured. For simple, one-off
+jobs, a single Worker may be sufficient. For health checks and parallelism or
+production deployments, it is recommended that a Controller is deployed to
+monitor any Workers.
+
+**Full configuration:**
+
+To run the configuration, execute the following.
+
+To deploy the above pipeline in Kubernetes, first follow the [setup for
+Kubernetes](../configuration.html#kubernetes) guide. The pipeline can be
+deployed using a port forwarded Coordinator service.
+
+Multiple Workers
+
+The Stream Processor will automatically scale the number of Workers to balance
+the available Kafka partitions across Workers. When deploying the Kafka broker
+chart, add `--set numPartitions=<number>` to increase the parallelism of the
+Kafka ingestion. The Stream Processor will not create more Workers than the
+specified `maxWorkers`.
+
+    
+    
+    curl -X POST http://localhost:5000/pipeline/create -d \
+        "$(jq -n --arg spec "$(cat spec.q)" \
+        '{
+            name     : "kafka",
+            type     : "spec",
+            settings : {
+                minWorkers : 1,
+                maxWorkers : 10
+            },
+            config   : { content: $spec },
+            env : { KXI_SP_KAFKA_BROKERS: "kafka:9092" }
+        }' | jq -asR .)"
+    
+

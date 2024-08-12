@@ -1,0 +1,193 @@
+https://code.kx.com/platform/deployment/upgrade_process/
+
+# Upgrade process - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/deployment/upgrade_process/
+
+# Upgrade process
+
+_KX Delta Platform_ upgrades come in the form of patch bundles (Px) which can
+be patched on top of an existing install, or installed along side a base GA
+bundle.
+
+### GA
+
+GA Bundles contain a full refresh of the _KX Delta Platform_ packages. When a
+new version is made available the GA bundle is released and subsequent patch
+bundles will follow (see below)
+
+If you are upgrading from 4.3.0 -> 4.4.0 you will need to take the 4.4.0 GA
+package along with the latest 4.4.0 Patch package (e.g. 4.4.0P8).
+
+### Patches
+
+Patch bundles are available for Linux and Windows and contain patches for
+individual KX Delta Platform components targeted for a particular GA version
+e.g. 4.4.0P1, 4.3.0P4.
+
+If you are running _KX Delta Platform_ 4.4.0 you should take each patch
+release when they come out, if you miss a patch you need only take the latest
+as each patch bundle contains all previous patches.
+
+## Linux bundle upgrade
+
+The process to upgrade the _KX Delta Platform_ is similar to that of a clean
+deployment, for a basic KX Delta Platform deployment the following steps will
+be executed:
+
+  * Stop existing deployment
+  * Download and Unpack the Patch bundle on the server which will be upgraded.
+  * Execute the `install.sh` script, pointing to the existing installation when prompt for an Install directory
+  * Start-up the upgraded deployment
+
+As the patch bundles are cumulative, the latest patch should be taken. e.g.
+Installing 4.4.0P6 will include patch releases P1, P2, P3 etc.
+
+**Note** for special upgrade considerations, checkout the _KX Delta Platform_
+Release Notes.
+
+In order to upgrade a _KX Delta Platform_ deploy you must first copy the
+release packages to each host and unpack. This process is described
+[here](../prepare_deploy/).
+
+Once the package have been copied to the deploy host you will need to shutdown
+you environment, the steps to do this are given
+[here](../lin_administration/).
+
+Now you can run the `install.sh` script, where you will be prompt to enter the
+location of your existing installation. The installer will recognize that this
+is an existing install and perform an upgrade of the patched packages.
+
+    
+    
+    $ ./install.sh
+    =============================================================
+    ==                  install.sh [2.1.6]                     ==
+    =============================================================
+     Platform install directory [/home/kxplatform/kxinstall]:
+    +-----------------------------------------------------------+
+     Warn: Detected KX installation in [/home/kxplatform/kxinstall]
+     Continue with upgrade: [yes]: yes
+    
+
+**Note** : if you are using a non standard deploy directory you should enter
+it above. The installer will recognize that the directory contains a deploy
+and prompt you to proceed with the upgrade. Hit enter or type yes and hit
+enter.
+
+### Post upgrade
+
+Once the upgrade has been performed on all nodes of the deploy the system can
+be brought up again. The steps to do this are covered in the [Linux
+Administration](../lin_administration/) section of this guide.
+
+## Windows bundle upgrade
+
+In order to upgrade a _KX Delta Platform_ deploy you must first copy the
+release packages to each host and unpack. This process is described
+[here](../prepare_deploy/).
+
+Once the package have been copied to the deploy host you will need to shutdown
+you environment, the steps to do this are given
+[here](../win_administration/).
+
+Once the bundles have been copied and untarred you can proceed with the
+upgrade by running the install.bat inside the bundle directory:
+
+    
+    
+    > install.bat
+    
+
+The script will prompt you for the location of your deployment enter the path
+to the base dir which contains delta-bin and delta-data etc.
+
+    
+    
+    C:\kxinstall\upgrade\EvalKx-4.3.0-Win>install.bat
+    =========================================================
+                     KX WINDOWS INSTALLER
+    =========================================================
+    Enter Path to Install dir : C:\kxinstall\KxPlatformWinDeploy_4_4_1_1910111311
+    Installing [AnalystUI_4_5_0]
+    
+
+The script will then install each package from the upgrade bundle and exits
+when the process is complete.
+
+At this point the installer has copied the packages into the deploy and
+updated the location of each component in the delta.profile.bat, the content
+of these packages now need to be imported into KX Control. This is done by
+running the start with with the -u (upgrade) option. as follows:
+
+    
+    
+    > cd C:\kxinstall\KxPlatformWinDeploy_4_4_1_1910111311\delta-bin\bin
+    > startDeltaControl.bat -u
+    
+
+The DeltaControl.log found in the `delta-data/DeltaControlData/logdir`
+directory can be checked to ensure a successful import, at the bottom of the
+file we should see this:
+
+    
+    
+    ### normal ### (2496): finished importing packages ###
+    
+
+Shut down KX Control by running the stopDeltaControl.bat command:
+
+    
+    
+    > cd C:\kxinstall\KxPlatformWinDeploy_4_4_1_1910111311\delta-bin\bin
+    > stopDeltaControl.bat
+    
+
+### Post upgrade
+
+Once the upgrade has been performed on all nodes of the deploy the system can
+be brought up again. The steps to do this are covered in the [Windows
+Administration](../win_administration/) section of this guide.
+
+## Cluster install upgrade
+
+The steps to upgrading a cluster are similar to a single server upgrade,
+however you will need to run the installation steps on each node in the
+Cluster.
+
+## 4.6.0 upgrade process
+
+### Upgrade existing Linux deploy
+
+The 4.6.0 _KX Delta Platform_ release includes changes for Inclusive
+Terminology. In order to upgrade an existing deploy you must first upgrade the
+terminology in that deploy. This is done by running the
+`updateDeployTerminology.sh` script which you can find in the `scripts`
+directory inside the 4.6.0 GA bundle.
+
+The script should be run against your existing deploy as follows:
+
+    
+    
+    $ ./updateDeployTerminology.sh -d /path/to/deploy/home/
+    
+
+Once complete you can now proceed to upgrade your deploy to 4.6.0 GA.
+
+### Upgrade install configuration files
+
+Any custom install configuration files must also be updated for changes for
+Inclusive Terminology. This is done by running the
+`updateInstallConfigTerminology.sh` script which you can find in the `scripts`
+directory inside the 4.6.0 GA bundle.
+
+The script should be run against your install config as follows:
+
+    
+    
+    $ updateInstallConfigTerminology.sh -f /path/to/install/config
+    
+
+Once completed you can now use your install config with the new
+`installKxPlatform.sh` install script.
+

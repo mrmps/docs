@@ -1,0 +1,181 @@
+https://code.kx.com/insights/core/objstor/quickstart.html
+
+# Object storage | Quick Start | kdb+ Cloud Edition - kdb products
+
+Original URL: https://code.kx.com/insights/core/objstor/quickstart.html
+
+# Object storage quickstart
+
+_Automatically authenticate with cloud credentials via the Kurl module and
+allow native access to cloud object storage._
+
+This guide will help create a simple app using Docker, Qpacker, the object-
+storage module `objstor.qpk`, and the Kxreaper cache-clearing application.
+
+## Cloud Data
+
+Public data has been provided for AWS, MS Azure and GCP.
+
+Create a sample using your selected cloud provider:
+
+This will create a standard HDB root directory where the partition in use is
+object storage. There should be no trailing `/` on the object store location
+in `par.txt`.
+
+    
+    
+    $ tree ~/db/
+    /home/user/db/
+    ├── par.txt
+    └── sym
+    
+
+## Running locally
+
+Run `q` on this directory:
+
+    
+    
+    $ ls
+    par.txt  sym
+    $ q /home/user/db/
+    KDB+ 4.0 2021.06.12 Copyright (C) 1993-2021 Kx Systems
+    l64/ 20()core 64227MB XXXXXX XXXXXXXXXX 127.0.1.1 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX KXCE XXXXXXXX
+    
+    q)
+    
+
+You should now be able to run queries:
+
+    
+    
+    q)tables[]
+    `s#`quote`trade
+    q)select count i by date from quote
+    date      | x        
+    ----------| ---------
+    2018.09.04| 692639728
+    2018.09.05| 762152767
+    2018.09.06| 788482304
+    2018.09.07| 801891891
+    2018.09.10| 635192966
+    
+
+The performance is limited by the speed of your network to the cloud storage,
+so creating a cache on fast SSDs or on local NVME (or even in shared memory)
+can be desirable.
+
+If you set these environment variables before starting `q`, the cache will be
+enabled:
+
+    
+    
+    $ export KX_OBJSTR_CACHE_PATH=/dev/shm/cache/
+    $ export KX_OBJSTR_CACHE_SIZE=10000000
+    $ ls
+    par.txt  sym
+    $ q
+    KDB+ 4.0 2021.06.12 Copyright (C) 1993-2021 Kx Systems
+    l64/ 20()core 64227MB XXXXXX XXXXXXXXXX 127.0.1.1 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX KXCE XXXXXXXX
+    
+    q)\t select count i by date from quote
+    4785
+    q)\t select count i by date from quote
+    0
+    
+
+You will want to run the `kxreaper` application to prune the cache
+automatically if it gets full.
+
+    
+    
+    q)\kxreaper "$KX_OBJSTR_CACHE_PATH" "$KX_OBJSTR_CACHE_SIZE" &
+    
+
+## S3 Compatible Object Store
+
+Demonstrate integration with S3 compatible object store
+[min.io](https://min.io).
+
+Prerequisites
+
+    
+    
+    The aws cli must be installed to work through this example.
+    
+
+Start minio server using docker or podman.
+
+    
+    
+    docker run -d -p 9000:9000 -p 9001:9001 -e "MINIO_ROOT_USER=<insert minio user>" -e "MINIO_ROOT_PASSWORD=<insert minio password>" minio/minio server /data --console-address ":9001"
+    
+
+Set the aws credentials using `aws configure`. The AWS Access Key ID should be
+set to the `MINIO_ROOT_USER` and AWS Secret Access Key to
+`MINIO_ROOT_PASSWORD`(see command above).
+
+Create some test data
+
+    
+    
+    d:2021.09.01+til 20
+    {[d;n]sv[`;.Q.par[`:test/db/;d;`trade],`]set .Q.en[`:test/;([]sym:`$'n?.Q.A;time:.z.P+til n;price:n?100f;size:n?50)];}[;10000]each d
+    
+
+Create a bucket in minio and copy in the test data
+
+    
+    
+    aws --endpoint-url http://127.0.0.1:9000 s3 mb s3://test
+    aws --endpoint-url http://127.0.0.1:9000 s3 sync test/db/. s3://test
+    aws --endpoint-url http://127.0.0.1:9000 s3 ls s3://test
+    
+
+Create a hdb root directory
+
+    
+    
+    mkdir dbroot
+    cp test/sym dbroot/
+    echo "s3://test" > dbroot/par.txt
+    
+
+Add the below environment variables as applicable
+
+Start a `q` process as below.
+
+    
+    
+    export KX_S3_ENDPOINT=http://127.0.0.1:9000
+    export KX_S3_USE_PATH_REQUEST_STYLE=1
+    q dbroot -q
+    
+
+Query the data in the bucket.
+
+    
+    
+    tables[]
+    ,`trade
+    select count sym from trade
+    sym
+    ------
+    200000
+    5#select count sym by date from trade
+    date      | sym
+    ----------| -----
+    2021.09.01| 10000
+    2021.09.02| 10000
+    2021.09.03| 10000
+    2021.09.04| 10000
+    2021.09.05| 10000
+    
+
+Note
+
+    
+    
+    To see which urls are used in the query, `export KX_TRACE_OBJSTR=1` and restart the `q` process.
+    
+

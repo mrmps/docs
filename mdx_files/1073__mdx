@@ -1,0 +1,729 @@
+https://code.kx.com/platform/stream/dw_qr_kxc_java_appendix/
+
+# KX Connect (Java) - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/stream/dw_qr_kxc_java_appendix/
+
+# KX Connect (Java) appendix
+
+## Java dependencies
+
+    
+    
+    // Place these .jar files or equivalent under the lib folder.
+    
+    // Used for ConnectSample.java
+    commons-codec-1.9.jar
+    commons-logging-1.2.jar
+    httpclient-4.5.1.jar
+    httpcore-4.4.3.jar
+    json-simple-1.1.1.jar
+    spring-security-core-4.0.1.RELEASE.jar
+    
+    
+    // Used for ConnectSampleWithCSV.java
+    commons-codec-1.9.jar
+    commons-logging-1.2.jar
+    httpclient-4.5.1.jar
+    httpcore-4.4.3.jar
+    spring-security-core-4.0.1.RELEASE.jar
+    org.apache.commons.io.jar
+    java-json.jar
+    
+
+## ConnectSample.java
+
+    
+    
+    // Declare the package
+    package com.fd.connect;
+    
+    import java.io.BufferedReader;
+    import java.io.InputStream;
+    import java.io.InputStreamReader;
+    import java.net.URI;
+    import java.text.SimpleDateFormat;
+    import java.util.Date;
+    import java.util.HashMap;
+    import java.util.Map;
+    import java.util.UUID;
+    
+    import javax.crypto.Mac;
+    import javax.crypto.spec.SecretKeySpec;
+    
+    import org.apache.http.HttpResponse;
+    import org.apache.http.client.HttpClient;
+    import org.apache.http.client.methods.HttpPost;
+    import org.apache.http.entity.ContentType;
+    import org.apache.http.entity.StringEntity;
+    import org.apache.http.impl.client.HttpClientBuilder;
+    import org.apache.http.message.BasicHeader;
+    
+    import org.json.simple.JSONArray;
+    import org.json.simple.JSONObject;
+    import org.json.simple.parser.JSONParser;
+    import org.json.simple.parser.ParseException;
+    
+    
+    public class ConnectSample {
+    
+        private HttpClient client;  
+    
+        /* NOTES
+         * The following sample implementation uses various 3rd party libraries for simplicity and convenience.
+         * Equivalents which provide the same functionality may be used. 
+         * The imported jar files for this sample are noted above in the imports section.
+         *  
+         * The following sample throws all exceptions rather than handling them, in order to make the sample code easily readable. 
+         * Full implementations should handle all exceptions appropriately   
+         */ 
+    
+    
+        public static void main(String args[]) throws Exception {
+    
+            String baseURL = "http://localhost:8080/connect";
+            String userName = "Administrator";
+            String password = "password";
+            String method = "getMem";
+    
+            if(args.length > 0) {
+                if (args.length == 4){
+                    baseURL = "http://" + args[0] + "/connect";
+                    userName = args[1];
+                    password = args[2];
+                    method = args[3];
+                } else{
+                    System.err.printf("Expected parameters host:port username password method. Received %d arguments\n", args.length);
+                    System.err.printf("Continuing using default parameters");
+                }
+            }   
+    
+            ConnectSample connectSample = new ConnectSample();      
+    
+            connectSample.makeRestRequests(baseURL, userName, password, method);        
+        }
+    
+    
+        public ConnectSample() {    
+            client = HttpClientBuilder.create().build();
+        }
+    
+    
+        private void makeRestRequests(String baseURL, String userName, String password, String method) throws Exception {
+    
+            // Login - the login request differs from all other calls as it does not require the payload to be encoded
+            // A Session ID is required to encode all subsequent requests after login , including logout
+    
+            log("Making request to login to URL : " + baseURL + " for user " + userName);
+    
+            String group = "auth";
+            String analytic = "login";
+            String requestType = analytic + "Req";
+            String requestId = makeRequestGUID();
+    
+            String sessionId = null;
+    
+            Map<String, Object> parameters = new HashMap<String, Object>();
+            parameters.put("username", userName);
+            parameters.put("password", password);
+    
+    
+            String loginResponseJSON = callRestAnalytic(baseURL, userName, sessionId, group, analytic, requestType, parameters, requestId);
+    
+            // Extract sessionId from successful login
+            sessionId = parseSessionIdFromJSON(loginResponseJSON);
+    
+            if(sessionId != null){
+                log("Logged in with session ID : " + sessionId);        
+    
+                // Call the .monPublic.getMem analytic with empty parameters
+                parameters = new HashMap<String, Object>();
+                parameters.put("start", "");    
+                parameters.put("end", "");
+                JSONArray symsArray = new JSONArray();
+                parameters.put("syms", symsArray);
+    
+                group = "monPublic";
+                // analytic = "getMem";
+                requestType = method + "Req";
+    
+                log("\nMaking request to analytic : " + method);
+                String responseJSON = callRestAnalytic(baseURL, userName, sessionId, group, method, requestType, parameters, requestId);
+    
+                // Logging response in a readable format
+                parseJsonResponse(responseJSON, method);
+    
+            }else{
+                System.err.printf("Failed login\n");
+                System.exit(0);
+            }
+        }   
+    
+    
+        private void parseJsonResponse(String json, String analytic) {
+    
+            JSONParser parser = new JSONParser();
+            JSONObject jsonObject = null;
+            try {
+                jsonObject = (JSONObject )parser.parse(json);
+            } catch (ParseException e) {            
+                e.printStackTrace();
+            }
+    
+            JSONArray messageArray = (JSONArray)jsonObject.get("msg");
+    
+            for(int i=0; i<messageArray.size(); i++) {
+                JSONObject messagePart = (JSONObject)messageArray.get(i);
+                String error = (String)messagePart.get("exceptionMessage");
+                if(error!=null) {
+                    log("Extracted error from invalid request : " + error);
+                }else{
+                    log("Got response JSON for analytic " + analytic + " : " + json);
+                }
+            }
+        }
+    
+    
+        private String callRestAnalytic(String baseURL, String userName, String sessionId, String group, String method, String requestType, Map<String, Object> parameterMap, String requestId) throws Exception {
+    
+            URI path = new URI(baseURL + "/api/" + group + "/" + method);
+    
+            String dateStr = formatCurrentDate();
+    
+            String requestJSON = buildRequestJSON(requestId, dateStr, requestType, parameterMap);
+            log("RequestJSON is : " + requestJSON);   
+    
+            StringEntity data = new StringEntity(requestJSON, ContentType.APPLICATION_JSON);   
+    
+            HttpPost post = new HttpPost(path);
+            post.setEntity(data);
+    
+            // sessionId available for login call
+            if(sessionId != null) {
+    
+                // MD5 encode the payload
+                String contentEncoded = contentToMD5(requestJSON);  
+    
+                String stringToSign = constructRESTSignature("POST", path.getPath(), sessionId, contentEncoded,
+                        "application/json", dateStr, userName);
+                String authorization = getPublicKey(userName, sessionId) + ":" + calculateHMAC(stringToSign, sessionId);
+    
+                log("Authorization is : " + authorization);
+    
+                // Add authorization to the request header
+                post.addHeader(new BasicHeader("Content-Type","application/json"));
+                post.addHeader(new BasicHeader("Authorization", authorization));
+            }
+    
+            String responseJSON = doHttpPost(post);
+    
+            return responseJSON;        
+        }
+    
+    
+    
+        @SuppressWarnings("unchecked")
+        private String buildRequestJSON(String requestId, String dateStr, String requestType, Map<String, Object> parameterMap) {
+    
+            JSONObject payload = new JSONObject();
+    
+            // All messages require these mandatory details
+            payload.put("type", requestType);       
+            payload.put("id", requestId);
+            payload.put("date", dateStr);
+    
+    
+            JSONArray messageArray = new JSONArray();
+            messageArray.add(parameterMap);     
+            payload.put("msg", messageArray);
+    
+            return payload.toJSONString();
+        }
+    
+    
+    
+        private String getPublicKey(String userName, String sessionID) {
+            return userName + sessionID.substring(sessionID.length() - 5, sessionID.length());
+        }
+    
+    
+        private String makeRequestGUID() {
+            return UUID.randomUUID().toString();
+        }
+    
+    
+        private String formatCurrentDate() {
+            SimpleDateFormat formatter = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz");
+            Date now = new Date();
+            return formatter.format(now);
+        }
+    
+    
+        private String doHttpPost(HttpPost post) throws Exception {
+            HttpResponse response = client.execute(post);
+            return  extractPayloadFromHttpResponse(response);
+        }
+    
+    
+        private String extractPayloadFromHttpResponse(HttpResponse response) throws Exception {
+    
+            InputStream content = response.getEntity().getContent();
+            StringBuilder stringBuilder = new StringBuilder();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(content));
+    
+            char[] charBuffer = new char[128];
+            int bytesRead = -1;
+            while ((bytesRead = reader.read(charBuffer)) > 0) {
+                stringBuilder.append(charBuffer, 0, bytesRead);
+            }
+            String responseText = stringBuilder.toString();     
+    
+            return responseText;
+        }
+    
+    
+    
+        private String parseSessionIdFromJSON(String json) {
+            log(json);
+            JSONParser parser = new JSONParser();
+            JSONObject jsonObject = null;
+            try {
+                jsonObject = (JSONObject )parser.parse(json);
+            } catch (ParseException e) {            
+                e.printStackTrace();
+            }
+    
+            JSONArray messageArray = (JSONArray)jsonObject.get("msg");
+            JSONObject sessionId = (JSONObject)messageArray.get(0);
+            return (String)sessionId.get("sessionId");
+        }
+    
+    
+    
+    
+        private String contentToMD5(String content) throws Exception {
+            Md5PasswordEncoder encoder =  new Md5PasswordEncoder();
+            return encoder.encodePassword(content, null);
+        }
+    
+    
+    
+        private String constructRESTSignature(String httpMethod, String requestURI, String sessionId,
+                String contentMd5, String contentType, String timestamp, String username) {
+    
+            // Calculate content to sign        
+            StringBuffer toSign = new StringBuffer();
+    
+            toSign.append(httpMethod).append("\n")
+                   .append(requestURI).append("\n")
+                   .append(username).append("\n")
+                   .append(contentMd5).append("\n")
+                   .append(contentType).append("\n")
+                   .append(timestamp);
+    
+            if (sessionId != null && sessionId.length() > 0) {
+                toSign.append("\n").append(sessionId);
+            }
+            return toSign.toString();
+        }
+    
+    
+    
+        private String calculateHMAC(String data, String secretKey) throws Exception {
+    
+            String result;
+    
+            log("Data for signing : \n" + data + "\n");
+            log("Secret key is: " + secretKey);
+    
+            // Get an hmac_sha1 key from the raw key bytes
+            SecretKeySpec signingKey = new SecretKeySpec(secretKey.getBytes(), "HmacSHA1");
+    
+            // Get an hmac_sha1 Mac instance and initialize with the signing key
+            Mac mac = Mac.getInstance("HmacSHA1");
+            mac.init(signingKey);
+    
+            // Compute the hmac on input data bytes
+            byte[] rawHmac = mac.doFinal(data.getBytes());
+    
+            log("HMAC is : " + new String(rawHmac, "UTF8"));
+    
+            // Base64-encode the hmac
+            result = new String(Base64.encodeBase64(rawHmac));
+    
+            log("HMAC after encoding is : " + result);
+    
+            return result;
+        }
+    
+    
+        private void log(String logMessage) {
+            System.out.println(logMessage);
+        }
+    }
+    
+
+## ConnectSampleWithCSV.java
+
+    
+    
+    // Declare the package
+    package com.fd.connect;
+    
+    import java.io.BufferedReader;
+    import java.io.InputStream;
+    import java.io.InputStreamReader;
+    import java.net.URI;
+    import java.text.SimpleDateFormat;
+    import java.util.Date;
+    import java.util.HashMap;
+    import java.util.Map;
+    import java.util.UUID;
+    
+    import javax.crypto.Mac;
+    import javax.crypto.spec.SecretKeySpec;
+    
+    import org.apache.http.HttpResponse;
+    import org.apache.http.client.HttpClient;
+    import org.apache.http.client.methods.HttpPost;
+    import org.apache.http.entity.ContentType;
+    import org.apache.http.entity.StringEntity;
+    import org.apache.http.impl.client.HttpClientBuilder;
+    import org.apache.http.message.BasicHeader;
+    
+    import org.json.JSONArray;
+    import org.json.JSONObject;
+    import org.json.JSONException;
+    
+    // For CSV Export
+    import java.io.File;
+    import org.apache.commons.io.FileUtils;
+    import org.json.CDL;
+    
+    
+    public class ConnectSample {
+    
+        private HttpClient client;  
+    
+        /* NOTES
+         * The following sample implementation uses various 3rd party libraries for simplicity and convenience.
+         * Equivalents which provide the same functionality may be used. 
+         * The imported jar files for this sample are noted above in the imports section.
+         *  
+         * The following sample throws all exceptions rather than handling them, in order to make the sample code easily readable. 
+         * Full implementations should handle all exceptions appropriately   
+         */ 
+    
+    
+        public static void main(String args[]) throws Exception {
+    
+            String baseURL = "http://localhost:8080/connect";
+            String userName = "Administrator";
+            String password = "password";
+            String method = "getMem";
+    
+            if(args.length > 0) {
+                if (args.length == 4){
+                    baseURL = "http://" + args[0] + "/connect";
+                    userName = args[1];
+                    password = args[2];
+                    method = args[3];
+                } else{
+                    System.err.printf("Expected parameters host:port username password method. Received %d arguments\n", args.length);
+                    System.err.printf("Continuing using default parameters");
+                }
+            } 
+    
+            ConnectSampleWithCSV connectSample = new ConnectSampleWithCSV();        
+    
+            connectSample.makeRestRequests(baseURL, userName, password, method);        
+        }
+    
+    
+        public ConnectSampleWithCSV() { 
+            client = HttpClientBuilder.create().build();
+        }
+    
+    
+        private void makeRestRequests(String baseURL, String userName, String password, String method) throws Exception {
+    
+            // Login - the login request differs from all other calls as it does not require the payload to be encoded
+            // A Session ID is required to encode all subsequent requests after login , including logout
+    
+            log("Making request to login to URL : " + baseURL + " for user " + userName);
+    
+            String group = "auth";
+            String analytic = "login";
+            String requestType = analytic + "Req";
+            String requestId = makeRequestGUID();
+    
+            String sessionId = null;
+    
+            Map<String, Object> parameters = new HashMap<String, Object>();
+            parameters.put("username", userName);
+            parameters.put("password", password);
+    
+    
+            String loginResponseJSON = callRestAnalytic(baseURL, userName, sessionId, group, analytic, requestType, parameters, requestId);
+    
+            // Extract sessionId from successful login
+            sessionId = parseSessionIdFromJSON(loginResponseJSON);
+    
+            if(sessionId != null){
+                log("Logged in with session ID : " + sessionId);        
+    
+                // Call the .monPublic.getMem analytic with empty parameters
+                parameters = new HashMap<String, Object>();
+                parameters.put("start", "");    
+                parameters.put("end", "");
+                JSONArray symsArray = new JSONArray();
+                parameters.put("syms", symsArray);
+    
+                group = "monPublic";
+                requestType = method + "Req";
+    
+                log("\nMaking request to analytic : " + method);
+                String responseJSON = callRestAnalytic(baseURL, userName, sessionId, group, method, requestType, parameters, requestId);
+    
+                // Logging response in a readable format
+                parseJsonResponse(responseJSON, method);
+    
+            }else{
+                System.err.printf("Failed login\n");
+                System.exit(0);
+            }
+        }   
+    
+    
+        private void parseJsonResponse(String json, String analytic) {
+    
+            try {
+                JSONObject jsonObject = new JSONObject(json);
+                JSONArray messageArray = jsonObject.getJSONArray("msg");
+    
+                String error = null;
+                for(int i=0; i<messageArray.length(); i++) {
+                    JSONObject messagePart = messageArray.getJSONObject(i);
+    
+                    if(messagePart.has("exceptionMessage")) {
+                        error = messagePart.getString("exceptionMessage");
+                    }
+                }
+    
+                if(error!=null) {
+                    log("Extracted error from invalid request : " + error);
+                }else{
+                    log("Got response JSON for analytic " + analytic + " : " + json);
+                    // CSV Export
+                    exportToCSV(messageArray, analytic);
+                }
+    
+            } catch (JSONException e) {         
+                e.printStackTrace();
+            }
+        }
+    
+        private void exportToCSV(JSONArray data, String analytic) {
+    
+            try {
+                Date today = new Date();
+                String date= new SimpleDateFormat("yyyyMMdd").format(today);
+                File filename = new File("/tmp/" + analytic + "_" + date + ".csv");
+    
+                String csv = CDL.toString(data);
+                FileUtils.writeStringToFile(filename, csv);
+    
+                log("Finished writing CSV");
+    
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    
+    
+        private String callRestAnalytic(String baseURL, String userName, String sessionId, String group, String method, String requestType, Map<String, Object> parameterMap, String requestId) throws Exception {
+    
+            URI path = new URI(baseURL + "/api/" + group + "/" + method);
+    
+            String dateStr = formatCurrentDate();
+    
+            String requestJSON = buildRequestJSON(requestId, dateStr, requestType, parameterMap);
+            log("RequestJSON is : " + requestJSON);   
+    
+            StringEntity data = new StringEntity(requestJSON, ContentType.APPLICATION_JSON);   
+    
+            HttpPost post = new HttpPost(path);
+            post.setEntity(data);
+    
+            // sessionId available for login call
+            if(sessionId != null) {
+    
+                // MD5 encode the payload
+                String contentEncoded = contentToMD5(requestJSON);  
+    
+                String stringToSign = constructRESTSignature("POST", path.getPath(), sessionId, contentEncoded,
+                        "application/json", dateStr, userName);
+                String authorization = getPublicKey(userName, sessionId) + ":" + calculateHMAC(stringToSign, sessionId);
+    
+                log("Authorization is : " + authorization);
+    
+                // Add authorization to the request header
+                post.addHeader(new BasicHeader("Content-Type","application/json"));
+                post.addHeader(new BasicHeader("Authorization", authorization));
+            }
+    
+            String responseJSON = doHttpPost(post);
+    
+            return responseJSON;        
+        }
+    
+    
+    
+        @SuppressWarnings("unchecked")
+        private String buildRequestJSON(String requestId, String dateStr, String requestType, Map<String, Object> parameterMap) {
+    
+            JSONObject payload = new JSONObject();
+    
+            try {       
+                // All messages require these mandatory details
+                payload.put("type", requestType);       
+                payload.put("id", requestId);
+                payload.put("date", dateStr);
+    
+    
+                JSONArray messageArray = new JSONArray();
+                messageArray.put(parameterMap);     
+                payload.put("msg", messageArray);
+    
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+    
+            return payload.toString();
+        }
+    
+    
+    
+        private String getPublicKey(String userName, String sessionID) {
+            return userName + sessionID.substring(sessionID.length() - 5, sessionID.length());
+        }
+    
+    
+        private String makeRequestGUID() {
+            return UUID.randomUUID().toString();
+        }
+    
+    
+        private String formatCurrentDate() {
+            SimpleDateFormat formatter = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz");
+            Date now = new Date();
+            return formatter.format(now);
+        }
+    
+    
+        private String doHttpPost(HttpPost post) throws Exception {
+            HttpResponse response = client.execute(post);
+            return  extractPayloadFromHttpResponse(response);
+        }
+    
+    
+        private String extractPayloadFromHttpResponse(HttpResponse response) throws Exception {
+    
+            InputStream content = response.getEntity().getContent();
+            StringBuilder stringBuilder = new StringBuilder();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(content));
+    
+            char[] charBuffer = new char[128];
+            int bytesRead = -1;
+            while ((bytesRead = reader.read(charBuffer)) > 0) {
+                stringBuilder.append(charBuffer, 0, bytesRead);
+            }
+            String responseText = stringBuilder.toString();     
+    
+            return responseText;
+        }
+    
+    
+    
+        private String parseSessionIdFromJSON(String json) {
+    
+            String sessionId = null;
+    
+            try {
+                JSONObject jsonObject = new JSONObject(json);
+                JSONArray messageArray = jsonObject.getJSONArray("msg");
+                JSONObject sessionIdObj = messageArray.getJSONObject(0);
+                sessionId = sessionIdObj.getString("sessionId");
+    
+            } catch(JSONException e) {
+                e.printStackTrace();
+            }
+    
+            return sessionId;
+        }
+    
+    
+    
+        private String contentToMD5(String content) throws Exception {
+            Md5PasswordEncoder encoder =  new Md5PasswordEncoder();
+            return encoder.encodePassword(content, null);
+        }
+    
+    
+    
+        private String constructRESTSignature(String httpMethod, String requestURI, String sessionId,
+                String contentMd5, String contentType, String timestamp, String username) {
+    
+            // Calculate content to sign        
+            StringBuffer toSign = new StringBuffer();
+    
+            toSign.append(httpMethod).append("\n")
+                   .append(requestURI).append("\n")
+                   .append(username).append("\n")
+                   .append(contentMd5).append("\n")
+                   .append(contentType).append("\n")
+                   .append(timestamp);
+    
+            if (sessionId != null && sessionId.length() > 0) {
+                toSign.append("\n").append(sessionId);
+            }
+            return toSign.toString();
+        }
+    
+    
+    
+        private String calculateHMAC(String data, String secretKey) throws Exception {
+    
+            String result;
+    
+            log("Data for signing : \n" + data + "\n");
+            log("Secret key is: " + secretKey);
+    
+            // Get an hmac_sha1 key from the raw key bytes
+            SecretKeySpec signingKey = new SecretKeySpec(secretKey.getBytes(), "HmacSHA1");
+    
+            // Get an hmac_sha1 Mac instance and initialize with the signing key
+            Mac mac = Mac.getInstance("HmacSHA1");
+            mac.init(signingKey);
+    
+            // Compute the hmac on input data bytes
+            byte[] rawHmac = mac.doFinal(data.getBytes());
+    
+            log("HMAC is : " + new String(rawHmac, "UTF8"));
+    
+            // Base64-encode the hmac
+            result = new String(Base64.encodeBase64(rawHmac));
+    
+            log("HMAC after encoding is : " + result);
+    
+            return result;
+        }
+    
+    
+        private void log(String logMessage) {
+            System.out.println(logMessage);
+        }
+    
+    }
+    
+

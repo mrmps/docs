@@ -1,0 +1,152 @@
+https://code.kx.com/dashboards/editablelist/
+
+# Editable List - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/editablelist/
+
+# Editable List
+
+![Screenshot](../img/editablelist/editablelist.jpg)
+
+Displays an editable list of string key/value pairs in a table format or
+dropdown menu. Pair it with other components such as [Data
+Filter](../datafilter/) or [Visual Query Builder](../visualquerybuilder/) to
+easily manipulate those components' JSON string states.
+
+## Set up
+
+  1. Define the data source used to store the key/value pairs in the editable list. An [update](../datasources/#update-query) query must be used on a keyed table.
+
+  2. Set the _Selected Key_ to a view state to map the currently selected key from the editable list.
+
+  3. Set the _Selected Value_ to a `string` view state to map the currently selected string value from the editable list.
+
+## Basics
+
+![Screenshot](../img/editablelist/editablebasics.png)
+
+_Name_
+
+    A name for the component provided by the user. 
+_Data Source_
+
+    
+
+This must be set to an update query on a keyed table, used for storing the
+editable list of key/value pairs.
+
+![Screenshot](../img/editablelist/editableupdatequery.jpg)
+
+    
+
+Update query:
+
+    
+    
+    {[dgAdd;dgUpd;dgDel]
+    
+    /this sample requires keyed table:
+    / table's key matches 'Key' in this dialog
+    /exampleQueries:: `id xkey ([] id:`int$();name:`symbol$();note1:`symbol$());
+    / `exampleQueries upsert(0i;`dummy;`);
+    
+        if[count[dgUpd]>0;`screenerFilters upsert flip dgUpd];
+        if[count[dgDel]>0;
+            delete from `screenerFilters where id in (dgDel[`id])];
+    
+        /generate unique ids for new items
+        if[count[dgAdd]>0;`screenerFilters upsert flip dgAdd];
+    }
+    
+
+    
+
+[Data sources](../datasources/#update-query)
+
+_Dropdown_
+
+    Displays JSON options in a dropdown
+_Selected Key_
+
+    A [view state parameter](../viewstateparameters/) assigned to the dropdown, determines which JSON list is selected
+_Selected Value_
+
+    
+
+A second [view state parameter](../viewstateparameters/), of type _string_ ,
+which stores the _Selected Key_ JSON.
+
+![Screenshot](../img/editablelist/editableJSON.jpg)
+
+_Vertical_
+
+    Positions the Editable list within the component
+_Show New_
+
+    When enabled, the user can create new key/value pairs in the editable list. The user will also have the option to validate new keys by defining additional properties in the Validation section of the properties panel.
+_Show Save_
+
+    User can save new key/value pairs that have been added to the editable list
+_Show Delete_
+
+    User can remove unwanted key/value pairs from the editable list
+_Prompt to Save_
+
+    When enabled, any changes made by a user will prompt a save request
+_Confirm Before Deleting_
+
+    When enabled, any deleted list will require confirmation from the user.
+_Is Enabled_
+
+    Control whether a list and associated buttons are active or inactive; can be associated with a boolean Type [View State Parameter](../viewstateparameters/)
+_Template_
+
+    
+
+For building a custom layout of an Editable list
+
+![Screenshot](../img/editablelist/editabletemplate.jpg)
+
+## Validation
+
+Users can optionally validate new entries to be added to the editable list.
+Validation requires the _Show New_ property in Basics to be enabled.
+
+![Screenshot](../img/editablelist/editablevalidation.png)
+
+_New Key_
+
+    A [view state parameter](../viewstateparameters/) which holds the new key entered by the user.
+_Validation Analytic_
+
+    
+
+This property identifies a query, analytic or virtual data source that will
+validate the new key provided by the user. The analytic should accept the _New
+Key_ view state parameter as input and return an empty string or a string
+containing an error message for the user. Returning an empty string indicates
+that the _New Key_ is valid and can be added to the editable list. If the new
+key is not accepted the error message will be presented to the user in an
+error dialog.
+
+_Sample Error Dialog_
+
+![Screenshot](../img/editablelist/editableerrormsg.png)
+
+_Sample Query_ ![Screenshot](../img/editablelist/editablesamplequery.png)
+
+    
+    
+    {[data]
+      data2:`;
+      if [data <>`Funds;data2:`$"Invalid entry. Please provide a new key.";];
+      data2      
+     }
+    
+
+Users can optionally add tooltip text to the New, Save and Delete buttons.
+
+## Format, Margins
+
+[Style](../style/#component-style) for common style settings
+

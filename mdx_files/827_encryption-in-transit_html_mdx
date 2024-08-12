@@ -1,0 +1,69 @@
+https://code.kx.com/insights/enterprise/security/encryption-in-transit.html
+
+# Encryption of data in transit - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/security/encryption-in-transit.html
+
+# Encryption of data in transit
+
+Encryption of data is essential for organizations to meet compliance,
+regulatory and internal information security requirements for encrypted data.
+
+_kdb Insights Enterprise_ supports end to end encryption of data.
+
+  * Data coming into _kdb Insights Enterprise_ via stream processors, reliable transport, KXI API and the UI is encrypted using various methods including TLS.
+
+  * _kdb Insights Enterprise_ can encrypt data in transit between internal services and across nodes. This is delivered using [Istio](https://istio.io) which provides a comprehensive security solution, mitigating both insider and external threats against your data, endpoints, communication, and platform. This section deals with this type of encryption.
+
+For new _kdb Insights Enterprise_
+[installations](../installation/insights.html) encryption of data in transit
+is turned on by default.
+
+For [upgrades](../installation/upgrading.html) to _kdb Insights Enterprise_ ,
+using the kdb Insights CLI, the default behaviour is to keep the existing,
+pre-upgrade setting.
+
+The current status of encryption of data in transit on your installation is
+visible on the [ribbon menu](../user-interface/ui-overview.html#ribbon-menu)
+of the UI.
+
+## What is required for encryption of data in transit
+
+When installing a new version of _kdb Insights Enterprise_ or upgrading _kdb
+Insights Enterprise_ all of the requirements to enable encryption in transit
+are installed and set up for you.
+
+These include:
+
+  * Installing [Istio](https://istio.io) \- Istio is a service mesh that extends Kubernetes to provide traffic management, telemetry, security, and policy for complex deployments.
+
+  * Updating the NGINX ingress to enable `mTLS` traffic between the _nginx controller_ and the _kdb Insights Enterprise_ API Gateway _nginx controller_ workload
+
+  * Updating [Prometheus](https://prometheus.io/):
+
+    * To enable the collection of metrics with `mTLS`
+    * To collect the [Standard](https://istio.io/latest/docs/reference/config/metrics/) Istio metrics at the recommended `15s` scrape interval
+
+See details [here](../monitoring/index.html#encryption-in-transit-metrics) on
+how to monitor Istio.
+
+## Considerations
+
+### Feedhandlers
+
+The _kdb Insights_ feedhandler do not have encryption enabled by default. If
+encryption is enabled in your _kdb Insights Enterprise_ deployment, you will
+need to update the encryption settings of your feedhandler. For information on
+how to do this, please reach our to your KX support contact.
+
+### Resource usage and performance
+
+Enabling encryption requires extra memory and CPU resources. Istio requests
+2GiB of memory and 500 mCPUs, and each kdb Insights pod requires an extra 128
+MiB of memory and 100 mCPU. Therefore, for a single database with one Data
+Access Process and one pipeline, this equates to 8.5GiB and 5800 mCPUs. Each
+additional database adds 1.5GiB and 1200 mCPUs.
+
+Encryption adds a small amount of latency when enabled, up to 10% depending on
+your infrastructure.
+

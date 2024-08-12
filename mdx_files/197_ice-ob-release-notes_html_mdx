@@ -1,0 +1,72 @@
+https://code.kx.com/insights/accelerators/fsi/release-notes/ice-ob-release-notes.html
+
+# Release Notes - kdb products
+
+Original URL: https://code.kx.com/insights/accelerators/fsi/release-notes/ice-ob-release-notes.html
+
+# kdb Insights Enterprise ICE Order Book Accelerator - Release notes
+
+_This section details the release notes for the kdb Insights ICE Order Book
+Accelerator_
+
+## Version 1.1.0
+
+#### Release Date
+
+2024-06-28
+
+## New Features
+
+  * Updated feed configuration template values.yaml to be compatible with the official feed handler release
+  * Enhanced the orderbook dashboard to display human readable instrument names when corresponding reference data is loaded
+  * Various UX/UI improvements in the dashboard
+  * Added top-of-book message handling
+  * Added bid/ask counts to data set
+  * Added total bid/ask sizes to data set
+
+## Fixes
+
+  * Fixed an issue with the sorting order of bids
+
+## Version 1.0.0
+
+#### Release Date
+
+2024-04-08
+
+## New Features
+
+  * Added ICE Realtime Feed Handler support
+  * Stream processor ingestion pipeline
+  * Templated helm chat values.yaml
+  * Pipelines for L1 Trade and Quote data ingest `icerealtime1-sp`
+  * Pipelines for L2 Quote data ingest `icerealtime2-sp` and orderbook construction `orderbook-sp`
+  * Schemas for L1 data (`Trade` and `Quote`), L2 data (`L2Quote`), and constructed order book data
+    * Snapshot formating, with arrays of price levels in a single field `OrderBookSnapshots`
+    * Depth formating, with order book levels on individual rows `Depth`
+  * Query and analytic API extensions via the [FSI Library](../fsi-lib-overview.html)
+  * An example Insight View for displaying streaming data
+  * Example Jupyter notebooks, demonstrating Python and REST API access
+
+## Artifacts
+
+type | Location  
+---|---  
+Accelerator Package | https://portal.dl.kx.com/assets/raw/kxi-accelerators/fsi/fsi-ice-orderbook/  
+  
+## Version Dependencies
+
+There are minimum versions of the underlying FSI Library, kdb Insights
+Enterprise, and the kxi CLI which are required to use ICE Order Book
+Accelerator.
+
+ICE OB Accelerator | FSI Library | Insights Enterprise | kxi CLI  
+---|---|---|---  
+1.0.0 | 1.0.0 | 1.9.0 | 1.9.0  
+1.1.0 | 1.1.1 | 1.9.3 | 1.9.0  
+  
+## Known issues
+
+  * ID Mapping is not applied to get* API calls. Data will only be returned for underlying symbols, even when `IDMapping` is set on get* API calls. Requests for ID Mapped symbols will not return any results. 
+  * When holiday calendars are applied in get* API calls using `applyHolidayCalendar`, the call will always return an empty result.
+

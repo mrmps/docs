@@ -1,0 +1,328 @@
+https://code.kx.com/insights/enterprise/installation/upgrading.html
+
+# Upgrading - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/installation/upgrading.html
+
+# Upgrading kdb Insights Enterprise
+
+This section details the steps to upgrade kdb Insights Enterprise from a
+current install. It also details the steps that may need to be taken to
+upgrade specific entities using the UI.
+
+If you are upgrading kdb Insights Enterprise on Azure Marketplace, reach out
+to [KX Support](../azure-marketplace/support.html).
+
+## Prerequisites
+
+Pre-flight checks
+
+The upgrade process requires downtime to ensure data integrity can be
+guaranteed. This means that before any upgrade is scheduled, a number of pre-
+flight checks are necessary.
+
+  1. **Stop ingestion feeds**
+
+Stop all feeds into the application to avoid data loss with inflight data.
+
+  2. **Ensure latest version of kxi-cli is[installed](../cli/install.html)**
+
+  3. **If you are upgrading from 1.1.X to 1.2.0+, ensure you have performed the[Keycloak 18 migration steps](https://code.kx.com/insights/1.2/platform/installation/keycloak-18.html)**
+
+The currently running versions of kdb Insights Enterprise and Operator should
+be noted for a rollback scenario
+
+  1. Operator
+    
+        NAME        NAMESPACE       REVISION    UPDATED                                 STATUS      CHART                       APP VERSION
+    insights    kxi-operator    1           2022-04-01 15:39:44.955236379 +0000 UTC deployed    kxi-operator-1.0.0          1.0.0
+    
+
+  2. Application
+    
+        helm ls -n $INSIGHTS_NAMESPACE
+    
+    
+        NAME        NAMESPACE   REVISION    UPDATED                                 STATUS      CHART                   APP VERSION
+    insights    kxi         1           2022-04-01 16:57:00.144126754 +0000 UTC deployed    insights-1.0.0          1.0.0
+    
+
+  3. **Operator version** The CLI installs the latest kdb Insights Operator minor version that matches the specified `$INSIGHTS_VERSION`. You can override this by passing the `--operator-version` command line option.
+
+  4. **Install values** Retrieve the `INSTALL_CONFIG_FILE` from the existing with the following command. Update the resulting file to customise the [install configuration](../configuration/index.html) upon upgrade, including version-specific upgrade considerations.
+
+    
+    
+    kxi install get-values --namespace $INSIGHTS_NAMESPACE > $INSTALL_CONFIG_FILE
+    
+
+  * **kubectl** You should have the [kubectl](https://kubernetes.io/docs/tasks/tools/) tool installed on your machine and configured to access the same cluster as the kdb Insights Enterprise deployment you are upgrading.
+
+  * **Version-specific considerations** Refer to the [release notes](../release-notes/latest.html) for any specific upgrade considerations for your version of kdb Insights Enterprise.
+
+### Variables
+
+Have the following information to hand:
+
+variable | example | further details  
+---|---|---  
+INSIGHTS_NAMESPACE | kxi | Namespace of existing deployment  
+INSIGHTS_VERSION | 1.1.1 | Version to upgrade to  
+INSTALL_CONFIG_FILE | values.yaml | [Install configuration](../configuration/index.html)  
+PRE_UPGRADE_INSIGHTS_VERSION | 1.0.0 | Current application version  
+PRE_UPGRADE_OPERATOR_VERSION | 1.0.0 | Current Operator version  
+  
+### Retrieve install configuration
+
+Retrieve the `INSTALL_CONFIG_FILE` from the existing installation with the
+following command.
+
+    
+    
+    kxi install get-values --namespace $INSIGHTS_NAMESPACE > $INSTALL_CONFIG_FILE
+    
+
+Update the resulting file to customise the [install
+configuration](../configuration/index.html) upon upgrade, including version-
+specific upgrade considerations.
+
+## Upgrade with CLI
+
+Upgrading using the [CLI](../kxi-cli/cli.html#kxi-install-upgrade) does not
+remove the persisted data backing kdb Insights Enterprise configuration or
+databases. These remain as persisted volumes within the Kubernetes cluster.
+
+The steps performed by the CLI are:
+
+  1. Backup assemblies
+  2. Teardown assemblies
+  3. Upgrade application, Operator and CRDs
+  4. Restore assemblies
+
+If there are no assemblies running, the CLI upgrades the base system and skips
+the assembly steps.
+
+To initiate the upgrade, run the following command. This steps through the
+upgrade, prompting you as required.
+
+    
+    
+    kxi install upgrade --filepath $INSTALL_CONFIG_FILE --version $INSIGHTS_VERSION
+    
+    
+    
+    Backing up assemblies
+    Persisted assembly definitions for ['dfx-assembly', 'iot-assembly'] to <ASSEMBLY STATE FILE>
+    ...
+    Upgrading insights and operator
+    ...
+    Reapplying assemblies
+    ...
+    Upgrade to version x.x complete
+    ...
+    
+
+Encryption in Transit
+
+If you have not previously set [encryption of data in
+transit](../security/encryption-in-transit.html), you will be prompted to
+enable it during upgrade.
+
+If you have previously enabled encryption for data in transit, the default
+behaviour is to keep the existing, pre-upgrade setting. To change this
+setting, add the `--encryption true/false` command line parameter.
+
+**Important - Encryption of data in transit is currently not supported for
+Openshift.**
+
+## Post-upgrade checks
+
+Check the system is running correctly.
+
+  1. Expected version of kdb Insights Enterprise is running
+    
+        kubectl describe cm insights-config | grep version
+    version: insights-1.1.1
+    
+
+  2. Operator installed
+    
+        NAME        NAMESPACE       REVISION    UPDATED                                 STATUS      CHART                       APP VERSION
+    insights    kxi-operator    1           2022-04-11 15:39:44.955236379 +0000 UTC deployed    kxi-operator-1.1.0          1.1.0
+    
+
+  3. Application installed
+    
+        helm ls -n $INSIGHTS_NAMESPACE
+    
+    
+        NAME        NAMESPACE   REVISION    UPDATED                                 STATUS      CHART                   APP VERSION
+    insights    kxi         1           2022-04-11 16:57:00.144126754 +0000 UTC deployed    insights-1.1.1          1.1.1
+    
+
+  4. Operator in running state
+    
+        kubectl get pods -n kxi-operator
+    
+    
+        NAME                                     READY   STATUS    RESTARTS   AGE
+    insights-kxi-operator-6df4bcfddc-gnnjj   1/1     Running   0          85m
+    insights-kxi-operator-6df4bcfddc-lqmrl   1/1     Running   0          85m
+    insights-kxi-operator-6df4bcfddc-z45wq   1/1     Running   0          85m
+    
+
+  5. Application in running state
+    
+        kubectl get pods -n $INSIGHTS_NAMESPACE
+    
+    
+        NAME                                            READY   STATUS      RESTARTS   AGE
+    insights-aggregator-9959bdc87-4pg7z             2/2     Running     0          9m47s
+    ...
+    ...
+    insights-sg-gateway-596b486d9f-pmhf4            1/1     Running     0          9m47s
+    insights-sg-gateway-596b486d9f-qvzbr            1/1     Running     0          9m47s
+    
+
+  6. Assembly CRDs redeployed
+    
+        kubectl get crds | grep insights.kx.com
+    
+
+    
+    
+    assemblies.insights.kx.com                   2022-04-11T15:23:53Z
+    assemblyresources.insights.kx.com            2022-04-11T15:23:54Z
+    
+
+  1. Ensure assemblies are up and running successfully. The CLI restores assemblies that were running before the upgrade was initiated. The example below shows two sample assemblies; you may have different assemblies, or none at all.
+    
+        NAME           DESCRIPTION      READY   STATUS   AGE
+    dfx-assembly   A KXI Assembly   True             28m
+    iot-assembly   A KXI Assembly   True             28m
+    
+
+## Rollback
+
+Use the `kxi install rollback` command to roll back to an older version of kdb
+Insights Enterprise.
+
+  1. Run `kxi install history` to review the release history and choose which revision you want to roll back to:
+    
+        $ kxi install history --show-operator
+    REVISION    UPDATED                     STATUS          CHART               APP VERSION     DESCRIPTION
+    1           Tue Feb 28 14:10:03 2023    deployed        insights-1.3.0      1.3.0           Install complete
+    2           Tue Feb 28 14:16:41 2023    failed          insights-1.4.0      1.4.0           Upgrade complete
+    3           Tue Feb 28 14:25:55 2023    failed          insights-1.4.1      1.4.1           Upgrade "insights" failed: post-upgrade hooks failed: timed out waiting for the condition
+    
+    1           Tue Feb 28 14:09:52 2023    superseded      kxi-operator-1.3.1  1.3.1           Install complete
+    2           Tue Feb 28 14:15:37 2023    superseded      kxi-operator-1.4.0  1.4.0           Upgrade complete
+    3           Tue Feb 28 14:24:54 2023    superseded      kxi-operator-1.4.2  1.4.2           Upgrade complete
+    
+
+If you only want kdb Insights Enterprise revisions, remove the `--show-
+operator` from the above command.
+
+Revision Value
+
+To initiate a rollback, it's important to note that the rollback command
+relies on the REVISION value rather than the APP VERSION. In order to revert
+back to version 1.3.0 of kdb Insights Enterprise, you must identify the
+correct REVISION number, which in this case is simply 1.
+
+The version of kdb Insights Operator and kdb Insights Enterprise must match
+
+If the currently installed version of kdb Insights Operator does not align
+with the rollback version of kdb Insights Operator, it's necessary to perform
+the rollback on both.
+
+  2. [Teardown](../assemblies/deploying-assemblies.html#teardown) all running assemblies.
+
+  3. Run `kxi install rollback` with the chosen revisions:
+    
+        $ kxi install rollback $INSIGHTS_REVISION --operator-revision $OPERATOR_REVISION
+    Rolling Insights back to version 1.3.0 and revision 1.
+    And operator back to version 1.3.1 and revision 1 [y/N]: y
+    
+    Backing up assemblies
+    No assemblies to back up
+    ...
+    
+
+No explicit revision
+
+If you do not provide an explicit revision, `kxi install rollback` will choose
+the most recent one.
+
+Rolling back kdb Insights Enterprise only
+
+Omit `--operator-revision` if you only want to roll back kdb Insights
+Enterprise.
+
+  4. (**Rolling back to versions older than 1.5 only**) When rolling back to versions older than 1.5, an additional step must be taken to downgrade all IDB PVCs that have been created from any assemblies. For each IDB PVC, run the following rollback chart. The `values.yaml` used is the same one used for the kdb Insights installation.
+
+Start by fetching the `IDB_PVC` value of interest.
+
+    
+        kubectl get pvc | grep idb
+    
+    
+        dfx-assembly-idb      Bound pvc-1dee46c6-ac8b-4ad6-807b-46489d53651f 20Gi RWX rook-cephfs 2d
+    iot-assembly-idb      Bound pvc-3f6b47b4-dff8-4bfe-89bf-7e01bc852310 20Gi RWX rook-cephfs 2d
+    ..
+    
+
+For this example, we will start with the `dfx-assembly`
+
+    
+        helm install rollback kx-insights/kxi-db-rollback --set rollback.version="1.4" --set rollback.idbPVC="$IDB_PVC" -f values.yaml
+    
+
+This will run a single rollback job on the specified `$IDB_PVC`. Check the
+`rollback` job completed.
+
+    
+        kubectl get pods | grep rollback
+    
+    
+        rollback-db-1.4-2rshr          0/1     Completed  0     22m
+    
+
+Once the rollback completes, run
+
+Repeat this process for each IDB PVC.
+
+  5. Once the rollback has completed, [deploy](../assemblies/deploying-assemblies.html#deploying-an-assembly) for each torn down assembly.
+
+## Failed upgrades
+
+Assembly state files are retained upon upgrade failure. The following is an
+example output from a failed upgrade.
+
+    
+    
+    ...
+    Persisted assembly definitions for ['dfx-assembly', 'iot-assembly'] to /tmp/tmp7ny84esa-kxi-assembly-state.yaml
+    ...
+    Error: Command '['helm', 'upgrade', '--install', '-f', './values.yaml', 'insights', 'kx-insights/insights', '--version', '1.1.1', '--namespace', 'insights']' returned non-zero exit status 1.
+    
+
+After recovering the state of kdb Insights Enterprise, restore assemblies to
+their running state by executing the following command, replacing the assembly
+state file name with that created by the failed upgrade.
+
+    
+    
+    kxi assembly create --filepath /tmp/tmp7ny84esa-kxi-assembly-state.yaml
+    
+
+## Updating your application configuration
+
+You can [apply advanced configurations](../configuration/index.html) to your
+running instance of kdb Insights Enterprise by upgrading with an updated
+install config file.
+
+  1. Retrieve your install configuration from the existing application and update the resulting `INSTALL_CONFIG_FILE`.
+
+  2. Upgrade your installation with the updated values file, passing the same version number as the running installation.
+

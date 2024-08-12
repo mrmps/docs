@@ -1,0 +1,100 @@
+https://code.kx.com/insights/core/big-query/datasets.html
+
+# Datasets - kdb products
+
+Original URL: https://code.kx.com/insights/core/big-query/datasets.html
+
+# Datasets
+
+## .com_kx_bq.datasets.get
+
+Get dataset details from BigQuery
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+args | dict | Arguments required for the datasets.get method (see .com_kx_bq.disc.getParameters`datasets.get)  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | Response from BigQuery  
+  
+**Example:** List dataset details for the dataset 'kx_bma_bigquery_ds' in the
+project 'cloudpak'
+
+    
+    
+     q).com_kx_bq.datasets.get `projectId`datasetId!("cloudpak"; "kx_bma_bigquery_ds")
+     kind            | "bigquery#dataset"
+     etag            | "ijYXKX/zJYLk6Anuf++t7Q=="
+     id              | "cloudpak:kx_bma_bigquery_ds"
+     selfLink        | "https://bigquery.googleapis.com/bigquery/v2/projects/cloud..
+     datasetReference| `datasetId`projectId!("kx_bma_bigquery_ds";"cloudpak")
+     access          | (`role`specialGroup!("WRITER";"projectWriters");`role`speci..
+     creationTime    | "1610712593842"
+     lastModifiedTime| "1610712593842"
+     location        | "US"
+    
+
+## .com_kx_bq.datasets.insert
+
+Create a dataset in BigQuery in a given project
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+args | dict | Arguments required for the datasets.insert method (see .com_kx_bq.disc.getParameters`datasets.insert)  
+datasetId | string | Name of the new dataset  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | Response from BigQuery  
+  
+**Example:** Create a dataset called 'weather'
+
+    
+    
+     q).com_kx_bq.datasets.insert[enlist[`projectId]!enlist "cloudpak"; "weather"]
+     kind            | "bigquery#dataset"
+     etag            | "IzXO40nvJoqo2YmhMJ0BkA=="
+     id              | "cloudpak:weather"
+     selfLink        | "https://bigquery.googleapis.com/bigquery/v2/projects/cloud..
+     datasetReference| `datasetId`projectId!("weather";"cloudpak")
+     access          | (`role`specialGroup!("WRITER";"projectWriters");`role`speci..
+     creationTime    | "1611230993939"
+     lastModifiedTime| "1611230993939"
+     location        | "US"
+    
+
+## .com_kx_bq.datasets.list
+
+List datasets in BigQuery for a given project
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+args | dict | Arguments required for the datasets.list (see .com_kx_bq.disc.getParameters`datasets.list)  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | Response from BigQuery  
+  
+**Example:** List the datasets in the project 'cloudpak'
+
+    
+    
+     q).com_kx_bq.datasets.list enlist[`projectId]!enlist "cloudpak"
+     kind    | "bigquery#datasetList"
+     etag    | "QBTuIlnauLLL29CnAng5dw=="
+     datasets| +`kind`id`datasetReference`location!(("bigquery#dataset";"bigquery#..
+    
+

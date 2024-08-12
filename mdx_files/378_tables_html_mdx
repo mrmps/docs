@@ -1,0 +1,146 @@
+https://code.kx.com/insights/core/big-query/tables.html
+
+# Tables - kdb products
+
+Original URL: https://code.kx.com/insights/core/big-query/tables.html
+
+# Tables
+
+## .com_kx_bq.tables.get
+
+Get table details from BigQuery Note: This doesn't return the data within the
+table
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+args | dict | Arguments required for the tables.get method (see .com_kx_bq.disc.getParameters`tables.get)  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | Response from BigQuery  
+  
+**Example:** Request for details of 'nested_table'
+
+    
+    
+     q).com_kx_bq.tables.get `projectId`datasetId`tableId!("cloudpak"; "kx_bma_bigquery_ds"; "nested_table")
+     kind            | "bigquery#table"
+     etag            | "3PBOd4/GmKp8mi/GRfjCRg=="
+     id              | "cloudpak:kx_bma_bigquery_ds.nested_table"
+     selfLink        | "https://bigquery.googleapis.com/bigquery/v2/projects/cloud..
+     tableReference  | `projectId`datasetId`tableId!("cloudpak";"kx_bma_bigquery_d..
+     schema          | (,`fields)!,(`name`type`mode!("id";"STRING";"NULLABLE");`na..
+     numBytes        | "244"
+     numLongTermBytes| ,"0"
+     numRows         | ,"2"
+     creationTime    | "1611058431773"
+     lastModifiedTime| "1611066081149"
+     type            | "TABLE"
+     location        | "US"
+    
+
+## .com_kx_bq.tables.insert
+
+Create a table in BigQuery
+
+Note: This _does not_ upload the data that is in the table, it only creates a
+table with the same schema in BigQuery
+
+In order to upload data once the schema is created use
+`.com_kx_bq.tabledata.insertAll`
+
+To create a schema that has nested columns you must provide a table with at
+least one row that contains an example of the nested structure
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+args | dict | Arguments required for the tables.insert method (see .com_kx_bq.disc.getParameters`tables.insert)  
+table | table | Table indicating schema to upload  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | Response from BigQuery  
+  
+**Example:** Inserting a simple table
+
+    
+    
+     q)simple_table:([] longCol:`long$(); dateCol:`date$())
+     q).com_kx_bq.tables.insert[`projectId`datasetId`tableId!("cloudpak"; "kx_bma_bigquery_ds";"simple_table"); simple_table]
+     kind            | "bigquery#table"
+     etag            | "ruJu2EDyJ2AihJhTwbX3kA=="
+     id              | "cloudpak:kx_bma_bigquery_ds.simple_table"
+     selfLink        | "https://bigquery.googleapis.com/bigquery/v2/projects/cloud..
+     tableReference  | `projectId`datasetId`tableId!("cloudpak";"kx_bma_bigquery_d..
+     schema          | (,`fields)!,+`name`type`mode!(("longCol";"dateCol");("INTEG..
+     numBytes        | ,"0"
+     numLongTermBytes| ,"0"
+     numRows         | ,"0"
+     creationTime    | "1611229907510"
+     lastModifiedTime| "1611229907560"
+     type            | "TABLE"
+     location        | "US"
+    
+
+**Example:** Inserting a nested table
+
+    
+    
+     q)hobbies:([] firstName:`John`Jane; lastName:`Doe`Doe; hobbies:(`skiing`running`cycling; `running`swimming))
+     q)hobbies
+     firstName lastName hobbies
+     ------------------------------------------
+     John      Doe      `skiing`running`cycling
+     Jane      Doe      `running`swimming
+     q).com_kx_bq.tables.insert[`projectId`datasetId`tableId!("cloudpak"; "kx_bma_bigquery_ds";"hobbies"); hobbies]
+     kind            | "bigquery#table"
+     etag            | "m0abliNQBx3fKfFk77MUKA=="
+     id              | "cloudpak:kx_bma_bigquery_ds.hobbies"
+     selfLink        | "https://bigquery.googleapis.com/bigquery/v2/projects/cloud..
+     tableReference  | `projectId`datasetId`tableId!("cloudpak";"kx_bma_bigquery_d..
+     schema          | (,`fields)!,+`name`type`mode!(("firstName";"lastName";"hobb..
+     numBytes        | ,"0"
+     numLongTermBytes| ,"0"
+     numRows         | ,"0"
+     creationTime    | "1611230179319"
+     lastModifiedTime| "1611230179364"
+     type            | "TABLE"
+     location        | "US"
+    
+
+## .com_kx_bq.tables.list
+
+List tables availabe in BigQuery
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+args | dict | Arguments required for the tables.list method (see .com_kx_bq.disc.getParameters`tables.list)  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | Response from BigQuery  
+  
+**Example:** Listing tables in the project 'cloudpak' and dataset
+'kx_bma_bigquery_ds'
+
+    
+    
+     q).com_kx_bq.tables.list `projectId`datasetId!("cloudpak"; "kx_bma_bigquery_ds")
+     kind      | "bigquery#tableList"
+     etag      | "XO0VOCRg48KNOqPXpRbrFw=="
+     tables    | +`kind`id`tableReference`type`creationTime!(("bigquery#table";"bi..
+     totalItems| 2f
+    
+

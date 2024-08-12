@@ -1,0 +1,117 @@
+https://code.kx.com/platform/api/failover/
+
+# Failover - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/api/failover/
+
+# Failover
+
+This module contains failover subscription and broadcast APIs. Any instance
+can subscribe to multiple topics and manage callbacks on them. The `ALL`
+keyword can be used to set callbacks to run for each topic in addition to any
+specific ones defined.
+
+Process can publish to specific topics or to all processes using the `ALL`
+keyword.
+
+## `.px.rpl.addCallback`
+
+Register a topic handler. Function must take two parameters; topic(symbol),
+payload (dict)
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+topic | symbol | Event topic  
+callback | symbol | Function name  
+  
+**Example:**
+
+    
+    
+     .ex.opsHandler:{[topic; payload] 0N!(topic; payload);}
+     .px.rpl.addCallback[`OPS; `.ex.opsHandler]
+    
+
+## `.px.rpl.broadcast`
+
+Broadcast a failover event
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+topic | symbol | Event topic  
+msg | string | Audit message  
+payload | dict | Event payload  
+  
+**Example:** Specific topic
+
+    
+    
+     prefs:`ds_rte_ops_b`ds_rte_ops_c`ds_rte_ops_a
+     .px.rpl.broadcast[`OPS; ""; enlist[`procs]!enlist prefs]
+    
+
+**Example:** Publish to all instances
+
+    
+    
+     .px.rpl.broadcast[`ALL; "Server down"; enlist[`server]!enlist `prod1]
+    
+
+## `.px.rpl.removeCallback`
+
+Removes a topic handler
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+topic | symbol | Event topic  
+callback | symbol | Function name  
+  
+**Example:**
+
+    
+    
+     .ex.opsHandler:{[topic; payload] 0N!(topic; payload);}
+     .px.rpl.addCallback[`OPS; `.ex.opsHandler]
+     .px.rpl.removeCallback[`OPS; `.ex.opsHandler]
+    
+
+## `.px.rpl.subTopics`
+
+Subscribes to failover topic broadcasts
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+topics | symbol[] | Subscription topics  
+  
+**Example:**
+
+    
+    
+     .px.rpl.subTopics[`QR`OPS]
+    
+
+## `.px.rpl.unsubTopics`
+
+Removes subscriptions to failover topic broadcasts
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+topics | symbol[] | Subscription topics  
+  
+**Example:**
+
+    
+    
+     .px.rpl.unsubTopics[`QR`OPS]
+    
+

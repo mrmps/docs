@@ -1,0 +1,144 @@
+https://code.kx.com/insights/enterprise/ingest/pipeline/deploy.html
+
+# Deploy - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/ingest/pipeline/deploy.html
+
+# Pipeline Settings
+
+When creating a pipeline, a number of options are available to tune the
+pipeline. The settings tab provides controls for changing pipeline resources,
+environment variables and tuning pipeline settings.
+
+![Pipeline settings](images/ui/pipeline/pipeline-settings.png)
+
+This document breaks down the settings available.
+
+## Runtime
+
+item | description  
+---|---  
+Protected Execution | Enabled for greater granularity in error reporting. When enabled, operating performance may be impacted.  
+Log Format | Define debug reporting format; select between `JSON` or `Text` formats. It is recommended to leave this as JSON for more structured logs.  
+Log Level | Select between `Trace`, `Debug`, `Info`, `Warning`, `Error` or `Fatal`. Lower log levels include higher ones. For example, the default level is `Info` which includes `Warning`, `Error` and `Fatal`.  
+  
+## Resources
+
+Resources are the amount of computational resources that this pipeline will be
+allowed to consume. When allocating resources, it is important to remember
+that only the worker is responsible for processing data. To increase
+throughput, increase resources on the worker. The controller resources will
+only need to be modified when a high degree of parallelism is used.
+
+### Controller
+
+**CPU**
+
+item | description  
+---|---  
+Minimum CPU | Minimum amount of CPU for the controller; `1 CPU` or `1000 mCPU` for one core, `0.5 CPU` or `500 mCPU` is half time for one core. Must be >= `0.1 CPU`.  
+Maximum CPU | Maximum amount of CPU for the controller; must be <= `4 CPU`.  
+  
+**Memory**
+
+item | description  
+---|---  
+Minimum Memory | Minimum memory to allocate to the controller and always be available; >= `50 MiB`.  
+Maximum Memory | Maximum memory to allocate to the controller; once reached it will return `out-of-memory` error; <= `10 GiB`.  
+  
+### Worker
+
+**CPU**
+
+item | description  
+---|---  
+Minimum CPU | Minimum amount of CPU for for the worker; `1 CPU` or `1000 mCPU` for one core, `0.5 CPU` or `500 mCPU` is half time for one core. Must be >= `0.1 CPU`.  
+Maximum CPU | Maximum amount of CPU for for the worker.  
+  
+**Memory**
+
+item | description  
+---|---  
+Minimum Memory | Minimum memory to allocate to the worker and always be available; >= `100 MiB`.  
+Maximum Memory | Maximum memory to allocate to the worker; once reached it will return `out-of-memory` error. Must be <= `500GiB`.  
+  
+**Config**
+
+item | description  
+---|---  
+Minimum number of workers | Define the minimum number of workers that can be created to run the pipeline; >= `1`.  
+Maximum number of workers | Define the maximum number of workers that can be created to run the pipeline; <= `10`.  
+Maximum number of worker threads | Maximum number of worker threads; value between `1` and `16`.  
+  
+## Metrics
+
+Customize or disable pipeline metrics.
+
+### Record counting
+
+Pipeline record counting allows pipelines to calculate an average input and
+output data rate, which is a good indication of how much data the pipeline is
+ingesting and outputting. Disabling record counting will increase pipeline
+performance by a small amount.
+
+item | description  
+---|---  
+Readers and Writers | Enable record counting for all readers and writers, allowing input and output data rates to be calculated.  
+Disabled | Disable record counting. This increases performance but doesn't allow input and output data rates to be calculated.  
+  
+## Persistence
+
+### Controller
+
+Kubernetes persistence configuration.
+
+item | description  
+---|---  
+Disabled | Enabled by default, click to disable.  
+Storage Class | Kubernetes storage class name; e.g. `standard`.  
+Storage Size | Size volume allocated to each controller; defaults to `20Gi`.  
+Checkpoint Frequency | Check frequency in milliseconds, defaults to `5,000`.  
+  
+Storage Class
+
+Ensure `Storage Class` is set to a valid class. This is defined in the cluster
+and may be different across cloud providers i.e. **GCP: standard, AWS: gp2,
+Azure: default**. This information can be retrieved by running:
+
+### Worker
+
+Kubernetes persistence configuration.
+
+item | description  
+---|---  
+Disabled | Enabled by default, click to disable.  
+Storage Class | Kubernetes storage class name; e.g. `standard`.  
+Storage Size | Size volume allocated to each Worker; defaults to `20Gi`.  
+Checkpoint Frequency | Check frequency in milliseconds, defaults to `5,000`.  
+  
+## Kubernetes
+
+item | description  
+---|---  
+Label | Add a label and value to created resources. This is a Kubernetes label and can be used to identify resources associated with this pipeline.  
+Image Pull Secrets | Add Kubernetes secret reference name; for example, `kx-access`. Secrets can be used for mounting in passwords, TLS certificates or just protected data.  
+  
+## Environment Variables
+
+Environment variables can be used as overrides to customize the behavior of
+the Stream Processor. See the [list of environment
+variables](../../../microservices/stream-processor/configuration.html) for
+available options.
+
+## Advanced
+
+_Replicas_
+
+    The number of pipeline replicas to deploy. Default value of `1` means only a single pipeline will be deployed with no replicas.
+_Worker Image_
+
+    A registry URL that points to a custom Stream Processor worker image. This can be used for extending the core set of functionality of the Stream Processor with custom code or libraries.
+_Controller Image_
+
+    A registry URL that points to a custom Stream Processor controller image.
+

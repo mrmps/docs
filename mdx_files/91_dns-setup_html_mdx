@@ -1,0 +1,31 @@
+https://code.kx.com/insights/enterprise/installation/dns-setup.html
+
+# DNS setup - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/installation/dns-setup.html
+
+# DNS setup
+
+A DNS record is required by kdb Insights Enterprise to setup ingress and allow
+external clients to access the application. This typically requires a
+subdomain being set up against an owned domain and registered with an
+appropriate DNS provider. The ability to do this is beyond the scope of the
+kdb Insights Enterprise but well documented on the various cloud providers.
+
+Once the subdomain zone has been registered and setup a record can be added to
+point to the kdb Insights Enterprise deployment. This URL should point to the
+public IP address/hostname of the ingress controller which can be retrieved
+using the command below.
+
+    
+    
+    kubectl get svc ingress-nginx-controller -n ingress-nginx
+    
+
+Record type
+
+If the ingress controller reports a public IP address, create an A record. If
+a hostname is reported (typically in AWS) define a CNAME record.
+
+## Useful links
+

@@ -1,0 +1,318 @@
+https://code.kx.com/developer/linting/
+
+# Linting - KX Developer
+
+Original URL: https://code.kx.com/developer/linting/
+
+# Linting
+
+QLint is a static q/kdb+ code analysis tool. The software detects a wide
+variety of standard q rules, and provides the capability for users to
+configure and add rules for their code. QLint is also provides a standalone
+command line interface for running linting in an automated process without
+loading all of KX Developer. For more information about running QLint as a
+standalone library, please refer to [build utilities](../libraries-scripts/).
+
+## Running the linter
+
+The linter can be run in a number of ways. The linter can be used directly in
+function editors, on files, or even on entire repositories.
+
+Files are linted by right-clicking on an artifact in the artifact tree,
+clicking _Code > Lint > Lint_. This will display the linter output to the
+console.
+
+Linting will yield different results according to the type of artifact:
+
+artifact | target of linting  
+---|---  
+repository | applicable files in the repository  
+module | applicable files in the module  
+applicable file | that file  
+  
+![lintSearchpane.png](../img/linting/lintSearchpane.png)
+
+Multiple files, modules, and repositories may be linted simultaneously by
+highlighting each of the artifacts and following the above instructions.
+
+It is also possible to lint a file open in an Editor window by picking `Lint`
+from its context menu.
+
+The linter will also be automatically run whenever an artifact is saved and
+will update the gutter icons. Automatic linting may be toggled off or on by
+clicking the _File_ > _Settings_ menu item, then _Lint on save_.
+
+The linter is capable of validating functions, data artifacts, and files with
+either the .q or .quke extensions.
+
+## Linter rules
+
+The default rules fall into three categories, ordered by significance.
+
+category | indicates  
+---|---  
+error | significant problems with the code that will very likely lead to runtime or compile errors  
+warning | code may lead to unexpected situations, not necessarily fatal  
+info | problems with the documentation of files  
+  
+### Editor icons
+
+Any applicable Developer artifacts that are open in editors will display icons
+in their left hand gutter to identify any broken linter rules on that line.
+These icons are updated whenever the linter for a given artifact is run, or
+when an editor is saved. A lint icon is also be displayed in the editor's tab
+title to indicate if there are any linter rules broken in the file.
+
+![lintIcons.png](../img/linting/lintIcons.png)
+
+The colour of each lint icon corresponds to the significance of each linter
+category, with `error` > `warning` > `info`. Hovering over the lint icon will
+display a help tip that provides a description of all the broken rules for the
+given line and, in quotes, the text that broke the rule. If the user wants to
+ignore a linter rule, it is possible to suppress the rule by clicking on the
+lint icon. See Configuring QLint for more details.
+
+### Linter output
+
+The linter tests code for violations of one or more rules from one of the
+above mentioned categories.
+
+The output of the linter reports broken rules, the code that violated the
+rule, the location in the code, and any additional messages to clarify the
+violation.
+
+Each QLint defined rule category (info, warning, and error) is coloured a
+unique color.
+
+![console.png](../img/linting/console.png)
+
+Within the output each category is presented as a series of dropdown lists.
+Clicking the arrow next to a category will display all the broken linter rules
+for that category. Clicking the arrow next to each broken rule will display a
+description of the broken rule along with all of the files (with associated
+line numbers) where a rule was broken. Clicking on a line number will open the
+file at the line where the rule was violated.
+
+In the below example, three files were linted, each with one broken linter
+rule. The error category is closed, while the warning category only shows the
+list of broken rules. The info category shows the details of each instance of
+a broken rule including file name and line number.
+
+![consoleExpanded.png](../img/linting/consoleExpanded.png)
+
+In the above example the `UNDOCUMENTED_PARAM` rule shows only the positions
+where the rule was violated and the code that violated the rule. Some rules
+also report error messages to provide more detail as to the broken rule.
+
+For example, if a test file with the suffix `.quke` is linted, then the
+details of all formatting errors will be reported by the linter.
+
+### Configuring QLint
+
+The linter may be configured at workspace, module, and file level. File-level
+configuration takes precedence over module-level configuration, and module-
+level configuration takes precedence over workspace-level configuration.
+
+At the workspace level, it is possible to choose which rules should be run by
+calling the function `.qlint.ws.setRules` with a list of rule labels (q
+symbols) that should be used for linting. These labels are the names of the
+rules to run, for example, `ASSIGN_RESERVED_WORD`. This function must be
+called every time a workspace is loaded to produce the desired rules.
+
+At the module or repository level, it is possible to configure the rules used
+when running the linter using a `lint.config` file.
+
+    
+    
+    ASSIGN_RESERVED_WORD : false
+    UNDECLARED_VAR       : true, warning { globals : [ "abc", "def" ] }
+    UNDOCUMENTED_PARAM   : true, error
+    
+
+The `lint.config` file affects only the other artifacts in the repository,
+module, or folder under which it is located, as well as all child directories.
+The first word on each line should be the rule to configure, followed by a
+colon and any configurations.
+
+The `lint.config` file specifies which rules should be tested when linting. A
+rule can be set to `false` to indicate that it should be ignored or to `true`
+to indicate that it should be included. Rules configured by `lint.config`
+files in child directories or modules take precedence over rules configured in
+parent directories, modules, or repositories.
+
+It is also possible to change the report level of a rule. This will change
+where the rule is displayed in the output for the file to allow the user to
+group rules of similar significance together. Changing the report level of the
+rule allows a user to control how a rule is interpreted if she disagrees with
+the default priority.
+
+Some rules have parameters that allow users to further configure the behaviour
+of the rule. These are written as JSON objects at the end of the line. See the
+_Default Rules_ below for descriptions of the available rule parameters.
+
+The Developer workspace provides a dialog to help create configuration files.
+This is done by right-clicking on a module or repository in the artifact tree,
+picking _Code_ , then _Lint_ , then _Config_.
+
+![configSearchpane.png](../img/linting/configSearchpane.png)
+
+The dialog allows users to set the activation state, priority, and parameters
+of the rule.
+
+![configDialog.png](../img/linting/configDialog.png)
+
+The dialog groups linter rules to make it easier to navigate. Click on the
+arrow to display the rules in that group.
+
+![configDialogOpen.png](../img/linting/configDialogOpen.png)
+
+All rules can use the report level select to select a rules report level. Some
+rule have additional configurable parameters. Rule parameters may have one of
+the following types. \- long \- boolean (true, false) \- string list \- a
+string from a list of options
+
+The config dialog provides the necessary elements to configure these different
+types. In the above image, the _TOO_MANY_CONSTANTS_ rule have a _kdb_ver_
+parameter, where the user can select which the functions constants limit to
+use when linting (the number of allowed constants in a function depends on the
+kdb version). The user must select from the list of available versions.
+
+The below _UNDECLARED_VAR_ rule supports two rule parameters: _globals_ and
+_presearch_globals_. The _globals_ expects a list of comma separated strings,
+and _presearch_globals_ is a boolean checkbox.
+
+![configDialogUndeclaredVar.png](../img/linting/configDialogUndeclaredVar.png)
+
+It also provides a description of the rule, which can be found by hovering
+over the `?`.
+
+The config in the dialog will generate the following `lint.config` rule:
+
+    
+    
+    UNDECLARED_VAR : true, warning { globals : [ ".dm", ".ms" ], presearch_globals : true }
+    
+
+Below is a potential result from running the above `lint.config` on a set of
+files. A file that previously had an `ASSIGN_RESERVED_WORD` error now passes
+because that rule has been ignored. The `UNDOCUMENTED_PARAM` rule now has the
+priority of an `error` (as opposed to an `info`) since the user has decided
+that it is a very serious issue to have undocumented parameters.
+
+![configConsole.png](../img/linting/configConsole.png)
+
+At the file level, it is possible to configure the linter to ignore specific
+rules using the `@qlintsuppress` tag.
+
+The `@qlintsuppress` tag is a comment tag that can be used to ignore specific
+rules on that file. It must be followed by a list of rule labels to ignore.
+
+![globalSuppress.png](../img/linting/globalSuppress.png)
+
+With the above syntax, the rule will be ignored for the entire file. It is
+also possible to ignore rules for only a specified region of the file using
+the `@qlintsuppress` tag. To do so, the rule label must be followed by a pair
+of brackets that enclose the number of lines after the line with the
+`@qlintsuppress` comment to ignore the rule. For example, the comment
+`//@qlintsuppress UNUSED_PARAM(2)` will cause the `UNUSED_PARAM` rule to be
+ignored on the line with the comment and for two subsequent lines.
+
+![localSuppress.png](../img/linting/localSuppress.png)
+
+It is possible to ignore all rules with a `@qlintsuppress` tag with the
+keyword `all` as one of the rules to ignore.
+
+To facilitate suppressing lint rules, clicking on a lint icon will open a
+dialog that allows the user to select the level of suppression desired for a
+rule (or set of rules). Three levels of suppression are supported.
+
+  * Clicking on the `Local` checkbox for a given rule will add a local `@qlintsuppress` tag to the file. This will only suppress the rule on the given line in the file.
+  * Clicking on the `Global` checkbox for a given rule will add a global `@qlintsuppress` tag to the file. This will suppress the rule throughout the entire file.
+  * Clicking on the `Config` checkbox for a given rule will set that rule to `false` in a `lint.config` file, thus causing the rule to be suppressed in all files in a module or repository, depending on where the `lint.config` file is located. The `lint.config` file will be added to the module, for artifacts located in modules. Otherwise it will add a `lint.config` file to the repository. If a `lint.config` file already exists then it will be updated to reflect the rule suppression.
+
+In the below example, the `UNUSED_PARAM` rule has been set to be suppressed on
+only line 7, whereas the `UNDOCUMENTED_PARAM` rule has been set to be
+suppressed globally in the file.
+
+![lintSuppressDialog.png](../img/linting/lintSuppressDialog.png)
+
+Clicking the checkbox immediately under `Local`, `Global`, or `Config` will
+toggle all rules in that column.
+
+Once the desired lint rule suppressions are selected, click _OK_ to apply them
+to the files.
+
+It is also possible to configure linter rule params within files or artifacts
+using the same syntax as the `lint.config` file. This will apply the
+configuration locally to the file. In the below example, there are three
+variables that have not been declared, _var1_ , _var2_ , and _var3_. However,
+there is only a warning for _var2_ because _var1_ and _var2_ are included in
+the _globals_ parameter of the _UNDECLARED_VAR_ rule to indicate that the
+developer knows that this is a globally declared variable.
+
+![LintLocalConfig.png](../img/linting/lintLocalConfig.png)
+
+There was previously a `@qlintinclude` to force the inclusion of rules, but
+this tag has been removed.
+
+### Default rules
+
+label | errorClass | description  
+---|---|---  
+ASSIGN_RESERVED_WORD | error | Assignment to a reserved word  
+COND_EVENARGS | error | Conditional $ should not be used with an even number of arguments  
+DECLARED_AFTER_USE | error | The variable was declared after being used  
+GLOBAL_PEACH | error | Modifying globals inside a peach statement is not allowed  
+INVALID_ADVERB | error | A binary adverb cannot be applied to a unary function  
+INVALID_ASSIGN | error | Attempt to assign to a string, symbol, or number  
+INVALID_ESCAPE | error | Invalid Escape Sequence: Valid escape sequences are: \n,\r,\t,/,\\\,\/ and three digit octal sequences \377 or smaller  
+INVALID_QUKE | error | A quke file was improperly formatted  
+OVERWRITE_ARTIFACT | error | Variable assignment overwrites namespace or artifact  
+STATEMENT_IN_EXPR | error | If, while, or do statement used in expression, possible missing semicolon  
+RESERVED_NAME | error | File has reserved name  
+TOO_MANY_CONSTANTS | error | Too many constants in a function  
+TOO_MANY_GLOBALS | error | Too many globals in a function  
+TOO_MANY_LOCALS | error | Too many locals in a function  
+UNINDENTED_CODE | error | Any multiline expression must be indented after the first line  
+BACKWARD_COMPATIBILITY | warning | This function has backward compatibility issues with kdb+ versions less than 3.6  
+CAST_TYPE_NUMERICAL | warning | Casting using a short to indicate cast type is unnecessarily unclear. Another form is advised  
+CONDITIONALLY_DECLARED | warning | This variable may be undefined at this point, as it was only declared conditionally  
+DEBUG_FUNCTION | warning | Calling a debug function. Likely should not be in release version  
+DEPRECATED_DATETIME | warning | Datetime has been deprecated  
+DEPRECATED_FUNCTION | warning | This file uses a deprecated function  
+EMPTY_IF | warning | If statement lacks code to execute  
+FIXED_SEED | warning | Inputting a positive number into ?0Ng will result in the same sequence every run  
+FUNCTION_START | warning | Function artifact must start with a function  
+INSUFFICIENT_INDENT | warning | Every line in the function other than the first must have an indentation at or deeper than the second line of the function, which must have an indentation of at least 1 extra space  
+INTERNAL | warning | Reference to an internal api of another module  
+INVALID_FUNCTION | warning | Function artifacts must be lambda definitions, rather than projections, immediately invoked functions, or functions in expressions  
+MALFORMED_SUPPRESSION | warning | Malformed @qlintsuppress tag  
+MISSING_DEPENDENCY | warning | Any reference to another namespace should be listed in the dependency list  
+NAME_COLLISION | warning | Executing statement in editor could overwrite global variable  
+NEED_EXPLICIT_RETURN | warning | Explicit return needed. Otherwise will return generic null  
+POSSIBLE_RETURN | warning | Assignment statement looks like return  
+UNDECLARED_VAR | warning | Undeclared variable in function will be treated as global  
+UNUSED_INTERNAL | warning | This function is marked as internal (is part of a sub-namespace i) but was never used within the namespace  
+UNUSED_PARAM | warning | This param was declared then never used  
+UNUSED_VAR | warning | This variable was declared then never used  
+RANDOM_GUIDS | warning | Multiple calls to ?0ng in quick succession, with negative numbers, can produce the same output  
+UNREACHABLE_CODE | warning | A preceding return prevents this statement from being reached  
+UNEXPECTED_COND_NEWLINE | warning | Condition should begin on same line as loop or if statement  
+UNPARENTHESIZED_JOIN | warning | A potential join in this QSQL statement will be interpreted as separate statements unless wrapped in parentheses  
+VAR_Q_ERROR | warning | Variable name the same as q error message. This can cause ambiguous error messages  
+DEFAULT_QDOC | info | The file has the default documentation  
+DUPLICATE_DEPENDENCY | info | Duplicate dependencies  
+INVALID_DEPENDENCY | info | Invalid dependencies  
+INVALID_TYPEDEF | info | Invalid typedef tag  
+INVALID_TAG | info | Tag not recognized as valid QDoc tag  
+MISSING_OVERVIEW | info | Missing @fileOverview tag with associated description  
+MISSING_RETURNS | info | Missing @returns tag  
+MISSING_TYPE | info | Missing type in returns or param tag  
+MULTIPLE_RETURNS | info | Multiple @returns tags  
+OUT_OF_ORDER_PARAM | info | Parameters out of order  
+PARAM_NOT_IN_CODE | info | This param is not in the function  
+QDOC_TYPE | info | Invalid type in tag  
+REDUNDANT_GLOBAL_ASSIGN | info | Using the global amend operator on a fully qualified name is redundant  
+UNDOCUMENTED_PARAM | info | Undocumented parameter  
+UNUSED_DEPENDENCY | info | Unused dependencies
+

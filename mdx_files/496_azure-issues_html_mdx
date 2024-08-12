@@ -1,0 +1,70 @@
+https://code.kx.com/insights/enterprise/azure-marketplace/azure-issues.html
+
+# Azure Deployment Potential Issues - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/azure-marketplace/azure-issues.html
+
+# Potential issues
+
+## Potential deployment issues
+
+Failed Deployments
+
+If a deployment fails for any reason, once the root cause analysis is
+complete, we recommend deleting the whole resource group to free up any
+resources that may be left in the deployment, before starting a fresh install.
+If you keep the resources and start a fresh install, remember to create a new
+resource group name. The deployment will fail if you try to select an existing
+resource group name.
+
+### Missing Resource Providers
+
+The required Resource Providers are listed below in the image in the final
+step and within the pre-requisites section. If your deployment fails with an
+error message 'Missing Subscription Registration error'; this is an indication
+that you need to register the `Microsoft.OperationsManagement` resource
+provider in your Azure Subscription:
+
+    
+    
+    {
+        "status": "Failed",
+        "error": {
+            "code": "AddContainerInsightsSolutionError",
+            "message": "Code=\"MissingSubscriptionRegistration\" Message=\"The subscription is not registered to use namespace 'Microsoft.OperationsManagement'. See https://aka.ms/rps-not-found for how to register subscriptions.\" Details=[{\"code\":\"MissingSubscriptionRegistration\",\"message\":\"The subscription is not registered to use namespace 'Microsoft.OperationsManagement'. See https://aka.ms/rps-not-found for how to register subscriptions.\",\"target\":\"Microsoft.OperationsManagement\"}]"
+        }
+    }
+    
+
+To resolve this issue:
+
+  1. Go to the subscription.
+
+  2. Select `Resource Providers` on the left menu.
+
+  3. Search for the `Microsoft.OperationsManagement` provider.
+
+![SubscriptionResProv](images/RegisterResource.png)
+
+  4. Register it.
+
+![Registered](images/Registered.png)
+
+Please refer to the [prerequisites](azure-prerequisites.html) section for the
+full list of required resource providers.
+
+### Azure Redeploy button
+
+Warning
+
+Do not use the 'Redeploy' button if there are any failures in the initial
+deployment. This does not function as expected and cannot be removed from the
+Marketplace. Contact KX Support for assistance by following the
+[Support](support.html) section of the documentation.
+
+### Sizing the node pool
+
+Please do not select a smaller node pool size than the default options. If you
+are unsure what size you need for your workload, please contact
+[Support](support.html).
+

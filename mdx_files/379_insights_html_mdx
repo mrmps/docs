@@ -1,0 +1,209 @@
+https://code.kx.com/insights/enterprise/installation/insights.html
+
+# Installing - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/installation/insights.html
+
+# kdb Insights Enterprise Installation
+
+The section details the steps to deploy the kdb Insights Enterprise in a pre-
+configured Kubernetes cluster. Once installed you can use the system to build
+and deploy your workloads.
+
+If you want to upgrade your kdb Insights Enterprise deployment, refer to the
+[upgrade guide](upgrading.html).
+
+KX Nexus
+
+The KX Nexus repository will be sunsetted in the future. Nexus links on this
+page are provided as a temporary alternative to the KX Downloads Portal for
+existing users. The KX Downloads Portal is the preferred repository for all
+use cases and KX Nexus links will be removed once the KX Nexus repository is
+decommissioned.
+
+## Prerequisites
+
+  * **Cluster and shared services**
+
+Before installing kdb Insights Enterprise you must have an appropriate
+Kubernetes cluster in place with the necessary shared services available. kdb
+Insights Enterprise provides a number of [Terraform
+scripts](../infrastructure/docs/index.html) which enable the quick deployment
+of the necessary cluster services on all three main cloud providers.
+
+To install into an existing cluster please ensure that all necessary
+infrastructure [pre-requisites](../infrastructure/docs/prerequisites.html)
+have been met.
+
+  * **Kubernetes access**
+
+You must have access to the Kubernetes cluster along with a number of third-
+party tools to interact with the cluster, including an [active kubeconfig with
+a namespace](interacting-with-kubernetes.html).
+
+  * **Helm**
+
+[Helm](https://helm.sh/docs/intro/install/) is used to deploy and manage kdb
+Insights Enterprise.
+
+  * **DNS**
+
+In order for external clients to interact with kdb Insights Enterprise, a [DNS
+record must be setup with your DNS provider](dns-setup.html).
+
+  * **kdb Insights CLI**
+
+The following instructions use the _kdb Insights CLI_. Make sure you have
+[installed the CLI](../cli/install.html) before you begin.
+
+  * **kdb Insights Enterprise license**
+
+The install process requires a kdb Insights Enterprise license. To obtain a
+valid license, speak to your KX sales representative.
+
+The self-service licensing model previously in use for KX products has been
+deprecated. Contact your sales representative if you have questions about
+this, and wish to discuss moving to the new model.
+
+    
+    
+    You must have credentials to the appropriate Helm and Docker registries for charts and images. The install prompts you for repository locations and access details. Default registries:
+    
+    - helm: https://portal.dl.kx.com/assets/helm/
+    - docker: portal.dl.kx.com
+    
+    Existing users can use the KX Nexus repository until Nexus is removed in the future. To use the KX Nexus repository, use the following registries:
+    
+    - helm: https://nexus.dl.kx.com/repository/kx-insights-charts/
+    - docker: registry.dl.kx.com
+    
+
+### Variables
+
+The CLI provides an interactive installer that deploys kdb Insights Enterprise
+on a Kubernetes cluster. It guides you through the steps to install the
+application. To ensure a smooth process, you need these variables:
+
+## Installation
+
+### Deploy on Kubernetes
+
+When you deploy kdb Insights Enterprise, the install command does the
+following:
+
+  1. Generates a `values.yaml` config file to use for repeatable future installs.
+  2. Installs the _kdb Insights Operator_ to the `kxi-operator` namespace
+  3. Deploys the application to the cluster using the generated `values.yaml`
+
+Credentials prompts
+
+You will be prompted for Helm and Docker credentials during the [install
+setup](../configuration/base.html). You will also be prompted to create
+[Keycloak](../security/authentication.html#administration-passwords) admin
+passwords, which should be saved for future use and to allow you to log into
+the Keycloak administration console.
+
+Install namespaces
+
+You can deploy kdb Insights Enterprise to the default namespace or a uniquely
+created namespace, however, two deployments cannot share the same namespace.
+
+Prior to deployment, check the active namespace to ensure there are no current
+deployments. The following command returns any instances of the application
+currently deployed to the active namespace.
+
+Encryption in Transit
+
+[Encryption of data in transit](../security/encryption-in-transit.html) is
+turned on by default for fresh installs. When you upgrade _kdb Insights
+Enterprise_ the CLI gives you the option to turn encryption on or off.
+
+When you install _kdb Insights Enterprise_ , you will be prompted to enable
+[encryption of data in transit](../security/encryption-in-transit.html). The
+default behaviour is to enable encryption.
+
+To change this setting after installation, perform an
+[upgrade](upgrading.html).
+
+To deploy kdb Insights Enterprise, run the following command:
+
+    
+    
+    kxi install run --version $INSIGHTS_VERSION --hostname $INSIGHTS_HOSTNAME --license-filepath $KX_LIC
+    
+
+kdb Insights Operator
+
+If the _kdb Insights Operator_ is not already installed, the CLI will attempt
+to install it along with the application. This is deployed within the `kxi-
+operator` namespace as a single deployment shared across all kdb Insights
+Enterprise deployments on the cluster.
+
+An Operator version is only compatible with corresponding minor versions of
+kdb Insights Enterprise, e.g. 1.4.X of the Operator supports 1.4.X of the
+application. The CLI will attempt to lookup the latest compatible operator
+version for the target application version.
+
+### Deploy on OpenShift
+
+OpenShift [SCC](https://www.redhat.com/en/blog/managing-sccs-in-openshift)
+should be applied to insights namespaces first.
+
+    
+    
+    oc create ns kxi
+    oc create ns kxi-operator
+    
+    oc adm policy add-scc-to-group nonroot-v2 system:serviceaccounts:kxi
+    oc adm policy add-scc-to-group nonroot-v2 system:serviceaccounts:kxi-operator
+    
+
+For OpenShift deployments, do the following:
+
+  1. generate the values.yaml file by populating the required parameters 
+    
+        kxi install setup --namespace kxi
+    
+
+  2. open the values.yaml with your preferred editor and append openshift required values 
+    
+        global:
+      clusterProvider: openshift
+    
+    packages:
+      useLocalValues: true
+      storageClass: "rook-cephfs"
+      storageSize: 10Gi
+    
+
+  3. finally, deploy it 
+    
+        kxi install run --filepath=values.yaml --version=$INSIGHTS_VERSION --namespace kxi
+    
+
+## Post install
+
+Once the kdb Insights Enterprise is running you should see pods deployed. All
+pods should enter a `Running` state after a short period of time.
+
+    
+    
+    kubectl get pods -l app.kubernetes.io/instance=insights
+    
+
+## Next steps
+
+After installing the base system, deploy an assembly data capture.
+
+## Customize deployment
+
+You can, alternatively, supply all setup and installation options by [command
+line arguments](../kxi-cli/cli.html#kxi-install-setup) or [cli
+configuration](../cli/configuration.html). Refer to the [options
+precedence](../cli/index.html#options-precedence) for a description of the
+order in which these are read.
+
+There are further configuration and customizations available for kdb Insights
+Enterprise. Details on how to use these are available in the
+[Configuration](../configuration/index.html) section.
+

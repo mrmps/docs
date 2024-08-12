@@ -1,0 +1,588 @@
+https://code.kx.com/insights/core/qlog/quickstart.html
+
+# Logging | Quickstart | kdb Insights Core - kdb products
+
+Original URL: https://code.kx.com/insights/core/qlog/quickstart.html
+
+# Logging quickstart
+
+_Build a simple Hello World application using QLog and cloud logging services;
+explore QLog features_
+
+## Hello world
+
+A simple application to print some logging to stdout.
+
+Create the fluent configuration files using the following commands:
+
+    
+    
+    mkdir -p fluent/conf fluent/etc fluent/credentials
+    
+    tee fluent/conf/aws.conf << EOF
+    [INPUT]
+        Name forward
+    
+    [OUTPUT]
+        Name cloudwatch_logs
+        Match   *
+        region us-east-2
+        log_group_name kx-qlog
+        log_stream_prefix kx-qlog-qs
+        auto_create_group On
+    
+    [SERVICE]
+        Parsers_File /fluent-bit/parsers/qlog_parser.conf
+        Flush 1
+        Grace 30
+    
+    [FILTER]
+        Name parser
+        Match *
+        Key_Name log
+        Parser kx_qlog
+        Reserve_Data True
+    EOF
+    
+    tee fluent/conf/azure.conf << EOF
+    [INPUT]
+        Name forward
+    
+    [OUTPUT]
+        Name azure
+        Match   *
+        Customer_ID <WORKSPACE_ID>
+        Shared_Key  <AUTH_KEY>
+    
+    [SERVICE]
+        Parsers_File /fluent-bit/parsers/qlog_parser.conf
+        Flush 1
+        Grace 30
+    
+    [FILTER]
+        Name parser
+        Match *
+        Key_Name log
+        Parser kx_qlog
+        Reserve_Data True
+    EOF
+    
+    tee fluent/conf/gcp.conf << EOF
+    [INPUT]
+        Name forward
+    
+    [OUTPUT]
+        Name stackdriver
+        Match   *
+        google_service_credentials /fluent-bit/credentials/gcp.json
+    
+    [SERVICE]
+        Parsers_File /fluent-bit/parsers/qlog_parser.conf
+        Flush 1
+        Grace 5
+    
+    [FILTER]
+        Name parser
+        Match *
+        Key_Name log
+        Parser kx_qlog
+        Reserve_Data True
+    EOF
+    
+    tee fluent/conf/stdout.conf << EOF
+    [INPUT]
+        Name forward
+    
+    [OUTPUT]
+        Name stdout
+        Match   *
+    
+    [SERVICE]
+        Parsers_File /fluent-bit/parsers/qlog_parser.conf
+        Flush 1
+        Grace 5
+    
+    [FILTER]
+        Name parser
+        Match *
+        Key_Name log
+        Parser kx_qlog
+        Reserve_Data True
+    EOF
+    
+    tee fluent/etc/qlog_parser.conf << EOF
+    [PARSER]
+        Name kx_qlog
+        Format json
+        Time_Key time
+        Time_Format %Y-%m-%dT%H:%M:%S
+    EOF
+    
+
+Create `client.q`.
+
+    
+    
+    id:.com_kx_log.init[`:fd://stdout; ()];
+    .qlog:.com_kx_log.new[`qlog; ()];
+    
+    .qlog.info["Hello world!"];
+    
+    if[not `debug in key .Q.opt .z.x; exit 0];
+    
+
+Execute the following:
+
+The output will be a structured, timestamped, JSON log message.
+
+    
+    
+    {"time":"2021-01-26T15:18:02.287z","component":"qlog","level":"INFO","message":"Hello world!"}
+    
+
+Basics for more on the APIs and a breakdown of the script
+
+## Configuring qlog
+
+Qlog can be configured from a file. This can be used to automatically setup
+endpoints, configure the format and set routing on initialisation.
+
+This is configured by setting the `KXI_LOG_CONFIG` to point to JSON file. A
+sample [file](config/qlog.json) is provided.
+
+    
+    
+    echo '{"endpoints":["fd://stderr"],"formatMode":"json","routings":{"DEFAULT":"INFO","qlog":"DEBUG"}}' > qlog.json
+    env KXI_LOG_CONFIG=$(pwd)/qlog.json q client.q -p 5000 -debug
+    
+
+## Logging agent
+
+_How logs can be collected by an agent and routed to other cloud services_
+
+Here we will use the [Fluent Bit](https://docs.fluentbit.io/manual/) agent and
+the Hello World example from the previous section. The agent can be configured
+to route to cloud logging applications. Examples are provided for _GCP_ ,
+_AWS_ , and _Azure_ , however you will need to provide service account
+credentials for your preferred endpoint.
+
+Docker Compose and Kubernetes
+
+This walkthrough uses Docker Compose for simplicity. The same Fluent Bit agent
+can be set up to run in a Kubernetes application as a DaemonSet. This process
+is relatively straightforward and well documented online: the [offical
+guide](https://docs.fluentbit.io/manual/installation/kubernetes) looks at both
+Kubernetes and Helm.
+
+In order to run these examples you'll need some pre-requisites;
+
+  * `docker-compose` version 1.25+
+  * logged in to _KX Nexus_ `docker login registry.dl.kx.com`
+  * log writer access to your chosen Cloud provider
+  * a valid `kc.lic` or `kx.lic`, base-64 encoded to an environment variable
+    * `export KDB_LICENSE_B64=$(base64 -w0 kc.lic)`
+    * `export KDB_KXLICENSE_B64=$(base64 -w0 kx.lic)`
+
+Here we run two Docker containers: one for the application, and one for the
+agent. The application’s logging is forwarded to the agent, which initially
+simply dumps it to its own STDOUT.
+
+  * Create _docker-compose.yml_
+
+    
+    
+    tee docker-compose.yml << EOF
+    version: "3.7"
+    
+    networks:
+      kx:
+        name: kx
+        driver: bridge
+    
+    services:
+      app:
+        container_name: hello
+        image: kdb-insights:X.Y.Z
+        depends_on:
+          - fluent
+        volumes:
+          - $QLIC:/tmp/qlic:ro
+          - ./:/opt/kx/code
+        command: client.q
+        working_dir: /opt/kx/code
+        logging:
+          driver: "fluentd"
+          options:
+            fluentd-address: localhost:24224
+        networks:
+          - kx
+    
+      fluent:
+        container_name: fluent
+        image: fluent/fluent-bit
+        environment:
+          - FLUENT_CONFIG
+        volumes:
+          - ./fluent/conf:/fluent/etc
+          - ./fluent/etc/qlog_parser.conf:/fluent-bit/parsers/qlog_parser.conf
+          - ./fluent/credentials:/fluent-bit/credentials
+        ports:
+          - "24224:24224"
+          - "24224:24224/udp"
+        command: /fluent-bit/bin/fluent-bit -c /fluent/etc/${FLUENT_CONFIG:-stdout.conf}
+    EOF
+    
+
+Run example:
+
+As below, the client application output is seen from the Fluent container. So
+the routing is working successfully. Press Ctrl-C to shut down.
+
+    
+    
+    ..
+    fluent    | [0] 247202086d68: [1611761398.000000000, {"log"=>"INFO: Using existing license file [/opt/kx/lic/kc.lic]", "container_id"=>"247202086d680f33f1f9e50ab383c0b7935d35cd0847652ba36ea2260b0d38c5", "container_name"=>"/hello", "source"=>"stdout"}]
+    fluent    | [1] 247202086d68: [1611761398.000000000, {"log"=>"RUN [q startq.q ]", "container_id"=>"247202086d680f33f1f9e50ab383c0b7935d35cd0847652ba36ea2260b0d38c5", "container_name"=>"/hello", "source"=>"stdout"}]
+    fluent    | [0] 247202086d68: [1611761399.000000000, {"component"=>"qlog", "level"=>"INFO", "message"=>"Hello world!", "container_id"=>"247202086d680f33f1f9e50ab383c0b7935d35cd0847652ba36ea2260b0d38c5", "container_name"=>"/hello", "source"=>"stdout"}]
+    hello exited with code 0
+    
+
+The agent is highly pluggable and supports a variety of different output
+types. If you are running on a cloud platform, let’s update it to do something
+more useful. Each of the cloud providers has its own logging application and
+we can configure the agent to route to there. We can switch between providers
+by setting the `FLUENT_CONFIG` environment variable.
+
+    
+    
+    GCP      gcp.conf
+    AWS      aws.conf
+    Azure    azure.conf
+    
+
+### GCP
+
+Execute the following to rerun the example and output to Google Cloud Logging.
+
+    
+    
+    cp <GCP CREDENTIALS FILE> ./fluent/credentials/gcp.json
+    export FLUENT_CONFIG=gcp.conf
+    docker-compose up
+    
+
+Open the [Logs Explorer](https://console.cloud.google.com/logs/) and it should
+contain the _Hello world!_ message. In the _Query builder_ pane, enter
+`jsonPayload.source="stdout"` to filter the dataset.
+
+![Screenshot](img/qs-gcp-logs.png)
+
+More information for the _GCP_ logging output is available from the _fluent-
+bit_ documentation.
+
+[GCP output](https://docs.fluentbit.io/manual/pipeline/outputs/stackdriver)
+
+### AWS
+
+Execute the following to rerun the example and output to _Amazon CloudWatch
+Logs_.
+
+Warning
+
+This example assumes you're running within an AWS project, with a service
+account mounted, and appropriate roles setup to write to CloudWatch. Please
+review the CloudWatch
+[configuration](https://docs.fluentbit.io/manual/pipeline/outputs/cloudwatch)
+and update `aws.conf` if this is not the case.
+
+    
+    
+    export FLUENT_CONFIG=aws.conf
+    docker-compose up
+    
+
+The uploaded logs should be available on [AWS](https://us-
+east-2.console.aws.amazon.com/cloudwatch/home?region=us-east-2#logsV2:log-
+groups/log-group/kx-qlog).
+
+![Screenshot](img/qs-aws-logs.png)
+
+### Azure
+
+Azure requires some additional setup.
+
+  1. Create a [Log Analytics workspace](https://docs.microsoft.com/en-us/azure/azure-monitor/logs/quick-create-workspace)
+  2. Using the Azure portal locate the newly created workspace in _Log Analytics workspaces_. Open `Agents Management` under `Settings` and locate the `Workspace ID` and `Primary Key`.
+  3. Replace the `<WORKSPACE_ID>` in the `fluent/conf/azure.conf` with the `Workspace ID` from #2.
+  4. Replace the `<AUTH_KEY>` in the `fluent/conf/azure.conf` with the `Primary Key` from #2.
+
+Execute the following to rerun the example and output to Azure Monitor Logs.
+
+    
+    
+    export FLUENT_CONFIG=azure.conf
+    docker-compose up
+    
+
+The uploaded logs should be available in the Log Analytics workspaces.
+
+It may take a few seconds for the first upload of logs to appear
+
+Locate the log messages using Azure Portal: 1\. Locate the workspace in _Log
+Analytics workspaces_. 2\. Navigate to `Logs` under `General`. 3\. At the
+query interface type `fluentbit_CL` and run the query. 4\. A result will be
+displayed similar to screenshot below(amend the date time range if necessary).
+
+![Screenshot](img/qs-azure-logs.png)
+
+## Examples
+
+Examine the earlier Quick Start example.
+
+Create `quickstart.q`.
+
+    
+    
+    id:.com_kx_log.init[`:fd://stdout; ()];
+    .qlog:.com_kx_log.new[`qlog; ()];
+    
+    .qlog.info["Hello world!"];
+    if[not `debug in key .Q.opt .z.x; exit 0];
+    
+
+Run example:
+
+Look at the `.qlog` dictionary. Each element corresponds to a different **log
+level**. We can print messages using two handlers to compare. Note the
+difference in the `level` field.
+
+    
+    
+    q).qlog
+    trace| locked[`TRACE;`qlog]
+    debug| locked[`DEBUG;`qlog]
+    info | locked[`INFO;`qlog]
+    warn | locked[`WARN;`qlog]
+    error| locked[`ERROR;`qlog]
+    fatal| locked[`FATAL;`qlog]
+    
+    q).qlog.info["Process starting"]
+    {"time":"2021-01-26T16:33:21.396z","component":"qlog","level":"INFO","message":"Process starting"}
+    
+    q).qlog.fatal["Process crashing"]
+    {"time":"2021-01-26T16:33:21.397z","component":"qlog","level":"FATAL","message":"Process crashing"}
+    
+
+Create a new **logging component**. Where levels are used to distinguish the
+severity of messages, components can be used to distinguish the source of a
+message. A component can be a module, a process or any other grouping that
+makes sense for the application. Below we create another set of logging APIs
+for a `Monitor` component. Note the change in the `component` field.
+
+    
+    
+    q).mon:.com_kx_log.new[`Monitor; ()];
+    q).mon.info["Monitor starting"];
+    {"time":"2021-01-26T16:37:50.768z","component":"Monitor","level":"INFO","message":"Monitor starting"}
+    
+
+### Routing
+
+Log messages can be routed or suppressed according to their severity. Often
+applications will suppress all debug or trace logs. Each logging component can
+set its own level routing.
+
+QLog has the following list of levels, in ascending order of severity:
+`TRACE`, `DEBUG`, `INFO`, `ERROR`, `FATAL`.
+
+This example initializes the STDOUT endpoint with a default routing of `INFO`.
+Messages will be logged with severities of `INFO` or above. Anything below
+that will be suppressed.
+
+Create `routing1.q`.
+
+    
+    
+    // init stdout and log info+
+    ids:.com_kx_log.init[`:fd://stdout; `INFO];
+    .qlog:.com_kx_log.new[`qlog; ()];
+    
+    // will be suppressed
+    .qlog.trace["Trace"];
+    .qlog.debug["Debug"];
+    
+    // will be logged
+    .qlog.info["Info"];
+    .qlog.error["Error"];
+    .qlog.fatal["Fatal"];
+    
+    if[not `debug in key .Q.opt .z.x; exit 0];
+    
+
+Run example:
+
+    
+    
+    q routing1.q -debug
+    {"time":"2021-01-26T17:19:38.113z","component":"qlog","level":"INFO","message":"Info"}
+    {"time":"2021-01-26T17:19:38.113z","component":"qlog","level":"ERROR","message":"Error"}
+    {"time":"2021-01-26T17:19:38.113z","component":"qlog","level":"FATAL","message":"Fatal"}
+    
+
+Create `routing2.q`.
+
+    
+    
+    // init stdout and log info+
+    ids:.com_kx_log.init[`:fd://stdout; `INFO];
+    .qlog:.com_kx_log.new[`qlog; ()];
+    .mon:.com_kx_log.new[`Monitor; ids!enlist `DEBUG];
+    
+    .qlog.debug["qlog debug"];
+    .mon.debug["Monitor debug"]
+    
+    if[not `debug in key .Q.opt .z.x; exit 0];
+    
+
+Create `routing3.q`.
+
+    
+    
+    file:`$":fd:///tmp/app-", string[.z.i], ".log";
+    ids:.com_kx_log.init[(`:fd://stdout; file); `DEBUG`ERROR];
+    .qlog:.com_kx_log.new[`qlog; ()];
+    
+    -1"STDOUT: \n";
+    .qlog.debug["Debug"];
+    .qlog.fatal["Fatal"];
+    
+    txt:read0 hsym `$5 _ string file;
+    
+    -1"\n\nFile: \n";
+    -1 txt;
+    
+    
+    if[not `debug in key .Q.opt .z.x; exit 0];
+    
+
+The `routing2` example shows how to route severities by component, and
+`routing3` illustrates how to configure different routings per endpoint when
+several are set up.
+
+### Message formatting
+
+It is common for log messages to include the values of variables or process
+state. These are often built into the message body. Often it is the
+responsibility of the client to do this parsing. QLog supports a token-based
+method of doing this in the APIs. The client can provide a list containing the
+message body and variables to be automatically parsed into a string.
+
+    
+    
+    q).qlog.info ("Complex list format with an int=%1 and a dict=%2"; rand 10; `a`b`c!til 3)
+    {"time":"2021-01-27T11:24:10.393z","component":"qlog","level":"INFO","message":"Complex list format with an int=9 and a dict=`a`b`c!0 1 2"}
+    
+
+The logging string should contain tokens from `%1` to `%N`, corresponding to
+the number of variables.
+
+Dictionary inputs are supported and are appended to the log message. It must
+include a `message` key for the actual log body. Other keys will be appended
+to the output.
+
+Create `formatting.q`.
+
+    
+    
+    // setup endpoints & handlers
+    .com_kx_log.init[`:fd://stdout; `];
+    .qlog:.com_kx_log.new[`qlog; ()];
+    
+    // different input formats
+    .qlog.info "Simple message";
+    .qlog.info `message`labels!("Dictionary message"; `rdb`eod);
+    .qlog.info ("Complex list format with an int=%1 and a dict=%2"; rand 10; `a`b`c!til 3);
+    .qlog.info `message`labels!(("Complex dict format with an int=%1 and a dict=%2"; rand 10; `a`b`c!til 3); `rdb`eod);
+    
+    exit 0;
+    
+
+Run the following for an example:
+
+    
+    
+    q formatting.q
+    {"time":"2021-01-27T11:24:10.392z","component":"qlog","level":"INFO","message":"Simple message"}
+    {"time":"2021-01-27T11:24:10.393z","component":"qlog","level":"INFO","message":"Dictionary message","labels":["rdb","eod"]}
+    {"time":"2021-01-27T11:24:10.393z","component":"qlog","level":"INFO","message":"Complex list format with an int=9 and a dict=`a`b`c!0 1 2"}
+    {"time":"2021-01-27T11:24:10.393z","component":"qlog","level":"INFO","message":"Complex dict format with an int=5 and a dict=`a`b`c!0 1 2","labels":["rdb","eod"]}
+    
+
+A common use case when logging is to include some metadata with logs. There
+are two types supported: correlators and service details.
+
+Service details
+
+    
+
+are set globally on the process and appended to each message
+
+Correlators
+
+    
+
+are set globally as part of an event and appended to each message
+
+For example, each incoming request would be assigned its own correlator and
+any logs emitted as part of that request would contain the same correlator.
+
+This example starts up with some basic logging, simulates receiving a request
+and shutting down. Note the `corr` field in the middle two log messages.
+
+Create `metadata.q`
+
+    
+    
+    // add endpoint configured with service details
+    .com_kx_log.configure[enlist[`serviceDetails]!enlist `service`PID!(`rdb; .z.i)]
+    .com_kx_log.init[`:fd://stdout; ()];
+    .qlog:.com_kx_log.new[`Monitor; ()];
+    
+    // startup log message
+    .qlog.info["Process initialised"]
+    
+    // incoming request sets correlator
+    .com_kx_log.setCorrelator[];
+    .qlog.info[("API request received from %1"; first 1?`2)]
+    .qlog.debug["Request complete"];
+    .com_kx_log.unsetCorrelator[];
+    
+    // shutting down
+    .qlog.info["Shutting down"]
+    
+    exit 0
+    
+    
+    
+    q metadata.q
+    {"time":"2021-01-27T11:38:17.989z","component":"Monitor","level":"INFO","message":"Process initialised","service":"rdb","PID":1}
+    {"time":"2021-01-27T11:38:17.989z","corr":"d13b7c7c-6d0f-5d56-7eb0-5e029c9f4609","component":"Monitor","level":"INFO","message":"API request received from kf","service":"rdb","PID":1}
+    {"time":"2021-01-27T11:38:17.990z","corr":"d13b7c7c-6d0f-5d56-7eb0-5e029c9f4609","component":"Monitor","level":"DEBUG","message":"Request complete","service":"rdb","PID":1}
+    {"time":"2021-01-27T11:38:17.990z","component":"Monitor","level":"INFO","message":"Shutting down","service":"rdb","PID":1}
+    
+
+### REST endpoints
+
+QLog can also log directly to the cloud applications over REST. The following
+example applications illustrate this. Each require extra parameters and they
+can be passed into the container as shown:
+
+## Summary
+
+We have seen how to build and run a basic application with QLog. We have
+introduced the concept of the logging agent.
+
+* * *
+
+[QLog documentation](overview.html)
+

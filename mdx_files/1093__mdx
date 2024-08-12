@@ -1,0 +1,707 @@
+https://code.kx.com/analyst/libraries/linter/
+
+# Linter - KX Analyst
+
+Original URL: https://code.kx.com/analyst/libraries/linter/
+
+# Static linter for q (`.qlint`)
+
+## Overview
+
+QLint is a static q/kdb code analysis tool. The software checks a wide variety
+of standard q rules, and provides the capability for users to configure and
+add rules for their code.
+
+## Basic usage
+
+    
+    
+    .qlint.lintFile "myFile.q"
+    
+
+## Rules
+
+The linter tests code for violations of one or more rules. The output of the
+linter is a table reporting broken rules, the code that violated the rule, the
+location in the code, and any additional error messages. QLint provides a
+number of default rules that cover a wide variety of potentially erroneous
+code. These rules are found in the table `.qlint.rules.defaultRules` and are
+summarized below.
+
+## Linter output
+
+The output from the linter is a table of broken rules. The columns of the
+table are described below.
+
+column | type | description  
+---|---|---  
+label | symbol | The label is the name of the rule  
+errorClass | symbol | The errorClass is the high level group that the error falls into and is one of either error, warning, or info  
+description | string | A high level description of the rule. This is set in the rules table used for linting  
+problemText | string | The text that was flagged as problematic  
+errorMessage | string | A more specific error message pertaining to the specific rule broken  
+startLine | long | The starting line where the problematic code was observed (1-indexed)  
+startCol | long | The starting column where the problematic code was observed (1-indexed)  
+endLine | long | The ending line where the problematic code was observed (1-indexed)  
+endCol | long | The ending column where the problematic code was observed (1-indexed)  
+  
+The label is the name of the rule. It is a single word containing only
+uppercase letters and underscores. This name defines the rule in the rule
+table. The _errorClass_ is the high-level category for the error. The three
+default categories are: _error_ , _warning_ , and _info_. The _error_ category
+reports significant problems with the code that will very likely lead to
+runtime or compile errors. The _warning_ category reports code that may lead
+to undesired outcomes, but is not necessarily fatal to the program. The _info_
+category indicates problems with the documentation of files. Users can create
+new rule categories by modifying `errorClass` column in the rule table
+provided to the linter. The _errorMessage_ is a more specific description of
+the broken rule and can provide additional info about the context where the
+rule is broken.
+
+## Running QLint
+
+There are many functions in the `.qlint` namespace that can be used to lint q
+code from a q process:
+
+### lintItem
+
+`.qlint.lintItem` is used to lint code fragments. As such, rules involving the
+workspace, artifact type, or artifact name are ignored.
+
+    
+    
+    .qlint.lintItem["5?0Ng";::]
+    
+    /=> label      errorClass description                                                                     problemText errorMessage startLine startCol endLine endCol
+    /=> ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    /=> FIXED_SEED warning    "Inputting a positive number into ?0Ng will result in the same seed every run." "5?0Ng"     ""           1         1        1       5
+    
+
+### lint
+
+`.qlint.lint` provides greater control over the linter's runtime parameters
+and it provides access to a greater variety of file type dependent rules than
+`.qlint.lintItem`. However, it cannot be used to run rules that require
+information about the workspace or artifact name.
+
+The fourth argument to this function is _fileType_. It represents the type of
+the file being passed to the linter. Six file types are allowed: _file,
+testfile, data, function, fragment_ , and _module_. The fileType affects what
+linter rules apply to the item and the parsing method.
+
+  * Type _file_ is parsed as a .q file.
+  * Type _testfile_ is parsed as a .quke test file.
+  * Type _module_ is parsed as a list of symbols used for handling dependencies.
+  * The other file types are parsed as q code
+
+    
+    
+    .qlint.lint["$[a;a:1;a:2;b:3];a,b";enlist ".";::;`function;""]
+    
+    /=> label                  errorClass description                                                                           problemText        errorMessage startLine startCol endLine endCol
+    /=> -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    /=> FUNCTION_START         warning    "Function artifact must start with a function"                                        "$[a;a:1;a:2;b:3]" ""           1         1        1       16
+    /=> MISSING_OVERVIEW       info       "Missing @fileOverview tag with associated description"                               ""                 ""           1         1        1       1
+    /=> MISSING_RETURNS        info       "Missing @returns tag"                                                                ""                 ""           1         1        1       1
+    /=> COND_EVENARGS          error      "Conditional $ should not be used with an even number of arguments"                   "$[a;a:1;a:2;b:3]" ""           1         1        1       16
+    /=> UNDECLARED_VAR         warning    "Undeclared variable in function will be treated as global"                           ,"a"               ""           1         3        1       3
+    /=> DECLARED_AFTER_USE     error      "The variable was declared after being used"                                          ,"a"               ""           1         5        1       5
+    /=> CONDITIONALLY_DECLARED warning    "This variable may be undefined at this point, as it was only declared conditionally" ,"b"               ""           1         20       1       20
+    
+
+### lintNS
+
+`.qlint.LintNS` will take a list of namespaces and lint all functions in them
+or any sub-namespaces. If it is given an empty list of namespaces, it will
+search all namespaces. Namespaces are identified as any dictionary with the
+null symbol as the first key, with a corresponding value of generic null
+("(::)"). This may pick up things that are not considered namespaces.
+
+This function will not lint for any of the info linter rules, since those only
+apply to documentation. It will return a table of messages similar to the
+table returned by `lintItem`.
+
+    
+    
+    ruleTable: select from .qlint.rules.defaultRules where label in `UNUSED_PARAM`FIXED_SEED;
+    .foo.bar : {[x;y] :x+1};
+    .foo.blort : {:10?0ng};
+    .qlint.lintNS[`.foo;ruleTable]
+    
+    /=> qualifiedName objType label        errorClass description                                                                    problemText errorMessage startLine startCol endLine endCol
+    /=> ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    /=> .foo.bar      function     UNUSED_PARAM warning    "This param was declared then never used"                                      ,"y"        ""           1         5        1       5
+    /=> .foo.blort    function     FIXED_SEED   warning    "Inputting a positive number into ?0Ng will result in the same seed every run" "10?0ng"    ""           1         3        1       8
+    
+
+### lintFile
+
+`.qlint.lintFile` will read and lint a file with the `.q` or `.quke`
+extension. The function takes a symbol or string as an argument, and works on
+absolute and relative paths.
+
+    
+    
+    .qlint.lintFile "foo/bar.q"
+    
+
+### lintFolder
+
+`.qlint.lintFolder` will take a folder name and recursively lint all files
+with the `.q` or `.quke` extension. The function takes a symbol or string as
+an argument, and works on absolute and relative paths.
+
+    
+    
+    .qlint.lintFolder "foo"
+    
+
+### Directory level configuration
+
+Within a directory, it is possible to configure rules using files with the
+name `lint.config`. These files can be used to activate/deactivate rules,
+change the rules `errorClass`, and configure rule parameters.
+
+The config file has a single rule on each line. The syntax is as follows (the
+regions in square brackets are optional):
+
+    
+    
+    rule : active [, errorClass [ruleparams]]
+    
+
+The _rule_ is the name of the rule to configure. These are usually linter
+rules, described in `.qlint.rules.defaultRules`. These are rules that the
+linter tests against. There are also configuration rules, described in
+`.qlint.rules.configRules`. Currently there is only one configuration rule,
+`SUPPRESS_ALL`, which can be used to deactivate all linter rules.
+
+The _active_ setting turns rules on and off. The optional _errorClass_ can
+configure the high level category of the rule, in case the user wants to
+change how the broken linter rules are interpreted.
+
+The _ruleparams_ are optional settings that can alter the behaviour of
+individual rules. These are always described in a _json_ object as so:
+
+    
+    
+    { param1 : value1, param2 : value2 }
+    
+
+Only certain parameter types are currently recognized. These are: \- long \-
+boolean (true, false) \- string list \- a string from a list of options
+
+An example is shown below:
+
+    
+    
+    { p1 : 10, p2 : true, p3 : [ "abc", "def" ], p4 : "hij" }
+    
+
+The rule definitions control the valid values for different parameters. `p1`
+would have to be a number withing a certain range, and `p4` would be one item
+from a list of potential options.
+
+See the Rule Summary below for the available rule parameters.
+
+Within an analyst workspace `lint.config` files can be found in repositories,
+modules, and folder artifacts. When using `.qlint.lintFolder`, any
+`lint.config` files found in the path will be used to configure linter rules.
+
+The `lint.config` file affects the behaviour of the linter for any artifacts
+or files with the same parent, as well as any artifacts in it's parent's
+descendants. If the parent artifact is a module, it will also affect the
+linting of its parent module.
+
+A nested `lint.config` file will inherit rules from an `lint.config` files in
+the parents. In the following example, the `folder1/folder2/lint.config` will
+inherit he configuration of the `FIXED_SEED` rule from the
+`folder1/lint.config`. As a result, the `FIXED_SEED` rule will not be run on
+`folder1/folder2/file.q`. In addition, the `UNUSED_VAR` rule will not be run
+on `file.q`, since it was deactivated in `folder1/folder2/lint.config`.
+
+  * folder1
+    * lint.config : "FIXED_SEED : false"
+    * folder2
+      * lint.config : "UNUSED_VAR : false"
+      * file.q
+
+A child `lint.config` file can overwrite a rule in the parent `lint.config`
+file by explicitly setting it. In the following directories, `FIXED_SEED` is
+used in `folder1/folder2/` but not `folder1/`.
+
+  * folder1
+    * lint.config : "FIXED_SEED : false"
+    * folder2
+      * lint.config : "FIXED_SEED : true"
+      * file.q
+
+There is one exception to the above described rule inheritance is that the
+`SUPPRESS_ALL` rule is not inherited by child `lint.config` files. When the
+`SUPPRESS_ALL` rule is activated, it will deactivate all other rules
+(equivalent to setting _active_ to false for all rules) even if the rule is
+explicitly activated. These deactivated rules will be inherited by any child
+`lint.config` files as described above (unless explicitly set by the child
+`lint.config`). However, the `SUPPRESS_ALL` rule is not inherited. This allows
+the child to use the rule by setting it to active in the child. If the
+`SUPPRESS_ALL` rule were inherited, then setting a rule in the child
+`lint.config` would not activate it because the `suppress_all` rule would
+override that configuration (as it does in directories where `SUPPRESS_ALL` is
+set).
+
+## File level rule configuration
+
+Within a file, it is possible to ignore specific rules for that file. The tag
+`@qlintsuppress` can be used in a comment to indicate which rules should be
+ignored. _Global_ and _local_ suppression are supported.
+
+To globally suppress rules, use the `@qlintsuppress` tag followed by a list of
+rules:
+
+    
+    
+    // @qlintsuppress MISSING_RETURN UNUSED_PARAM
+    
+
+To locally suppress rules, use the `@qlintsuppress` tag followed by a list of
+rules including a bracketed number indicating the number of lines to suppress
+the rule. In the example below, the MISSING_RETURN rule will be ignored for 2
+lines after the comment, while the UNUSED_PARAM rule is will be ignored for 5
+lines after the comment.
+
+    
+    
+    // @qlintsuppress MISSING_RETURN(2) UNUSED_PARAM(5)
+    
+
+Both local and global suppressions can be used together in the same comment.
+
+    
+    
+    // @qlintsuppress MISSING_RETURN UNUSED_PARAM(2)
+    
+
+In addition to the `@qlintsuppress` tag, it is possible to force utilization
+of certain rules using the `@qlintinclude` tag even if they are not included
+in the rule table provided to the linter function. In the below example, the
+tag will force the linter to include the RANDOM_GUIDS rule when linting the
+given file even if it was removed from `.qlint.rules.defaultRules` prior to
+being supplied to the linter function.
+
+    
+    
+    // @qlintinclude RANDOM_GUIDS
+    
+
+Like the `@qlintsuppress` tag, any number of rules are allowed with the given
+tag. The only rules that can be forced to be included are those in the default
+rule table.
+
+In addition to the above rule suppression and inclusion, it is possible to
+configure linter rules using the same syntax found in `lint.config` files. To
+do so, simply preface the `lint.config` syntax with the comment tag
+`@qlintrule`, as shown below:
+
+    
+    
+    // @qlintrule UNDECLARED_VAR : true, warning { globals : [ "abc", "def" ] }
+    
+
+Like a `lint.config` file, it is possible to activate/deactivate rules, set
+the _errorClass_ and configure any rule parameters. Such configuration only
+affects the file being analyzed.
+
+## Examples
+
+Examples runs of the linter are presented below.
+
+### Function example
+
+Consider the function .qlint.test1:
+
+    
+    
+    // @fileOverview function
+    // @param x {int[}
+    {[x]
+        $[1;2;5;6]
+        }
+    
+
+If .qlint.test1 were linted, the output would be:
+
+    
+    
+    Linting 1 of 1 artifact failed:
+    
+    error : 1
+       COND_EVENARGS
+          Description : Conditional $ should not be used with an even number of arguments
+          .qlint.test1
+             (4:4) Problem Text: "$[1;2;5;6]"
+    warning : 1
+       UNUSED_PARAM
+          Description : This param was declared then never used
+          .qlint.test1
+             (3:2) Problem Text: "x"
+    info : 2
+       MISSING_RETURNS
+          Description : Missing @returns tag
+          .qlint.test1
+             (1:0) Problem Text: ""
+       QDOC_TYPE
+          Description : Invalid type in tag
+          .qlint.test1
+             (2:12) Problem Text: "int["
+                    Error Message: "Expected end of input, but found "[""
+    
+
+Clicking on the line with the problem text will open the failing file at the
+location where the problem text was found.
+
+### Suppression example
+
+If .qlint.test1 is modified to include a `@qlintsuppress` tag, this could be
+the file:
+
+    
+    
+    // @fileOverview function
+    // @qlintsuppress QDOC_TYPE MISSING_RETURNS
+    // @param x {int[}
+    {[x]
+        $[1;2;5;6]; //@qlintsuppress COND_EVENARGS(0)
+        $[3;4;7;8];
+        }
+    
+
+If .qlint.test1 were linted, the output would be:
+
+    
+    
+    Linting 1 of 1 artifact failed:
+    
+    error : 1
+       COND_EVENARGS
+          Description : Conditional $ should not be used with an even number of arguments
+          .qlint.test1
+             (6:4) Problem Text: "$[3;4;7;8]"
+    warning : 1
+       UNUSED_PARAM
+          Description : This param was declared then never used
+          .qlint.test1
+             (4:2) Problem Text: "x"
+    
+
+In this example, the QDOC_TYPE and MISSING_RETURN info rules have been ignored
+due to a global suppression. Furthermore, there is a local suppression of the
+DOLLARIF_EVENARGS rule. The incorrect conditional on line 5 is ignored, but
+the one on line 6 is not, since this rule was only suppressed locally.
+
+### Q file example
+
+Consider the following file, .qlint/any.q:
+
+    
+    
+    abc:1 2 3
+     abc+1
+    def: 1 2 3
+    def+1
+    
+    select a,'b from t
+     where 1b, 0b
+    
+
+The output of linting this file would be:
+
+    
+    
+    Linting 1 of 1 artifact failed:
+    
+    error : 1
+       DECLARED_AFTER_USE
+          Description : The variable was declared after being used
+          .qlint/any.q
+             (1:0) Problem Text: "abc"
+    warning : 3
+       UNDECLARED_VAR
+          Description : Undeclared variable in function will be treated as global
+          .qlint/any.q
+             (2:1)  Problem Text: "abc"
+             (6:17) Problem Text: "t"
+       UNPARENTHESIZED_JOIN
+          Description : A potential join in this QSQL statement will be interpreted as separate statements unless wrapped in parentheses
+          .qlint/any.q
+             (6:0) Problem Text: "select a,'b from t
+                                   where 1b, 0b"
+    
+
+Note that this file does not violate the RESERVED_NAME rule even though the
+name of the file is "any". This is because this is a file, not a function or
+data artifact. Note also that only the "abc" variable is identified as being
+declared after use. This is because in .q files, when loaded with `\l`, any
+non-whitespace character at the start of a line is treated as a statement
+delimiter.
+
+### Quke file example
+
+Consider the following quke file, .qlint/test.quke:
+
+    
+    
+    feature
+            expect
+                1b
+        bench
+            behaviour
+                til 1
+            timelimit
+                notatimelimit
+    
+
+The output of linting this file would be:
+
+    
+    
+    Linting 1 of 1 artifact failed:
+    
+    error : 4
+        INVALID_QUKE
+           Description : A quke file was improperly formatted
+           .qlint/test.quke
+              (1:0)  Problem Text: "feature"
+                     Error Message: "incorrect token in feature block"
+              (2:8)  Problem Text: "expect"
+                     Error Message: "expect statement in feature block is in improper location"
+              (3:12) Problem Text: "1b"
+                     Error Message: "function statement in feature block is in improper location"
+              (7:8)  Problem Text: "timelimit"
+                     Error Message: "only single number allowed in timelimit"
+    
+
+## Rule summary
+
+label | error class | description | rule params  
+---|---|---|---  
+ASSIGN_RESERVED_WORD | error | Assignment to a reserved word |   
+COND_EVENARGS | error | Conditional $ should not be used with an even number of arguments |   
+DECLARED_AFTER_USE | error | The variable was declared after being used |   
+GLOBAL_PEACH | error | Modifying globals inside a peach statement is not allowed |   
+INVALID_ADVERB | error | A binary adverb cannot be applied to a unary function |   
+INVALID_ASSIGN | error | Attempt to assign to a string, symbol, or number |   
+INVALID_ESCAPE | error | Invalid Escape Sequence: Valid escape sequences are: \n,\r,\t,/,\,\/ and three digit octal sequences \377 or smaller |   
+INVALID_QUKE | error | A quke file was improperly formatted |   
+OVERWRITE_ARTIFACT | error | Variable assignment overwrites namespace or artifact |   
+STATEMENT_IN_EXPR | error | If, while, or do statement used in expression, possible missing semicolon |   
+RESERVED_NAME | error | File has reserved name |   
+TOO_MANY_CONSTANTS | error | Too many constants in a function | kdb_ver : The function limits depend on the kdb version. Must be one of "process", "kdb3.4", "kdb3.5", "kdb3.6". Defaults to the version running the process  
+TOO_MANY_GLOBALS | error | Too many globals in a function | kdb_ver : The function limits depend on the kdb version. Must be one of "process", "kdb3.4", "kdb3.5", "kdb3.6". Defaults to the version running the process  
+TOO_MANY_LOCALS | error | Too many locals in a function | kdb_ver : The function limits depend on the kdb version. Must be one of "process", "kdb3.4", "kdb3.5", "kdb3.6". Defaults to the version running the process  
+UNINDENTED_CODE | error | Any multiline expression must be indented after the first line |   
+BACKWARD_COMPATIBILITY | warning | This function has backward compatibility issues with kdb versions less than 3.6 | kdb_ver : The function limits depend on the kdb version. Must be one of "process", "kdb3.4", "kdb3.5", "kdb3.6". Defaults to the version running the process  
+CAST_TYPE_NUMERICAL | warning | Casting using a short to indicate cast type is unnecessarily unclear. Another form is advised |   
+CONDITIONALLY_DECLARED | warning | This variable may be undefined at this point, as it was only declared conditionally |   
+DEBUG_FUNCTION | warning | eval, or value when run on a string literal |   
+DEPRECATED_DATETIME | warning | Datetime has been deprecated |   
+DEPRECATED_FUNCTION | warning | This file uses a deprecated function |   
+EMPTY_IF | warning | If statement lacks code to execute |   
+FIXED_SEED | warning | Inputting a positive number into ?0Ng will result in the same sequence every run |   
+FUNCTION_START | warning | Function artifact must start with a function |   
+INSUFFICIENT_INDENT | warning | Indentation must be equal to or greater than the second line of the function body, and the second line must have an indentation greater than the first line | tab_size : Specifies the number of spaces equivalent to a tab character  
+INTERNAL | warning | Reference to an internal api of another module |   
+INVALID_FUNCTION | warning | Function artifacts must be lambda definitions, rather than projections, immediately invoked functions, or functions in expressions |   
+MALFORMED_SUPPRESSION | warning | Malformed @qlintsuppress tag |   
+MISSING_DEPENDENCY | warning | Any reference to another namespace should be listed in the dependency list | globals : A list of global dependencies known to the workspace  
+NAME_COLLISION | warning | Executing statement in editor could overwrite global variable |   
+NEED_EXPLICIT_RETURN | warning | Explicit return needed. Otherwise will return generic null |   
+POSSIBLE_RETURN | warning | Assignment statement looks like return |   
+UNDECLARED_VAR | warning | Undeclared variable in function will be treated as global | globals : A list of global variables in the file that should not be marked as UNDECLARED_VAR   
+presearch_globals : Determines if the linter searches the file for any global
+variables defined in the file when determining undeclared variables. If this
+parameter is true, then variables in functions that match global variables
+defined anywhere in the file are not marked as an UNDECLARED_VAR. Otherwise
+global variables must be declared prior to the use of the variable, or the
+variable will be marked as an UNDECLARED_VAR  
+UNUSED_INTERNAL | warning | This function is marked as internal (is part of a sub-namespace i) but was never used within the namespace |   
+UNUSED_PARAM | warning | This param was declared then never used | ignore : A list of unused function parameters to not raise warnings for in this file. This applies to all functions in the file  
+UNUSED_VAR | warning | This variable was declared then never used |   
+RANDOM_GUIDS | warning | Multiple calls to ?0ng in quick succession, with negative numbers, can produce the same output |   
+UNREACHABLE_CODE | warning | A preceding return prevents this statement from being reached |   
+UNEXPECTED_COND_NEWLINE | warning | Condition should begin on same line as loop or if statement |   
+UNPARENTHESIZED_JOIN | warning | A potential join in this QSQL statement will be interpreted as separate statements unless wrapped in parentheses |   
+VAR_Q_ERROR | warning | Variable name the same as q error message. This can cause ambiguous error messages |   
+MISSING_SEMICOLON | warning | An apply statement spans multiple lines with the same indentation and an assignment on the second line, potentially indicating a missing semi-colon |   
+MALFORMED_RULE | warning | Malformed @qlintrule tag |   
+TODO | warning | Todo qDoc tag present |   
+LINE_LENGTH | warning | Maximum line length exceeded | max_length : Maximum line length, must be greater than 1  
+DEFAULT_QDOC | info | The file has the default documentation |   
+INVALID_KIND | info | Invalid qdoc kind in tag |   
+INVALID_TYPEDEF | info | Invalid typedef tag |   
+INVALID_TAG | info | Tag not recognized as valid qDoc tag |   
+MISSING_OVERVIEW | info | Missing @fileOverview tag with associated description |   
+MISSING_RETURNS | info | Missing @returns tag |   
+MISSING_TYPE | info | Missing type in returns or param tag |   
+MULTIPLE_RETURNS | info | Multiple @returns tags |   
+OUT_OF_ORDER_PARAM | info | Parameters out of order |   
+PARAM_NOT_IN_CODE | info | This param is not in the function |   
+QDOC_TYPE | info | Invalid type in tag |   
+REDUNDANT_GLOBAL_ASSIGN | info | Using the global amend operator on a fully qualified name is redundant |   
+UNDOCUMENTED_PARAM | info | Undocumented parameter |   
+UNUSED_DEPENDENCY | info | Unused dependencies |   
+  
+## .qlint.lint
+
+Lints an entire segment of q code and reports any issues.
+
+This function provides access to a greater variety of rules than
+.qlint.lintItem such as those that only run on files. It cannot be used to run
+rules relating to the workspace or requiring the artifact name.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+code | string | The code to be linted.  
+context | string | The context in which the variable is defined.  
+ruleTable | [ .qlint.ty.ruleTable ](../overview-typedefs/#qlinttyruletable) | null | A table of rules. Generic null (::) uses the default rule table.  
+fileType | symbol | The type of file to be run on. Can be any `of `file`testfile`data`function`fragment`. This is not necessarily the same as objType in a workspace.  
+dependencyList | string | A list of symbols indicating the contexts that are referenced.  
+  
+**Returns:**
+
+**Example:** Lint a function artifact
+
+    
+    
+     .qlint.lint["$[a;a:1;a:2;b:3];a,b";enlist ".";::;`function;""]
+    
+     /=> label                  errorClass description                                                                           problemText        errorMessage startLine startCol endLine endCol
+     /=> -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+     /=> FUNCTION_START         warning    "Function artifact must start with a function"                                        "$[a;a:1;a:2;b:3]" ""           1         1        1       16    
+     /=> MISSING_OVERVIEW       info       "Missing @fileOverview tag with associated description"                               ""                 `            1         1        1       1    
+     /=> MISSING_RETURNS        info       "Missing @returns tag"                                                                ""                 ""           1         1        1       1     
+     /=> COND_EVENARGS          error      "Conditional $ should not be used with an even number of arguments"                   "$[a;a:1;a:2;b:3]" ""           1         1        1       16    
+     /=> UNDECLARED_VAR         warning    "Undeclared variable in function will be treated as global"                           ,"a"               ""           1         3        1       3    
+     /=> DECLARED_AFTER_USE     error      "The variable was declared after being used"                                          ,"a"               ""           1         5        1       5     
+     /=> CONDITIONALLY_DECLARED warning    "This variable may be undefined at this point, as it was only declared conditionally" ,"b"               ""           1         20       1       20   
+    
+
+## .qlint.lintFile
+
+Lints a .q or .quke file and reports any issues.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+path | string | symbol | The file path  
+  
+**Returns:**
+
+**Example:** Lint a file
+
+    
+    
+     .qlint.lintFile `file.q
+    
+
+## .qlint.lintFolder
+
+Lints all .q or .quke files in a folder and reports any issues.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+path | string | symbol | null | The folder path or null. Null is replaced with the '.' namespace  
+  
+**Returns:**
+
+**Example:** Lint a folder
+
+    
+    
+     .qlint.lintFolder `folder
+    
+
+## .qlint.lintItem
+
+Lints a sample of q code and reports any issues.
+
+Since this function is linting on a code fragment, rules involving variable
+tracking, file context references, and namespace dependency are ignored. It
+will also not test rules that require information on the workspace or artifact
+name. The fileType is `fragment.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+code | string | Code to be linted.  
+ruleTable | [ .qlint.ty.ruleTable ](../overview-typedefs/#qlinttyruletable) | null | A table of rules. Generic null (::) uses the default rule table.  
+  
+**Returns:**
+
+**Example:** Lint a q string
+
+    
+    
+     .qlint.lintItem["5?0Ng";::]
+    
+     /=> label      errorClass description                                                                     problemText errorMessage startLine startCol endLine endCol
+     /=> ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+     /=> FIXED_SEED warning    "Inputting a positive number into ?0Ng will result in the same seed every run." "5?0Ng"     ""           1         1        1       5     
+    
+
+## .qlint.lintNS
+
+Lints one or more namespaces.
+
+Namespaces are determined as any dictionary containing the key-value pair (`;
+::). This may pick up things that are not considered namespaces. If namespaces
+is null, it will search all namespaces.
+
+If an empty list is passed as a rule table, then the default rules will be
+used. Any rules checking for dependency will be ignored. Wrong dependencies
+are IDE-specific and cannot be determined by examining the namespace. In
+addition, it will not lint for any of the info linter rules, since those only
+apply to documentation. It returns a table of messages similar to the table
+returned by lintItem.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+namespaces | symbol[] | symbol | null | The names of the namespaces you want to lint. If you enter in null it will lint all namespaces excluding single letter namespaces.  
+ruleTable | [ .qlint.ty.ruleTable ](../overview-typedefs/#qlinttyruletable) | null | A table of rules or (::) to indicate a default list should be used  
+  
+**Returns:**
+
+**Example:**
+
+    
+    
+     ruleTable: select from .qlint.rules.defaultRules where label in `UNUSED_PARAM`FIXED_SEED;
+     .foo.bar : {[x;y] :x+1};
+     .foo.blort : {:10?0ng};
+     .qlint.lintNS[`.foo;ruleTable]
+    
+     /=> qualifiedName objType label        errorClass description                                                                    problemText errorMessage startLine startCol endLine endCol
+     /=> ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+     /=> .foo.bar      function     UNUSED_PARAM warning    "This param was declared then never used"                                      ,"y"        ""           1         5        1       5
+     /=> .foo.blort    function     FIXED_SEED   warning    "Inputting a positive number into ?0Ng will result in the same seed every run" "10?0ng"    ""           1         3        1       8
+    
+
+## .qlint.lintWorkspace
+
+Lint the artifacts in a table (not a workspace, despite the name)
+
+**Parameter:**
+
+**Returns:**
+
+## .qlint.linterSchema
+
+The schema for the linter results
+

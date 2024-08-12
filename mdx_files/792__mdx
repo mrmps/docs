@@ -1,0 +1,107 @@
+https://code.kx.com/platform/stream/dw_runtime_management/
+
+# Runtime management - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/stream/dw_runtime_management/
+
+# Runtime management
+
+During the build process it will be necessary to modify and diagnose problems
+with created process instances.
+
+## View instances and service classes
+
+View instances/service classes in the Process Library Status viewer at the top
+of the screen. The viewer contains a list of all the workflows, instances,
+service classes and tasks in the system.
+
+![Screenshot](../img/stream/processviewerserviceclass.png)
+
+To locate the previously created service classes under the `kxw` naming
+convention, first filter the list; Enter `kxw` at the top of the Service
+column.
+
+![Screenshot](../img/stream/processviewerserviceclassfiltered.png)
+
+From here you can view the log file of the running service class instance :
+right-click the runnning `kx_rdb` instance and select the _Show partial log_
+option. This will open a pane containing the log file.
+
+![Screenshot](../img/stream/serviceclassviewpartiallogs.png)
+
+The log pane will contain information similar to the log below. These logs are
+used extensively to diagnosis problems with the configuration.
+
+![Screenshot](../img/stream/serviceclasspartiallogs.png)
+
+Old log files can be viewed even if the service class is not running. In the
+History tab, right-click on an older instance (e.g. one that has finished)and
+select Show Partial Log.
+
+![Screenshot](../img/stream/serviceclasspreviouspartiallogs.png)
+
+## Inspect instances
+
+_KX Control_ comes with an interactive development environment (IDE) called
+[_KX Analyst_](https://code.kx.com/analyst/). _KX Analyst_ can be used to
+inspect processes and service class instances, modify processes and develop
+programs. To open the IDE, right-click on the `kxw_rdb` instance in the
+_Process Library Status_ viewer and select _Connect_ from the context menu.
+
+_KX Analyst_ (IDE Lite Version) will open in a separate tab in local view.
+
+![Screenshot](../img/stream/serviceclassides.png)
+
+The _(Global)_ list contains the global functions, tables, lists, etc that are
+running in the process.
+
+By default, a _Scratchpad_ should be available in which code snippets may be
+evaluated.
+
+Type `tables[]` into the pad and right click on the text and choose the
+`Display` option or use the `ctrl + d` keyboard shortcut. In the console
+window you should see the tables available to the process and the tables we
+defined earlier `monCPU`, `monAvgLoad`, `monDisk`, `monMem`.
+
+![Screenshot](../img/stream/serviceclasstable.png)
+
+The IDE provides a range of code-development options. See the [_KX
+Analyst_](https://code.kx.com/analyst/) documentation for details.
+
+## Change instances
+
+Changes to the system will not generally take effect until the affected
+service class is restarted. There are some exceptions:
+
+  * Some configuration parameter changes are automatically pushed to running processes
+  * Entitlement changes are automatically pushed to running processes
+
+## Shut down instances
+
+Service class instances can be shut down from the _Process Library Status_
+viewer or the service class context menu in the tree. In the _Process Library
+Status_ viewer or the tree, right-click on the instance and select _Stop >
+Shut Down Q Process_.
+
+## Stop warehouse
+
+Similar to the [Run Warehouse](../dw_runtime/#runwarehouse), there is a script
+to stop all of the service classes created at once provided in the [Warehouse
+Appendix](../dw_appendix/#stopservicescsvsh).
+
+  * It reads the same [CSV](../dw_appendix/#systemcsv) file as the start up script.
+  * To run script use this command:
+
+    
+    
+     ./stopServicesCSV.sh ../config/system.csv
+    
+
+## Kill instances
+
+Service class instances can be killed rather than shut down gracefully. In the
+_Process Library Status_ viewer or the tree, right-click on the instance and
+select _Stop > Kill-9_. If automated restarts are set up upon failure, then
+the process will restart automatically. A message will appear in the status
+bar.
+

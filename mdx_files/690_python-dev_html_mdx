@@ -1,0 +1,177 @@
+https://code.kx.com/insights/enterprise/analysis/python-dev.html
+
+# Developing using Python - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/analysis/python-dev.html
+
+# Developing using Python
+
+When analyzing your data retrieved from the kdb Insights Enterprise database
+you have two options for the language which can be used for this analysis, q
+or Python. This page outlines the functionality available when using Python
+specifically, if you are developing principally in q see [here](q-dev.html).
+
+The Python environment provided by the scratchpads provides you with a self-
+contained location unique to you which allows you to assign variables and
+produce analyses that are visible only to you.
+
+It is important to note that use of the q language version of the scratchpad
+will be indicated by the highlighting of the `Python` language within the
+scratchpad dialog as seen in the bottom right of the image below.
+
+![Python language](img/python_scratchpad.png)
+
+This page will guide you through the execution of code and the APIs which are
+provided with the scratchpad by default. These can help you accelerate the
+development of your enterprise workflows, these include the following at
+present.
+
+For information relating to the visualization of data and console output
+within the scratchpad see [here](../visualization/query.html).
+
+## Executing code
+
+When executing code within the scratchpad there are a number of important
+points you should be aware of:
+
+  1. Use of the "Run Scratchpad" button will result in all code in the scratchpad code window being executed
+  2. Use of `Cmd + Enter` or `ctrl + Enter`, depending on OS, allows you to execute single lines of code or multi-line highlighted code blocks
+
+## Available Python Libraries
+
+The scratchpad does not support bringing your own Python library functionality
+at this time, as a result you are limited to using only the libraries
+currently installed within the scratchpad image, the full list of requirements
+can be downloaded [here](files/requirements.txt), the following is a selection
+of the most important data-science libraries included:
+
+library | version  
+---|---  
+beautifulsoup4 | 4.11.1  
+h5py | 3.7.0  
+keras | 2.9.0  
+kxi | 1.4.0  
+kxi.ml | 1.4.0  
+kxi.packages | 1.4.0  
+numpy | 1.22.4  
+pandas | 1.4.1  
+pykx | 2.3.2  
+pytz | 2022.6  
+scikit-learn | 1.0.2  
+scipy | 1.7.3  
+spacy | 3.4.1  
+statsmodels | 0.13.1  
+tensorflow-cpu | 2.9.1  
+xgboost | 1.6.2  
+  
+## Interacting with custom code
+
+Through the use of [Packages](../packaging/index.html) it is possible for you
+to add custom code to kdb Insights Enterprise for use within the Stream
+Processor when adding custom streaming analytics or the Database for adding
+custom queries. The scratchpad also has access to these APIs allowing you to
+[load custom code](../../api/packaging/python/packages.html) and access [user
+defined functions](../../api/packaging/python/udfs.html) when prototyping
+workflows for the Stream Processor or development of analytics for custom
+query APIs.
+
+The following shows an example of a scratchpad workflow which utilizes both
+the packages and UDF APIs available within the scratchpad.
+
+![python packages functionality](img/python_scratchpad_packages.png)
+
+## Developing machine learning workflows
+
+The scratchpad has access to a variety of machine learning libraries developed
+by the Python community and by KX over the last number of years. In particular
+you have access to the [KX ML Python library](../../api/machine-
+learning/python/registry/index.html) to access it's Model Registry
+functionality as well as access to some of the most commonly used machine
+learning and NLP Python libraries:
+
+The following example shows how you can use some of this functionality to
+preprocess data, fit a machine learning model and store this ephemerally
+within your scratchpad session. (Note that the storage of models in this way
+will result in the models being lost at restart of the scratchpad pod.)
+
+![python ml functionality](img/python_scratchpad_ml.png)
+
+Code snippet for ML scratchpad example
+
+The following provides the equivalent code snippet the screenshot above
+allowing you to replicate it's behavior yourself:
+
+    
+    
+    import pandas as pd
+    from sklearn.linear_model import LinearRegression
+    import pykx as kx
+    import kxi.ml as ml
+    ml.init()
+    
+    # Generate random q data converting to Pandas
+    raw_q_data = kx.q('([]asc 100?1f;100#50f;100?1f;y:desc 100?1f)')
+    raw_pd_data = raw_q_data.pd()
+    
+    features = raw_pd_data.get(['x', 'x1', 'x2'])
+    target = raw_pd_data['y']
+    
+    # Remove columns of zero variance
+    data = features.loc[:, features.var() != 0.0]
+    data
+    
+    # Fit a model and produce predictions against original data
+    model = LinearRegression(fit_intercept=True).fit(data, target)
+    predictions = model.predict(data)
+    
+    # Create a new ML Registry and add model to the temporary registry
+    ml.registry.new.registry('/tmp')
+    ml.registry.set.model(model, 'skmodel', 'sklearn', '/tmp')
+    
+    # Retrieve and use the model validating it is equivalent to persisted model
+    saved_model = ml.registry.get.predict('/tmp', model_name = 'skmodel')
+    all(saved_model(data) == model(data))
+    
+
+## Including q code in Python development
+
+Should your workflow require it, it is possible to tightly integrate q code
+and analytics within your Python code through the use of
+[PyKX](https://code.kx.com/pykx). This library is included as part of the
+scratchpad by default and provides you with the ability to develop analytics
+in q to operate on your Python or q data.
+
+By default the returned data from database queries following the [querying
+databases](query.html) guide will be a `PyKX` object rather than a Pandas
+DataFrame, as such you may find it more efficient to complete data
+transformations and analysis using q via PyKX before converting to
+Pandas/Numpy for further development.
+
+The following basic example shows usage of the PyKX interface to interrogate
+data prior to conversion to Pandas:
+
+![Python q scratch](img/python_scratchpad_q.png)
+
+Code snippet for PyKX usage within Python scratchpad
+
+The following provides the equivalent code snippet the screenshot above
+allowing you to replicate it's behavior yourself:
+
+    
+    
+    import pandas as pd
+    import pykx as kx
+    
+    # Generate random q data
+    qtab = kx.q('([]sym:100?`AAPL`MSFT`GOOG;prx:10+100?1f;vol:100+100?10000)')
+    
+    # Query data using sql statement to retrieve AAPL data only
+    aapl = kx.q.sql("SELECT * from $1 where sym='AAPL'", qtab)
+    
+    # Calculate vwap for stocks based on symbol
+    vwap = kx.q.qsql.select(qtab, {'price' : 'vol wavg prx'}, by='sym')
+    
+    # Convert vwap data to Pandas
+    vwap.pd()
+    
+

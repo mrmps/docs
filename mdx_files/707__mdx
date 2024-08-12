@@ -1,0 +1,312 @@
+https://code.kx.com/platform/stream/custom-jrxml/
+
+# Custom JRXMLs - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/stream/custom-jrxml/
+
+# Write custom JRXMLs
+
+Custom JRXML definitions provide a large range of possibilities for formatting
+and manipulating the report dataset.
+
+There are six main sections in a JRXML file:
+
+  1. Styles
+  2. Parameters, fields, variables
+  3. Title
+  4. Page header
+  5. Detail
+  6. Footers
+
+## Styles
+
+Style definitions are simple XML elements used to define font, background
+color, etc.
+
+    
+    
+    <style name="Verdana_Bold" isDefault="false" 
+        fontName="Verdana" fontSize="5" 
+        isBold="true" isItalic="false" isUnderline="false" isStrikeThrough="false"
+        />
+    
+
+Style definitions can then be referenced elsewhere in the document.
+
+    
+    
+    <reportElement style="Verdana_Bold" mode="Opaque" 
+        x="0" y="0" width="80" height="35" 
+        forecolor="#FFFFFF" backcolor="#042275"
+        />
+    
+
+## Parameters, fields, variables
+
+### Parameters
+
+The JRXML file can use the values of action analytic parameters. For example,
+if a report has a `filename` analytic parameter then we declare the field name
+as follows:
+
+    
+    
+    <parameter name="filename" class="java.lang.String"/>
+    
+
+Note that the type of the parameter defined here must match the actual type of
+the analytic parameter. The parameter can then be referenced in the JRXML doc
+using `$P{paramName}`.
+
+    
+    
+    <textFieldExpression class="java.lang.String">
+        <![CDATA[$P{filename}]]>
+    </textFieldExpression>
+    
+
+The above `textFieldExpression` would evaluate to the value of the `filename`
+parameter passed to the Document Generator.
+
+### Fields
+
+The report dataset columns are referenced by means of field definition.
+
+    
+    
+    <field name="fillPrcnt" class="java.lang.Integer"/>
+    
+
+The value of this field (for the current data row) can then be referenced
+using the expression `$F{fillPrcnt}`.
+
+### Variables
+
+Variables can be set, and then read elsewhere in the document.
+
+    
+    
+    <textarea rows="5****" cols="80" style="border:none;">
+    <variable name="sumRequests" class="java.lang.Long" calculation="Sum">
+            <variableExpression><![CDATA[$F{requests}]]></variableExpression>
+            <initialValueExpression><![CDATA[0]]></initialValueExpression>
+    </variable>
+    </textarea>
+    
+
+The above defines a variable `sumRequests` whose value is the sum of all
+values in the `requests` column.
+
+The variable can then be read elsewhere in the JRXML using the expression
+`$V{sumRequests}`.
+
+## Title
+
+The Title section defines the appearance and structure of the overall document
+title, which will be displayed at the top of the first page.
+
+    
+    
+    <textarea rows="28" cols="100" style="border:none;">
+        <band height="100">
+            <image scaleImage="FillFrame">
+                <reportElement x="0" y="5" width="50" height="40"/>
+                <graphicElement/>
+                <imageExpression class="java.lang.String">
+                    <![CDATA["FDlogo.jpg"]]>
+                </imageExpression>
+                <hyperlinkTooltipExpression>"FD Logo"</hyperlinkTooltipExpression>
+            </image>
+            <line><reportElement x="0" y="0" width="575" height="1"/></line>
+            <textField isBlankWhenNull="true" bookmarkLevel="1">
+                <reportElement style="Verdana_Normal" 
+                    x="0" y="10" width="485" height="30"/>
+                <textElement textAlignment="Center"><font size="22"/></textElement>
+                <textFieldExpression class="java.lang.String">
+                    <![CDATA["Taker Daily Report"]]>
+                </textFieldExpression>
+                <anchorNameExpression><![CDATA["Title"]]></anchorNameExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement style="Verdana_Normal" 
+                    x="0" y="40" width="485" height="20"/>
+                <textElement textAlignment="Center"><font size="8"/></textElement>
+                <textFieldExpression class="java.lang.String">
+                    <![CDATA[$P{Date}.toString()]]>
+                </textFieldExpression>
+            </textField>
+        </band>
+    </textarea>
+    
+
+The above JRXML will generate a title that looks like this:
+
+![Screenshot](../img/reporting/dxdailytakertitle.pdf.png)
+
+The example above shows how an image element can be incorporated. Note that
+the image file (`FDLogo.jpg` in this case) must be located on the Document
+Generator’s classpath.
+
+Also note how the example uses the value of the analytic parameter `Date` to
+generate a dynamic sub-heading.
+
+The `pageHeader` section defines the content and appearance of the headings
+that appear at the top of the results table on each page. An example (partial)
+header:
+
+    
+    
+    <textarea rows="24" cols="100" style="border:none;">
+    <pageHeader>
+        <band height="35">
+            <staticText>
+                <reportElement style="Verdana_Bold" mode="Opaque" 
+                    x="0" y="0" width="80" height="35" 
+                    forecolor="#FFFFFF" backcolor="#042275"/>
+                <textElement textAlignment="Center"/>
+                <text><![CDATA[Taker]]></text>
+            </staticText>
+            <staticText>
+                <reportElement style="Verdana_Bold" mode="Opaque" 
+                    x="80" y="0" width="80" height="35" 
+                    forecolor="#FFFFFF" backcolor="#042275"/>
+                <textElement textAlignment="Center"/>
+                <text><![CDATA[Pool]]></text>
+            </staticText>
+            <staticText>
+                <reportElement style="Verdana_Bold" mode="Opaque" 
+                    x="160" y="0" width="35" height="35" 
+                    forecolor="#FFFFFF" backcolor="#042275"/>
+                <textElement textAlignment="Center"/>
+                <text><![CDATA[EUR/USD]]></text>
+            </staticText> 
+            …
+        </band>
+     </pageHeader> 
+    </textarea>
+    
+
+## Detail
+
+This section defines the format and content of each row in the displayed
+table.
+
+The `x` values of each element here should match the `x` values in the
+`pageHeader` section; otherwise the data will be misaligned.
+
+    
+    
+    <textarea rows="35" cols="100" style="border:none;">
+        <detail>
+            <band height="10">
+                <textField isStretchWithOverflow="true">
+                    <reportElement x="0" y="0" width="80" height="10"/>
+                    <box leftPadding="10" rightPadding="10">
+                        <topPen lineWidth="0.5"/>
+                        <leftPen lineWidth="0.5"/>
+                        <bottomPen lineWidth="0.5"/>
+                    </box>
+                    <textElement verticalAlignment="Middle"/>
+                    <textFieldExpression class="java.lang.String">
+                        <![CDATA[$F{taker}]]>
+                    </textFieldExpression>
+                </textField>
+                <textField isStretchWithOverflow="true">
+                    <reportElement x="80" y="0" width="80" height="10"/>
+                    <box leftPadding="10" rightPadding="10">
+                        <leftPen lineWidth="0.5"/>
+                        <bottomPen lineWidth="0.5"/>
+                    </box>
+                    <textElement verticalAlignment="Middle"/>
+                    <textFieldExpression class="java.lang.String">
+                        <![CDATA[$F{pool}]]>
+                    </textFieldExpression>
+                </textField>
+                <textField isStretchWithOverflow="true">
+                    <reportElement x="160" y="0" width="35" height="10"/>
+                    <box leftPadding="10" rightPadding="10">
+                        <leftPen lineWidth="0.5"/>
+                        <bottomPen lineWidth="0.5"/>
+                    </box>
+                    <textElement verticalAlignment="Middle"/>
+                    <textFieldExpression class="java.lang.Double">
+                        <![CDATA[Math.round($F{EUR/USD}*1000.00)/10000.0]]>
+                    </textFieldExpression>
+                </textField>
+                …
+            </band>
+        </detail>
+    </textarea>
+    
+
+Note how the third element above makes use of the Java `Math.round` method. In
+general, any Java expression can be used in JRXML expressions.
+
+There are typically two footer sections, a `pageFooter` displayed at foot of
+every page and a `lastPageFooter` displayed once at the end of the document.
+Below is a typical example, which illustrates use of built-in
+[JasperReport](https://community.jaspersoft.com/project/jasperreports-library)
+variables `PAGE_NUMBER` and `REPORT_COUNT`:
+
+    
+    
+    <textarea rows="46" cols="100" style="border:none;">
+        <pageFooter>
+            <band height="40">
+                <line><reportElement x="0" y="10" width="515" height="1"/></line>
+                <textField>
+                    <reportElement x="200" y="20" width="80" height="10"/>
+                    <textElement textAlignment="Right"/>
+                    <textFieldExpression class="java.lang.String">
+                        <![CDATA["Page " 
+                            + String.valueOf($V{PAGE_NUMBER}) 
+                            + " of"]]>
+                    </textFieldExpression>
+                </textField>
+                <textField evaluationTime="Report">
+                    <reportElement x="280" y="20" width="75" height="10"/>
+                    <textElement/>
+                    <textFieldExpression class="java.lang.String">
+                        <![CDATA[" " + String.valueOf($V{PAGE_NUMBER})]]>
+                    </textFieldExpression>
+                </textField>
+            </band>
+        </pageFooter>
+        <lastPageFooter>
+            <band height="60">
+                <textField bookmarkLevel="1">
+                    <reportElement x="0" y="10" width="515" height="10"/>
+                    <textElement textAlignment="Center"/>
+                    <textFieldExpression class="java.lang.String">
+                        <![CDATA["There were " 
+                            + String.valueOf($V{REPORT_COUNT}) 
+                            + " address records on this report."]]>
+                    </textFieldExpression>
+                    <anchorNameExpression><![CDATA["Summary"]]></anchorNameExpression>
+                </textField>
+                <line><reportElement x="0" y="30" width="515" height="1"/></line>
+                <textField>
+                    <reportElement x="200" y="40" width="80" height="10"/>
+                    <textElement textAlignment="Right"/>
+                    <textFieldExpression class="java.lang.String">
+                        <![CDATA["Page " + String.valueOf($V{PAGE_NUMBER}) + " of"]]>
+                    </textFieldExpression>
+                </textField>
+                <textField evaluationTime="Report">
+                    <reportElement x="280" y="40" width="75" height="10"/>
+                    <textElement/>
+                    <textFieldExpression class="java.lang.String">
+                        <![CDATA[" " + String.valueOf($V{PAGE_NUMBER})]]>
+                    </textFieldExpression>
+                </textField>
+            </band>
+        </lastPageFooter>
+    </textarea>
+    
+
+A large range of other features are available including: conditional styles,
+grouping, sub-reports, and summary cross-tabs. They are beyond the scope of
+this document – see [online JasperReports
+documentation](https://community.jaspersoft.com/project/jasperreports-library)
+for more details.
+

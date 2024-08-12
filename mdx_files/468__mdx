@@ -1,0 +1,281 @@
+https://code.kx.com/analyst/editor/
+
+# Editor - KX Analyst
+
+Original URL: https://code.kx.com/analyst/editor/
+
+# Text Editor
+
+The Text Editor is used to create and edit q functions, q data initializers,
+and small text files. Before we look at the editor in detail, let’s examine
+the difference between q functions, q data initializers, and files.
+
+## Q functions
+
+These contain q function definitions that are referenced by name in other
+functions. Q functions are created by selecting a module and picking _New >
+Function…_ from the main or context menus. A function is referenced externally
+using its fully qualified name, consisting of the module name and function
+name using dot notation, e.g. `.moduleName.functionName`.
+
+## Q data initializers
+
+These are snippets of q code that are automatically executed when their module
+is loaded; typically they are used to initialize tables, or other variables
+required for the module to execute. Data initializers are created by selecting
+the module and picking _New > Data…_ from the main or context menus.
+
+For example, imagine that you have a table that you use over and over again
+each time you load a workspace. Instead of having to create and load it
+manually every time, you can put the code to create it in a q data initializer
+that loads automatically when you load the module. That way, the table is
+always available to you. (Initializers for huge tables or databases should
+make use of unmanaged files or databases placed on the server by their team or
+administrator.)
+
+## Files
+
+These provide a means for managing files, including `.q` files. Files are
+created by selecting a repository, module or folder and picking _New > File…_
+from the context menu and typing the name of the file path. When the
+repository is loaded the named file path is created relative to the workspace
+path for that user. The file will contain the contents entered using the Text
+Editor.
+
+This example repository contains several modules (e.g. `.analysis`,
+`.analysis.test`, `Agenda`, `Data`, etc.). The `.analysis` and `Data` modules
+are opened. In the `.analysis` module, we can see function (light brown icons)
+and data (light green icons) artifacts. Data artifacts become available as
+variables when the workspace is loaded. `CITIES`, `PI`, and `PLANETS` become
+populated with data on load. Functions can be run in the workspace. The
+`.analysis.hailstoneSequence` has been entered with a variable into the
+Scratchpad. The actual function has been opened in the pane beside it. When
+the function is displayed in the workspace, the output of the function is
+shown in the Console.
+
+![image1.png](../img/editor/image1.png)
+
+## Creating a q function
+
+  1. Right-click on the module in which to create the function and pick _New > Function…_ from the context menu.
+
+![image2.png](../img/editor/image2.png)
+
+  2. Name your function and click _OK_.
+
+![image3.png](../img/editor/image3.png)
+
+  3. The function appears in the module with a green plus icon to indicate that it has been added.
+
+![image4.png](../img/editor/image4.png)
+
+## Opening editors
+
+Functions, data initializers, and files can be opened in several ways:
+
+  * Double-clicking an item in the search pane will open a text editor in the main page.
+
+  * Right-clicking the function and picking _Open_ from the context menu will do the same thing.
+
+  * Picking _File > Open_ from the main menu with an item selected will do the same thing.
+
+![image5.png](../img/editor/image5.png)
+
+Editors opened on the main page look like this:
+
+![image6.png](../img/editor/image6.png)
+
+Note the dark dot in the left hand gutter. This is a linter warning to
+indicate that there is some coding or styling issue with the file. Hover over
+the dot to find out the issue with the code. In this case, it is warning that
+that the function has default documentation. See [Linting](../linting/) for
+more details.
+
+  * Right-clicking the tab and picking _Undock_ from the context menu will open the function in a new window.
+
+![image7.png](../img/editor/image7.png)
+
+Functions opened in a new window look like this:
+
+![image8.png](../img/editor/image8.png)
+
+The rest of this section will use examples where the function editor has been
+opened in a separate window. In the Text Editor, q keywords are highlighted.
+_Edit_ and _Q_ menus are provided and a context menu is available for command
+execution. Some key aspects of the view are summarized below. Please note that
+other file types can be uploaded, and can be opened using the file editor as
+long as they are in UTF-8 format, or ASCII format with no extended ASCII
+characters.
+
+## Interactive editing
+
+With any q editor open (`functions`, `data`, or `.q` scripts), any code can be
+selected and run by either right-clicking the code and selecting `Display`, or
+by pressing the associated hotkey of Ctrl+D (⌘D on macOS).
+
+Additionally, if editing a `.q` file, the file can be run by right-clicking
+the editor and selecting `Run Script`.
+
+Set the `ANALYST_EDITOR_DISPLAY_ON_EXECUTE` env var to `yes` in the install
+config to enable Ctrl+E as Display
+
+When executing selected text with either Display or Execute, the q context
+(namespace) of execution is chosen with the following rules:
+
+  * if editing an artifact within a module:
+    * if the module name starts with a `.` (e.g., `.ns`), the module name is the context
+    * otherwise, the context is global (`.`)
+  * if editing a q file (e.g., `script.q`)
+    * the closest `\d .ns` or `system "d .ns"` context switch above the selected text is used to determine the context
+    * if there is no context switch above, the context is either global (`.`), or it's folder name if the folder starts with a `.` (`.ns/script.q`)
+
+When editing files, dynamic context switches (setting the context from a
+variable, etc) will not be identified. To always use global as the context for
+editing files, disable the _Infer file context_ option from _File > Settings_.
+
+## Relevant File menu commands
+
+The following _File_ menu commands are relevant to files open in the Function
+Editor view.
+
+command | description  
+---|---  
+Save | Saves the function.  
+Save As… | Saves the function with an alternate name. You are prompted for the name.  
+History > View History | For repositories, this opens the repository differ. For child artifacts, this opens the version dialog showing previous versions of the artifact.  
+History > Reset | Restore the artifact to the state it was in when it was last pulled.  
+Restore | Restores the function to its last saved contents.  
+Dock | Docks the window inside the work area.  
+Close | Closes the editor.  
+  
+## Supported browser commands
+
+command | description  
+---|---  
+Print | Prints the current page.  
+Bookmarking | You can bookmark the landing page. At the present time, you cannot bookmark any other artifacts.  
+  
+## Edit menu commands
+
+command | description  
+---|---  
+Undo | Returns the editor to the previous state.  
+Redo | Returns the editor to a latter state. The opposite action of Undo.  
+Select all | Make the entire contents of the file the current selection.  
+Find/replace… | Opens the search and replace dialog.  
+Toggle line numbers | Toggles the display of line numbers in the current editor.  
+Toggle line wrapping | Toggles the line wrapping of the current editor.  
+  
+## Q menu commands
+
+command | description  
+---|---  
+Inspect | Opens the current selection in the Visual Inspector.  
+Profile | Opens the current selection in the Visual Profiler.  
+Execute | Executes the currently selected expression.  
+Display | Displays the result of executing an expression in the console.  
+Display in Editor | Displays the result of executing an expression in the current editor.  
+Open | If the selection is a function name and this function is in the workspace, open that function.  
+Uses (Selection) | If the selection is a function name, search for any functions, data initializers or q files using that function.  
+Interactive Debugger | Opens an interactive debugger on the selected code. _Only available in KX Platform_.  
+Quick Debugger | Opens a debugger to show the stack trace of any errors that occur when executing the selected code.  
+View Text | If the selection evaluates to a string, list of strings, or dictionary of strings, open those strings in a text viewer.  
+About | Evaluates the expression, displaying the type, length and attributes or metadata, depending on the type of the result.  
+Bench | Displays in the console the time in milliseconds it takes to execute the selected code as well as the memory footprint associated with the execution in bytes (e.g. 23 553472).  
+Uses (File) | Search for any functions, data initializers or q files that reference the current function or data initializer.  
+  
+## Help menu commands
+
+command | description  
+---|---  
+Open Help On Editor Selection… | Opens the code.kx.com page for the current editor selection.  
+Keyboard Reference… | Shows all the keyboard shortcuts for the current component.  
+Q Reference… | Opens a q reference code.kx.com page.  
+Analyst Function Reference… | Opens the documentation for included libraries.  
+Analyst User Guide… | Opens user guide.  
+Analyst Notes & Troubleshooting… | Opens the troubleshooting, notes, and FAQ.  
+  
+The context menu can be accessed by right-clicking the editor. See the _File_
+or _Edit_ menu command sections for more information about each command.
+
+![image9.png](../img/editor/image9.png)
+
+## Status bar messages
+
+The _Status Bar_ at the bottom of the window provides status information about
+each command.
+
+![image10.png](../img/editor/image10.png)
+
+When you execute, inspect or display a line or lines of code, your code may
+not execute properly due to syntax, runtime, parse or system errors. Errors
+are reported in the _Status Bar_.
+
+![image11.png](../img/editor/image11.png)
+
+## Using commands
+
+There are several commands, accessible by the context menu, the Q section of
+the main menu, or hotkeys that can be run on any expressions in a q editor.
+These include commands such as _display_ , _inspect_ , _about_ and _bench_. If
+code is selected, the command will be run on the selection. If there is no
+selection, it is run on the current line.
+
+In the example below, the highlighted line of code on the left (partially
+under the menu) creates a table. The _Visual Inspector_ on the right contains
+the result of inspecting the evaluated expression on the left. With the
+inspector, we can see the size and contents of the table.
+
+![image12.png](../img/editor/image12.png)
+
+Calls to functions can be [profiled](../profiler/) or [debugged](../quick-
+debugger/), via the menus, or with hotkeys.
+
+With the name of a function selected, if the function is in the workspace, it
+can be opened with the _Open_ command.
+
+## Autocomplete
+
+Pressing CTRL+Space while typing a variable name will open the autocomplete
+menu. This gives you a list including variable and column names in the current
+editor or in memory, qDoc tags and q keywords. If there is only one option
+available, it will automatically insert that name.
+
+## Hover hints
+
+Hovering over the name of a function that is both in the workspace and
+documented in the QDoc style will display a tooltip for that function showing
+descriptions of the parameters and the return value.
+
+## Using find and replace
+
+A find-and-replace toolbar is available: pick _Edit > Find/Replace…_ from the
+main menu, or _Find/Replace…_ from the context menu, or type CTRL+F on
+Windows/Linux or ⌘F on a macOS. The `▲` and `▼` buttons can be used to cycle
+through matches, and the `Aa`, `.*`, and `|Abc|` buttons can be used to enable
+or disable case sensitivity, regex, and whole word options respectively. When
+searching using regular expressions, the expression does not need to be
+wrapped in slashes.
+
+![image13.png](../img/editor/image13.png)
+
+## Syntax highlighting
+
+The editor provides syntax highlighting for the q language as well as some
+support for detecting common errors. For example, in the function below, the
+line `n:5000;` needs to be indented in order to evaluate correctly. As such,
+the line is highlighted in red indicating an error. Hovering over an error
+will give an explanation of why it is an error.
+
+![](../img/editor/noLintError.png)
+
+![](../img/editor/lintError.png)
+
+## Error messages
+
+If there is an error evaluating an expression, an error message will appear in
+the status bar.
+
+See Reference: [Errors](https://code.kx.com/q/basics/errors/) for a list of
+errors and their causes.
+

@@ -1,0 +1,165 @@
+https://code.kx.com/platform/deployment/non_interactive_install/
+
+# Non-interactive installation - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/deployment/non_interactive_install/
+
+# Non-interactive installation
+
+Using the `install.config` file containing the necessary configuration options
+allows for a _non-interactive_ deployment which can be fully automated.
+
+The `install.config` file in the released Bundles will serve as a good
+starting point to fully automate your installation process.
+
+#### Install config examples
+
+Below are some example configuration files that could be used to deploy a
+certain type of application, the content should be put into a file and passed
+to the installation script.
+
+    
+    
+    ./installKxPlatform.sh -p install.config.test
+    
+
+**Note** : For any options not explicitly defined, the default options will be
+accepted, see the [Install Config Options](../install_config_options/) section
+for more details.
+
+##### Single server install
+
+The settings below will deploy KX Delta Platform on a single server and accept
+all the default settings.
+
+    
+    
+    delta-install-dir=/path/to/install
+    delta-package-dir=/path/to/tgzpackages
+    license-dir=/path/to/license/files
+    # No changes under this line
+    no-prompt=1
+    accept-defaults=1
+    always-upgrade=1
+    always-overwrite=0
+    delta-package-auto-import=1
+    delta-install-type=3
+    delta-control-clustering=0
+    app-server-install-type=1
+    
+
+##### Daemon only
+
+    
+    
+    delta-install-dir=/path/to/install
+    delta-package-dir=/path/to/tgzpackages
+    DELTACONTROL_REMOTEHOST=control-host
+    DELTACONTROL_REMOTEPORT=2001
+    # No changes under this line
+    delta-install-type=2
+    accept-defaults=1
+    
+
+##### Cluster leader/follower
+
+Configuration file below can be used on both the leader and follower nodes.
+
+    
+    
+    delta-install-dir=/path/to/install
+    delta-package-dir=/path/to/tgzpackages
+    auto-configure-instance-hostname-a=leader-hostname
+    auto-configure-instance-hostname-b=follower-hostname
+    auto-configure-instance-taskset=1
+    app-server-hostname-a=leader-hostname
+    app-server-hostname-b=follower-hostname
+    DELTACONTROL_PORT=2001
+    DELTACONTROL_REMOTEHOST=leader-hostname
+    DELTACONTROL_REMOTEPORT=2001
+    delta-control-clustering=1
+    delta-control-leader-hostname=leader-hostname
+    delta-control-leader-port=2001
+    delta-control-follower-hostname=follower-hostname
+    delta-control-follower-port=2001
+    no-prompt=1
+    accept-defaults=1
+    always-upgrade=1
+    always-overwrite=0
+    delta-package-auto-import=1
+    app-server-install-type=1
+    delta-install-type=3
+    tls-encryption-enabled=0
+    
+
+##### KDB/Web node split
+
+_KDB Node_
+
+    
+    
+    delta-install-dir=/path/to/install
+    delta-package-dir=/path/to/tgzpackages
+    DELTACONTROL_PORT=2001
+    DELTACONTROL_REMOTEHOST=control-host
+    DELTACONTROL_REMOTEPORT=2001
+    delta-install-type=3
+    delta-control-clustering=0
+    delta-control-leader-hostname=control-host
+    delta-control-leader-port=2001
+    global-portstart=3000
+    auto-configure-instance-portstart=3000
+    auto-configure-instance-hostname-a=control-host
+    auto-configure-instance-taskset=1
+    app-server-hostname-a=web-host
+    app-server-taskset=1
+    app-server-install-type=1
+    web-node=0
+    kdb-node=1
+    no-prompt=1
+    accept-defaults=1
+    always-upgrade=1
+    always-overwrite=0
+    delta-package-auto-import=1
+    tls-encryption-enabled=0
+    
+
+_Web Node_
+
+    
+    
+    delta-install-dir=/path/to/install
+    delta-package-dir=/path/to/tgzpackages
+    DELTACONTROL_PORT=2001
+    DELTACONTROL_REMOTEHOST=control-host
+    DELTACONTROL_REMOTEPORT=2001
+    delta-install-type=2
+    delta-control-clustering=0
+    delta-control-leader-hostname=control-host
+    delta-control-leader-port=2001
+    global-portstart=3000
+    auto-configure-instance-portstart=3000
+    auto-configure-instance-hostname-a=control-host
+    auto-configure-instance-taskset=1
+    app-server-hostname-a=web-host
+    app-server-taskset=1
+    app-server-install-type=1
+    web-node=1
+    kdb-node=0
+    no-prompt=1
+    accept-defaults=1
+    always-upgrade=1
+    always-overwrite=0
+    delta-package-auto-import=1
+    tls-encryption-enabled=0
+    
+
+### Extending the installation script
+
+The _KX Delta Platform_ installation process can be extended by using the
+`pre-install-script` and `post-install-script` install config options. This
+allows scripts to be executed before or after the core installation script
+executed.
+
+The install.config hooks allow a single script to be executed.
+

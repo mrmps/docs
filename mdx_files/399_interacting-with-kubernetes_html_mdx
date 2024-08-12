@@ -1,0 +1,95 @@
+https://code.kx.com/insights/enterprise/installation/interacting-with-kubernetes.html
+
+# Interacting with Kubernetes - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/installation/interacting-with-kubernetes.html
+
+# Interacting with Kubernetes
+
+You can deploy _kdb Insights Enterprise_ to, AWS, GCP & Azure. The clusters
+are typically managed through [Terraform GitOps
+scripts](../infrastructure/docs/index.html). New cluster setup and
+reconfigurations can be achieved by updating the terraform configuration and
+applying via DevOps processes.
+
+## Prerequisites
+
+A number of tools are required to allow the user to deploy the kdb Insights
+Enterprise:
+
+## Connection to cluster
+
+To connect to a cluster, you must create a context.
+
+A context is the configuration that you use to access a particular cluster and
+namespace with a user account.
+
+The user account must be authorized to access the cloud provider project. Use
+the cloud provider CLI to grant authorization. You may need assistance from
+the project administrator. See the relevant cloud provider documentation for
+further details on how to do this. Some info is provided below.
+
+Assuming the user account has the appropriate permissions to the cloud
+provider and cluster, and has authenticated via the CLI, the next step is to
+connect to a specific cluster & namespace.
+
+## Kubernetes contexts and namespaces
+
+Once connected to the cluster, set up an 'active context'. The default context
+points to the default namespace within the active cluster. Change this to a
+siloed namespace to allow multiple deployments of applications within a
+cluster.
+
+Depending on the maturity of the cluster being used and the `kubectl` setup,
+you may need to carry out a number of steps. See [full documentation on
+contexts and namespaces](https://kubernetes.io/docs/tasks/access-application-
+cluster/configure-access-multiple-clusters/). Below are common commands to
+help interrogate the active context, clusters, and namespaces.
+
+### View active context
+
+Displays the name of the active context.
+
+    
+    
+    kubectl config current-context
+    
+
+### View defined contexts
+
+Displays all contexts within your configuration and includes cluster
+information, users access configuration and namespace association. Note this
+is dynamically built from various calls highlighted here.
+
+### Create from command line
+
+    
+    
+    kubectl create namespace kxi-sys
+    
+
+### Create a context
+
+Link the cluster, user and namespace to a single context entity.
+
+    
+    
+    kubectl config set-context kxi --namespace=kxi-sys \
+      --cluster=<cluster-name> \
+      --user=<user-name>
+    
+
+Note
+
+The namespace, cluster and user should already exist in your config `kubectl
+config view`.
+
+### Set active context
+
+Once created, set the context as active.
+
+    
+    
+    kubectl config use-context kxi
+    
+

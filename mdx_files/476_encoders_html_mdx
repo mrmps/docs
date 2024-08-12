@@ -1,0 +1,98 @@
+https://code.kx.com/insights/enterprise/ingest/pipeline/operators/encoders.html
+
+# Encoders - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/ingest/pipeline/operators/encoders.html
+
+# Encoders
+
+_Encode a kdb data into an external data format_
+
+Encoding allows data to be converted into a format that can be passed to an
+external system either by writing the content to a static file or by streaming
+the data to a different system.
+
+See APIs for more details
+
+A q interface can be used to build pipelines programatically. See [the q
+API](../../../../api/stream-processor/q/encoders.html) for API details.
+
+A Python interface is included along side the q interface and can be used if
+PyKX is enabled. See [the Python API](../../../../api/stream-
+processor/python/encoders.html) for API details.
+
+The pipeline builder uses a drag-and-drop interface to link together
+operations within a pipeline. For details on how to wire together a
+transformation, see the [building a pipeline guide](../index.html#building-a-
+pipeline).
+
+## Arrow
+
+(_Beta Feature_) _Encodes kdb Arrow data_
+
+Beta Features
+
+Beta feature are included for early feedback and for specific use cases. They
+are intended to work but have not been marked ready for production use. To
+learn more and enable beta features, see [enabling beta
+features](../../../../microservices/stream-processor/configuration.html).
+
+![Arrow encoder node properties](images/ui/encoders/arrow-config.png)
+
+_Optional Parameters:_
+
+name | description | default  
+---|---|---  
+Payload Type | Indicates the message payload that will be passed in the stream. This is used as an optimization if the data shape is known ahead of time. Otherwise, leave set as 'Automatic' | Automatic  
+  
+## CSV
+
+_Convert data into CSV format_
+
+![CSV encoder node properties](images/ui/encoders/csv-config.png)
+
+**Required Parameters:**
+
+name | description | default  
+---|---|---  
+Delimiter | Field separator for the records in the encoded data | `,`  
+  
+_Optional Parameters:_
+
+name | description | default  
+---|---|---  
+Header | Indicates whether encoded data should start with a header row. Options are `Never`, `First Row`, or `Always`. | `First Row`  
+  
+## JSON
+
+_Serialize data into JSON format_
+
+![JSON Encoder properties](images/ui/encoders/json-config.png)
+
+_Optional Parameters:_
+
+name | description | default  
+---|---|---  
+Split | By default, batches are encoded as single JSON objects. Split encodes each value in a given batch separately. When the input is a table, this encodes each row as its own JSON object. | No  
+  
+## Protocol Buffers
+
+_Serialize data into[Protocol Buffers](https://developers.google.com/protocol-
+buffers)_
+
+![Protocol buffers encoder node properties](images/ui/encoders/protobuf-
+config.png)
+
+**Required Parameters:**
+
+name | description | default  
+---|---|---  
+Message Name | The name of the Protocol Buffer message type to decode |   
+Message Definition | A `.proto` definition containing the expected schema of the data to decode. This definition must include a definition of the `Message Name` referenced above. |   
+  
+_Optional Parameters:_
+
+name | description | default  
+---|---|---  
+Payload Type | Indicates the message payload that will be passed in the stream. This is used as an optimization if the data shape is known ahead of time. Otherwise, leave set as `Automatic`. | `Automatic`
+

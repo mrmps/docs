@@ -1,0 +1,364 @@
+https://code.kx.com/insights/api/machine-learning/q/analytics/api/variadic/timeseries.html
+
+# Time series models - kdb products
+
+Original URL: https://code.kx.com/insights/api/machine-learning/q/analytics/api/variadic/timeseries.html
+
+# Time Series
+
+The following outlines the variadic function definitions provided with the kdb
+Insights ML Analytics library for time series models. Full breakdowns of the
+algorithms represented can be found
+[here](https://code.kx.com/q/ml/toolkit/timeseries/models/), this includes,
+via examples the use of the function returns for prediction, this is not
+outlined below explicitly.
+
+Note
+
+All arguments marked with an asterisk are optional and can be input using the
+notation defined in the [function calls section](function-calls.html) of the
+model monitoring documentation.
+
+## AutoRegressive Model(AR)
+
+### `.ml.kxi.ts.AR.fit`
+
+_Fit a AR model_
+
+**Parameters:**
+
+name | type | description  
+---|---|---  
+`endog` | `any` | Endogenous variable determined by it's relationship with others.  
+  
+_options:_
+
+name | type | description | default  
+---|---|---|---  
+`exog` | `any` | Variables to include in model generation. Must have the same number of observations as `endog` and should be aligned such that `endog[i]` is regressed on `exog[i]`. | `::`  
+`p` | `long` | Number of lags to include in model generation. | `2`  
+`trend` | `boolean` | Is trend to be accounted for. | `1b`  
+  
+**Returns:**
+
+type | description  
+---|---  
+`dictionary` | All information collected during the fitting of a model, along with prediction functionality.  
+  
+**Examples:**
+
+**Example 1:** Fit a model using default configuration
+
+    
+    
+    // Generate data
+    q)endog:100?1f
+    q)exog:10+100?1f
+    
+    // Fit a model using default configuration
+    q)show mdl1:.ml.kxi.ts.AR.fit endog
+    modelInfo| `coefficients`trendCoeff`exogCoeff`pCoeff`lagVals!(0.5098695 0.130..
+    predict  | {[config;exog;len]
+      model:config`modelInfo;
+      exog:ts.i.predDataC..
+    q)mdl1`modelInfo
+    coefficients| 0.5098695 0.1308255 -0.1176227
+    trendCoeff  | ,0.5098695
+    exogCoeff   | `float$()
+    pCoeff      | 0.1308255 -0.1176227
+    lagVals     | 0.159069 0.2646864
+    
+
+**Example 2:** Fit a model modifying the default behavior
+
+    
+    
+    // Generate data
+    q)endog:100?1f
+    q)exog:10+100?1f
+    
+    // Fit a model modifying the default behavior
+    q)params:.var.kwargs`p`trend!(3;0b)
+    q)show mdl2:.ml.kxi.ts.AR.fit[endog;exog;params]
+    modelInfo| `coefficients`trendCoeff`exogCoeff`pCoeff`lagVals!(0.07857143 -0.6..
+    predict  | {[config;exog;len]
+      model:config`modelInfo;
+      exog:ts.util.predDataC..
+    q)mdl2`modelInfo
+    oefficients| 0.07857143 -0.6071429 1.45
+    trendCoeff  | `float$()
+    exogCoeff   | ,0.07857143
+    pCoeff      | -0.6071429 1.45
+    lagVals     | 8 9f
+    
+
+## AutoRegressive Moving Average(ARMA)
+
+### `.ml.kxi.ts.ARMA.fit`
+
+_Fit a ARMA model_
+
+    
+    
+    .ml.kxi.ts.ARMA.fit[endog]
+    
+
+**Parameters:**
+
+name | type | description  
+---|---|---  
+`endog` | `any` | Endogenous variable determined by it's relationship with others.  
+  
+_options:_
+
+name | type | description | default  
+---|---|---|---  
+`exog` | `any` | Variables to include in model generation. Must have the same number of observations as `endog` and should be aligned such that `endog[i]` is regressed on `exog[i]`. | `::`  
+`p` | `long` | Number of lags to include in model generation. | `0`  
+`q` | `long` | Number of residual errors to include in model generation. | `0`  
+`trend` | `boolean` | Is trend to be accounted for. | `1b`  
+  
+**Returns:**
+
+type | description  
+---|---  
+`dictionary` | All information collected during the fitting of a model, along with prediction functionality.  
+  
+**Examples:**
+
+**Example 1:** Fit a model using default configuration
+
+    
+    
+    // Generate data
+    q)endog:100?1f
+    q)exog:10+100?1f
+    
+    // Fit a model using default configuration
+    q)show mdl1:.ml.kxi.ts.ARMA.fit endog
+    modelInfo| `coefficients`trendCoeff`exogCoeff`pCoeff`lagVals`qCoeff`residualV..
+    predict  | {[config;exog;len]
+      model:config`modelInfo;
+      exog:ts.util.predDataC..
+    q)mdl1`modelInfo
+    coefficients  | ,0.4955508
+    trendCoeff    | ,0.4955508
+    exogCoeff     | `float$()
+    pCoeff        | `float$()
+    lagVals       | `float$()
+    qCoeff        | ()
+    residualVals  | ()
+    residualCoeffs| ()
+    paramDict     | `p`q`trend!(0;0;1b)
+    
+
+**Example 2:** Fit a model modifying the default behavior
+
+    
+    
+    // Generate data
+    q)endog:100?1f
+    q)exog:10+100?1f
+    
+    // Fit a model modifying the default behavior
+    q)show mdl2:.ml.kxi.ts.ARMA.fit[endog;.var.kw[`p;3];.var.kwargs`exog`q!(exog;2)]
+    modelInfo| `coefficients`trendCoeff`exogCoeff`pCoeff`qCoeff`lagVals`residualV..
+    predict  | {[config;exog;len]
+      model:config`modelInfo;
+      exog:ts.util.predDataC..
+    q)mdl2`modelInfo
+    coefficients  | 1.406245 -0.07764113 -0.1519254 -0.1038931 0.0745155 0.212620..
+    trendCoeff    | 1.406245
+    exogCoeff     | ,-0.07764113
+    pCoeff        | -0.1519254 -0.1038931 0.0745155
+    qCoeff        | 0.2126203 -0.05684466
+    lagVals       | 0.08810016 0.6299055 0.7514869 0.8232365
+    residualVals  | 0.2605527 0.1726264
+    residualCoeffs| 0.05543747 -0.2116724 -0.08487247 0.1399949 -0.01148043
+    paramDict     | `p`q`trend!(3;2;1b)
+    
+
+## AutoRegressive Integrated Moving Average(ARIMA)
+
+### `.ml.kxi.ts.ARIMA.fit`
+
+_Fit a ARIMA model_
+
+    
+    
+    .ml.kxi.ts.ARIMA.fit[endog]
+    
+
+**Parameters:**
+
+name | type | description  
+---|---|---  
+`endog` | `any` | Endogenous variable determined by it's relationship with others.  
+  
+_options:_
+
+name | type | description | default  
+---|---|---|---  
+`exog` | `any` | Variables to include in model generation. Must have the same number of observations as `endog` and should be aligned such that `endog[i]` is regressed on `exog[i]`. | `::`  
+`p` | `long` | Number of lags to include in model generation. | `0`  
+`d` | `long` | Number of differencing terms to include in model generation. | `0`  
+`q` | `long` | Number of residual errors to include in model generation. | `0`  
+`trend` | `boolean` | Is trend to be accounted for. | `1b`  
+  
+**Returns:**
+
+type | description  
+---|---  
+`dictionary` | All information collected during the fitting of a model, along with prediction functionality.  
+  
+**Examples:**
+
+**Example 1:** Fit a model using default configuration
+
+    
+    
+    // Generate data
+    q)endog:100?1f
+    q)exog:10+100?1f
+    
+    // Fit a model using default configuration
+    q)show mdl1:.ml.kxi.ts.ARIMA.fit endog
+    modelInfo| `coefficients`trendCoeff`exogCoeff`pCoeff`lagVals`qCoeff`residualV..
+    predict  | {[config;exog;len]
+      model:config`modelInfo;
+      exog:ts.util.predDataC..
+    q)mdl1`modelInfo
+    coefficients  | ,0.4955508
+    trendCoeff    | ,0.4955508
+    exogCoeff     | `float$()
+    pCoeff        | `float$()
+    lagVals       | `float$()
+    qCoeff        | ()
+    residualVals  | ()
+    residualCoeffs| ()
+    paramDict     | `p`q`trend!(0;0;1b)
+    originalData  | `float$()
+    
+
+**Example 2:** Fit a model modifying the default behavior
+
+    
+    
+    // Generate data
+    q)endog:100?1f
+    q)exog:10+100?1f
+    
+    // Fit a model modifying the default behavior
+    q)params:.var.kwargs`exog`p`d`q!(exog;5;2;2)
+    q)show mdl2:.ml.kxi.ts.ARIMA.fit[endog;params]
+    modelInfo| `coefficients`trendCoeff`exogCoeff`pCoeff`qCoeff`lagVals`residualV..
+    predict  | {[config;exog;len]
+      model:config`modelInfo;
+      exog:ts.util.predDataC..
+    q)mdl2`modelInfo
+    coefficients  | -0.4041469 0.03772791 -0.1416746 -0.2788988 -0.2048458 -0.535..
+    trendCoeff    | -0.4041469
+    exogCoeff     | ,0.03772791
+    pCoeff        | -0.1416746 -0.2788988 -0.2048458 -0.5352439 -1.42802
+    qCoeff        | -0.9264254 -0.04674371
+    lagVals       | -0.4359039 -0.1012633 0.3720861 0.5743528 -0.4202239 -0.04983..
+    residualVals  | 0.4615449 0.2299498
+    residualCoeffs| 0.0003810419 -0.3362408 -0.7078495 -1.054529 -1.15638 -1.3141..
+    paramDict     | `p`q`trend!(5;2;1b)
+    
+
+## Seasonal AutoRegressive Integrated Moving Average(SARIMA)
+
+### `.ml.kxi.ts.SARIMA.fit`
+
+_Fit a SARIMA model_
+
+    
+    
+    .ml.kxi.ts.SARIMA.fit[endog]
+    
+
+**Parameters:**
+
+name | type | description  
+---|---|---  
+`endog` | `any` | Endogenous variable determined by it's relationship with others.  
+  
+_options:_
+
+name | type | description | default  
+---|---|---|---  
+`exog` | `any` | Variables to include in model generation. Must have the same number of observations as `endog` and should be aligned such that `endog[i]` is regressed on `exog[i]`. | `::`  
+`p` | `long` | Number of lags to include in model generation. | `0`  
+`d` | `long` | Number of differencing terms to include in model generation. | `0`  
+`q` | `long` | Number of residual errors to include in model generation. | `0`  
+`trend` | `boolean` | Is trend to be accounted for. | `1b`  
+`season` | `dictionary` | Seasonal components. | ``P`D`Q`m!0 0 0 0`  
+  
+**Returns:**
+
+type | description  
+---|---  
+`dictionary` | All information collected during the fitting of a model, along with prediction functionality.  
+  
+**Examples:**
+
+**Example 1:** Fit a model using default configuration
+
+    
+    
+    // Generate data
+    q)endog:100?1f
+    q)exog:([]100?1f;100?10f)
+    
+    // Fit a model using default configuration
+    q)show mdl1:.ml.kxi.ts.SARIMA.fit endog
+    modelInfo| `coefficients`trendCoeff`exogCoeff`pCoeff`lagVals`qCoeff`residualV..
+    predict  | {[config;exog;len]
+      model:config`modelInfo;
+      exog:ts.util.predDataC..
+    q)mdl1`modelInfo
+    coefficients  | ,0.4955508
+    trendCoeff    | ,0.4955508
+    exogCoeff     | `float$()
+    pCoeff        | `float$()
+    lagVals       | `float$()
+    qCoeff        | ()
+    residualVals  | ()
+    residualCoeffs| ()
+    paramDict     | `p`q`trend!(0;0;1b)
+    originalData  | `float$()
+    
+
+**Example 2:**
+
+    
+    
+    // Generate data
+    q)endog:100?1f
+    q)exog:([]100?1f;100?10f)
+    
+    // Fit a model modifying the default behavior
+    q)season:`P`D`Q`m!2 0 1 10
+    q)params:.var.kwargs`p`d`q`season!(3;0;1;season)
+    q)show mdl2:.ml.kxi.ts.SARIMA.fit[endog;exog;params]
+    modelInfo| `coefficients`trendCoeff`exogCoeff`pCoeff`lagVals`qCoeff`residualV..
+    predict  | {[config;exog;len]
+      model:config`modelInfo;
+      exog:ts.util.predDataC..
+    q)mdl2`modelInfo
+    coefficients  | 0.5114756 -0.0810032 0.004972889 -0.02217438 0.1698094 -0.523..
+    trendCoeff    | 0.5114756
+    exogCoeff     | -0.0810032 0.004972889
+    pCoeff        | -0.02217438 0.1698094 -0.5233872
+    qCoeff        | ,0.5901153
+    PCoeff        | 0.2835886 0.1210252
+    QCoeff        | ,-0.2835886
+    lagVals       | 0.6458945 0.2286639 0.4354205 0.7844876 0.8665244 0.6767128 0..
+    residualVals  | 0.2935768 0.3357624 0.2876154 0.04145062 0.194916 -0.1708675 ..
+    residualCoeffs| 0.193646 0.005886717 0.03720493 0.1017816 0.3331299 0.2087178
+    paramDict     | `p`q`P`Q`m`trend`additionalP`additionalQ`n!(3;1;0 10;,0;10;1b..
+    originalData  | `float$()
+    seasonData    | `float$()
+    
+

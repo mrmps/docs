@@ -1,0 +1,1182 @@
+https://code.kx.com/pykx/api/pykx-q-data/wrappers.html
+
+# PyKX type wrappers - PyKX
+
+Original URL: https://code.kx.com/pykx/api/pykx-q-data/wrappers.html
+
+Wrappers for q data structures, with conversion functions to
+Python/Numpy/Pandas/Arrow.
+
+Under PyKX, q has its own memory space in which it stores q data structures in
+the same way it is stored within a regular q process. PyKX provides Pythonic
+wrappers around these objects in q memory.
+
+In general, these wrappers consist of a pointer to a location in q memory, and
+a collection of methods to operate on/with that data.
+
+Memory in q is managed by reference counting, and so wrapper objects (i.e.
+`pykx.K` objects) hold a reference to the underlying object in q memory, and
+release it when the Python wrapper is deallocated.
+
+A benefit of this approach to interacting with q data is that all conversions
+are deferred until explicitly performed via one of the conversion methods:
+
+  * `.py` for Python
+  * `.np` for Numpy
+  * `.pd` for Pandas
+  * `.pa` for PyArrow
+
+Example:
+
+    
+    
+    >>> import pykx as kx
+    >>> t = kx.q('([] x: 1 2 3; y: `a`b`c)') # Create a table in q memory
+    >>> x = t['x'] # Index into it in q
+    >>> x
+    pykx.LongVector(pykx.q('1 2 3'))
+    >>> x.np() # Convert the vector to Numpy
+    array([1, 2, 3])
+    >>> t.pd() # Convert the table to Pandas
+       x  y
+    0  1  a
+    1  2  b
+    2  3  c
+    >>> t.pa() # Convert the table to PyArrow
+    pyarrow.Table
+    x: int64
+    y: string
+    ----
+    x: [[1,2,3]]
+    y: [["a","b","c"]]
+    >>> t.py() # Convert the table to Python
+    {'x': [1, 2, 3], 'y': ['a', 'b', 'c']}
+
+Conversions from q to Python avoid copying data where possible, but that is
+not always possible. Furthermore, conversions can result in loss of data about
+type information - not a loss of the data itself, but of the type information
+that informs how it will be interpreted.
+
+For example, if we had a q second atom `pykx.SecondAtom('04:08:16')`, and we
+converted it to Python using its `.py` method, we would get
+`datetime.timedelta(seconds=14896)`. If we convert that back to q using the
+`pykx.K` constructor, we get
+`pykx.TimespanAtom(pykx.q('0D04:08:16.000000000'))`.
+
+We started with a `pykx.SecondAtom`, but after converting to Python and then
+back to q, we get a `pykx.TimestampAtom`. This is because that is what
+`datetime.timedelta` converts to by default, but the net effect is that we
+lost type information about the q data.
+
+This round-trip-lossiness can be prevented in 2 ways:
+
+  1. If possible, avoid converting the `pykx.K` object to a Python/Numpy/Pandas/PyArrow type in the first place. No information can be lost during a conversion if no conversion occurs. It is frequently the case that no conversion actually needs to occur. As an example, instead of converting an entire `pykx.Table` into a Pandas dataframe, only to use a few columns from it, one can index into the `pykx.Table` directly to get the desired columns, thereby avoiding the conversion of the entire table.
+  2. Conversions from Python to q can be controlled by specifying the desired type. Using `pykx.K` as a constructor forces it to chose what q type the data should be converted to (using the same mechanism as [`pykx.toq`](toq.html#pykx.toq)), but by using the class of the desired q type directly, e.g. [`pykx.SecondAtom`][], one can override the defaults.
+
+So to avoid the loss of type information from the previous example, we could
+run `pykx.SecondAtom(datetime.timedelta(seconds=14896))` instead of
+`pykx.K(datetime.timedelta(seconds=14896))`.
+
+#### Wrapper type hierarchy
+
+The classes in the diagram are all attributes of `pykx`. They should be
+accessed as `pykx.K`, `pykx.LongVector`, `pykx.Table`, etc.
+
+    
+    
+    graph LR
+      K --> Atom
+      K --> Collection
+      Atom --> GUIDAtom
+      Atom --> NumericAtom
+      NumericAtom --> IntegralNumericAtom
+      IntegralNumericAtom --> BooleanAtom
+      IntegralNumericAtom --> ByteAtom
+      IntegralNumericAtom --> ShortAtom
+      IntegralNumericAtom --> IntAtom
+      IntegralNumericAtom --> LongAtom
+      NumericAtom --> NonIntegralNumericAtom
+      NonIntegralNumericAtom --> RealAtom
+      NonIntegralNumericAtom --> FloatAtom
+      Atom --> CharAtom
+      Atom --> SymbolAtom
+      Atom --> TemporalAtom
+      TemporalAtom --> TemporalFixedAtom
+      TemporalFixedAtom --> TimestampAtom
+      TemporalFixedAtom --> MonthAtom
+      TemporalFixedAtom --> DateAtom
+      TemporalFixedAtom --> DatetimeAtom
+      TemporalAtom --> TemporalSpanAtom
+      TemporalSpanAtom --> TimespanAtom
+      TemporalSpanAtom --> MinuteAtom
+      TemporalSpanAtom --> SecondAtom
+      TemporalSpanAtom --> TimeAtom
+      Atom --> EnumAtom
+      Atom --> Function
+      Function --> Lambda
+      Function --> UnaryPrimitive
+      UnaryPrimitive --> Identity
+      Identity --> ProjectionNull
+      Function --> Operator
+      Function --> Iterator
+      Function --> Projection
+      Function --> Composition
+      Function --> AppliedIterator
+      AppliedIterator --> Each
+      AppliedIterator --> Over
+      AppliedIterator --> Scan
+      AppliedIterator --> EachPrior
+      AppliedIterator --> EachRight
+      AppliedIterator --> EachLeft
+      Function --> Foreign
+      Collection --> Vector
+      Vector --> List
+      Vector --> GUIDVector
+      Vector --> NumericVector
+      NumericVector --> IntegralNumericVector
+      IntegralNumericVector --> BooleanVector
+      IntegralNumericVector --> ByteVector
+      IntegralNumericVector --> ShortVector
+      IntegralNumericVector --> IntVector
+      IntegralNumericVector --> LongVector
+      NumericVector --> NonIntegralNumericVector
+      NonIntegralNumericVector --> RealVector
+      NonIntegralNumericVector --> FloatVector
+      Vector --> CharVector
+      Vector --> SymbolVector
+      Vector --> TemporalVector
+      TemporalVector --> TemporalFixedVector
+      TemporalFixedVector --> TimestampVector
+      TemporalFixedVector --> MonthVector
+      TemporalFixedVector --> DateVector
+      TemporalFixedVector --> DatetimeVector
+      TemporalVector --> TemporalSpanVector
+      TemporalSpanVector --> TimespanVector
+      TemporalSpanVector --> MinuteVector
+      TemporalSpanVector --> SecondVector
+      TemporalSpanVector --> TimeVector
+      Vector --> EnumVector
+      Collection --> Mapping
+      Mapping --> Dictionary
+      Dictionary --> KeyedTable
+      Mapping --> Table
+      Table --> SplayedTable
+      SplayedTable --> PartitionedTable
+
+###  `K`
+
+    
+    
+    K(x, *, cast=None, **kwargs)
+
+Base type for all q objects.
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`x` |  `[Any](https://docs.python.org/3/library/typing.html#typing.Any "typing.Any")` | An object that will be converted into a `pykx.K` object via [`pykx.toq`][]. |  _required_  
+  
+###  `Atom`
+
+Bases: `K`
+
+See Also
+
+[`pykx.Collection`][]
+
+Base type for all q atoms, including singular basic values, and functions.
+
+###  `EnumAtom`
+
+Bases: `Atom`
+
+Wrapper for q enum atoms.
+
+###  `TemporalAtom`
+
+Bases: `Atom`
+
+Base type for all q temporal atoms.
+
+###  `TemporalSpanAtom`
+
+Bases: `TemporalAtom`
+
+Base type for all q temporal atoms which represent a span of time.
+
+###  `TemporalFixedAtom`
+
+Bases: `TemporalAtom`
+
+Base type for all q temporal atoms which represent a fixed date/time.
+
+###  `DatetimeAtom`
+
+    
+    
+    DatetimeAtom(*args, **kwargs)
+
+Bases: `TemporalFixedAtom`
+
+The q datetime type is deprecated.
+
+PyKX does not provide a rich interface for the q datetime type, as it is
+deprecated. Avoid using it whenever possible.
+
+Wrapper for q datetime atoms.
+
+###  `SymbolAtom`
+
+Bases: `Atom`
+
+Unique symbols are never deallocated!
+
+Reserve symbol data for values that are recurring. Avoid using symbols for
+data being generated over time (e.g. random symbols) as memory usage will
+continually increase.
+
+See Also
+
+[`pykx.CharVector`][]
+
+Wrapper for q symbol atoms.
+
+###  `CharAtom`
+
+Bases: `Atom`
+
+Wrapper for q char (i.e. 8 bit ASCII value) atoms.
+
+###  `NumericAtom`
+
+Bases: `Atom`
+
+Base type for all q numeric atoms.
+
+###  `NonIntegralNumericAtom`
+
+Bases: `NumericAtom`,
+`[Real](https://docs.python.org/3/library/numbers.html#numbers.Real
+"numbers.Real")`
+
+Base type for all q non-integral numeric atoms.
+
+###  `GUIDAtom`
+
+Bases: `Atom`
+
+Wrapper for q GUID atoms.
+
+###  `Collection`
+
+Bases: `K`
+
+See Also
+
+[`pykx.Collection`][]
+
+Base type for all q collections (i.e. non-atoms), including vectors, and
+mappings.
+
+###  `Vector`
+
+Bases: `Collection`,
+`[abc](https://docs.python.org/3/library/collections.abc.html#module-
+collections.abc
+"collections.abc").[Sequence](https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence
+"collections.abc.Sequence")`
+
+Base type for all q vectors, which are ordered collections of a particular
+type.
+
+####  append
+
+    
+    
+    append(data)
+
+Append object to the end of a vector.
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`self` |  | PyKX Vector/List object |  _required_  
+`data` |  | Data to be used when appending to a list/vector, when appending to a typed list this must be an object with a type which converts to an equivalent vector type. When appending to a List any type object can be appended. |  _required_  
+  
+**Raises:**
+
+Type | Description  
+---|---  
+`[PyKXException](../exceptions.html#pykx.exceptions.PyKXException "pykx.exceptions.PyKXException")` | When dealing with typed vectors appending to this vector with data of a different type is unsupported and will raise an error  
+  
+**Examples:**
+
+Append to a vector object with an atom
+
+    
+    
+    >>> import pykx as kx
+    >>> qvec = kx.q.til(3)
+    >>> qvec
+    pykx.LongVector(pykx.q('0 1 2'))
+    >>> qvec.append(3)
+    >>> qvec
+    pykx.LongVector(pykx.q('0 1 2 3'))
+
+Attempt to append a vector object with an incorrect type:
+
+    
+    
+    >>> import pykx as kx
+    >>> qvec = kx.q.til(3)
+    >>> qvec.append([1, 2, 3])
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+      File "/usr/local/anaconda3/lib/python3.8/site-packages/pykx/wrappers.py", line 1262, ...
+        raise QError(f'Appending data of type: {type(data)} '
+    pykx.exceptions.QError: Appending data of type: <class 'pykx.wrappers.LongVector'> ...
+
+Append to a list object with an atom and list:
+
+    
+    
+    >>> import pykx as kx
+    >>> qlist = kx.toq([1, 2.0])
+    >>> qlist
+    pykx.List(pykx.q('
+    1
+    2f
+    '))
+    >>> qlist.append('a')
+    >>> qlist
+    pykx.List(pykx.q('
+    1
+    2f
+    `a
+    '))
+    >>> qlist.append([1, 2])
+    >>> qlist
+    pykx.List(pykx.q('
+    1
+    2f
+    `a
+    1 2
+    '))
+
+####  extend
+
+    
+    
+    extend(data)
+
+Extend a vector by appending supplied values to the vector.
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`self` |  | PyKX Vector/List object |  _required_  
+`data` |  | Data to be used when extending the a list/vector, this can be data of any type which can be converted to a PyKX object. |  _required_  
+  
+**Raises:**
+
+Type | Description  
+---|---  
+`[PyKXException](../exceptions.html#pykx.exceptions.PyKXException "pykx.exceptions.PyKXException")` | When dealing with typed vectors extending this vector with data of a different type is unsupported and will raise an error  
+  
+**Examples:**
+
+Extend a vector object with an atom and list
+
+    
+    
+    >>> import pykx as kx
+    >>> qvec = kx.q.til(3)
+    >>> qvec
+    pykx.LongVector(pykx.q('0 1 2'))
+    >>> qvec.extend(3)
+    >>> qvec
+    pykx.LongVector(pykx.q('0 1 2 3'))
+    >>> qvec.extend([4, 5, 6])
+    >>> qvec
+    pykx.LongVector(pykx.q('0 1 2 3 4 5 6'))
+
+Attempt to extend a vector object with an incorrect type:
+
+    
+    
+    >>> import pykx as kx
+    >>> qvec = kx.q.til(3)
+    >>> qvec.extend('a')
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+      File "/usr/local/anaconda3/lib/python3.8/site-packages/pykx/wrappers.py", line 1271, ...
+        raise QError(f'Extending data of type: {type(data)} '
+      pykx.exceptions.QError: Extending data of type: <class 'pykx.wrappers.SymbolAtom'> ...
+
+Extend a list object with an atom and list:
+
+    
+    
+    >>> import pykx as kx
+    >>> qlist = kx.toq([1, 2.0])
+    >>> qlist
+    pykx.List(pykx.q('
+    1
+    2f
+    '))
+    >>> qlist.extend('a')
+    >>> qlist
+    pykx.List(pykx.q('
+    1
+    2f
+    `a
+    '))
+    >>> qlist.extend([1, 2])
+    >>> qlist
+    pykx.List(pykx.q('
+    1
+    2f
+    `a
+    1
+    2
+    '))
+
+###  `List`
+
+Bases: `Vector`
+
+The memory layout of a q list is special.
+
+All other vector types (see: subclasses of [`pykx.Vector`][]) are structured
+in-memory as a K object which contains metadata, followed immediately by the
+data in the vector. By contrast, q lists are a a vector of pointers to K
+objects, so they are structured in-memory as a K object containing metadata,
+followed immediately by pointers. As a result, the base data "contained" by
+the list is located elsewhere in memory. This has performance and ownership
+implications in q, which carry over to PyKX.
+
+Wrapper for q lists, which are vectors of K objects of any type.
+
+####  np
+
+    
+    
+    np(*, raw=False, has_nulls=None)
+
+Provides a Numpy representation of the list.
+
+###  `NumericVector`
+
+Bases: `Vector`
+
+Base type for all q numeric vectors.
+
+###  `IntegralNumericVector`
+
+Bases: `NumericVector`
+
+Base type for all q integral numeric vectors.
+
+###  `GUIDVector`
+
+Bases: `Vector`
+
+Wrapper for q GUID vectors.
+
+###  `NonIntegralNumericVector`
+
+Bases: `NumericVector`
+
+Base type for all q non-integral numeric vectors.
+
+###  `CharVector`
+
+Bases: `Vector`
+
+See Also
+
+[`pykx.SymbolAtom`][]
+
+Wrapper for q char (i.e. 8 bit ASCII value) vectors.
+
+###  `SymbolVector`
+
+Bases: `Vector`
+
+Unique symbols are never deallocated!
+
+Reserve symbol data for values that are recurring. Avoid using symbols for
+data being generated over time (e.g. random symbols) as memory usage will
+continually increase.
+
+Wrapper for q symbol vectors.
+
+###  `TemporalVector`
+
+Bases: `Vector`
+
+Base type for all q temporal vectors.
+
+###  `TemporalFixedVector`
+
+Bases: `TemporalVector`
+
+Base type for all q temporal vectors which represent a fixed date/time.
+
+###  `TemporalSpanVector`
+
+Bases: `TemporalVector`
+
+Base type for all q temporal vectors which represent a span of time.
+
+###  `DatetimeVector`
+
+    
+    
+    DatetimeVector(*args, **kwargs)
+
+Bases: `TemporalFixedVector`
+
+The q datetime type is deprecated.
+
+PyKX does not provide a rich interface for the q datetime type, as it is
+depreceated. Avoid using it whenever possible.
+
+Wrapper for q datetime vectors.
+
+###  `EnumVector`
+
+Bases: `Vector`
+
+Wrapper for q enum vectors.
+
+###  `Anymap`
+
+Bases: `List`
+
+Wrapper for q mapped lists, also known as "anymaps".
+
+###  `Mapping`
+
+    
+    
+    Mapping(*args, **kwargs)
+
+Bases: `Collection`,
+`[abc](https://docs.python.org/3/library/collections.abc.html#module-
+collections.abc
+"collections.abc").[Mapping](https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping
+"collections.abc.Mapping")`
+
+Base type for all q mappings, including tables, and dictionaries.
+
+###  `Table`
+
+    
+    
+    Table(*args, **kwargs)
+
+Bases: `PandasAPI`, `Mapping`
+
+See Also
+
+  * [`pykx.SplayedTable`][]
+  * [`pykx.PartitionedTable`][]
+
+Wrapper for q tables, including in-memory tables, splayed tables, and
+partitioned tables.
+
+Note: Despite the name, keyed tables are actually dictionaries.
+
+####  insert
+
+    
+    
+    insert(
+        row, match_schema=False, test_insert=False, replace_self=True, inplace=True
+    )
+
+Helper function around `q`'s `insert` function which inserts a row or multiple
+rows into a q Table object.
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`row` |  `[Union](https://docs.python.org/3/library/typing.html#typing.Union "typing.Union")[[list](../pykx-execution/q.html#list), List]` | A list of objects to be inserted as a row. |  _required_  
+`match_schema` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Whether the row/rows to be inserted must match the tables current schema. |  `False`  
+`test_insert` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Causes the function to modify a small local copy of the table and return the modified example, this can only be used with embedded q and will not modify the source tables contents. |  `False`  
+`replace_self` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | `Deprecated` please use `inplace` keyword. Causes the underlying Table python object to update itself with the resulting Table after the insert. |  `True`  
+`inplace` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Causes the underlying Table python object to update itself with the resulting Table after the insert. |  `True`  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+| The resulting table after the given row has been inserted.  
+  
+**Raises:**
+
+Type | Description  
+---|---  
+`[PyKXException](../exceptions.html#pykx.exceptions.PyKXException "pykx.exceptions.PyKXException")` | If the `match_schema` parameter is used this function may raise an error if the row to be inserted does not match the tables schema. The error message will contain information about which columns did not match.  
+  
+**Examples:**
+
+Insert a single row onto a Table, ensuring the new row matches the current
+tables schema.
+
+    
+    
+    >>> tab.insert([1, 2.0, datetime.datetime(2020, 2, 24)], match_schema=True)
+
+####  upsert
+
+    
+    
+    upsert(
+        row, match_schema=False, test_insert=False, replace_self=True, inplace=True
+    )
+
+Helper function around `q`'s `upsert` function which inserts a row or multiple
+rows into a q Table object.
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`row` |  `[Union](https://docs.python.org/3/library/typing.html#typing.Union "typing.Union")[[list](../pykx-execution/q.html#list), List]` | A list of objects to be inserted as a row. |  _required_  
+`match_schema` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Whether the row/rows to be inserted must match the tables current schema. |  `False`  
+`test_insert` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Causes the function to modify a small local copy of the table and return the modified example, this can only be used with embedded q and will not modify the source tables contents. |  `False`  
+`replace_self` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | `Deprecated` please use `inplace` keyword. Causes the underlying Table python object to update itself with the resulting Table after the upsert. |  `True`  
+`inplace` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Causes the underlying Table python object to update itself with the resulting Table after the upsert. |  `True`  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+| The resulting table after the given row has been upserted.  
+  
+**Raises:**
+
+Type | Description  
+---|---  
+`[PyKXException](../exceptions.html#pykx.exceptions.PyKXException "pykx.exceptions.PyKXException")` | If the `match_schema` parameter is used this function may raise an error if the row to be inserted does not match the tables schema. The error message will contain information about which columns did not match.  
+  
+**Examples:**
+
+Upsert a single row onto a Table, ensuring the new row matches the current
+tables schema.
+
+    
+    
+    >>> tab.upsert([1, 2.0, datetime.datetime(2020, 2, 24)], match_schema=True)
+
+####  xbar
+
+    
+    
+    xbar(values)
+
+Apply `xbar` round down operations on the column(s) of a table to a specified
+value
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`values` |  | Provide a dictionary mapping the column to apply rounding to with the rounding value as follows `{column: value}`. |  _required_  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+| A table with rounding applied to the specified columns.  
+      
+    
+    >>> import pykx as kx
+    >>> N = 5
+    >>> kx.random.seed(42)
+    >>> tab = kx.Table(data = {
+    ...     'x': kx.random.random(N, 100.0),
+    ...     'y': kx.random.random(N, 10.0)})
+    >>> tab
+    pykx.Table(pykx.q('
+    x        y
+    -----------------
+    77.42128 8.200469
+    70.49724 9.857311
+    52.12126 4.629496
+    99.96985 8.518719
+    1.196618 9.572477
+    '))
+    >>> tab.xbar({'x': 10})
+    pykx.Table(pykx.q('
+    x  y
+    -----------
+    70 8.200469
+    70 9.857311
+    50 4.629496
+    90 8.518719
+    0  9.572477
+    '))
+    >>> tab.xbar({'x': 10, 'y': 2})
+    pykx.Table(pykx.q('
+    x  y
+    ----
+    70 8
+    70 8
+    50 4
+    90 8
+    0  8
+    '))
+
+####  window_join
+
+    
+    
+    window_join(table, windows, cols, aggs)
+
+Window joins provide the ability to analyse the behaviour of data in one table
+in the neighborhood of another.
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`table` |  | A `pykx.Table` or Python table equivalent containing a `['sym' and 'time']` column (or equivalent) with a `parted` attribute on `'sym'`. |  _required_  
+`windows` |  | A pair of lists containing times/timestamps denoting the beginning and end of the windows |  _required_  
+`cols` |  | The names of the common columns `['sym' and 'time']` within each table |  _required_  
+`aggs` |  | A dictionary mapping the name of a new derived column to a list specifying the function to be applied as the first element and the columns which should be passed from the `table` to this function. These are mapped {'new_col0': [f0, 'c0'], 'new_col1': [f1, 'c0', 'c1']}. |  _required_  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+| For each record of the original table, a record with additional columns
+denoted by the `new_col0` entries in the `aggs` argument are added which is
+the result of applying the function `f0` with the content of column `c0` over
+the matching intervals in the `table`.  
+      
+    
+    >>> trades = kx.Table(data={
+    ...     'sym': ['ibm', 'ibm', 'ibm'],
+    ...     'time': kx.q('10:01:01 10:01:04 10:01:08'),
+    ...     'price': [100, 101, 105]})
+    >>> quotes = kx.Table(data={
+    ...     'sym': 'ibm',
+    ...     'time': kx.q('10:01:01+til 9'),
+    ...     'ask': [101, 103, 103, 104, 104, 107, 108, 107, 108],
+    ...     'bid': [98, 99, 102, 103, 103, 104, 106, 106, 107]})
+    >>> windows = kx.q('{-2 1+\:x}', trades['time'])
+    >>> trades.window_join(quotes,
+    ...                    windows,
+    ...                    ['sym', 'time'],
+    ...                    {'ask_max': [lambda x: max(x), 'ask'],
+    ...                     'ask_minus_bid': [lambda x, y: x - y, 'ask', 'bid']})
+    pykx.Table(pykx.q('
+    sym time     price ask_minus_bid ask_max
+    ----------------------------------------
+    ibm 10:01:01 100   3 4           103
+    ibm 10:01:04 101   4 1 1 1       104
+    ibm 10:01:08 105   3 2 1 1       108
+    '))
+
+###  `SplayedTable`
+
+    
+    
+    SplayedTable(*args, **kwargs)
+
+Bases: `Table`
+
+Wrapper for q splayed tables.
+
+###  `PartitionedTable`
+
+    
+    
+    PartitionedTable(*args, **kwargs)
+
+Bases: `SplayedTable`
+
+Wrapper for q partitioned tables.
+
+###  `Dictionary`
+
+    
+    
+    Dictionary(*args, **kwargs)
+
+Bases: `Mapping`
+
+Wrapper for q dictionaries, including regular dictionaries, and keyed tables.
+
+###  `KeyedTable`
+
+    
+    
+    KeyedTable(*args, **kwargs)
+
+Bases: `Dictionary`, `PandasAPI`
+
+Wrapper for q keyed tables, which are a kind of table-like dictionary.
+
+[Refer to chapter 8.4 of Q for
+Mortals](https://code.kx.com/q4m3/8_Tables/#84-primary-keys-and-keyed-tables)
+for more information about q keyed tables.
+
+####  insert
+
+    
+    
+    insert(
+        row, match_schema=False, test_insert=False, replace_self=True, inplace=True
+    )
+
+Helper function around `q`'s `insert` function which inserts a row or multiple
+rows into a q Table object.
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`row` |  `[Union](https://docs.python.org/3/library/typing.html#typing.Union "typing.Union")[[list](../pykx-execution/q.html#list), List]` | A list of objects to be inserted as a row. |  _required_  
+`match_schema` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Whether the row/rows to be inserted must match the tables current schema. |  `False`  
+`test_insert` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Causes the function to modify a small local copy of the table and return the modified example, this can only be used with embedded q and will not modify the source tables contents. |  `False`  
+`replace_self` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | `Deprecated` please use `inplace` keyword. Causes the underlying Table python object to update itself with the resulting Table after the insert. |  `True`  
+`inplace` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Causes the underlying Table python object to update itself with the resulting Table after the insert. |  `True`  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+| The resulting table after the given row has been inserted.  
+  
+**Raises:**
+
+Type | Description  
+---|---  
+`[PyKXException](../exceptions.html#pykx.exceptions.PyKXException "pykx.exceptions.PyKXException")` | If the `match_schema` parameter is used this function may raise an error if the row to be inserted does not match the tables schema. The error message will contain information about which columns did not match.  
+  
+**Examples:**
+
+Insert a single row onto a Table, ensuring the new row matches the current
+tables schema.
+
+    
+    
+    >>> tab.insert([1, 2.0, datetime.datetime(2020, 2, 24)], match_schema=True)
+
+####  upsert
+
+    
+    
+    upsert(
+        row, match_schema=False, test_insert=False, replace_self=True, inplace=True
+    )
+
+Helper function around `q`'s `upsert` function which inserts a row or multiple
+rows into a q Table object.
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`row` |  `[Union](https://docs.python.org/3/library/typing.html#typing.Union "typing.Union")[[list](../pykx-execution/q.html#list), List]` | A list of objects to be inserted as a row, if the table is within embedded q you may also pass in a table object to be upserted. |  _required_  
+`match_schema` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Whether the row/rows to be inserted must match the tables current schema. |  `False`  
+`test_insert` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Causes the function to modify a small local copy of the table and return the modified example, this can only be used with embedded q and will not modify the source tables contents. |  `False`  
+`replace_self` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | `Deprecated` please use `inplace` keyword. Causes the underlying Table python object to update itself with the resulting Table after the insert. |  `True`  
+`inplace` |  `[bool](https://docs.python.org/3/library/functions.html#bool)` | Causes the underlying Table python object to update itself with the resulting Table after the insert. |  `True`  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+| The resulting table after the given row has been upserted.  
+  
+**Raises:**
+
+Type | Description  
+---|---  
+`[PyKXException](../exceptions.html#pykx.exceptions.PyKXException "pykx.exceptions.PyKXException")` | If the `match_schema` parameter is used this function may raise an error if the row to be inserted does not match the tables schema. The error message will contain information about which columns did not match.  
+  
+**Examples:**
+
+Upsert a single row onto a Table, ensuring the new row matches the current
+tables schema.
+
+    
+    
+    >>> tab.upsert([1, 2.0, datetime.datetime(2020, 2, 24)], match_schema=True)
+
+###  `Function`
+
+Bases: `Atom`
+
+Base type for all q functions.
+
+`Function` objects can be called as if they were Python functions. All
+provided arguments will be converted to q using [`pykx.toq`][], and the
+execution of the function will happen in q.
+
+`...` can be used to omit an argument, resulting in a function projection.
+
+[Refer to chapter 6 of Q for Mortals](https://code.kx.com/q4m3/6_Functions/)
+for more information about q functions.
+
+###  `Lambda`
+
+Bases: `Function`
+
+Wrapper for q lambda functions.
+
+Lambda's are the most basic kind of function in q. They can take between 0 and
+8 parameters (inclusive), which all must be q objects themselves. If the
+provided parameters are not [`pykx.K`][] objects, they will be converted into
+them using [`pykx.toq`][].
+
+Unlike other [`pykx.Function`][] subclasses, `Lambda` objects can be called
+with keyword arguments, using the names of the parameters from q.
+
+###  `UnaryPrimitive`
+
+Bases: `Function`
+
+See Also
+
+[`pykx.Identity`][]
+
+Wrapper for q unary primitive functions, including `::`, and other built-ins.
+
+Unary primitives are a class of built-in q functions which take exactly one
+parameter. New ones cannot be defined by a user through any normal means.
+
+###  `Identity`
+
+Bases: `UnaryPrimitive`
+
+Wrapper for the q identity function, also known as generic null (`::`).
+
+Most types in q have their own null value, but `::` is used as a
+generic/untyped null in contexts where a non-null q object would otherwise be,
+e.g. as a null value for a generic list, or as a null value in a dictionary.
+
+`::` is also the identity function. It takes a single q object as a parameter,
+which it returns unchanged.
+
+###  `ProjectionNull`
+
+Bases: `Identity`
+
+Projection nulls are unwieldy.
+
+There are very few scenarios in which a typical user needs to work with a
+projection null directly, and doing so can be very error-prone. Instead of
+using them directly, operate on / work with projections, which use them
+implicitly.
+
+Wrapper for the q projection null.
+
+Projection null is a special q object which may initially seem to be generic
+null (`::`), but is actually a magic value used to create projections.
+
+When a projection null is provided as an argument to a q function, the result
+is a function projection.
+
+###  `Iterator`
+
+Bases: `Function`
+
+Wrappers for q iterator functions.
+
+Iterators include the mapping iterators (`'`, `':`, `/:`, and `\:`), and the
+accumulating iterators (`/`, and `\`). They are documented on the q reference
+page: <https://code.kx.com/q/ref/#iterators>
+
+###  `Projection`
+
+Bases: `Function`
+
+Wrapper for q function projections.
+
+Similar to [`functools.partial`][], q functions can have some of their
+parameters fixed in advance, resulting in a new function, which is a
+projection. When this projection is called, the fixed parameters are no longer
+required, and cannot be provided.
+
+If the original function had `n` parameters, and it had `m` of them provided,
+the result would be a function (projection) that has `m` parameters.
+
+In PyKX, the special Python singleton `...` is used to represent [projection
+null][`pykx.ProjectionNull`]
+
+####  params
+
+    
+    
+    params()
+
+The param names from the base function that have not been set.
+
+####  args
+
+    
+    
+    args()
+
+The supplied arguments to the function being projected.
+
+The arguments in the tuple are ordered as they were applied to the function,
+with projection nulls to fill the empty spaces before and in-between the
+supplied arguments. The tuple may either end with the last supplied argument,
+or have some trailing projection nulls depending on how the projection was
+created.
+
+**Examples:**
+
+    
+    
+    >>> f = kx.q('{x+y+z}')
+    >>> f.args
+    ()
+    >>> f(..., 2)
+    pykx.Projection(pykx.q('{x+y+z}[;2]'))
+    >>> f(..., 2).args
+    (pykx.ProjectionNull(pykx.q('::')), pykx.LongAtom(pykx.q('2')))
+    >>> f(..., 2, ...)
+    pykx.Projection(pykx.q('{x+y+z}[;2;]'))
+    >>> f(..., 2, ...).args
+    (pykx.ProjectionNull(pykx.q('::')), pykx.LongAtom(pykx.q('2')), pykx.ProjectionNull(pykx.q('::')))
+
+####  func
+
+    
+    
+    func()
+
+The original function with no fixed parameters.
+
+With the original function, a new projection can be created, or it can simply
+be called with every parameter set.
+
+###  `Composition`
+
+Bases: `Function`
+
+Wrapper for q function compositions.
+
+Functions in q can be directly composed, as opposed to creating a new lambda
+function that applies a chain of functions. Direct composition of functions
+lends itself to a style which is referred to as "point-free" or "tacit"
+programming.
+
+###  `AppliedIterator`
+
+Bases: `Function`
+
+Base type for all q functions that have had an iterator applied to them.
+
+Iterators, also known as adverbs, are like Python decorators, in that they are
+functions which take a function as their argument, and return a modified
+version of it. The iterators themselves are of the type [`pykx.Iterator`][],
+but when applied to a function a new type (which is a subclass of
+`AppliedIterator`) is created depending on what iterator was used.
+
+###  `Each`
+
+Bases: `AppliedIterator`
+
+Wrapper for functions with the 'each' iterator applied to them.
+
+###  `Over`
+
+Bases: `AppliedIterator`
+
+Wrapper for functions with the 'over' iterator applied to them.
+
+###  `Scan`
+
+Bases: `AppliedIterator`
+
+Wrapper for functions with the 'scan' iterator applied to them.
+
+###  `EachPrior`
+
+Bases: `AppliedIterator`
+
+Wrapper for functions with the 'each-prior' iterator applied to them.
+
+###  `EachRight`
+
+Bases: `AppliedIterator`
+
+Wrapper for functions with the 'each-right' iterator applied to them.
+
+###  `EachLeft`
+
+Bases: `AppliedIterator`
+
+Wrapper for functions with the 'each-left' iterator applied to them.
+
+###  `Foreign`
+
+Bases: `Atom`
+
+Wrapper for foreign objects, i.e. wrapped pointers to regions outside of q
+memory.
+
+####  py
+
+    
+    
+    py(stdlib=None, raw=None)
+
+The resulting object is a reference to the same memory location as the initial
+object.
+
+This can result in unexpected behavior and it is recommended to only modify
+the original python object passed into the `Foreign`
+
+Turns the pointer stored within the Foreign back into a Python Object.
+
+###  `SymbolicFunction`
+
+    
+    
+    SymbolicFunction(*args, **kwargs)
+
+Bases: `Function`, `SymbolAtom`
+
+Special wrapper type representing a symbol atom that can be used as a
+function.
+
+####  sym
+
+    
+    
+    sym()
+
+The symbolic function as a plain symbol.
+
+####  func
+
+    
+    
+    func()
+
+The symbolic function as a regular function, obtained by dereferencing the
+symbol.
+
+####  with_execution_ctx
+
+    
+    
+    with_execution_ctx(execution_ctx)
+
+Get a new symbolic function that will be evaluated within the provided q
+instance.
+

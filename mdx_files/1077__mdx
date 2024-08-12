@@ -1,0 +1,137 @@
+https://code.kx.com/platform/stream/entitlements_permissions/
+
+# Entitlements and permissions - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/stream/entitlements_permissions/
+
+# Entitlements and permissions
+
+Entitlements restrict what users can see and what they can access. For
+example, a user may be able to see a process, but not be allowed to access
+functions or data inside that process. This is done by creating different
+entity groups and user groups and assigning permissions to those groups.
+Entitlements are defined using entity groups, entities, user groups, users and
+access levels
+
+Entity Groups : Containers for entities that you want to permission together.
+These groups can also be nested, which allows you to layer permissions.
+
+Entities : The parts that make up your system (e.g. instances, tasks,
+connections, etc). They appear in their folders where created, but will also
+appear automatically in the Entities folder under Entitlements so are
+available for permissioning.
+
+User Groups : Containers for users that you want to permission together. User
+groups can set permissions on seeing or accessing individual entities, entity
+groups, or administrator APIs (add, edit, delete entities).
+
+Users : Users are individuals who use the system in some capacity. KX Control
+can be connected to LDAP to authenticate users and download user group
+memberships.
+
+Access Levels : Each entity has four access levels (Read, Read/Write,
+Read/Deny Write, Deny All). A user can inherit different access levels from
+groups they belong to. For each user, the entitlements are resolved to give a
+true/false value for each entity. A Deny permission overrides all others and
+takes precedence. That’s why there is an explicit difference between Read and
+Read/Deny Write access levels.
+
+Entitlements provide a flexible and granular way of permissioning the system,
+but can be challenging to set up. Grouping and permissioning correctly can be
+difficult because of the permutations and combinations that can occur when
+entity groups and user groups overlap. The simplest approach is to break the
+permissioning problem down into chunks which make adding and modifying
+permissions straightforward.
+
+## Groups
+
+First set up two new user groups: `kxUsers` and `kxUserSupport`. The Users
+will have access to the [KX Dashboards](../dw_qr_dashboards/). The support
+team will have access to the same dashboards, plus the ability to interrogate
+and restart the service classes via KX Control.
+
+Secondly we must set up two new entity groups: `kxDashboards` and
+`kxServices`. The `kxDashboards` group will contain permissions to the
+dashboard. The `kxServices` group will contain permissions which allow access
+to the service classes.
+
+name | of an | that contains  
+---|---|---  
+`kxDashboards` | entity group | the dashboard  
+`kxServices` | entity group | the service classes  
+`kxUsers` | user group | entity groups to view and access the dashboard  
+`kxUserSupport` | user group | entity groups to view and access the dashboard and service classes  
+  
+### Create entity groups
+
+Right-click on `kxWarehouse` package and select New > _Entity Group_ from the
+context menu. Enter the name _kxDashboards_ and click _Add_
+
+![Screenshot](../img/serviceclass/kxdashboardscreate.jpg)
+
+Add the _MemBucket_ dashboard, _API.monPublic_ analytic group and
+_.monPublic.getMem_ , _.monPublic.getMemBucket_ analytics to the associated
+entities. Click Save.
+
+![Screenshot](../img/serviceclass/kxdashboardsentities.jpg)
+
+Right-click on `kxWarehouse` package and select New > _Entity Group_ from the
+context menu. Enter the name _kxServices_ and click _Add_
+
+![Screenshot](../img/serviceclass/kxservicescreate.jpg)
+
+Add the _kxw_ service classes created previously to the associated entities.
+Click Save.
+
+![Screenshot](../img/serviceclass/kxservicesentities.jpg)
+
+### Create the users
+
+Right-click on `kxWarehouse` package and select New > _User_ from the context
+menu. Enter the name _kxUser_ and click _Add_. User is _kxUser_ , password can
+be `12345678` or a password of your choice. A fake email input for now is ok.
+Save it.
+
+![Screenshot](../img/serviceclass/kxusercreate.jpg)
+
+Now repeat this process for a _kxSupport_.
+
+### Create the user groups
+
+Right-click on `kxWarehouse` package and select New > _User Group_ from the
+context menu.
+
+Give the user group the name _kxUsers_ and click _Add_.
+
+![Screenshot](../img/serviceclass/kxuserscreate.jpg)
+
+In the _User Group Contents_ subtab, select `kxUser` and add it to the group
+members.
+
+![Screenshot](../img/serviceclass/kxusersaddnewuser.jpg)
+
+In the _Entity Permissions tab_ , add the entity group `kxDashboards` to the
+selected entities and set the access level to _Read_.
+
+![Screenshot](../img/serviceclass/kxusersentitiesperms.jpg)
+
+_Save_ the user group.
+
+Repeat the steps above but for the following information:
+
+  1. Create a new user group called `kxUserSupport`.
+
+  2. Add `kxSupport` to the users in the group.
+
+  3. Give the `kxUserSupport` group _read/write_ access on both the `kxDashboards` and `kxServices` entity groups.
+
+  4. Add `UxRuntime` read permissions to allow Control UI access.
+
+## Test permissions
+
+  1. Log into _KX Control_ and _KX Dashboards_ as the `kxSupport` user. From Control it should be possible to start and stop the listed service classes, but not others. The support user should be able to edit the dashboard.
+
+  2. Next log in as the _`kxUser`. The `kxUser` account should only be able to view the dashboard, not edit it nor be able to control edit anything in Control UI.
+
+  3. Test the system to ensure users can do all the things they are permissioned for, and cannot do things for which they are not permissioned for. This test will be required for both _KX Control_ and 0 access.
+

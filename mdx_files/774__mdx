@@ -1,0 +1,562 @@
+https://code.kx.com/platform/deployment/single_node_deploy/
+
+# Single node deploy - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/deployment/single_node_deploy/
+
+# Single node deploy
+
+This section details how to deploy the _KX Delta Platform_ on a non-clustered
+single node deploy on a Linux or Windows host.
+
+## Single server deploy - Linux
+
+Once the bundle has been copied, unpacked and the licenses are in place it’s
+time to run the installer as follows:
+
+    
+    
+    $ cd Platform-4.4.1-Linux
+    $ ./install.sh
+    
+
+**Deploy Location**
+
+The script will print to the terminal. The first prompt will be for the
+location of the deployment. The default is `$USER/kxinstall`. Pressing the
+enter key will accept the default location, to overwrite this enter an
+alternative location.
+
+    
+    
+    =============================================================
+    ==                  install.sh [2.1.6]                     ==
+    =============================================================
+     KX Delta Platform install directory [/home/kxplatform/kxinstall]:
+    
+
+Before the deploy configuration continues a pre deploy script called
+checkHost.sh will be run. The script will collect information about the deploy
+host. If the host is not configured correctly or if there are missing
+dependencies i.e. Java is not installed then the deploy will fail.
+
+**Note** : You can disable the pre deploy check by running `install.sh` with
+the `-h` flag as follows:
+
+    
+    
+    =============================================================
+    ==                  install.sh [2.1.6]                     ==
+    =============================================================
+     Skip Host Check
+     KX Delta Platform install directory [/home/kxplatform/kxinstall]:
+    
+
+**Deploy Mode**
+
+Select Mode 1 (Single host deploy)
+
+    
+    
+    +-----------------------------------------------------------+
+     Running Pre Deploy Script [checkHost.sh]
+    +-----------------------------------------------------------+
+     [1] Single
+     [2] Control
+     [3] Web Server
+     [4] Daemon
+     [5] Control + Web Server
+    +-----------------------------------------------------------+
+     Select Node Type [1-5]: 1
+    
+
+**Note** : For more information on Deploy modes, see
+[here](../install_scripts/#installsh-deploy-modes)
+
+**Control Port**
+
+The script will prompt for a free port to be used by the Control process. The
+default port is 2001, press enter to accept the default port or enter a new
+value.
+
+**_Default Port_**
+
+    
+    
+     Configuring Single Node Deploy:
+      Please enter free port to be used by Control [2001]:
+      Using port [2001] for Control
+    
+
+**_Custom Port_**
+
+    
+    
+     Configuring Single Node Deploy:
+      Please enter free port to be used by Control [2001]: 2500
+      Using port [2500] for Control
+    
+
+**_Port in use_**
+
+The installer will check that the port selected is not already in use. If it
+is, you will be required to select an alternative port.
+
+    
+    
+     Configuring Single Node Deploy:
+      Please enter free port to be used by Control [2001]: 2500
+      Port [2500] in use
+      Please enter free port to be used by Control [2001]:
+    
+
+**KX Delta Platform CPU Cores**
+
+At this point you may be prompted to enter the number of CPU cores you wish to
+use for your _KX Delta Platform_ Deploy. This depends 2 factors, the number of
+cores on the box (see Max: value below) and the number of cores your kdb+
+License (k4.lic) supports. In the example below we are installing on a 12 CPU
+Core host but the kdb+ license file only covers the use of 5 cores.
+
+    
+    
+      Number of [Licensed KDB+] [CPU cores] [Max: 12]: 5
+    
+
+**Web Server Configuration**
+
+In a single node deploy the Webserver runs on the same node as the KX Control
+process. The Webserver can be deployed with either HTTP connector (only) or
+HTTP/HTTPS connectors.
+
+**_HTTP_**
+
+To deploy with HTTP connector only select [1] HTTP below:
+
+    
+    
+     [1] HTTP
+     [2] HTTPS
+    +-----------------------------------------------------------+
+     Select App Server Deploy Type [1-2]: 1
+    
+
+Enter the port to use for the HTTP connector (Default is port 8080)
+
+    
+    
+    App Server HTTP port [8080]:
+    
+
+**_HTTP/HTTPS_**
+
+To deploy with HTTP and HTTPS connectors select [2] HTTPS below:
+
+    
+    
+     [1] HTTP
+     [2] HTTPS
+    +-----------------------------------------------------------+
+     Select App Server Deploy Type [1-2]: 2
+    
+
+HTTPS connector requires a Java Keystore which stores a SSL certificate under
+the alias tomcat. The script prompts for the Keystore location and password.
+
+    
+    
+     Tomcat Java Keystore [/home/kxplatform/.keystore]: /home/kxplatform/.keystore
+     Tomcat Java Keystore Password [changeit]: mypass
+    
+
+The ports for the HTTPS and HTTP connectors are configured next. The HTTP
+connector is configured to redirect to the HTTPS connector.
+
+    
+    
+     App Server HTTPS port [8443]: 8443
+     App Server HTTP port [8080]: 8080
+    
+
+**Process Configuration**
+
+The next prompt is for the global port value which defines a starting point
+for all port based config parameters in the delta.profile and
+delta.instance.profile excluding the KX Control Port, Webserver HTTP and HTTPS
+ports which are defined above.
+
+    
+    
+     Please enter starting value for deploy port range [3000]: 3000
+     Using starting port [3000]
+    
+
+**TLS Encryption**
+
+If the bundle release version supports TLS Encryption you will be prompted
+here to enable it. TLS configuration is dealt with [here](../tls_overview/).
+For this example we will proceed without encryption:
+
+    
+    
+     Encryption
+      Deploy with TLS/SSL Encryption Enabled [no]:
+    
+
+**Deploy Packages**
+
+The installer will now deploy the _KX Delta Platform_ packages and perform the
+package import into _KX Control_ once completed. You should see the following
+progress indicator:
+
+    
+    
+    +-----------------------------------------------------------+
+     Running Deploy
+     Installing [12] Packages
+     [***********  ]
+    
+
+Once completed you should see the following
+
+    
+    
+    +-----------------------------------------------------------+
+     [Tue 12 Nov 15:23:07 UTC 2019]
+    Installation complete.
+    
+
+**Environment Start-up**
+
+Once deployment is complete the bundle installer will bring up the system. On
+successful installation you will see the following:
+
+    
+    
+     KX Delta Platform Start-up
+     [kxuser@kxplatform.firstderivatives.com]
+     [Tue 12 Nov 15:23:07 UTC 2019]
+    +-----------------------------------------------------------+
+     Starting Control                                  .....done
+     Starting Daemon                                   .....done
+     Starting App Server                               .....done
+     Starting Workflow [DS_launch_MS_A]                .....done
+     Starting Workflow [DS_launch_ALERT_A]             .....done
+     Starting Workflow [DS_launch_OPS_A]               .....done
+     Starting Workflow [DS_launch_REPORT_A]            .....done
+     Starting Workflow [DS_launch_AT_A]                .....done
+    +-----------------------------------------------------------+
+     Control:
+       [https://kxplatform.firstderivatives.com:8443/control]
+     Dashboards:
+       [https://kxplatform.firstderivatives.com:8443/dashboards]
+     Analyst:
+       [https://kxplatform.firstderivatives.com:8443/analyst]
+    +-----------------------------------------------------------+
+     Finished.
+    
+
+### Post deploy
+
+Once the deploy has completed the post deploy env script called checkEnv.sh
+will be run which will create a TGZ file with details of the deploy. The TGZ
+can be found inside the bundle directory and it will be named something like
+**KX-INSTALL-LOGS-20180117-103731.tgz**.
+
+If you deploy with TLS Enabled an additional validation script called
+validateCerts.sh will be run. The output from this and the checkEnv.sh script
+will be printed to the screen see below:
+
+    
+    
+    [checkEnv.log]
+    +----------------------------------------------------------+
+    Create Output Dirs
+    +----------------------------------------------------------+
+    Create dir [platform-info/kxplatform/env-info]
+    +----------------------------------------------------------+
+    Getting Process Details
+    +----------------------------------------------------------+
+    [netstat -antp]
+    [ps -efwww]
+    +----------------------------------------------------------+
+    Copy Deploy Configuration
+    +----------------------------------------------------------+
+    Copy scripts [delta-bin/bin]
+    Copy profile [delta.profile]
+    Copy profile [delta.instance.profile]
+    Copy profile [delta_user.profile]
+    Copy config  [failover.csv]
+    Copy config  [${TOMCAT_HOME}/latest/conf]
+    +----------------------------------------------------------+
+    Copy Deploy Logs
+    +----------------------------------------------------------+
+    Tomcat logs  [delta-bin/software/Tomcat_9_0_19/latest/logs]
+    Process logs [delta-data/DeltaControlData/logdir]
+    +----------------------------------------------------------+
+    Parse Deploy Logs
+    +----------------------------------------------------------+
+    Parsing [2] Errors from Process Log [DeltaControlDaemon.log]
+    Parsing [6] Errors from Process Log [DeltaControl.log]
+    Parsing [3] Errors from Process Log [ds_jemail_a.1.20191112T152325053.out.log]
+    Parsing [5] Errors from Process Log [ds_report_doc_generator_a.1.20191112T152329627.out.log]
+    Parsing [1] Errors from Process Log [ds_report_generator_a.1.20191112T152328212.out.log]
+    +----------------------------------------------------------+
+    Check Delta License
+    +----------------------------------------------------------+
+    Found license file [/home/kxuser/kxinstall/delta-bin/config/.delta.lic]
+    Delta license valid
+    +----------------------------------------------------------+
+    Check KDB+ License
+    +----------------------------------------------------------+
+    Found license file [/home/kxuser/kxinstall/delta-bin/config/k4.lic]
+    KDB+ license valid
+    +----------------------------------------------------------+
+    Validate SSL Certificates
+    +----------------------------------------------------------+
+    Deploy is not TLS enabled skipping SSL Certificate Validation
+    +----------------------------------------------------------+
+    Write Summary File [platform-info/kxplatform/summary.txt]
+    +----------------------------------------------------------+
+    +----------------------------------------------------------+
+    Finished [checkEnv.sh].
+    +-----------------------------------------------------------+
+    install.sh Finished.
+    
+
+## Single node deploy - Windows
+
+This section deals with deploying the _KX Delta Platform_ in a non-clustered
+single node deploy.
+
+### Configuring the deploy
+
+The Windows bundle contains a configuration script
+`configurePlatformDeploy.bat` which can be used to update the configuration
+files for the deploy.
+
+This script will make the necessary changes to the install directory,
+localhosts and KX Control Port in the following files:
+
+  * delta.profile.bat (found in the delta-bin folder)
+  * delta.instance.profile (found in the delta-bin folder)
+  * failover.csv (found in the delta-bin/config folder)
+
+To run the script, open a new command prompt and navigate to the delta-bin/bin
+directory of the deploy and run the command `configurePlatformDeploy.bat` as
+shown below:
+
+    
+    
+    > configurePlatformDeploy.bat
+    
+
+Enter 1 when prompted for deploy type:
+
+    
+    
+    +-----------------------------------------------------------+
+                     Configuring Platform Deploy
+    +-----------------------------------------------------------+
+    [1] Single Host Deploy
+    
+    [2] Multi-Host Deploy
+    
+    Select Node Type [1-2] : 1
+    
+
+**Hostname**
+
+The `configurePlatformDeploy.bat` script will automatically configure the
+hostname of your computer for a single host deploy and update the relevant
+files. Before configuring the deploy, the host is set to ‘localhost’ in the
+delta.profile.bat and delta.instance.profile.bat.
+
+**Install Directory**
+
+The install directory will replace the DELTA_HOME variable in the
+delta.profile.bat, similarly to the hostname, this is automatically configured
+by the script. Prior to the configuration script being executed, DELTA_HOME is
+set as below:
+
+    
+    
+    > type delta.profile.bat
+    REM ############ INSTALL ENV ###############
+    set "DELTA_HOME=<PATH TO DEPLOY ROOT>" 
+    
+
+This is then updated by the script to be set to the directory of your install
+which returns the following screen:
+
+![Screenshot](../img/updated-windows-home.png)
+
+**Control Port**
+
+The configures script will now prompt Port to be used by kx Control. The
+default port that is already set in the delta.profile.bat and failover.csv is
+2001. If you would like to use the default port either enter 2001 to the
+command prompt or simply leave the prompt blank and hit return and 2001 will
+be automatically used. If a different port e.g. 2017 is entered then 2017 will
+be used as the KX Control Port. For this example we will use the default 2001
+port by hitting enter and leaving the command line blank when prompted for the
+port:
+
+    
+    
+    +-----------------------------------------------------------+
+    Enter DeltaControl Port [2001] :
+    +-----------------------------------------------------------+
+    
+
+**CPU Affinity**
+
+The script allows you to configure how many CPU cores you wish the system to
+run on, when prompted, the command line will display the max amount of cores
+the system can run on in brackets. The number of cores selected should be the
+maximum number allowed under you kdb+ license.
+
+If no value is entered to the command line then the maximum number of
+processors available will be used by default.
+
+    
+    
+    +-----------------------------------------------------------+
+    Enter number of CPU Cores to be used: [Max: 8] :8
+    +-----------------------------------------------------------+
+    
+
+**Note** : Please note that the KDB_CPU_AFFINITY and DCD_CPU_AFFINITY
+variables in the delta.profile.bat will be updated to a hexadecimal affinity
+value, e.g. if 6 was entered to the command line in this example the variable
+would be set to 3F.
+
+    
+    
+    set KDB_CPU_AFFINITY=3F
+    set DCD_CPU_AFFINITY=3F
+    
+
+**TLS Encryption**
+
+TLS configuration is detailed [here](../tls_overview/), for the purposed of
+this section we will be deploying without TLS.
+
+When prompted to deploy with TLS enter N.
+
+    
+    
+    +-----------------------------------------------------------+
+    Deploy with TLS/SSL Encryption? [Y/N]: N
+    +-----------------------------------------------------------+
+    
+
+#### Licenses
+
+The configure script now prompts for the location of the kdb+ (k4.lic) and KX
+Delta Platform (.delta.lic) license files. Enter the path to the directory in
+which they are stored:
+
+    
+    
+    +-----------------------------------------------------------+
+    Please enter location of kx license files (k4.lic/.delta.lic) [dir] :C:\licenses
+    +-----------------------------------------------------------+
+                     Configuration Successful
+    +-----------------------------------------------------------+
+    
+
+The script will check the directory provided to the command prompt for the
+license files. If any of the licenses are not present in the directory they
+will be prompted for again by the script. In the example below the license
+file directory has been provided but the .delta.lic file is not present so the
+script prompts for the location of this file:
+
+    
+    
+    Please enter location of kx license files (k4.lic/.delta.lic) [dir] :C:\licenses
+    ERROR: Failed to find .delta.lic in C:\licenses
+    Location of .delta.lic [dir] :
+    
+
+### Post deploy checks
+
+After the successful configuration of the deploy, the three files can be
+checked to see the changes that have been made. In the delta.profile.bat the
+DELTA_HOME variable will point to the install directory that was entered to
+the command prompt.
+
+    
+    
+    REM ############ INSTALL ENV ###############
+    set "DELTA_HOME=C:\kxinstall\KxPlatformWinDeploy_4_4_1_1910111311" 
+    
+
+The delta.profile.bat should have been update with DELTACONTROL_PORT,
+DELTACONTROL_HOST, DELTACONTROL_REMOTEHOST and DELTACONTROL_REMOTEPORT being
+updated see below:
+
+    
+    
+    > type delta.profile.bat
+    set DELTACONTROL_PORT=2001
+    set DELTACONTROLLOGSTREAMER_PORT=2002
+    set DELTACONTROL_HOST=control-a.fd.com
+    set DELTACONTROL_TDIR=%DELTADATA_HOME%\DeltaControlData\tdir
+    set DELTACONTROL_QSRC=%DELTADATA_HOME%\DeltaControlData\qsrc
+    set DELTACONTROL_ZIP=%DELTADATA_HOME%\DeltaControlData\zip
+    set DELTACONTROL_FAILOVER=%DELTA_CONFIG%\failover.csv
+    set DELTACONTROL_LOGFILE=DeltaControl.log
+    set DELTACONTROL_REMOTEHOST=control-a.fd.com
+    set DELTACONTROL_REMOTEPORT=2001
+    
+
+The delta.instance.profile now have the deploy hostname instead of localhost
+for all _a process instances:
+
+    
+    
+    > type delta.instance.profile.bat
+    set ds_appServer_a_HOST=contol-a.fd.com
+    set ds_appServer_a_PORT=3000
+    set ds_appServer_a_TASKSET=
+    set ds_appServer_b_HOST=NO_HOST_SET
+    set ds_appServer_b_PORT=3000
+    set ds_appServer_b_TASKSET=
+    set ds_jemail_a_HOST=contol-a.fd.com
+    set ds_jemail_a_PORT=3001
+    set ds_jemail_a_TASKSET=
+    set ds_jemail_b_HOST=NO_HOST_SET
+    set ds_jemail_b_PORT=3001
+    set ds_jemail_b_TASKSET=
+    
+
+**Note** : in a single host deploy, all b_hosts will be set to NO_HOST_SET by
+default in the delta.instance.profile.bat and these should not be changed
+unless running a multi-host install.
+
+The final file updated by the configurePlatformDeploy.bat script is the
+failover.csv; again the localhost and KX Control port were changed to what was
+entered to the command prompt.
+
+    
+    
+    > type config\failover.csv
+    control-a.fd.com,2001
+    
+
+### Java Home
+
+In order for the _KX Delta Platform_ to run successfully on Windows, Java must
+be installed and the JAVA_HOME environment variable set to the path in which
+Java is installed.
+
+    
+    
+    > echo %JAVA_HOME%
+    C:\Program Files\Java\jdk1.8.0_131
+    
+
+You should now be ready to bring up the deploy see
+[here](../win_administration/)
+

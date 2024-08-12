@@ -1,0 +1,236 @@
+https://code.kx.com/platform/quick_start_win/
+
+# Windows - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/quick_start_win/
+
+#  Quick start on Windows
+
+The _KX Delta Platform_ package bundle provide a simple and rapid installation
+process to get up and running a basic development environment within minutes
+utilizing the full power of the enterprise _KX Delta Platform_ framework.
+
+This guide aims to highlight how to start from the single zipped folder;
+install it and be up and running with all the features of Platform available
+immediately. This is the simplest way to have Platform up and running, however
+the Platform offers significant customization and configuration at
+installation time; including specific package installation, port configuration
+and clustered installs. For information on these options please refer to the
+deployment documentation available along with the Platform bundle.
+
+## Prerequisites
+
+This guide covers the installation of the _KX Delta Platform_ on a Windows
+Server 2016.
+
+Alternatively [Quick start Linux](../quick_start/)
+
+### Required third-party software
+
+  * Java Runtime 1.8
+  * Open SSL 1.0.1+ (Only required if you wish to use TLS encryption)
+  * 7-Zip Software (<https://www.7-zip.org/>)
+
+### Required software and licenses
+
+  1. The _KX Delta Platform_ zip 
+  2. A suitable KX core license
+  3. A _KX Delta Platform_ license
+
+## Initial setup of the package
+
+### Accessing the package
+
+Packages and licenses are available to clients
+
+Please contact [sales@kx.com](mailto:sales@kx.com) for details on how to
+retrieve these or if you would like to become a client, availability of a demo
+or trial.
+
+Unzip the Package.
+
+![Screenshot](../img/windeploy/unzip.png)
+
+Do not use the integrated Windows zip tool
+
+Due to limitations with Windows path lengths and complexities with path
+spaces, install at a base directory with no spaces in the paths.
+
+### Setup
+
+Navigate to the `delta-bin\bin` folder via the command line and run the
+`configurePlatformDeploy.bat` script. To begin, the script will prompt whether
+the install is a single or multi-host install. For this example, we will enter
+`1` for a single-host install.
+
+    
+    
+    +-----------------------------------------------------------+
+                     Configuring KX Delta Platform Deploy
+    +-----------------------------------------------------------+
+    [1] Single Host Deploy
+    
+    [2] Multi-Host Deploy
+    
+    Select Node Type [1-2] : 1
+    +-----------------------------------------------------------+
+    
+
+This will automatically update the `DELTA_HOME` variable to the install
+directory of the deploy in the `delta.profile.bat` and all of the localhost
+variables to the FQDN of your computer in the `delta.profile.bat`,
+`delta.instance.profile.bat`, and `failover.csv`.
+
+Multi-host install
+
+For a multi-host install the FQDN of both the leader and follower node host
+will be prompted for. See the Windows Deployment Guide for more information._
+
+The script will then prompt for a number of inputs:
+
+_Delta Control Port_ If left blank 2001 will be used as the Delta Control
+Port.
+
+    
+    
+    +-----------------------------------------------------------+
+    Enter DeltaControl Port [2001] :
+    +-----------------------------------------------------------+
+    
+
+_The number of CPU cores to be used_ If left blank this will use the maximum
+number of CPU cores available.
+
+    
+    
+    +-----------------------------------------------------------+
+    Enter number of CPU Cores to be used: [Max: 8] :8
+    +-----------------------------------------------------------+
+    
+
+_TLS Encryption_ If `Y` is entered to the command line this will prompt for
+the location of TLS certs and whether TLS mixed mode is to be enabled.
+
+    
+    
+    +-----------------------------------------------------------+
+    Deploy with TLS/SSL Encryption? [Y/N]: N
+    +-----------------------------------------------------------+
+    
+
+_Location of license files_ This will be automatically copied to the `delta-
+bin\config` folder of the install.
+
+    
+    
+    +-----------------------------------------------------------+
+    Please enter location of kx license files (k4.lic/.delta.lic) [dir] :C:\dplatform\licenses
+    +-----------------------------------------------------------+
+    
+
+### Setting up `JAVA_HOME`
+
+Open up the command prompt window and type the following :
+
+    
+    
+    C:\> echo %JAVA_HOME% 
+    
+
+If the command does not return a path like:
+
+    
+    
+    C:\Program Files\Java\jre1.8.0_191
+    
+
+set up this variable. Go to _Control Panel > System and Security > System_ and
+click on _Advanced System_ settings on the left side of the panel.
+
+![Screenshot](../img/windeploy/system.png)
+
+Click the _Environment Variables…_ button, then go to _System Variables_ and
+type `JAVA_HOME` and the path of your Java folder into the _Variable name_ and
+_Variable value_ boxes respectively.
+
+Open a new command prompt, and enter the command `echo %JAVA_HOME%` again.
+This time the Java path should be returned.
+
+![Screenshot](../img/windeploy/properties.png)
+
+![Screenshot](../img/windeploy/variables.png)
+
+Important: check to ensure this Java Version is correct. Run the command
+
+    
+    
+    C:\> echo %JAVA_HOME% 
+    C:\Program Files\Java\jre1.8.0_191
+    
+    C:\> java -version
+    java version "1.8.0_191"
+    java(TM) SE Runtime Environment build 1.8.0_191-b01)
+    
+    
+
+## Running the installation
+
+After Configuring the deploy you must now start up the deploy. This is done by
+navigating to the bin directory (i.e. `delta-bin\bin`) on the command line by
+using the `cd` command e.g. `cd users\defaultuser\DeployName\delta-bin\bin`
+and running `startup.bat`:
+
+    
+    
+    C:\dplatform\release\KxEvalWinDeploy_420\delta-bin\bin> startup.bat
+    
+
+Once this script has run, KX Control, Control Daemon and the AppServer will
+run. This will be display on screen. Once this has finished the links to both
+KX Control and Dashboards will be printed
+
+    
+    
+    +-----------------------------------------------------------+
+                        Starting Environment
+    +-----------------------------------------------------------+
+                       [22/11/2018] [10:18:56]
+    +-----------------------------------------------------------+
+    Starting Delta Control...
+    Starting Delta Daemon...
+    Starting App Server...
+    +-----------------------------------------------------------+
+      Control:
+        [http://winserver.firstderivatives.com:8080/control]
+      Dashboards:
+        [http://winserver.firstderivatives.com:8080/dashboards/quickview]
+    +-----------------------------------------------------------+
+    
+    
+
+Congratulations, you’re ready to start building applications on top of KX
+Delta Platform. [Build a data warehouse](../stream/dw_overview/) offers a
+tutorial on how to build a powerful scalable tick-capture application using
+_KX Delta Platform_.
+
+## Start-up failure
+
+If the deploy fails to start up, check the log files of the processes to find
+and understand where the error is arising.
+
+failure | log file location  
+---|---  
+Control | delta-data\DeltaControlData\logdir\DeltaControl.log  
+Daemon | deltadata\DeltaControlData\logdir\DeltaControlDaemon.log  
+AppServer | delta-bin\software\Tomcat_9_0_37\apache-tomcat-9.0.37\logs\delta.log  
+Tomcat | delta-bin\software\Tomcat_9_0_37\apache-tomcat-9.0.37\logs\catalina.out.log  
+  
+### Possible kdb+ errors during start-up
+
+error | explanation  
+---|---  
+host | The hostname reported by the OS does not match the hostname or hostname-pattern in the license. If you see `55.255.255.255` in the kdb+ banner, the machine almost certainly cannot resolve its hostname to an IP address, which will cause a `host` error  
+k4.lic | `k4.lic` file not found, check contents of environment variables `QHOME` and `QLIC`  
+exp | License expiry date is prior to system date CPU  
+cpu | The license is for fewer CPUs than available
+

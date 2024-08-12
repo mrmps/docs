@@ -1,0 +1,65 @@
+https://code.kx.com/insights/api/stream-processor/q/data-structures.html
+
+# Data Structures - kdb products
+
+Original URL: https://code.kx.com/insights/api/stream-processor/q/data-structures.html
+
+# Data Structures
+
+## General
+
+### .qsp.op
+
+key | type | description  
+---|---|---  
+id | symbol | A unique name for this operator.  
+config | dict (...symbol: any) | Contains any custom configuration for the current operator.  
+  
+Operators internal fields
+
+The operator object contains a few other fields that are currently reserved
+for internal use.
+
+### .qsp.message
+
+`.qsp.message` is a list containing 2 elements: the message metadata and the
+message event.
+
+field | type | description  
+---|---|---  
+0 | .qsp.message.metadata | The message metadata is a dictionary of meta information that applies to all the events in this message.  
+1 | .qsp.message.event or .qsp.message.event[] | The events in this message. Each atom, tuple or record in this field is considered an event. If there are multiple events, metadata applies to all events in the message.  
+key | type | description  
+---|---|---  
+key | .qsp.message.metadata.key | An optional partition key for the events in this message. This is used to group related collections of data based on a common attribute. Events that do not share the same key are considered independent and will be processed independent of other keys.  
+window | .qsp.temporal | Indicates the start time or index of a window of data.  
+offset | .qsp.integer or .qsp.temporal | An event offset is a number or time that represents the current message offset to the stream reader. This value will be used to recover data if messages are lost down stream. In the case messages need to be replayed, the message offset will be used to indicate the last successfully processed message.  
+isPartial | boolean | True if the message contains a partial window.  
+isLatePassthrough | boolean | True if the data being passed through is [late](windows.html#latedatapassthrough)  
+  
+### .qsp.message.event
+
+`.qsp.message.event` is the payload for a given message. This data is most
+typically a table but can be any data type. Note that some operators
+explicitly require the event data to be a table to perform their desired
+operation.
+
+`.qsp.message.metadata.key` can be any of the following types:
+
+  * long
+  * int
+  * short
+  * byte
+  * char
+  * symbol
+  * date
+  * month
+
+### .qsp.temporal
+
+`.qsp.temporal` can be any of the following types:
+
+### .qsp.integer
+
+`.qsp.integer` can be any of the following types:
+

@@ -1,0 +1,293 @@
+https://code.kx.com/platform/api/logging/
+
+# Logging - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/api/logging/
+
+# Logging
+
+This module contains logging functions. These are available in all processes
+and by default will log to both standard out and the process logfile. There
+are four logging levels with each having their own functions.
+
+  * normal `.log.out`
+  * warn `.log.warn`
+  * error `.log.err`
+  * debug `.log.debug`
+
+The log message format includes the timestamp, logging key (usually the host,
+`.z.h`), level, message, payload. Sample message below;
+
+    
+    
+    <->2017.02.28D13:09:31.314 ### coredev1.fir ### normal ### (29526): Batch job started ### (`endOfDay;2010.11.12)
+    <->2017.02.28D15:50:41.090 ### coredev1.fir ### ERROR. ### (29526): Batch job failed ### (`endOfDay;2010.11.12;"type")
+    
+
+Padding and truncation are applied to logging key and level parameters to
+ensure they are 12 and 6 characters respectively. Hence the full log message
+will be fixed length up to the PID (29526 in the example) making it easier to
+programatically parse the logfile if required.
+
+Debug logging can be enabled/disabled using `.log.cmp.setDebug` or
+`.log.cmp.toggleDebug`. Time will always be local time (`.z.P`).
+
+### Logging components
+
+The first parameter to each of the APIs is treated as a component and by
+convention each framework should have its own component. Debug logging can
+then be toggled at a component level.
+
+When debug logging is enabled for a component, table and dictionary payloads
+will be printed in a formatted manner (similar to `.q.show`).
+
+Two APIs exist for component debug status; `.log.cmp.setDebug` and
+`.log.cmp.toggleDebug`. See the example below for usage.
+
+    
+    
+    // debug disabled for `Foo component
+    .log.out[`Foo; "Bar"; ([]x:til 3)]
+    /=> <->2018.11.14D15:02:08.481 ### Foo          ### normal ### (7978): Bar ### +(,`x)!,0 1 2
+    .log.debug[`Foo; "Bar"; ([]x:til 3)]
+    /=>
+    
+    // debug enabled for `Foo
+    .log.cmp.setDebug[`Foo; 1b]
+    .log.out[`Foo; "Bar"; ([]x:til 3)]
+    /=> <->2018.11.14D15:06:09.260 ### Foo          ### normal ### (7978): Bar ### 
+    /=> x
+    /=> -
+    /=> 0
+    /=> 1
+    /=> 2
+    .log.debug[`Foo; "Bar"; ([]x:til 3)]
+    /=> <->2018.11.14D15:06:49.606 ### Foo          ### debug. ### (7978): Bar ### 
+    /=> x
+    /=> -
+    /=> 0
+    /=> 1
+    /=> 2
+    
+    // no debug for `Bar component
+    .log.debug[`Bar; "Foo"; ([]x:til 3)]
+    /=>
+    
+    // disable debug for `Foo
+    .log.cmp.toggleDebug[`Foo]
+    .log.debug[`Foo; "Bar"; ([]x:til 3)]
+    /=> 
+    
+
+## `.log.cmp.setDebug`
+
+Sets debug mode for a component. The `ALL` component can be used as the
+default for components that aren't set explicitly.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+component | symbol | Logging component  
+mode | boolean | On or off  
+  
+**Example:**
+
+    
+    
+     .log.cmp.setDebug[`Foo; 1b]
+     .log.out[`Foo; "Bar"; ([]x:til 1)]
+     /=> <->2018.11.14D15:06:09.260 ### Foo          ### normal ### (7978): Bar ### 
+     /=> x
+     /=> -
+     /=> 0
+     .log.cmp.setDebug[`Foo; 0b]
+     .log.out[`Foo; "Bar"; ([]x:til 1)]
+    
+
+## `.log.cmp.toggleDebug`
+
+Toggles the debug mode for a component.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+component | symbol | Logging component  
+  
+**Example:**
+
+    
+    
+     .log.cmp.setDebug[`Foo; 0b]
+     .log.out[`Foo; "Bar"; ([]x:til 1)]
+     .log.cmp.toggleDebug[`Foo]
+     .log.out[`Foo; "Bar"; ([]x:til 1)]
+     /=> <->2018.11.14D15:06:09.260 ### Foo          ### normal ### (7978): Bar ### 
+     /=> x
+     /=> -
+     /=> 0
+    
+
+## `.log.debug`
+
+Log a debug message. Message only printed if debug logging enabled using
+`.log.setdebugmode`
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+nm | symbol | Symbol tag for message. `.z.h` usually used  
+msg | string | Message string payload  
+opts | untyped | Additional message data. Printed using `-3!`  
+  
+**Example:**
+
+    
+    
+     .log.cmp.setDebug[`Foo; 0b]
+     .log.debug[`Foo; "Logging to standard out"; `Any`q`Object]
+     .log.cmp.setDebug[`Foo; 1b]
+     .log.debug[`Foo; "Logging to standard out"; `Any`q`Object]
+     /=> <->2019.06.14D07:04:27.353 ### Foo          ### debug. ### (2412): Logging to standard out ### `Any`q`Object
+    
+
+## `.log.err`
+
+Log an error message.
+
+Can also use `.log.error`
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+nm | symbol | Symbol tag for message. `.z.h` usually used  
+msg | string | Message string payload  
+opts | untyped | Additional message data. Printed using `-3!`  
+  
+**Example:**
+
+    
+    
+     .log.err[.z.h; "Logging to standard out"; `Any`q`Object]
+     /=> <->2017.02.07D15:09:06.222 ### coredev1.fir ### ERROR. ### (32302): Logging to standard out ### `Any`q`Object
+    
+
+## `.log.isdebug`
+
+Returns the debug enabled flag
+
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | Debug enabled flag  
+  
+**Example:** Debug logging enabled
+
+    
+    
+     .log.isdebug[]
+     /=> 1b
+    
+
+## `.log.mem`
+
+Logs the process memory usage from `.Q.w`. Formats values to units of bytes,
+KB, MB or GB. Number of decimals and memory values to include are configurable
+through `.utils.setMemLogParams`. By default used, heap and peak memory are
+displayed to two decimal places.
+
+**Example:**
+
+    
+    
+     .log.mem[]
+     /=> <->2017.07.24D15:12:40.210 ### Memory       ### normal ### (12635): Utilisation: used=7.19M, heap=67.11M, peak=67.11M ###
+    
+
+## `.log.out`
+
+Log normal message
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+nm | symbol | Symbol tag for message. `.z.h` usually used  
+msg | string | Message string payload  
+opts | untyped | Additional message data. Printed using `-3!`  
+  
+**Example:**
+
+    
+    
+     .log.out[.z.h; "Logging to standard out"; `Any`q`Object]
+     /=> <->2017.02.07D15:05:17.070 ### coredev1.fir ### normal ### (32302): Logging to standard out ### `Any`q`Object
+    
+
+## `.log.setMemLogParams`
+
+Configures format of `.log.mem` output. Sets the decimal precision and which
+usage stats to include.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+mkeys | symbol[] | Memory values to include. List corresponds to keys of `.Q.w`  
+prec | int | Precision of values  
+  
+**Example:**
+
+    
+    
+     .log.mem[]
+     /=> <->2017.07.24D15:12:40.210 ### Memory       ### normal ### (12635): Utilisation: used=7.19M, heap=67.11M, peak=67.11M ###
+     .log.setMemLogParams[`used`heap`peak`wmax`symw; 3]
+     /=> <->2017.08.31D10:16:52.256 ### Memory       ### normal ### (26668): Logging keys and precision set ### (`used`heap`peak`wmax`symw;3)
+     .log.mem[]
+     /=> <->2017.08.31D10:16:55.201 ### Memory       ### normal ### (26668): Utilisation: used=153.183M, heap=201.327M, peak=201.327M, wmax=0.000, symw=1.670M ###
+    
+
+## `.log.setdebugmode`
+
+**Deprecated** :
+
+Set debug logging on/off
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+d | boolean | Debug flag  
+  
+**Example:** Enable debug logging
+
+    
+    
+     .log.setdebugmode[1b]
+    
+
+## `.log.warn`
+
+Log a warning message
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+nm | symbol | Symbol tag for message. `.z.h` usually used  
+msg | string | Message string payload  
+opts | untyped | Additional message data. Printed using `-3!`  
+  
+**Example:**
+
+    
+    
+     .log.warn[.z.h; "Logging to standard out"; `Any`q`Object]
+     /=> <->2017.02.07D15:09:06.222 ### coredev1.fir ### warn.. ### (32302): Logging to standard out ### `Any`q`Object
+    
+

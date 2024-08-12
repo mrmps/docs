@@ -1,0 +1,98 @@
+https://code.kx.com/insights/core/objstor/kxreaper.html
+
+# Caching | kdb+ Cloud Edition - kdb products
+
+Original URL: https://code.kx.com/insights/core/objstor/kxreaper.html
+
+# Caching
+
+_Limit the amount of object storage data cached on local SSD._
+
+Cloud object storage is slow relative to local storage such as SSD. The
+performance of kdb+ when working with cloud storage can be improved by caching
+data. This has the added benefit of reducing cost as kdb+ will use cached data
+where possible instead of pulling the same data from cloud storage again.
+
+Multiple kdb+ instances using the same HDB (historical database) should share
+a cache area, the base of which is to be specified in environment variable
+`KX_OBJSTR_CACHE_PATH`, e.g.
+
+    
+    
+    export KX_OBJSTR_CACHE_PATH=/fastssd/s3cache
+    
+
+Kdb+ writes temporary files under this directory and will require write
+permission to do so
+
+Kxreaper continously monitors file access within this directory, and maintains
+a limit on the space used, by deleting files according to a LRU (least
+recently used) algorithm. Any file _moved_ into this directory becomes a
+candidate for deletion as this is a scratch area for _exclusive_ use by kdb+.
+
+Files written by kdb+ in this area initially have the form `filename$` and are
+automatically moved by kdb+ to their final filename on completion of writing.
+Kxreaper is notified by the OS of this addition and, if the space used then
+exceeds the configured limit, deletes least-recently-used files to bring the
+space used within the limit again.
+
+Kxreaper may be started as a daemon. It takes two arguments:
+
+  * the cache root path
+  * an integer representing the size to limit the cache to in MB
+
+Here it is started as a daemon with both STDOUT and STDERR redirected to the
+system log
+
+    
+    
+    kxreaper $KX_OBJSTR_CACHE_PATH 5000 2>&1 | logger &
+    
+
+and the log may be viewed via
+
+    
+    
+    sudo tail /var/log/syslog
+    
+
+The output could equally be redirected to a log file
+
+    
+    
+    kxreaper $KX_OBJSTR_CACHE_PATH 5000 2>&1 > reaper.log &
+    
+
+On startup, Kxreaper scans the directory and if the sum of the file sizes
+exceeds the configured limit, deletes the oldest files until within the limit
+again.
+
+In case Kxreaper gets out of sync with the filesystem, for example due to
+manual deletions of cache files, a rescan can be triggered manually by sending
+the Kxreaper process a SIGHUP. Should Kxreaper become too slow to process disk
+notifications, it will rescan automatically.
+
+## Troubleshooting
+
+If you observe the error `inotify_init: Too many open files` check the values
+in
+
+    
+    
+    /proc/sys/fs/inotify/max_queued_events
+    /proc/sys/fs/inotify/max_user_instances
+    /proc/sys/fs/inotify/max_user_watches
+    
+
+and if necessary update them to larger values to accommodate the number of
+files that might need to be cached. e.g.
+
+    
+    
+    echo 8192 >> /proc/sys/fs/inotify/max_user_instances
+    echo 8192 >> /proc/sys/fs/inotify/max_user_watches
+    
+
+If the environment variable `KX_CACHE_REAPER_TRACE` is set, Kxreaper prints
+tracing info when processing events.
+

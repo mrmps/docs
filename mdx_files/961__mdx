@@ -1,0 +1,244 @@
+https://code.kx.com/platform/deployment/win_administration/
+
+# Windows - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/deployment/win_administration/
+
+# Windows
+
+## Single node deploy
+
+### Start-up
+
+When starting a single-node deploy, KX Delta Platform can be started from the
+delta-bin\bin dir.
+
+To start the deploy run the startup.bat script as follows:
+
+    
+    
+    > cd C:\kxinstall\KxPlatformWinDeploy_4_4_1_1910111311\delta-bin\bin
+    > startup.bat
+    Checking KDB+ License
+    KDB+ License OK
+    +-----------------------------------------------------------+
+                        Starting Environment
+    +-----------------------------------------------------------+
+                       [16/12/2019] [11:45:06]
+    +-----------------------------------------------------------+
+    Starting Delta Control...
+    Starting Delta Daemon...
+    Starting App Server...
+    Starting Workflows from startup_workflows.txt...
+    [DS_launch_MS_A ]...
+    [DS_launch_ALERT_A ]...
+    [DS_launch_OPS_A ]...
+    [DS_launch_REPORT_A ]...
+    [DS_launch_AT_A ]...
+    +-----------------------------------------------------------+
+      Delta Control:
+        [http://control-a.firstderivatives.com:8080/control]
+      Dashboards:
+        [http://control-a.firstderivatives.com:8080/dashboards/quickview]
+    +-----------------------------------------------------------+
+                       [16/12/2019] [11:45:32]
+    +-----------------------------------------------------------+
+                        Finished
+    +-----------------------------------------------------------+
+    
+
+### Shutdown
+
+When stopping a single-node deploy, KX Delta Platform can be brought down from
+the delta-bin\bin dir.
+
+    
+    
+    > cd C:\kxinstall\KxPlatformWinDeploy_4_4_1_1910111311\delta-bin\bin
+    > shutdown.bat
+    +-----------------------------------------------------------+
+                    Shutting Down Environment
+    +-----------------------------------------------------------+
+                       [16/12/2019] [12:00:25]
+    +-----------------------------------------------------------+
+    Executing [shutdownEnv.bat]...
+    +-----------------------------------------------------------+
+                       [16/12/2019] [12:00:34]
+    +-----------------------------------------------------------+
+                        Finished
+    +-----------------------------------------------------------+
+    
+
+## Multi-node deploy
+
+### Start-up
+
+When starting a multi-node deploy the order in which each of the nodes are
+brought up in is important. The Control layer should always be started before
+the web layer. The steps to bring up a multi-node deploy are detailed below.
+
+#### KX Control layer
+
+The process for starting the KX Control instances depends on the type of
+Deploy i.e. clustered or standalone.
+
+##### KX Control cluster
+
+When starting a clustered Deploy the preferred _KX Control_ leader node should
+be started first with the follower node being start immediately afterwards.
+
+The KX Control process can be started on each cluster node as follows:
+
+    
+    
+    > cd C:\kxinstall\KxPlatformWinDeploy_4_4_1_1910111311\delta-bin\bin
+    > startDeltaControl.bat
+    Starting Delta Control on port 2001
+    
+
+With both KX Control nodes started check the DeltaControl.log for the status
+of each node as follows:
+
+This node is the leader
+
+    
+    
+    <->2019.12.10D15:43:24.844 ### control-a   ### normal ### (17879): This process is now the leader ###
+    
+
+This node is a follower
+
+    
+    
+    <->2019.12.10D15:43:25.422 ### control-b   ### normal ### (17927): This process is now a follower and has synced with leader ### `host`port`handle`uid!(`control-a.firstderivatives.com;2001i;11i;0)
+    
+
+With the KX Control instances running the Daemon process should now be started
+on each KX Control Cluster node. This process is used to start all process
+instances on windows as well as being responsible for collecting stats for the
+Monitoring workflows.
+
+To start the Daemon run the following on each node.
+
+    
+    
+    > cd C:\kxinstall\KxPlatformWinDeploy_4_4_1_1910111311\delta-bin\bin
+    > startDeltaControlDaemon.bat
+    JAVA VERSION = 8
+    KX_SSL_KEYSTORE_FILE = C:\kxinstall\KxPlatformWinDeploy_4_4_1_1910111311\delta-bin\config\tls-certs\keystore.jks
+    SSL_KEYSTORE_FILE =
+    no keystore file found, using Java Global location for keystore location (.../jre/lib/security/jssecacerts)
+    Starting the Delta Control Java Daemon in background
+    Starting Daemon process PID 11556
+    
+
+#### Web layer
+
+The process for starting the Web Server instances depends on the architecture
+of the Deploy.
+
+##### Start web application
+
+The Web Application is started on windows by starting the
+DS_launch_APPSERVER_A/B workflows on the leader _KX Control_ node. To start
+the web application on both the A and B nodes you should start
+`DS_launch_APPSERVER_A` and `DS_launch_APPSERVER_B` which contain the App
+Server processes and supporting kdb+ Processes (QR, QP).
+
+    
+    
+    > cd C:\kxinstall\KxPlatformWinDeploy_4_4_1_1910111311\delta-bin\bin
+    > startWorkflow.bat DS_launch_APPSERVER_A
+    > startWorkflow.bat DS_launch_APPSERVER_B
+    
+
+#### Process workflows
+
+The _KX Delta Platform_ comes with a set of pre-configured workflows which are
+used to start kdb+ and Java processes which are part of KX Delta Platform. The
+list of pre-configured workflows can be found [here](../env_info/#platform-
+workflows)
+
+The workflows should be started in turn using the `startWorkflow.bat` as
+follows:
+
+    
+    
+    > cd C:\kxinstall\KxPlatformWinDeploy_4_4_1_1910111311\delta-bin\bin
+    > startWorkflow.bat DS_launch_MS_A
+    > startWorkflow.bat DS_launch_ALERT_A
+    > startWorkflow.bat DS_launch_OPS_A
+    > startWorkflow.bat DS_launch_REPORT_A
+    > startWorkflow.bat DS_launch_AT_A
+    
+
+### Shutdown
+
+As with starting a multi-node deploy, the order in which each node is brought
+down is important. The Control Layer should always be brought down last.
+
+#### App server and process workflows
+
+The AppServer and kdb+/Java processes (Including the Daemon) should be brought
+down before the KX Control cluster. Control is responsible for stopping these
+processes so it need to be up in order to do so.
+
+The following script should be run in turn on the KX Control leader node:
+
+    
+    
+    > cd C:\kxinstall\KxPlatformWinDeploy_4_4_1_1910111311\delta-bin\bin
+    > stopAllProcesses.bat
+    
+
+#### KX Control layer
+
+The process for shutting down the KX Control instances depends on the type of
+Deploy i.e. clustered or standalone.
+
+##### KX Control cluster
+
+When stopping the Control instances you should take care to ensure that the
+followers are shutdown before the leader. Before bringing down any node check
+the DeltaControlData\cluster\status file or DeltaControl.log to confirm its
+state (Leader or a Follower) i.e. don't assume the Preferred Leader is always
+the current Leader in the cluster. On each node run:
+
+    
+    
+    > call ..\delta.profile
+    > type %DELTACONTROL_DATA_HOME%/cluster/status
+    
+
+Value of 1 = Leader , 0 = Follower.
+
+**Note** : if the file does not exist use the DeltaControl.log, look for the
+last entry of "This process is" in each log file.
+
+Once you have confirmed which nodes are followers, the KX Control instance on
+these node should be brought down by running:
+
+    
+    
+    > cd C:\kxinstall\KxPlatformWinDeploy_4_4_1_1910111311\delta-bin\bin
+    > stopDeltaControl.bat
+    
+
+Lastly the Leader _KX Control_ instance should be brought down by executing:
+
+    
+    
+    > cd C:\kxinstall\KxPlatformWinDeploy_4_4_1_1910111311\delta-bin\bin
+    > stopDeltaControl.bat
+    
+
+Check the task manager to ensure these processes have all successfully
+shutdown. Look to see if any of the processes below are remaining:
+
+![Screenshot](../img/running-processes-windows.png)
+
+If any of the processes are still running the deploy has not shutdown
+correctly, you can manually end tasks from here by right clicking and
+selecting end task. Ensure to check the relevant log files to check for errors
+when shutting down.
+

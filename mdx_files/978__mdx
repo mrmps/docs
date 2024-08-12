@@ -1,0 +1,143 @@
+https://code.kx.com/dashboards/selectioncontrols/
+
+# Selection Controls - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/selectioncontrols/
+
+# Selection Controls
+
+![Screenshot](../img/selection/selectsectorradio.jpg)  
+_Some Radio Buttons_
+
+## Set up
+
+  1. Use a data source to define the items in the selection control.
+
+  2. Define in the mapping which column represents the text labels in the selection control, and which column is the value passed to the view state on selection. 
+
+  3. Set the _Selected Value_ as a [view state parameter](../viewstateparameters/) which carries the value of the selected item. 
+
+## Basics
+
+![Screenshot](../img/selection/radiobuttonsbasic.png)
+
+_Name_
+
+    A name for the component provided by the user. 
+_Data Source_
+
+    
+
+A [data source](../datasources/): include the list of values to pass into the
+linked [View State Parameter](../viewstateparameters/) and possibly a list of
+value names to display in the dropdown. For example:
+
+![Screenshot](../img/selection/dropdowndatasourcehtmllight.jpg)  
+_A query for a Radio Button data source_
+
+Tip
+
+When using _Data Source_ to create a set of radio buttons, ensure _Use Data
+Source_ is checked and _Data Source Mapping_ is defined.
+
+    
+
+A sample query to use is (if connecting to the sample data connection source
+`htmlevalcongroup` available in the sample demo dashboard set):
+
+`q select distinct src from dfxQuote`
+
+_Selected Value_
+
+    
+
+The view state parameter populated on selection.
+
+[Selected values](../viewstateparameters/#selected-values)
+
+_Label_
+
+    Label description for the Radio Button
+_Use Data Source_
+
+    When checked, _Data Source_ is used to build a Radio Button
+_Accept Empty Values_
+
+    When checked, a null value is available for selection
+_Force Selected Value_
+
+    When checked, the Radio Button will always populate a _Selected Value_ [View State Parameter](../viewstateparameters/); either default or selected value (which may be null if not set). 
+_Multi-select_
+
+    
+
+When checked, multiple radio button selections are supported and selected
+items passed to the _Selected Value_ View State Parameter.
+
+![Screenshot](../img/selection/mutliselectradio.jpg)
+
+_Items Layout_
+
+    Configure Radio Button layout: `Horizontal` or `Vertical`
+_Horizontal_
+
+    Radio button alignment: `Left`, `Right` or `Center`
+_Vertical_
+
+    Radio button alignment: `Top`, `Middle` or `Bottom`
+_Label Width_
+
+    Width of the main label
+_Item Action Event_
+
+    Sets the type of action event when useDatasource is set to false
+
+  * none : (default) no action when changing a selection
+  * always : always runs actions when changing a selection
+  * index - only run actions when changing to the selected index
+  * value - only run actions when changing to the selected value
+
+## Data source mapping
+
+![Screenshot](../img/selection/datasourcemapping.jpg)
+
+When a _Data Source_ is used to populate Radio Buttons, the items of the _Data
+Source_ will represent values. Labels must be assigned using _Data Source
+Mapping_ – else the list will be empty.
+
+_Value_
+
+    The column of the _Data Source_ corresponding to the values to be passed into the _Selected Value_ View State Parameter
+_Text_
+
+    The column of the _Data Source_ corresponding to the text to be displayed as the dropdown options
+
+## Items
+
+![Screenshot](../img/selection/itemsdropdownlist.jpg)
+
+If _Data Source_ is not used to create Radio Buttons, individual values can be
+specified in the _Items_ menu.
+
+## Action
+
+[Actions](../action/)
+
+## Style
+
+_Template_
+
+![Screenshot](../img/selection/selectioncontrol_template.png)
+
+    
+
+Sets the label text for each selection item. The parameters passed to the
+template depend on whether _Use Data Source_ is enabled.
+
+  * if using a data source then the parameters reflect the column names
+  * if inputting items manually then Text and Value parameters are passed
+
+## Format, Margins
+
+[Style](../style/#component-style) for common settings
+

@@ -1,0 +1,128 @@
+https://code.kx.com/insights/enterprise/user-interface/ui-overview.html
+
+# Overview of the kdb Insights Enterprise web interface - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/user-interface/ui-overview.html
+
+# kdb Insights Enterprise UI
+
+_kdb Insights Enterprise_ has both a graphical user interface and [command
+line interface](../cli/index.html).
+
+The graphical user interface (UI), described in this section, enables you to
+create and build databases and to query and visualize data in those databases.
+
+After you [login](login.html) to the _kdb Insights Enterprise_ UI you are
+presented with the Overview page.
+
+The user interface is made up of the following elements:
+
+![Home page of kdb Insights Enterprise.](img/overviewhome.png)  
+
+Menu items are navigable by Tab, Enter to select, and Esc to close.
+
+Supported Browsers
+
+_kdb Insights Enterprise_ UI runs on the latest version of Chrome, Safari,
+Edge and Firefox. We recommend that you use Chrome.
+
+## Left hand menu
+
+The left-hand menu contains dropdown menus for databases, pipelines, queries
+and views. You also have options to view diagnostics and perform upgrades to
+streams and schemas. You can refine the elements displayed on this menu using
+the search option. The following table illustrates each of these options and
+provides links to the functionality they support.
+
+The ribbon menu runs across the top of all UI screens.
+
+Click **+** to open a menu of items for databases, pipelines, queries, and
+views.
+
+![Document bar and tabbed menu options.](img/topline-menu.png)
+
+Use Tab to navigate between selections and Esc to close the dialog. Use Enter
+to execute an action.
+
+The ribbon menu contains a number of icons described in the next section.
+
+The ribbon menu contains the following icons:
+
+item | description  
+---|---  
+![System notifications](img/systemicon.jpg)  
+System Notifications | Click the System Notifications icon to display a [log of system errors and information messages](../troubleshooting/diagnostics.html#4-view-system-notifications). Click ![expanded view](img/expandicon.jpg) for a full page view.  
+![System settings](img/systemsettings.jpg)  
+System Settings | Click the System Settings icon to download system [diagnostics](../troubleshooting/diagnostics.html). _Note: This is a resource heavy process to run._  
+![System information](img/informationalicon2.JPG)  
+System Information | Click the [System Information](system-information.html) icon to display: the _kdb Insights Enterprise_ version and license information, the status of [encryption of data in transit](../security/encryption-in-transit.html) and a link to documentation.  
+![User Profile](img/user-profile-icon.jpg)  
+User Profile | Click the user profile button to display the name of the currently logged in user and gives the option to [logout](login.html#log-out).  
+  
+## Overview
+
+The Overview page is the home page for _kdb Insights Enterprise_ UI.
+
+![Home page of kdb Insights Enterprise.](img/overviewhome.png)  
+
+On the Overview page you see two main sections:
+
+## Discover kdb Insights Enterprise
+
+The Overview page contains options that allow you to build, import, query and
+visualize data.
+
+  * [1\. Build a Database](../database/configuration/ui/database.html#create-a-database) \- setup your _kdb Insights Enterprise_ database.
+  * [2\. Import](../ingest/wizard.html) \- use the import wizard to bring data into the system.
+  * [3\. Query](../visualization/query.html) \- explore your data using q, SQL or python.
+  * [4\. Visualize](../visualization/quickstart.html) \- present and share your insights using views.
+
+## Running Pipelines
+
+The lower section of the Overview page displays a table which lists the status
+of active or finished running pipelines that encountered errors during the
+activation process.
+
+See [here](../ingest/pipeline/index.html#pipeline-status.md) for information
+on pipeline status.
+
+## Additional Actions
+
+When you expand the menu on any of the left hand menu items and hover over the
+entities listed you see three dots to the right of the entity name indicating
+there are more actions available.
+
+Click on the more actions button to see the options available:
+
+  * [**Deploy**](../database/deploy/index.html) \- you can deploy a database using the UI.
+  * **Export** \- you can export databases or pipelines
+  * **Rename** \- click **Rename** to change the name of any of the entities in the UI
+  * **Delete** \- click **Delete** to delete any of the entities in the UI. You will be asked to confirm the request.
+  * **Share** \- you can [share views](../visualization/views.html#share-a-view) of your data with others.
+
+### Exporting entities
+
+The **Export** action button enables you to export a database or a pipeline
+entity created in the UI.
+
+Click the three dots on the entity action menu and select **Export**.
+
+![Exporting an entity](img/export-pipeline.png)
+
+You can run exported entities in a new environment using the CLI on the
+downloaded artifact:
+
+    
+    
+    $ kxi assembly deploy --filepath download.yaml
+    
+
+#### Export a View
+
+To export a View, long-press the save button within the View.
+
+![Exporting an entity](img/export-view.png)
+
+To import a downloaded View, drag the downloaded artifact onto a newly created
+View.
+

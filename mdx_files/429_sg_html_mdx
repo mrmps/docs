@@ -1,0 +1,51 @@
+https://code.kx.com/insights/microservices/database/query/sg.html
+
+# Overview - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/database/query/sg.html
+
+# Overview
+
+The Service Gateway provides a unified access point for data that is
+distributed across one or more Data Access Processes (DAPs). Data in the
+system is generally dispersed across many different DAPs, making it difficult
+to determine the locality of your desired data at any given point in time. It
+may be distributed across multiple assemblies and, within an assembly, it
+migrates across different storage tiers (e.g. RDB, IDB, HDB) over time. The
+Service Gateway's role is to abstract away the complexity of data locality
+(see [Purviews](purviews.html)), and logical query routing (see
+[Routing](routing.html)). It allows you to make simple API calls, which it
+distributes to the appropriate DAP(s). It then aggregates each DAP's partial
+view of the data into a single response, which it returns to you. The Service
+Gateway supports requests made via either REST or QIPC (sync or async).
+
+The Service Gateway is composed of 3 process types, each of which may have
+multiple replicas.
+
+Process | Abbreviation | Description  
+---|---|---  
+Gateway | GW | Publicly exposed user entry point. It accepts API requests and returns the results upon completion.  
+Resource Coordinator | RC | Makes routing decisions, i.e. distributes requests to relevant DAPs, and manages the request queue.  
+Aggregator | Agg | Receives partial responses from DAPs and aggregates into a final response.  
+  
+The high-level architecture and (successful) query path is described in the
+following diagram.
+
+![process diagram](images/sg-arch.png)
+
+  * Blue processes (GW, RC, Agg) represent SG processes.
+  * Yellow processes (DAP) are non-SG processes within kdb Insights.
+  * The green process (User) represents an arbitrary user process making a request to the Service Gateway.
+  * The grey boxes represent RC "ownership". On initialization, the DAPs and Aggs register with an RC, which then has unilateral authority to assign work to them. Moreover, the RCs all register with each other, meaning that each RC has a complete view of all data covered by all DAPs, even if it cannot directly interact with another RC's DAPs.
+  * The arrows represent IPC between processes. Unless otherwise specified, all IPC messages are asynchronous QIPC messages.
+
+Here's a description of the process:
+
+  1. The user sends a request to a GW. This can be done via REST, synchronous QIPC, or asynchronous QIPC.
+  2. The GW forwards the request to an RC. On receipt of the request, the RC determines which portions of the request can be satisfied by the DAPs it owns, and which cannot. It also chooses an Agg that will be responsible for collecting and aggregating the DAPs' partial responses.
+  3. For the portions of the request that the RC cannot satisfy, it passes them to one or more peer RCs that can.
+  4. For the portions of the request that the RC can satisfy, it distributes them to one or more DAPs that contain the requested data.
+  5. DAPs execute the request and forward their partial results to the Agg.
+  6. Once all responses have been received, the Agg aggregates the partial responses into a final response and sends the result to the GW that originally received the request.
+  7. The GW returns the request to the user, either synchronously (if the request was made synchronously), or asynchronously by invoking a callback on the user process (if the request made asynchronously).
+

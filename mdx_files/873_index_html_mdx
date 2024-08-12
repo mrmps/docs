@@ -1,0 +1,144 @@
+https://code.kx.com/insights/enterprise/packaging/index.html
+
+# Introduction - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/packaging/index.html
+
+# kdb Insights Enterprise Packaging
+
+## Introduction
+
+A _kdb Insights Enterprise_ package is a group of components that can be
+managed as one entity via the _kdb Insights Enterprise_ UI, or from outside
+_kdb Insights Enterprise_ using the [kxi package command](package-cli.html) in
+the [kdb Insights CLI](../cli/install.html).
+
+A package is made up of:
+
+  * A [manifest file](package-components.html#manifest-file) describing the content of a package and its dependencies.
+  * [Deployment Components](package-add.html#deployment-components) including details on how processes need to be created and orchestrated.
+  * [Runtime Components](package-add.html#runtime-components) defining the runtime behavior when you load a package from a q or python session.
+  * [Static Context](package-add.html#static-context) describing relationships with other packages.
+  * An initialization script defining the file/files to be loaded when a package is loaded.
+
+A package is a directory containing files and sub-folders that describe these
+components.
+
+Advantages of using packages over the deprecated [assembly deployment
+mechanism](../kxi-cli/cli.html#kxi-assembly).
+
+The CLI and the _kdb Insights Enterprise_ UI both interact with packages
+stored and deployed in _kdb Insights Enterprise_ ensuring that the packages UI
+is kept in sync with the CLI and vice versa.
+
+## Package life cycle
+
+The following list outlines the normal life cycle of a package, from creation
+to removal:
+
+  1. [Create](package-create.html) a package locally.
+  2. [Add](package-add.html) all the components you require to the local package.
+  3. [Pack](package-upload.html#packing) the package locally into a `.kxi` package file, ready for upload to _kdb Insights Enterprise_.
+  4. [Upload](package-upload.html#uploading) the `.kxi` package to _kdb Insights Enterprise_. 
+  5. [Deploy](package-deploy.html) the package on _kdb Insights Enterprise_.
+  6. [Tear down](package-deploy.html#tearing-down) the package on _kdb Insights Enterprise_.
+  7. [Remove](package-upload.html#deleting) a local package or a package on _kdb Insights Enterprise_.
+
+## Converting assemblies to packages
+
+The CLI provides a conversion function to help you migrate from assemblies to
+packages. The `remote-convert` function takes an assembly file and creates a
+package with the same name. The packages is stored in a directory next to the
+original assembly.
+
+This new package can be managed via the CLI or the UI, once uploaded to a _kdb
+Insights Enterprise_ deployment. When you deploy the package, it behaves in
+the same way as the assembly it was created from:
+
+    
+    
+    kxi package remote-convert --help
+    
+    
+    
+     Usage: kxi package remote-convert [OPTIONS] ASSEMBLY_FILE                      
+    
+     Convert V1/V2 assemblies into Packages with the server. Optionally keep the    
+     package installed on the server.                                               
+    
+    ╭─ Options ────────────────────────────────────────────────────────────────────╮
+    │ --hostname,--url                  TEXT   Insights URL                        │
+    │                                          [env var: INSIGHTS_URL]             │
+    │ --realm                           TEXT   Realm                               │
+    │                                          [env var: INSIGHTS_REALM]           │
+    │                                          [default: insights]                 │
+    │ --client-id                       TEXT   Client id                           │
+    │                                          [env var: INSIGHTS_CLIENT_ID]       │
+    │ --client-secret                   TEXT   Client secret                       │
+    │                                          [env var: INSIGHTS_CLIENT_SECRET]   │
+    │ --auth-enabled/--auth-disabled           Will attempt to retrieve bearer     │
+    │                                          token for request                   │
+    │                                          [env var: KXI_AUTH_ENABLED]         │
+    │                                          [default: auth-enabled]             │
+    │ --server-timeout                  FLOAT  Timeout for Insights server calls   │
+    │                                          [env var: INSIGHTS_SERVER_TIMEOUT]  │
+    │                                          [default: 60]                       │
+    │ --install                                Additionally installs the resulting │
+    │                                          package on the server.              │
+    │ --help                                   Show this message and exit.         │
+    ╰──────────────────────────────────────────────────────────────────────────────╯
+    
+
+The example below runs the conversion of an existing assembly that includes a
+database, tables and a pipeline:
+
+    
+    
+    kxi package -q remote-convert asm.yaml && kxi package unpack asm && kxi package info asm
+    
+    
+    
+    ==PATH==
+    /Users/kx/packages/asm
+    
+    ==OBJECT==
+    Package
+    
+    ==Manifest==
+    name: asm
+    version: 0.0.1
+    databases:
+      asm-db:
+        dir: databases/asm-db
+        shards:
+        - asm-db-shard
+        tables:
+        - trade
+        - quote
+        - exchange
+        - instrument
+    pipelines:
+      sp-asm:
+        file: pipelines/sp-asm.yaml
+    router: router/router.yaml
+    deployment_config: deployment_config/deployment_config.yaml
+    
+
+If the conversion fails, kdb Insights Enterprise indicates which fields are
+problematic.
+
+To ensure a successful conversion, modify the existing assembly by fixing the
+required fields. For example:
+
+    
+    
+    spec -> elements -> sm -> tiers -> 1 -> compression -> level field required (type=value_error.missing)
+    spec -> elements -> sm -> tiers -> 2 -> compression -> level field required (type=value_error.missing)
+    spec -> elements -> sm -> stream
+    extra fields not permitted (type=value_error.extra)
+    
+
+In the example above, the conversion requires the field compression to be
+added to the two tiers and the field "stream" to be removed from the Storage
+Manager.
+

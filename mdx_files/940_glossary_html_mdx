@@ -1,0 +1,427 @@
+https://code.kx.com/insights/enterprise/glossary.html
+
+# kdb Insights Enterprise glossary - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/glossary.html
+
+# Glossary
+
+## Assembly
+
+Versions of kdb Insights Enterprise before v1.5 use assemblies; an assembly is
+comprised of:
+
+  * A database to store and access your data.
+  * A schema to convert imported data to a format compatible with kdb Insights Enterprise (using kdb+ technology).
+  * A stream to push event data into a database.
+  * Pipelines to read data from source and write it to a kdb Insights Enterprise database.
+
+Every assembly is labelled with its name.
+
+## Build a Database
+
+Build a database is accessible from a tile under "Discover kdb Insights
+Enterprise" on the **Overview** page. Simply name and save the database to get
+started.
+
+## Ceph
+
+An open-source, scalable, simplified storage solution for data pipelines.
+
+## C-SDK
+
+A software development kit to support C/C++ applications.
+
+## cli
+
+"cli" is the command line interface. The cli runs Insights processes and is an
+alternative to the UI for power users.
+
+## Console (UI)
+
+The console is where results from ad hoc queries run in the Scratchpad are
+presented.
+
+The console is part of the Query window.
+
+## DAP
+
+Data Access Process.
+
+## Dashboards
+
+Dashboards is an interactive visualization tool that runs in your browser. You
+can query, transform, share and present live data insights. Dashboards is
+integrated into kdb Insights Enterprise as Views.
+
+[I want to learn more about KX Dashboards](https://code.kx.com/dashboards/)
+
+## Database
+
+A database is a data store built on kdb+ technology. A database offers rdb
+(real-time database storage), idb (interval data storage) and at least one hdb
+(historic database storage) - sub-tiers of a hdb may be on the database too.
+
+A database also includes:
+
+  * A schema to convert imported data to a kdb+ compatible format.
+  * A stream to help push event data to the database.
+  * Optional pipelines to import data to the platform
+
+[I want to build my own database.](database/index.html)
+
+## Decode
+
+One of the functions available in pipeline is decode. The decode node converts
+data to a format that can be directly processed within the Stream Processor.
+
+[I want to learn more about decode nodes.](../api/stream-
+processor/q/decoders.html)
+
+## Diagnostics
+
+kdb Insights Enterprise includes diagnostic and logging tools to report on the
+status of database and pipeline deployments.
+
+[I want to learn more about diagnostics.](troubleshooting/diagnostics.html)
+
+## Docker
+
+[Docker](https://www.docker.com/) is a platform-as-a-service, delivering
+software to consumers via "containers".
+
+## Entity-tree
+
+The entity-tree is a dynamic menu, always available in the left margin of the
+kdb Insights Enterprise user interface. The content of the menu changes
+depending on the interaction in the platform. On the **Overview** page, for
+example, the entity-tree shows a list of databases, pipelines, queries and
+views. On the pipeline page, the entity-tree lists the nodes used to build
+data pipelines to import data from source and transform it to a format
+compatible with a kdb Insights Enterprise database.
+
+## hdb
+
+A hdb is a mount for storing historic data on a database. A historic database
+is the final destination for interval data.
+
+## idb
+
+An idb is a mount for storing interval data on a database. It takes data from
+a real-time database (rdb), stores this data for a set period, e.g. 10
+minutes, before the data is written to a historic database.
+
+## Import Wizard
+
+A step-by-step process for building a pipeline to import, transform and write
+data to your database.
+
+[I want to learn more about the import wizard](ingest/wizard.html)
+
+## Java-SDK
+
+A software development kit for developing applications in Java.
+
+## kdb+
+
+Kdb+ is an ultra-fast time series columnar database.
+
+## Keycloak
+
+Keycloak is an open-source, single-sign-on authentication service and
+management tool. It offers enhanced user security built from existing
+protocols and can support authentication via social platform providers like
+Google, Facebook or GitHub.
+
+## kodbc
+
+An open database connectivity driver for connecting kdb+ databases.
+
+## Kubernetes
+
+Kubernetes is an open-source tool for bundling and managing clusters of
+containerized applications.
+
+## Kurl
+
+Kurl is an easy-to-use cloud integration, registering Azure, Amazon, and
+Google Cloud Platform authentication information.
+
+[I want to learn more about Kurl.](../core/kurl/kurl.html)
+
+## Label
+
+A Label is required by a database. Every created database has a default label,
+`kxname`; additional labels can be added to the database. Labels are a filter
+option in the query tab.
+
+[I want to learn more about
+labels.](database/configuration/assembly/database.html#labels)
+
+## Language interfaces
+
+kdb Insights language interfaces are libraries created in different languages
+for developers to integrate with that help you publish, subscribe and query
+data stored in an kdb Insights.
+
+Language interfaces are available for `C`, `Java`, `q` and `Python`.
+
+These interfaces were called SDKs prior to 1.7.0
+
+## Machine Learning
+
+Machine learning is a branch of artificial intelligence (AI) that focuses on
+the use of data and algorithms to imitate how people learn, with the goal of
+improving accuracy.
+
+[I want to learn more about Stream Processor machine learning.](../api/stream-
+processor/q/ml.html)
+
+## Mount
+
+A mounted database is ready for use; a database can have a hdb, idb and/or rdb
+mounts.
+
+## Nodes
+
+Nodes are used by pipelines to read, write and transform data from its source
+to the database.
+
+Each node has a defined function and set of properties to edit. Some nodes
+allow for `q` or `python` code.
+
+Machine Learning nodes offer more advanced manipulations of imported data
+before writing to the database.
+
+## Object Storage
+
+A data storage system managing data as objects, compared to a file hierarchy
+or block based storage architecture. Object storage is used for unstructured
+data, eliminating the scaling limitations of traditional file storage.
+Limitless scale is the reason object storage is the storage of the cloud;
+Amazon, Google and Microsoft all employ object storage as their primary
+storage.
+
+## Output Variable
+
+Results from a database query are written to an _Output Variable_. The _Output
+Variable_ can be queried in the scratchpad using `q` or `python`.
+
+## Packages
+
+A package is a storage location for code, metadata and information for
+describing an application.
+
+[I want to learn more about packages](../api/packaging/q/packages.html)
+
+## Partitioning
+
+When a data table is written to a database it must be partitioned to be
+compatible with a kdb+ time series database.
+
+Partitioning is handled by a Timestamp column, and defined in a schema. Every
+table must have a Timestamp column.
+
+## Pipeline
+
+Pipelines are a linked set of processes to read data from its source,
+transform it to a format compatible with kdb Insights Enterprise, then write
+it to a database for later querying.
+
+Pipelines can be created using the Import Wizard or a visual pipeline builder.
+The pipeline builder offers a set of nodes to help read, writer or transform
+data; nodes are connected together in a workspace to form a linked chain of
+events or pipeline template. Additional machine learning nodes are available
+for more advanced data interactions.
+
+Pipelines can be deployed individually or associated with a database;
+pipelines associated with a database will be deployed and activated when the
+database is deployed.
+
+[I want to learn more about pipelines.](ingest/pipeline/index.html)
+
+## Pipeline template
+
+The Pipeline Template is the layout of the nodes that together make a
+Pipeline.
+
+## Postgres
+
+[Postgres](https://www.postgresql.org/) (PostgreSQL), is an open-source
+relational database management system.
+
+## pgwire
+
+pgwire is a PostgresSQL client library, used to implement a Postgres wire
+protocol server that connects to kdb Insights Core.
+
+[I want to learn more about pgwire.](../core/pgwire.html)
+
+## Protocol Buffers
+
+Protocol buffers are Google's language-neutral, platform-neutral, extensible
+mechanism for serializing structured data - think XML, but smaller, faster,
+and simpler. Data structure is first defined before specially generated source
+code read-and-writes structured data, to-and-from a variety of data streams,
+using a variety of programming languages.
+
+## PyKX
+
+PyKX is the interface between the programming language, q, the time-series
+columnar database, kdb+, data, and Python.
+
+[I want to learn more about PyKX.](https://code.kx.com/pykx/index.html)
+
+## q
+
+`q` is the programming language used to query a kdb+ database.
+
+## q/SQL
+
+q/SQL is a collection of SQL-like functions for interacting with a kdb+
+database.
+
+[I want to learn more about q-sql.](https://code.kx.com/q4m3/9_Queries_q-sql/)
+
+## Query
+
+Interact with your data by building queries in the Query window. Build queries
+with filters, or execute with `q`, or `SQL` code. Queries reference the name
+of the table generated by the pipeline and results written to an _Output
+Variable_ for use by the Scratchpad.
+
+Ad hoc queries in the scratchpad use `q` or `python` with the _Output
+Variable_ ; results are outputted to the console as a table or chart.
+
+[I want to learn more about data exploration.](analysis/query.html)
+
+## Reader
+
+A reader is typically the first node in a pipeline. It feeds or imports data
+from an external data source to kdb Insights Enterprise. Data read from an
+external source needs to be decoded (in most cases), and transformed, before
+it can written to a kdb Insights Enterprise database.
+
+[I want to learn more about readers.](../api/stream-processor/q/readers.html)
+
+## Reliable Transport
+
+The kdb Insights Reliable Transport (RT) is a microarchitecture for ensuring
+the reliable streaming of messages.
+
+[I want to learn more about kdb Insights Reliable Transport
+(RT).](../microservices/rt/index.html)
+
+## REST
+
+REST, Representational State Transfer, is a software architectural style that
+describes the architecture of the web.
+
+[I want to learn more about REST.](https://restfulapi.net/)
+
+## rdb
+
+Real-time event data is stored on an rdb mount of the database, before it's
+written to the interval database (idb).
+
+## RT Bridge
+
+An RT Bridge is a q process which enables applications outside of Insights
+which deliver data to a q process, to deliver the same data to Insights
+without further modification.
+
+## RT stream
+
+An RT stream is the kdb Insights Enterprise deployment of a Reliable Transport
+cluster.
+
+[I want to learn more about
+Streams.](database/configuration/assembly/stream.html)
+
+## Service Discovery
+
+The Service Discovery microservice has been deprecated and is no longer be
+available. Older versions of Service Discovery will be available as part of
+[past releases](../microservices/release-notes/previous.html#service-
+discovery). Patches will be issued as required for critical issues and
+security vulnerabilities in accordance with KX's Security Standards.
+
+## Schema
+
+A schema is how data is converted from its source format, to a [format
+compatible](https://code.kx.com/q/basics/datatypes/) with a kdb+ database.
+Every data table has its own schema.
+
+[I want to learn more about
+schemas.](database/configuration/assembly/schema.html)
+
+## Scratchpad
+
+Scratchpad is part of the Query window. With scratchpad you can make ad hoc
+queries against an Output Variable generated by a query against a table in the
+database.
+
+You can also create data tables directly in the scratchpad editor. The
+scratchpad editor supports `q` or `python` code.
+
+Results from a scratchpad query are presented in the console, or as a table or
+chart.
+
+## SDK
+
+kdb Insights Enterprise SDKs have been renamed language interfaces.
+
+## SQL
+
+SQL (Structured Query Language) is a standard language for accessing
+databases, and is supported by kdb+ databases.
+
+## Stream
+
+Streams is how event data is written to a database. Event data is typically
+real-time as may be generated by a price or sensor feed.
+
+Real-time data is stored on an real-time database (rdb), moved to an interval
+database (idb), before the data is written to an historic (hdb) database.
+
+## Stream Processor
+
+The KX Stream Processor is a steam processing service for transforming,
+validating, processing, enriching and analyzing real-time data in context.
+
+[I want to learn more about the KX Stream Processor.](../microservices/stream-
+processor/index.html)
+
+## Terraform
+
+Terraform is an infrastructure as code tool that lets you build, change, and
+version cloud and on-prem resources safely and efficiently.
+
+## Transform
+
+A Transform node is required for most pipelines. A transform node takes
+imported data and transforms it to a kdb+ format suitable for storage on the
+database.
+
+## UI
+
+UI is the User Interface for kdb Insights Enterprise.
+
+## Upgrades
+
+Upgrades lists overloaded and orphaned streams, and orphaned schemas, created
+in earlier versions of kdb Insights Enterprise.
+
+## View
+
+Views is how you build visualizations in kdb Insights Enterprise. Views are
+powered by KX Dashboards technology.
+
+## Writer
+
+A Writer node is an essential part of any pipeline. The writer nodes takes the
+transformed (kdb+) data you have read from its source and writes it to a kdb+
+database.
+
+[I want to learn more about writers.](../api/stream-processor/q/writers.html)
+

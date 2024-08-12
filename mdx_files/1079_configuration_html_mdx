@@ -1,0 +1,91 @@
+https://code.kx.com/insights/microservices/rt/configuration.html
+
+# Overview - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/rt/configuration.html
+
+# RT Configuration
+
+This section describes some the configuration details in RT.
+
+## Sequencer Endpoints
+
+### Internal Publisher
+
+An internal publisher starts a set of push_client
+[replicators](index.html#replicators) which connect to each of the internal
+push_server replicators running in the RT [sequencers](index.html#sequencers)
+using the endpoints:
+
+  * `${RT_TOPIC_PREFIX}<streamid>-0:5002`
+  * `${RT_TOPIC_PREFIX}<streamid>-1:5002`
+  * `${RT_TOPIC_PREFIX}<streamid>-2:5002`
+
+Note
+
+`${RT_TOPIC_PREFIX}` is defaulted as follows: \- [Docker](quickstart/docker-
+compose.html#environment-variables) is set to `rt-` \-
+[Kubernetes](quickstart/kubernetes.html) is set to the release name of the RT
+chart \- _kdb Insights Enterprise_ is set to `rt-`
+
+For example: in _kdb Insights Enterprise_ if the streamid is set to `data` the
+endpoints will be `rt-data-0:5002`, `rt-data-1:5002`, `rt-data-2:5002`.
+
+### Internal Subscriber
+
+An internal subscriber starts a set of pull_client
+[replicators](index.html#replicators) which connect to each of the internal
+pull_server replicators running in the RT [sequencers](index.html#sequencers)
+using the endpoints:
+
+  * `${RT_TOPIC_PREFIX}<streamid>-0:5001`
+  * `${RT_TOPIC_PREFIX}<streamid>-1:5001`
+  * `${RT_TOPIC_PREFIX}<streamid>-2:5001`
+
+Note
+
+`${RT_TOPIC_PREFIX}` is defaulted as follows: \- [Docker](quickstart/docker-
+compose.html#environment-variables) is set to `rt-` \-
+[Kubernetes](quickstart/kubernetes.html) is set to the release name of the RT
+chart \- _kdb Insights Enterprise_ is set to `rt-`
+
+For example: in _kdb Insights Enterprise_ if the streamid is set to `data` the
+endpoints will be `rt-data-0:5001`, `rt-data-1:5001`, `rt-data-2:5001`.
+
+### External Publisher
+
+External publishers use encryption with mutable TLS. An external publisher
+starts a set of push_client [replicators](index.html#replicators) with SSL
+enabled which connect via load balancers to each of the external push_server
+replicators running in the RT [sequencers](index.html#sequencers) using the
+endpoints:
+
+  * `<load_balancer_1>:5000`
+  * `<load_balancer_2>:5000`
+  * `<load_balancer_3>:5000`
+
+The mechanism for determining the load balancer endpoints and certificate
+exchange varies depending on the deployment type:
+
+## Stream log files
+
+Each publisher and subscriber writes and reads from a set of RT stream log
+files in a directory.
+
+Publishers and subscribers specify a 64 bit position in the stream when
+writing or reading from it. That position first identifies the log file which
+contains that message, with RT log files being named as `log.x.y` where:
+
+  * x is the top 20 bits of the position
+  * y is the next 14 bits of the position
+
+The remaining 30 bits then locate the start of the message in the
+corresponding log file. Therefore, each log file has a maximum size of 1GB
+before automatically rolling to the next log file.
+
+Additional files created by an RT stream. You should not be modify nor delete
+these files:
+
+  * .session file.
+  * state.X file
+

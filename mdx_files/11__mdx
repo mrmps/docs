@@ -1,0 +1,1069 @@
+https://code.kx.com/developer/libraries/grammar-of-graphics-statistics/
+
+# Statistics - KX Developer
+
+Original URL: https://code.kx.com/developer/libraries/grammar-of-graphics-statistics/
+
+# Statistical Transformation Functions
+
+`.st` provides statistical transformation implementations (primarily) for use
+with GG graphics. See `.gg.stat` for GG wrappers.
+
+## .gg.stat.ty.applyF
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+<param> | dict |   
+<param>.applyF | fn (table) → table |   
+<param>.colmap | symbol[] |   
+  
+**Returns:**
+
+Type | Description  
+---|---  
+fn (table) → table | a transform function  
+  
+## .gg.stat.ty.with.colmap
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+| symbol[] | a list of symbols that will be output identically to the input  
+<param> | dict |   
+<param>.applyF | fn (table) → table |   
+<param>.colmap | symbol[] |   
+  
+**Returns:**
+
+Name | Type | Description  
+---|---|---  
+<returns> | dict |   
+<returns>.applyF | fn (table) → table |   
+<returns>.colmap | symbol[] |   
+  
+## .gg.stat.ty.colmap
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+<param> | dict |   
+<param>.applyF | fn (table) → table |   
+<param>.colmap | symbol[] |   
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol[] | a list of symbols that will be output identically to the input  
+  
+## .gg.stat.ty.new
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+| (fn (table) → table; symbol[]) | A tuple of:   
+a transform function  
+a list of symbols that will be output identically to the input  
+  
+## .gg.stat.bin1d
+
+A 1d binning stat
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+column | symbol |   
+binspec | (symbol; number; number) | width or count (`w or`c), argument, padding  
+aggs | dict | see .st.a.*  
+options | dict | null | null for defaults, see .st.sbinNd_i  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | table -> transformed table  
+  
+**See Also:** [ .st.bin1d ](./#stbin1d)
+
+## .gg.stat.bin2d
+
+2d binning transform
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+columns | symbol[] | list of two column names  
+binspec1 | (symbol; number; number) | width or count (`w; or`c), argument, padding  
+binspec2 | (symbol; number; number) |   
+aggs | dict | see .st.a.*  
+options | dict | null | null for defaults, see .st.sbinNd_i  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | table -> transformed table  
+  
+**See Also:** [ .st.bin2d ](./#stbin2d)
+
+## .gg.stat.binNd
+
+nD binning transform
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+columns | symbol[] | list of n column names  
+binspecs | (symbol; number; number)[] | list of n triples of: width or count (`w or`c), argument, padding  
+aggs | dict | see .st.a.*  
+options | dict | null | null for defaults, see .st.sbinNd_i  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | table -> transformed table  
+  
+**See Also:** [ .st.binNd ](./#stbinnd)
+
+## .gg.stat.lsquares
+
+Least-squares regression transform function.
+
+Produce a table of values along the least-squares regression of the input
+table
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+x | symbol | column  
+y | symbol | column  
+degree | number | degree of the least-squares fit polynomial  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | transform object  
+  
+**See Also:** [ .st.lsqTable ](./#stlsqtable)
+
+## .gg.stat.mavg
+
+Moving average statistic
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+num | long | the number of values to be averaged at each point  
+x | symbol | column  
+y | symbol | column  
+g | symbol | null | group column  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | transform object  
+  
+## .gg.stat.outliers
+
+Compute the outliers component of a box-plot
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+catcol | symbol | categorical column name  
+numcol | symbol | continuous column name  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+fn | table -> transformed table  
+  
+**See Also:** [ .st.outliers ](./#stoutliers)
+
+## .gg.stat.pie
+
+Summarizing 1d bin transform with an additional constant 0 column (`const__`)
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+column | symbol | column name  
+aggs | dict | aggregators to use (see .st.a)  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | new stat transform  
+  
+## .gg.stat.quantile
+
+Compute the quantiles of a numeric column
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+column | symbol | column name  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | table -> quantile table  
+  
+**See Also:** [ .st.quantile ](./#stquantile)
+
+## .gg.stat.quartiles
+
+Compute the quartiles of a column for each distinct value of another column
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+catcol | symbol | categorical column name  
+numcol | symbol | continuous column name  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | table -> transformed table  
+  
+**See Also:** [ .st.quartiles ](./#stquartiles)
+
+## .gg.stat.sbin1d
+
+Scaled 1d bin (i.e., log bins)
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+column | symbol | column name  
+binspec | (symbol; number; number) | width or count (`w or`c), argument, padding  
+sc | dict | see .gg.scale  
+aggs | dict | see .st.a.*  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | table -> transformed table  
+  
+**See Also:** [ .st.sbin1d ](./#stsbin1d)
+
+## .gg.stat.sbin2d
+
+Scaled 2d bin (i.e., log bins)
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+columns | symbol[] | 2 column names  
+binspec1 | (symbol; number; number) | width or count (`w or`c), argument, padding  
+binspec2 | (symbol; number; number) |   
+scale1 | dict | see .gg.scale  
+scale2 | dict |   
+aggs | dict | see .st.a.*  
+options | dict | null | null for defaults, see .st.sbinNd_i  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | table -> transformed table  
+  
+**See Also:** [ .st.sbin2d ](./#stsbin2d)
+
+## .gg.stat.sbinNd
+
+Scaled nD bin (i.e., log bins)
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+columns | symbol | n column names  
+binspecs | (symbol; number; number) | n triples of: width or count (`w or`c), argument, padding  
+scales | dict | n scales -- see .gg.scale  
+aggs | dict | see .st.a.*  
+options | dict | null | null for defaults, see .st.sbinNd_i  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | table -> transformed table  
+  
+**See Also:** [ .st.sbinNd ](./#stsbinnd)
+
+## .gg.stat.summary
+
+Compute 5-number summaries of a column for each distinct value of another
+column
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+catcol | symbol | categorical column name  
+numcol | symbol | continuous column name  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | table -> transformed table  
+  
+**See Also:** [ .st.summary ](./#stsummary)
+
+## .st.a.avg
+
+Return a description of an `avg` aggregation.
+
+Note - the aggregation will be mapped to the column name. For an aggregation
+with an explicit output mapping (to avoid collisions with other aggregations
+on the same column, see .st.a.custom).
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+col | symbol | column name to avg  
+  
+**See Also:** [ .st.a.custom ](./#stacustom)
+
+**Example:** An average aggregation of a column
+
+    
+    
+     .st.a.avg[`mycolumn]
+    
+
+**Example:** A count and avg aggregation
+
+    
+    
+     .st.a.count[] , .st.a.avg[`mycolumn]
+    
+
+## .st.a.count
+
+Return a count aggregation description. The output will be mapped to a
+variable named `count__`.
+
+**Returns:**
+
+**Example:** A count aggregation
+
+    
+    
+     .st.a.count[]
+    
+
+## .st.a.custom
+
+Return a description for a custom aggregation on a table. The custom function
+should take a list of the type of the column, and return a single value (e.g.
+`avg`, `dev`, `{count distinct x}`, etc)
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+n | symbol | name of resulting column  
+col | symbol | name of column to aggregate  
+customF | fn | function to aggregate sublists of the column  
+  
+**Returns:**
+
+**Example:** Custom average aggregator
+
+    
+    
+     .st.a.custom[`outputName__; `mycolumn; avg]
+    
+
+**Example:** Count and a custom aggregator count occurrences
+
+    
+    
+     .st.a.count[] , .st.a.custom[`output__; `mycolumn; {count where x = `something}]
+    
+
+## .st.a.max
+
+Return a description of a max aggregation.
+
+Note - the output will be mapped to the column name. For an aggregation with
+an explicit output mapping (to avoid collisions with other aggregations on the
+same column, see .st.a.custom).
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+col | symbol | column name to max  
+  
+**See Also:** [ .st.a.custom ](./#stacustom)
+
+## .st.a.min
+
+Return a description of a min aggregation
+
+Note - the output will be mapped to the column name. For an aggregation with
+an explicit output mapping (to avoid collisions with other aggregations on the
+same column, see .st.a.custom).
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+col | symbol | column name to min  
+  
+**See Also:** [ .st.a.custom ](./#stacustom)
+
+## .st.a.sum
+
+Return a description of a sum aggregation
+
+Note - the output will be mapped to the column name. For an aggregation with
+an explicit output mapping (to avoid collisions with other aggregations on the
+same column, see .st.a.custom).
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+col | symbol | column name to sum  
+  
+**See Also:** [ .st.a.custom ](./#stacustom)
+
+## .st.bin1d
+
+Perform a 1D binning on a table, performing all specified aggregations.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+col | symbol | column to bin  
+val | (symbol; number) | width or count (``w` or ``c`) and argument pair  
+aggs | dict | dictionary of aggregation descriptions (see .st.a.*)  
+options | dict | null | see .st.bin2d  
+table | table |   
+  
+**Returns:**
+
+Type | Description  
+---|---  
+table | binned and aggregated table  
+  
+**Throws:**
+
+Type | Description  
+---|---  
+| "column x not found"  
+  
+**Example:** Basic categorical bin with count aggregation
+
+    
+    
+          t: ([]x:45?5?`8; v:45?45);
+    
+          .st.bin1d[`x; ::; .st.a.count[]; ::; t]
+    
+     /=> x        x_start__ x_end__  count__
+     /=> -----------------------------------
+     /=> akkihkkm akkihkkm  dkphkccc 5      
+     /=> dkphkccc dkphkccc  fchdbpfd 11     
+     /=> fchdbpfd fchdbpfd  mbpcngkg 11     
+     /=> mbpcngkg mbpcngkg  pdhioofe 8      
+     /=> pdhioofe pdhioofe           10    
+    
+
+**Example:** Categorical bin with count and avg aggregations
+
+    
+    
+          .st.bin1d[`x; ::; .st.a.count[] , .st.a.custom[`myoutput__;`v;avg]; ::; t]
+    
+     /=> x        x_start__ x_end__  count__ myoutput__
+     /=> ----------------------------------------------
+     /=> biamifgg biamifgg  ekeilfak 12      17.25     
+     /=> ekeilfak ekeilfak  obikddhi 4       22        
+     /=> obikddhi obikddhi  oebfende 11      28.63636  
+     /=> oebfende oebfende  pbaioapc 7       14.42857  
+     /=> pbaioapc pbaioapc           11      21        
+    
+
+**Example:** Numeric bin with count aggregation
+
+    
+    
+          .st.bin1d[`v; ::; .st.a.count[]; ::; t]
+    
+     /=> v  v_start__ v_end__ count__
+     /=> ----------------------------
+     /=> 0  0         3       5      
+     /=> 3  3         6       3      
+     /=> 6  6         9       4      
+     /=> 9  9         12      2      
+     /=> 12 12        15      1      
+     /=> 15 15        18      5      
+     /=> ...
+    
+
+**Example:** Custom numeric bin with count aggregation and centered output
+
+    
+    
+          .st.bin1d[`v; (`w;10;0); .st.a.count[]; enlist[`center]!enlist 1b; t]
+                     // ^ 10-unit wide bins
+                                                  // ^ center the output point    
+    
+     /=> v  v_start__ v_end__ count__
+     /=> ----------------------------
+     /=> 5  0         10      13     
+     /=> 15 10        20      9      
+     /=> 25 20        30      8      s
+     /=> 35 30        40      10     
+     /=> 45 40        50      5      
+    
+
+## .st.bin2d
+
+Perform a 2D binning and all specified aggregations on the bins of a specified
+table.
+
+If hexbins are requested, normalization and centering are disabled.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+columns | symbol[] | pair of column names  
+xbins | (symbol; number) | width or count (``w` or ``c`) and argument  
+ybins | (symbol; number) | width or count (``w` or ``c`) and argument  
+mods | dict | aggregations to perform  
+options | dict (norm: symbol; center: boolean; hex: boolean) | null | options for binning  
+table | table |   
+  
+**Returns:**
+
+**Throws:**
+
+Type | Description  
+---|---  
+| "column x not found"  
+  
+**See Also:** [ .st.bin1d ](./#stbin1d)
+
+**Example:** Basic 2d binning using all defaults
+
+    
+    
+         .st.bin2d[`x`y; ::; ::; .st.a.count[]; ::; ([]x:til 45; y: til 45)]
+    
+
+**Example:** Bin with 40 x bins
+
+    
+    
+         .st.bin2d[`x`y; (`c;40;0); ::; .st.a.count[]; ::; ([]x:til 45; y: til 45)]
+    
+
+**Example:** Bin with centered bins
+
+    
+    
+         .st.bin2d[`x`y; ::; ::; .st.a.count[]; enlist[`center]!enlist 1b; ([]x:til 45; y: til 45)]
+    
+
+**Example:** Bin with x normalized by y
+
+    
+    
+         .st.bin2d[`x`y; ::; ::; .st.a.count[]; enlist[`norm]!enlist `x; ([]x:til 45; y: 45?`a`b`c)]
+    
+
+**Example:** Bin with custom sum aggregation on x
+
+    
+    
+         .st.bin2d[`x`y; ::; ::; .st.a.count[] , .st.a.custom[`newx; `x; sum]; ::; ([]x:til 45; y: 45?`a`b`c)]
+    
+
+**Example:** Bin using a by-clause _and_ a bin
+
+    
+    
+         .st.bin2d[`x`y; ::; `by; .st.a.count[] , .st.a.custom[`newx; `x; sum]; ::; ([]x:til 45; y: 45?`a`b`c)]
+    
+
+## .st.binNd
+
+Perform an nD binning and all specified aggregations on the bins of a
+specified table.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+columns | symbol[] | list of column names to bin  
+xbins | (symbol; number; number) | width or count (``w` or ``c`) and argument  
+ybins | (symbol; number; number) | width or count (``w` or ``c`) and argument  
+mods | dict | aggregations to perform  
+options | dict | null | see .st.bin2d  
+table | table |   
+  
+**Returns:**
+
+**Throws:**
+
+Type | Description  
+---|---  
+| "column x not found"  
+  
+**See Also:** [ .st.bin1d ](./#stbin1d)
+
+## .st.factorial
+
+Calculates the factorial of a number This uses floats, as longs overflow too
+quickly
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | Number |   
+  
+**Returns:**
+
+## .st.gen.normal
+
+Generate a normal distribution
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+n | Long | The number of points to generate  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+Float[] | The random data points  
+  
+## .st.lsqTable
+
+Return a 1000-point sampling of the d-degree least squares fit of the x and y
+column of the given table
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+x | symbol | column name  
+y | symbol | column name  
+d | long | degree (i.e., between 0-4)  
+t | table | dict | table or .gg.tbl.ty instance  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+table | 1000-point sampling  
+  
+## .st.lsqTableGrouped
+
+Return a 1000-point sampling of the d-degree least squares fit of the x and y
+column of the given table
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+x | symbol | column name  
+y | symbol | column name  
+g | symbol | group column name  
+d | long | degree (i.e., between 0-4)  
+t | table | dict | table or .gg.tbl.ty instance  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+table | 1000-point sampling  
+  
+## .st.lsquares
+
+Return the coefficients of the d-degree least-squares fit on the given table
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+x | symbol | column  
+y | symbol | column  
+d | long | degree (i.e., between 0-4)  
+table | table | dict | table or .gg.tbl.ty instance  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+number[] | coefficients  
+  
+## .st.normalPDF
+
+The probability density function of a normal distribution
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+u | Number | The mean value  
+v | Number | The variance  
+x | Number | The independent variable  
+  
+**Returns:**
+
+## .st.outliers
+
+Return the "outliers" component of a box-plot. All data points further than
+1.5 times the interquartile range from the median are returned.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+catcol | symbol | categorical column  
+numcol | symbol | numeric column  
+table | table |   
+  
+**Returns:**
+
+**See Also:** [ .st.summary ](./#stsummary)
+
+**Example:**
+
+    
+    
+          t : ([]x:45?5?`8; y:45?45);
+    
+          .st.outliers[`x; `y; t]
+    
+     /=> x        y 
+     /=> -----------
+     /=> mijpkecf 44
+     /=> kiggemin 39
+    
+
+## .st.poissonPMF
+
+The probability mass function of a poisson distribution
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+l | Number | The mean value  
+k | Number | The number of occurrences  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+Float | The probability of a given outcome  
+  
+## .st.quantile
+
+Perform a quantile transform on a numeric column
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+x | symbol | numeric column name  
+table | table |   
+  
+**Returns:**
+
+**Throws:**
+
+Type | Description  
+---|---  
+| "column x not found"  
+| "column x of type y not one of z"  
+  
+**Example:**
+
+    
+    
+          t:([]x:45?45);
+    
+          .st.quantile[`x; t]
+    
+     /=> x  fvalue__  
+     /=> -------------
+     /=> 0  0.01111111
+     /=> 0  0.03333333
+     /=> 1  0.05555556
+     /=> 1  0.07777778
+     /=> 1  0.1       
+     /=> 2  0.1222222 
+     /=> 2  0.1444444 
+     /=> ...
+    
+
+## .st.quartiles
+
+Take the quartiles of column y of the table for each distinct column x value.
+
+The output columns are the following:
+
+  * the first column has the same name as the given categorical column (x)
+  * `q1__` \- first quartile
+  * `q2__` \- second quartile
+  * `q3__` \- third quartile
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+x | symbol |   
+y | symbol |   
+table | table |   
+  
+**Returns:**
+
+**Throws:**
+
+Type | Description  
+---|---  
+| "column x not found"  
+| "column x of type y not one of z"  
+  
+**See Also:** [ .st.summary ](./#stsummary)
+
+**Example:**
+
+    
+    
+          t: ([]x:45?5?`8; y:45?45);
+    
+          .st.quartiles[`x; `y; t]
+    
+     /=> x        q1__ q2__ q3__
+     /=> -----------------------
+     /=> npccjbfg 4    23   32.5
+     /=> kcjfooab 7.5  23.5 31  
+     /=> jnmhejla 14   23   30  
+     /=> iiphmkna 16   25.5 31  
+     /=> gnlighkg 22   34   41  
+    
+
+## .st.rollup.col
+
+Calculate a columns statistics if column is of type 1,4-10,12-19. Otherwise
+this will return empty stats dictionary
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+col | list | The column in list format, which stats are to be calculated on.  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | The stats keyed by statistical operation.  
+  
+## .st.rollup.table
+
+For a given table, construct the statistics on each column
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+table | table | The (keyed) table which stats should be calculated.  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | A dictionary keyed by column names containing each columns calculated stats.  
+  
+## .st.sbin1d
+
+Perform a scaled 1d bin on a table. The given scale is applied to the data
+before binning.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+col | symbol |   
+val | (symbol; number) | width or count (``w` or ``c`) and arg for bin  
+scale | dict | scale (see .gg.scale)  
+aggs | dict | aggregations (see .st.a.*)  
+options | dict | null | see .st.bin2d  
+table | table |   
+  
+**Returns:**
+
+**See Also:** [ .st.bin1d ](./#stbin1d)
+
+## .st.sbin2d
+
+Perform a 2d binning and necessary aggregations.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+columns | symbol[] | pair of symbols to bin  
+xbins | (symbol; number; number) | (``w` or ``c`; arg; padding)  
+ybins | (symbol; number; number) | (``w` or ``c`; arg; padding)  
+xscale | dict | scale for the x axis  
+yscale | dict | scale for the y axis  
+mods | dict | aggregations  
+options | dict | null | see .st.bin2d  
+table | table |   
+  
+**See Also:** [ .st.bin1d ](./#stbin1d)
+
+## .st.sbinNd
+
+Perform an nD binning using the given scales. Bins can be specified as in
+width or height. The padding to a bin is added to increase the range over
+which the bins are split. For example, categorical columns would likely
+specify a padding value of 1 so that bins (`c;5;1) are spaced on even numbers,
+rather than over (num distinct) % 5 intervals.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+columns | symbol[] | list of column names  
+binDescr | (symbol; number; number)[] | bin description (``w` or ``c`; arg; padding)  
+scales | dict[] | list of scales for each variable  
+mods | dict | list of aggregations to perform  
+options | dict | null | see .st.bin2d  
+table | table |   
+  
+**See Also:** [ .st.bin1d ](./#stbin1d)
+
+## .st.sbinNd_i
+
+Perform an nD binning using the given scales. Bins can be specified as in
+width or height. The padding to a bin is added to increase the range over
+which the bins are split. For example, categorical columns would likely
+specify a padding value of 1 so that bins (`c;5;1) are spaced on even numbers,
+rather than over (num distinct) % 5 intervals.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+cs | symbol[] | list of column names  
+descr | ((symbol; number; number) | null)[] | bin description (``w` or ``c`; arg; padding), or null to accept defaults  
+scales | dict[] | list of scales for each variable  
+mods | dict | list of aggregations to perform  
+opts | dict | null | see .st.bin2d  
+t | table |   
+  
+**Returns:**
+
+Type | Description  
+---|---  
+table | binned data  
+  
+**Throws:**
+
+Type | Description  
+---|---  
+| "column x not found" [!!] NOTE - this binning function should avoid
+duplicating data at all costs!  
+  
+**See Also:** [ .st.bin1d ](./#stbin1d)
+
+## .st.summary
+
+Returns a five-number-summary-style report for each subset of the data split
+on distinct values of one column (x). The x column should be categorical,
+while the y column should be numeric/continuous.
+
+The output columns are the following:
+
+  * the first column has the same name as the given categorical column (x)
+  * `q1__` \- first quartile
+  * `q2__` \- second quartile
+  * `q3__` \- third quartile
+  * `min__` \- min
+  * `max__` \- max
+  * `med__` \- median
+  * `mean__` \- average (avg)
+  * `upper__` \- upper hinge (1.5 * interquartile range from median)
+  * `lower__` \- lower hinge (1.5 * interquartile range from median)
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+x | symbol | categorical column name  
+y | symbol | continuous column name  
+table | table |   
+  
+**Returns:**
+
+**Throws:**
+
+Type | Description  
+---|---  
+| "column x not found"  
+| "column x of type y not one of z"  
+  
+**See Also:** [ .st.outliers ](./#stoutliers) [ .st.quartiles
+](./#stquartiles)
+
+**Example:**
+
+    
+    
+          t:([]x:45?5?`8; y:45?45);
+    
+          .st.summary[`x; `y; t]
+    
+     /=> x        q1__ q2__ q3__ min__ max__ med__ mean__   upper__ lower__
+     /=> ------------------------------------------------------------------
+     /=> npccjbfg 4    23   32.5 0     42    23    18.88889 42      0      
+     /=> kcjfooab 7.5  23.5 31   1     42    23    20       42      1      
+     /=> jnmhejla 14   23   30   7     33    22.5  21       33      7      
+     /=> iiphmkna 16   25.5 31   13    41    20    24.2     41      13     
+     /=> gnlighkg 22   34   41   17    42    30    29.66667 42      17     
+    
+

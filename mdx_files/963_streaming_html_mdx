@@ -1,0 +1,413 @@
+https://code.kx.com/insights/enterprise/walkthrough/report/streaming.html
+
+# Guided Walkthrough Streaming subway data - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/walkthrough/report/streaming.html
+
+# Streaming subway data to a Data Grid in Views
+
+_This walkthrough showcases the ability of kdb Insights Enterprise to
+visualize streaming data in real-time in a View, by streaming the latest co-
+ordinates of a set of NY City subway trains to a data grid._
+
+In this walkthrough you will:
+
+A Kafka subway feed has been provided for use in this walkthrough. This feed
+generates live alerts for NYC subway trains, tracking which trains are stopped
+at stations. For each train it provides arrival time, station location
+coordinates, direction and route details.
+
+## Create a pipeline
+
+To create the pipeline open the Pipeline editor by clicking [+] on the ribbon
+menu and clicking **Pipeline** , as shown below, or by clicking [+] beside
+**Pipelines** on the left-hand menu.
+
+![Click pipeline from the ribbon drop-down menu to open the pipeline
+editor.](../img/dropdownmenu.jpg)
+
+The pipeline editor opens, as shown below.
+
+![pipeline editor.](img/pipeline-editor.png)
+
+The pipeline you are setting up requires the following:
+
+Once these are configured you can save and deploy the pipeline. You can then:
+
+### Add a Kafka node
+
+You begin your pipeline with a Kafka node to read the data from the **subway**
+feed we have provided.
+
+  1. Click-and-drag a **Kafka** node, from the **Readers** , into the workspace.
+
+  2. Select the Kafka node and add the following connection details to the **Configure Kafka Node** panel:
+
+setting | value  
+---|---  
+Broker | kafka.trykdb.kx.com:443  
+Topic | subway  
+Offset | End  
+Use TLS | Unchecked  
+Use Schema Registry | Unchecked  
+  3. Expand the **Advanced** parameters section and select **Advanced Broker Options**. 
+
+  4. Click the [+] to add an advanced configuration and enter the following key value pairs:
+
+key | value  
+---|---  
+sasl.username | demo  
+sasl.password | demo  
+sasl.mechanism | SCRAM-SHA-512  
+security.protocol | SASL_SSL  
+  5. Click **Apply** to apply these changes to the Kafka node.
+
+### Add a Decoder node
+
+Kafka event data is in JSON and must be decoded to a kdb+ friendly format (a
+kdb+ dictionary).
+
+  1. Click-and-drag a **JSON** decoder node, from the **Decoders** , into the workspace, and connect it to the **Reader** node.
+
+  2. Click **Apply** to keep the default JSON decoder settings. 
+
+### Add a Map node
+
+The decoded data needs to be converted to a kdb+ table. The Map node converts
+an incoming dictionary to a table using an
+[enlist](https://code.kx.com/q/ref/enlist/).
+
+  1. Click-and-drag a **Map** node, from the **Functions** , into the workspace, and connect it to the **Decoder** node.
+
+  2. Select the **Map** node and replace the code in the right-hand **Configure Map Node** property panel with the following code:
+
+  3. Click **Apply** to apply this code to the Map node.
+
+### Add a Transform Node
+
+The next step is to add a **Transform** node which transforms the **subway**
+data fields to kdb+ compatible types and drops the fields that are not going
+to be displayed in the View.
+
+Converting strings to symbols for use as keyed columns in the Subscriber node
+
+The data from Kafka that is used in this example includes strings. The
+Subscriber node requires any columns defined as keyed columns to be symbols.
+This step is required to convert the strings to symbols.
+
+If you are using a Subscriber node with your own data and the data in your
+keyed columns are already symbols this step is not necessary. See the next
+section for details on keyed columns.
+
+  1. Click-and-drag the **Apply Schema** node from the list of **Transform** nodes and connect it to the **Decoder** node. 
+
+  2. In the **Schema** section click the [**+**] icon under the **Add schema columns below** text. Then add the following columns, leaving **Parse Strings** set to **Auto** for all columns:
+
+column name | column type  
+---|---  
+arrival_time | Timestamp  
+stop_name | Symbol  
+stop_lat | Float  
+stop_lon | Float  
+direction_id | Symbol  
+route_long_name | Symbol  
+route_color | Symbol  
+  3. Click **Apply** to apply changes to the node.
+
+### Add a Subscriber node
+
+A [Subscriber](../../ingest/pipeline/operators/writers.html#subscriber) node
+emits a summarized view of the input data, with one record per unique
+combination of values in the list of keyed columns. The remaining columns are
+set to their latest values.
+
+Once deployed, the emitted stream of data is available as a data source in a
+View. This is described in the Create a View section later.
+
+In this example the node is configured so that it emits updates to the co-
+ordinates of trains per route and direction of travel (i.e. inbound or
+outbound).
+
+  1. Click-and-drag the **Subscriber** node, from the list of **Writers** into the central workspace, and connect it to the **Apply Schema** node.
+
+  2. Select the **Subscriber** node and set the **Table** to **subway**.
+
+  3. Add the following **Keyed Column** values:
+
+value  
+---  
+route_long_name  
+direction_id  
+  
+Defining these keyed columns ensures that:
+
+     * The output of the Subscriber node has one record per train route and direction.
+
+     * You can filter these columns in the View, as you can only filter on Keyed Columns.
+
+  4. Set the **Publish Frequency** to 100. This determines how regularly the subscriber updates the web-socket in milliseconds.
+
+  5. Click **Apply** to apply these settings.
+
+### Save and deploy the pipeline
+
+The pipeline is now configured and ready to be saved and deployed.
+
+  1. Enter **subway-streaming** in the **Name** field in the top left of the workspace.
+
+  2. Click **Save & Deploy** in the top panel.
+
+  3. Check the progress of the pipeline under the **Running Pipelines** panel of the **Overview** tab. The data is ready to visualize when the **Status** is set to Running. Note it may take a few minutes for the pipeline to start running.
+
+## Create a View
+
+Now that the data is being streamed to a pipeline containing a Subscriber
+node, you can create a View with a Data Grid to display the locations of the
+subway trains that are stopped at stations.
+
+  1. Select **Visualize** on the **Overview** page, or **View** from the ribbon menu, as shown below.
+
+![Select View from the menu to build a visualization.](img/reporthome.png)
+
+  2. Click-and-drag a **Data Grid** , which is the first component on the list, from the icon menu into the central workspace.
+
+![Click-and-drag a data grid into the workspace](img/clickanddragdatagrid.gif)
+
+  3. In the Data Grid component, **Click to populate Data Source** to open the Data editor.
+
+  4. Click **New** to create a new data source and name it **streaming**.
+
+  5. Click on the **Streaming** radio button and set the following properties:
+
+value | setting  
+---|---  
+pipeline | This is automatically populated with any running pipelines with a Subscriber node. Select **subway-streaming**.  
+table | This is automatically populated with tables associated with the pipeline selected. Choose **subway**.  
+filters | leave empty  
+  6. Click **Execute** to view the results in the **Results** panel at the bottom of the screen, as shown below. The streaming position values are displayed with updates visible as data is streamed.
+
+![Streaming properties](img/streaming-datasource.png)
+
+  7. Click **Apply** and then **Select Item**.
+
+  8. With the Data Grid selected, set the **Sort Column** , in the Basics properties, to **route_long_name**.
+
+  9. Save the View by clicking the **Save Dashboard** icon at the top of the workspace.
+
+The Data Grid now displays a record per train showing the most recent stop
+along the NY City subway.
+
+![Streaming to a data grid](img/streamingviewdatagrid2.gif)
+
+### Filtering the Data Grid
+
+Now that you have a View that is being updated with streamed data you can add
+filters, based on any of the Keyed Columns, to show a subset of the data.
+
+You can only filter on the Keyed Columns, filtering on any other column causes
+a timeout.
+
+  1. With the Data Grid selected in the new View, click on **Data Source** value to open the Data dialog and choose the **streaming** Data Source from the list on the left-hand side.
+
+  2. Type in one of the filters below, which are examples of how filtering can be applied:
+
+filter | filter description  
+---|---  
+`{"direction_id":"inbound"}` | All inbound trains  
+`{"route_long_name":"6 Avenue Express"}` | All trains on the 6 Avenue Express route  
+  
+Current filter restrictions
+
+     * Filters must be defined using the following JSON format: `{"keyed_column":"value"}`.
+     * Only one keyed column can be filtered on.
+     * Only one value can be applied to the keyed column.
+
+  3. Click **Execute** to check that the results, displayed in the **Results** panel at the bottom of the screen, have applied the filter to the data.
+
+  4. Click **Apply** and then **Select Item**.
+
+The Grid now lists records that match the filter being applied. The following
+example shows the grid being updated with data for all inbound trains only.
+![Streaming data inbound trains](img/streamingviewdatagrid2.gif)
+
+#### Filtering based on a drop-down
+
+Having used a static filter to limit the Data Grid to a specific value in a
+keyed column, we can enhance this by using a drop-down to filter the Data Grid
+to a specific value from a list.
+
+  1. With the View open, select **Drop Down List** from the list of components. Drag and drop it above the Data Grid.
+
+  2. With the Drop Down List selected, expand the **Items** properties in the Basics properties. 
+
+  3. Click **+** to add an item with **Value** and **Text** properties equal to **inbound**. Repeat for **outbound**.
+
+![Drop Down list items](img/streaming-filter-drop-down.png)
+
+  4. Create a View State parameter for the selected value in the Drop Down List:
+
+    1. Click on the **Selected Value** item of the Drop Down List
+
+![Selected Value](img/dropdown-selectedvalue.png)
+
+    2. Click **New** to add a new view state and click **Rename** to change the name to **selected_direction**.
+
+    3. Set the **Default** value to **inbound**
+
+    4. Click **Select Item**.
+
+The **selected_direction** View State is now populated with the value chosen
+in the drop-down.
+
+  5. The **Filter** field value, for Streaming Data Sources, must be in JSON format. The following steps explain how to create a virtual query that takes the **selected_direction** view state as an input and updates a second view state, **json_selected_direction** , with the appropriate JSON.
+
+    1. In Design view, click **View** workspace, to deselect the components and display the Dashboard Properties. 
+
+    2. Click on the **Data Dialog** icon at the top of the Dashboard properties tab on the right-hand side of the View.
+
+![Data Dialog](img/data-dialog.png)
+
+    3. Click **New** to add a new data source and click **Rename** to name it **virtual**.
+
+    4. Click **Virtual** and delete any data contained there. Then input the following in the code editor:
+        
+                function (ddSelection, callback) {
+        var toReturn = {
+            "columns": ["kk", "vv"],
+            "meta": {"kk":"11", "vv":"11"},
+            "rows":[{
+                "kk": "json",
+                "vv": `{"direction_id":"${ddSelection}"}`
+            }]
+            }  
+        
+            callback(toReturn);
+        }
+        
+
+    5. Delete any trailing blank spaces/lines after the code above.
+
+    6. Click on the eye below the code editor to the right of the **ddSelection** parameter name to open the View State screen.
+
+![Streaming Virtual Data Source](img/streaming-virtual.png)
+
+    7. Choose **selected_direction** from the list on the left and click **Select Item** to set **selected_direction** as the input to the Virtual query. The View State screen closes.
+
+    8. Click **Execute** to check the results. The results are displayed in the **Results** panel at the bottom of the screen.
+
+    9. Select the **Mapping** tab in the **Results** section.
+
+    10. Click **+** in the bottom right-hand side in the **Mapping** tab.
+
+![Mapping Add](img/mapping-add.png)
+
+    11. Enter **json** in the **Key** field of the new record.
+
+    12. Click on the eye in the View State column of the new record, to open the View State popup.
+
+    13. Create a new view state and rename it to **json_selected_direction**.
+
+    14. Click **Select Item**. 
+
+The image below shows the new virtual data source.
+
+![filter virtual query](img/streaming-filter-virtualquery.png)
+
+    15. Click **Apply** and **Close**.
+
+  6. The next step is to update the Filter in the Data Grid to use the new **json_selected_direction** View State value. 
+
+    1. Select the Data Grid and click on the **Data Source** to open the Data dialog.
+
+    2. Click on the eye in the far right of the **Filter** field and select **json_selected_direction** from the list of View States displayed. 
+
+    3. Click **Select Item**.
+  7. Click **Apply** and then **Select Item** to close the Data Source screen.
+
+In Preview mode, choose the direction from the Drop-down List and the data
+grid is filtered appropriately. In the following example, the **Direction**
+selected is **Inbound** and so only Inbound trains are displayed:
+
+![Filtered Preview](img/filter-preview.png)
+
+### Add a map
+
+If you have an access to an API Key for Google Maps Platform you can add a Map
+component to your View to display the subway data.
+
+This step is optional. If you want to proceed you must create an API Key for
+Google Maps Platform [as described
+here](https://developers.google.com/maps/documentation/javascript/get-api-
+key#creating-api-keys).
+
+To add a map to your View:
+
+  1. In the design mode for your View, search for the **Map** component in the list of components, on the left, and drag it into the workspace.
+
+![Find the map component in the list of dashboard components.](img/map1.jpg)
+
+  2. Click on the **Map** component and configure it as follows:
+
+    1. Click **"set Google Maps JavaScript API Key in Map Key Property"**. The Map Key is saved as a view state inside your view.
+
+![The Map Key is saved as a view state inside your
+view.](img/clicktosetmapkey.jpg)
+
+    2. Click **New** and name the node `mapkey`.
+
+    3. In the Properties section for `mapkey`, leave **Type** set to `Symbol`. Enter your API Key for Google Maps into the **Default** and **Value** properties and click **Select Item**.
+
+![The Map Key is saved as a view state inside your view.](img/mapkey.jpg)
+
+    4. Centralize the map on New York by setting the values, in the following table, in the Map properties. These are illustrated in the screenshot below the table.
+
+setting | value  
+---|---  
+CenterX | 40.75  
+CenterY | -73.98  
+  
+![Define Map properties.](img/map2.jpg)
+
+  3. Define the **Data Source** from which the component will get data:
+
+  4. Click on **Data Source** in the **Points** properties.
+
+  5. Create a new data source and name it **streaming-map**.
+
+!!! note "If you want to share your filtering options for the Data Grid,
+select the existing `streaming` data source."
+
+  1. Click on the **Streaming** radio button and set the following properties:
+    
+        value     | setting
+    --------- | -------
+    pipeline  | subway-streaming
+    table     | subway
+    filters   | leave empty
+    
+
+  2. Click **Execute** to check the results are displayed in the **Results** panel at the bottom of the screen, as shown below. This displays the streaming position values with updates visible as data is streamed.
+
+![Streaming properties](img/streaming-datasource.png)
+
+  3. Click **Apply** and then **Select Item**.
+
+  4. To ensure the trains are named, positioned and coloured on the map based on the streaming data set the **Points** properties as follows:
+
+properties | value  
+---|---  
+Selected Attr | route_long_name  
+Latitude Data | stop_lat  
+Longitude Data | stop_long  
+Shape | train  
+Shape Colour (From DB) | route_colour  
+Cluster | Unchecked  
+  5. Save the View by clicking the **Save Dashboard** icon at the top of the workspace.
+
+Your View now contains a data grid and a map updating for all inbound and
+outbound trains, as illustrated below.
+
+![Streaming View](img/streamingview.gif)
+
+## Further Reading
+

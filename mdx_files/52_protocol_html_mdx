@@ -1,0 +1,358 @@
+https://code.kx.com/insights/api/streaming/web-socket/protocol.html
+
+# kdb Insights web-sockets client protocol - kdb products
+
+Original URL: https://code.kx.com/insights/api/streaming/web-socket/protocol.html
+
+# Web-sockets client protocol
+
+This section details the messages passed between the Service Gateway and a
+client application for streaming data.
+
+When establishing a web-socket connection the following headers must be
+specified:
+
+header | value | details  
+---|---|---  
+Content-Type | `"application/json"` | Future definitions will be based on the format of the data being sent in  
+Accept | `"application/json"` | Future definitions will be based on the format you wish to receive  
+  
+## General message format
+
+All messages are JSON objects. Messages are either subscription requests and
+responses or event messages. With event messages you would receive data back
+based on the subscription request. Subscription request messages may contain
+an optional "response id", which all corresponding response messages need to
+contain.
+
+The subscription request message contains the following fields:
+
+field | type | details  
+---|---|---  
+type | string | The update type; either `subscribe`, `snap`, `subsnap` or `unsubscribe`. This field is expanded upon below  
+id | int | This must be an incrementing number, and in the replies it must match the id of the request that the message is a response to  
+error | int | Present in error response messages  
+payload | object | The payload for the particular message type  
+  
+## Subscription requests and responses
+
+The update type is one of the fields in a subscription request sent by the
+client. In response to a subscription request message, you will receive an
+acknowledgment back. The update types are as follows:
+
+### Subscribe
+
+The `subscribe` message is sent by the client to the Service Gateway to
+request a stream of data.
+
+#### Payload
+
+name | type | required | details  
+---|---|---|---  
+topic | String | Yes | The topic to subscribe to  
+subTopic | String | No | The filter on the topic data. If this is empty all data for the topic is provided  
+  
+#### Example
+
+    
+    
+    {
+      "type":"subscribe",
+      "payload":
+      {
+        "topic":"trade",
+        "subTopic":
+        {
+          "ccyPair","EUR/USD"
+        }
+      },
+      "id":1234
+    }
+    
+
+### Subscribe response
+
+The `subscribed` message is sent from the Service Gateway to the client in
+response to a `subscribe` message, if it was successful.
+
+#### Payload
+
+field | type | required | details  
+---|---|---|---  
+subscription | UUID | Yes | The `id` the SG has assigned to this subscription if set up successfully  
+  
+#### Example
+
+    
+    
+    {
+      "type":"subscribed",
+      "payload":
+      {
+        "subscription":"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+      },
+      "id":1234
+    }
+    
+
+### Snapshot
+
+The `snap` message is sent from the client to the Service Gateway to request a
+snapshot of the data.
+
+#### Payload
+
+field | type | required | details  
+---|---|---|---  
+topic | String | Yes | The topic to subscribe to  
+subTopic | String | No | The filter on the data. If this is empty, all data for the topic is provided  
+  
+#### Example
+
+    
+    
+    {
+      "type":"snap",
+      "payload":
+      {
+        "topic":"trade",
+        "subTopic":
+        {
+          "ccyPair","EUR/USD"
+        }
+      },
+      "id":1235
+    }
+    
+
+### Snapshot response
+
+The `snapped` message is sent from the Service Gateway to the client in
+response to a `snapshot` message, if it was successful.
+
+#### Payload
+
+field | type | required | details  
+---|---|---|---  
+data | Object | Yes | The data in the snapshot, if the request was successful  
+  
+#### Example
+
+    
+    
+    {
+      "type":"snapped",
+      "payload":
+      {
+        data:
+        {
+            "ccyPair":["EUR/USD","EUR/USD","EUR/USD","EUR/USD"],
+            "val":[1.02,1.01,1.03,1.01]
+        }
+      },
+      "id":1235
+    }
+    
+
+### Subscription with snapshot
+
+The `subsnap` message is sent from the client to the Service Gateway to
+request a subscription with a snapshot of the current state of the data in the
+response.
+
+#### Payload
+
+field | type | required | details  
+---|---|---|---  
+topic | String | Yes | The topic to subscribe to  
+subTopic | String | No | The filter on the data. If this is empty, all data for the topic is provided  
+  
+#### Example
+
+    
+    
+    {
+      "type":"subsnap",
+      "payload":
+      {
+        "topic":"trade",
+        "subTopic":
+        {
+          "ccyPair","EUR/USD"
+        }
+      },
+      "id":1236
+    }
+    
+
+### Subscription with snapshot response
+
+The `snapped` message is sent from the Service Gateway to the client in
+response to a subscription, containing the snapshot message and current state
+of the data, if it was successful.
+
+#### Payload
+
+field | type | required | details  
+---|---|---|---  
+data | Object | Conditional | The data in the snapshot, if the request was successful  
+subscription | UUID | Conditional | The `id` the SG has assigned to this subscription if it was set up successfully  
+  
+#### Example
+
+    
+    
+    {
+      "type":"subsnapped",
+      "payload":
+      {
+        data:
+        {
+            "ccyPair":["EUR/USD","EUR/USD","EUR/USD","EUR/USD"],
+            "val":[1.02,1.01,1.03,1.01]
+        },
+        "subscription":"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+      },
+      "id":1236
+    }
+    
+
+### Unsubscribe
+
+The `unsubscribe` message is sent from the client to the Service Gateway to
+terminate a subscription stream.
+
+#### Payload
+
+field | type | required | details  
+---|---|---|---  
+subscription | UUID | Yes | The `id` of the subscription to be stopped  
+  
+#### Example
+
+    
+    
+    {
+      "type":"unsubscribe",
+      "payload":
+      {
+        "subscription":"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+      },
+      "id":1237
+    }
+    
+
+### Unsubscribe response
+
+The `unsubscribed` message is sent from the Service Gateway to the client to
+confirm the subscription has been terminated.
+
+Once this message is received, no more data is sent for the given subscription
+id.
+
+#### Payload
+
+The payload is empty for this message.
+
+#### Example
+
+    
+    
+    {
+      "type":"unsubscribed",
+      "payload":
+      {
+        "subscription":"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+      },
+      "id":1237
+    }
+    
+
+## Event messages
+
+After sending a subscription request and receiving the response, you will
+start to receive data updates. These updates are driven by the subscription
+request. If there are updates to the data that you have requested, these
+updates will be sent to the client every 5 seconds.
+
+name | direction | details  
+---|---|---  
+update | Server -> Client | Continuous response to `subscribe` or `subsnap` messages  
+error | Server -> Client | Message sent if an error occurs when processing a command  
+  
+### Update
+
+The `update` message is sent every 5 seconds from the Service Gateway to the
+client in response to a `subscribe` or a `subsnap` message.
+
+#### Payload
+
+field | type | required | details  
+---|---|---|---  
+data | Object | Yes | The data in the snapshot, if the request was successful  
+subscription | UUID | Yes | The `id` the SG has assigned to this subscription if it was set up successfully  
+  
+#### Example
+
+    
+    
+    {
+      "type":"update",
+      "payload":
+      {
+        "topic":"trade",
+        "subTopic":
+        {
+          "ccyPair","EUR/USD"
+        },
+        data:
+        {
+            "ccyPair":["EUR/USD","EUR/USD","EUR/USD","EUR/USD"],
+            "val":[1.02,1.01,1.03,1.01]
+        }
+        "subscription":"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+      },
+      "id":1236
+    }
+    
+
+The id refers to the message id from the client that set up the subscription.
+
+### Error response
+
+The `error` message is sent from the Service Gateway to the client if an error
+occurred when processing a command.
+
+#### Payload
+
+The payload is empty for this message.
+
+#### Example
+
+Example:
+
+    
+    
+    {
+      "type":"error",
+      "id":1234,
+      "error":29
+    }
+    
+
+## Error codes
+
+code | details  
+---|---  
+20 | No type  
+21 | Payload not present  
+22 | Payload invalid  
+28 | Bad or no id provided  
+29 | id is equal to or less than the last one seen on this connection  
+42 | Already subscribed  
+43 | Not subscribed  
+61 | Incorrect data type received  
+62 | Failed to provide all required inputs  
+63 | Provided topic does not exist for subscription  
+64 | Not all subscription topics provided as valid keyed tables
+

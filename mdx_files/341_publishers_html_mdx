@@ -1,0 +1,162 @@
+https://code.kx.com/insights/microservices/rt/publishers.html
+
+# Overview - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/rt/publishers.html
+
+# Publishers
+
+There are a variety of interfaces that can be used to publish data to RT:
+
+The publishers use these interfaces to record messages to a log file. These
+files are then replicated into the RT stream which merges them and then
+replicates the output stream to subscribers. Each publisher needs to be
+uniquely identified by the kdb Insights deployment it is publishing to which
+is done by setting a session name.
+
+If a publisher requires an ingress point, such as a load balancer, in order to
+communicate with RT, we class this as an external publisher. External
+publishers are designed to connect to the _kdb Insights Enterprise_ via an
+Information Service. This service provides the RT external load balancer
+endpoints and associated SSL certificate authority, certificate and key for a
+client which has enrolled via Keycloak.
+
+## Publisher characteristics
+
+The interfaces have the following characteristics:
+
+  * Includes a low-level log-writer.
+  * Writing messages to log files means that a loss of networking won't result in data loss (assuming the network does come back and the publisher has enough disk space to queue during the drop out).
+  * The log files are written to a specific directory (defined by the session name) on the publisher's host.
+  * The log file names have the format "log.X.Y" - where “X” is the session number and “Y” is the roll-index.
+  * The session name (and session directory) is preserved between runs, but is not shared by multiple publishers.
+  * The files are rolled every 1GB.
+
+At startup, the interfaces do the following:
+
+  1. Local filesystem checks on the log file directory.
+  2. Create a new file with the next session number for the defined session.
+  3. Start the replicators needed to move data from the local log file directory to each of the RT nodes where they are merged.
+
+## Deduplication
+
+Deduplication is available for publishers who are sending the same messages in
+the same sequence such that RT ensures only one copy of each message is sent
+to the consumers. This allows support for the failure of a publisher. The use
+cases for deduplication include:
+
+  * Failure and restart of a single publisher from the last checkpoint. This ensures any messages sent between the last publisher checkpoint and a failover are not passed down the stream twice.
+  * Multi node publishing of the same messages, to ensure high availability. This ensures only one copy of each message is sent down the stream but allows for one of the publishers to fail without data loss or duplication.
+
+## Publisher Logs
+
+### Garbage collection of publisher logs
+
+Publisher log files are automatically garbage collected when both of the
+following conditions are met:
+
+  * The publisher's log file has rolled, for example from `log.0.0` to `log.0.1`.
+
+  * The rolled log, for example `log.0.0`, has been replicated to all the RT pods **and** merged.
+
+At this point `log.0.0` is garbage collected on each of the RT pods. An
+archived flag is then propagated back to publisher so its local `log.0.0` is
+then also garbage collected.
+
+### Publisher logs upon publisher shutdown and restart
+
+Before a publisher can shut down, the RT log file that was being written to
+needs to be fully replicated from the publisher node to the RT cluster. This
+is to ensure no messages are lost. When the publisher is first started,
+there'll be a number of log files created. Details on these logs files are
+expanded upon on the [About](index.html) page.
+
+    
+    
+    [nobody@rt-pub-0 /]# ls -al
+    total 84
+    drwxr--r-- 2 nobody nobody  4096 Dec 13 17:44 .
+    drwxr-xr-x 5 nobody nobody  4096 Dec 13 17:44 ..
+    -rw-r--r-- 1 nobody nobody     8 Dec 13 17:44 .session
+    -rw-r--r-- 1 nobody nobody 67287 Dec 13 17:45 log.0.0
+    -rw-r--r-- 1 nobody nobody     8 Dec 13 17:44 state.0
+    
+
+Upon restarting the publisher, the publisher will no longer write to `log.0.0`
+but instead a new log will be created that the publisher will write to
+`log.1.0`.
+
+Note
+
+The sticky bit is set on the previous log `log.0.0` indicating it has been
+garbage collected.
+
+    
+    
+    [nobody@rt-pub-0 /]# ls -al
+    total 60
+    drwxr--r-- 2 nobody nobody  4096 Dec 13 17:47 .
+    drwxr-xr-x 5 nobody nobody  4096 Dec 13 17:44 ..
+    -rw-r--r-- 1 nobody nobody     8 Dec 13 17:47 .session
+    -rw-r--r-T 1 nobody nobody     0 Dec 13 17:47 log.0.0
+    -rw-r--r-- 1 nobody nobody 44603 Dec 13 17:48 log.1.0
+    -rw-r--r-T 1 nobody nobody     0 Dec 13 17:47 state.0
+    -rw-r--r-- 1 nobody nobody    32 Dec 13 17:47 state.1
+    
+
+## Ingress network bandwidth
+
+### Default topology
+
+By default, RT uses a one-to-three fan out from the publisher to each RT node.
+If any connections from the publisher go down, RT’s backup service steps in to
+replicate data among the three nodes in the cluster. This approach minimizes
+the number of hops, and therefore the latency between the publisher and the RT
+nodes when there’s full connectivity. It also ensures data path redundancy if
+connectivity decreases.
+
+However, when external publishers send data to a Kubernetes cluster, they must
+send the data three times through network load balancers due to the one-to-
+three fan out:
+
+![](./images/default_topology.png)
+
+### Alternative topology
+
+To avoid potential ingress costs from data traversing a load balancer, an
+alternative topology that only sends the data once is supported.
+
+![](./images/alternative_toplogy.png)
+
+Using the alternative topology, the publisher connects to only one RT node at
+a time. The replicator monitors the connection’s health, tracking errors,
+disconnects, heartbeats, etc. If it encounters a problem, it automatically
+reconnects to a different RT node.
+
+The alternative topology has the advantage of reducing the ingress bandwidth
+to a third of what the default topology requires. This could offer significant
+cost savings where ingress data incurs charges.
+
+However, the disadvantage is that additional hops are required for the data to
+replicate to all nodes using the backup service. This might cause a small
+increase in latency. Furthermore, if the single connection fails, there is a
+brief spike in latency while reconnecting to a different node.
+
+#### Recommendations
+
+If you don’t incur ingress costs or if latency is critical, the default
+topology is recommended. Consider the alternative topology if ingress costs
+are high and latency is less important.
+
+#### Support
+
+The following interfaces currently support the alternative topology:
+
+To enable it, set the environment variable `$RT_SINGLE_INGRESS` on the
+publisher.
+
+Only applicable when publishing to a three node RT
+
+This option has no affect when publishing to a one node RT since both
+topologies are effectively the same.
+

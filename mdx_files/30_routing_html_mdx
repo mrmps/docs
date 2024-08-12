@@ -1,0 +1,77 @@
+https://code.kx.com/insights/enterprise/database/configuration/assembly/routing.html
+
+# Routing - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/database/configuration/assembly/routing.html
+
+# Assembly routing configuration
+
+[Query routing](../../query/routing.html) is managed by two primary
+components, the Service Gateway and the Resource Coordinator. When a query is
+executed, partial results across tiers are merged in the Aggregator. These
+components are [installed globally](../routing.html) as part of a standard
+deployment in your kdb Insights Enterprise base install. In addition to having
+the global routing processes, additional Resource Coordinator(s) and
+Aggregator(s) can be installed within an assembly. This gives the capacity to
+handle increased query load because these are scalable. Having these as
+additional and separate also enables you to have custom aggregations that can
+be applied within individual assemblies.
+
+![process diagram](images/asm-query-routing.png)
+
+Unless otherwise specified, the arrows in the diagram represent asynchronous q
+IPC communication between processes. Query flow is as follows:
+
+arrow | description  
+---|---  
+`1` | Client makes API request to a Service Gateway replica. This can be synchronous or asynchronous.  
+`2` | The Service Gateway forwards the request to the Resource Coordinator.  
+`3` | The Resource Coordinator sends partial requests to each DAP relevant to the query based on purview.  
+`4` | DAPs forward their responses to a single Aggregator for aggregation.  
+`5` | The Aggregator sends the response to the same Service Gateway the client connected to.  
+`6` | The Service Gateway sends response back to client.  
+  
+## Configuration
+
+To add a Resource Coordinator and Aggregator to an assembly, an `rc` and `agg`
+key can be added under the [`elements`](database.html#elements) within the
+assembly file.
+
+    
+    
+    spec:
+      elements:
+        rc:
+          size: 2
+        agg:
+          size: 2
+    
+
+### Resource Coordinator
+
+Configuration for the Resource Coordinator is nested under an `elements.rc`
+key within an assembly file.
+
+name | type | required | description  
+---|---|---|---  
+`args` | string[] | No | Optional [command line arguments](https://code.kx.com/q/basics/cmdline/) to pass to the running container.  
+`env` | object[] | No | Additional environment variables can be added to tune and customize the configuration for this instance. See [Resource Coordinator environment variables](../routing.html#resource-coordinator) for details.  
+`image` | object | No | A custom image can be provided to override the version included with this install. This object must include a `repo`, `container` and `tag` argument pointing to the desired Resource Coordinator image.   
+`k8sPolicy` | object | No | Allows you to specify additional Kubernetes configuration for this instance. This configuration can be used to modify process availability and resource limits. See [Kubernetes configuration](reference.html#k8sPolicy) for more details.  
+`size` | string | No | This is the total number of instance replicas to deploy for a given Resource Coordinator. Increasing this value provides higher query availability and can increase the number of concurrent queries the database can service. Each instance will require its own resources for memory and CPU. The default number of instances is 3.  
+`volumeMounts` | string[] | No | Extra volumes to mount on this instance. These volumes must be listed in `spec.volumes` of the assembly file. This can be used to mount additional data to the Resource Coordinator for mounting custom code.   
+  
+### Aggregator
+
+Configuration for the Aggregator is nested under an `elements.agg` key within
+an assembly file.
+
+name | type | required | description  
+---|---|---|---  
+`args` | string[] | No | Optional [command line arguments](https://code.kx.com/q/basics/cmdline/) to pass to the running container.  
+`env` | object[] | No | Additional environment variables can be added to tune and customize the configuration for this instance. See [Aggregator environment variables](../routing.html#aggregator) for details.  
+`image` | object | No | A custom image can be provided to override the version included with this install. This object must include a `repo`, `container` and `tag` argument pointing to the desired Aggregator image.   
+`k8sPolicy` | object | No | Allows you to specify additional Kubernetes configuration for this instance. This configuration can be used to modify process availability and resource limits. See [Kubernetes configuration](reference.html#k8sPolicy) for more details.  
+`size` | string | No | This is the total number of instance replicas to deploy for a given Aggregator. Increasing this value provides higher query availability and can increase the number of concurrent queries the database can service. Each instance will require its own resources for memory and CPU. The default number of instances is 3.  
+`volumeMounts` | string[] | No | Extra volumes to mount on this Aggregator. These volumes must be listed in `spec.volumes` of the assembly file. This can be used to mount additional data to the Aggregator or for mounting custom code. 
+

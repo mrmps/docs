@@ -1,0 +1,278 @@
+https://code.kx.com/insights/enterprise/database/configuration/ui/database.html
+
+# Database Settings - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/database/configuration/ui/database.html
+
+# Database settings
+
+_This section describes the configuration options available under
+the**Database Settings** tab in the kdb Insights Enterprise UI._
+
+## Access Database Settings
+
+The **Database Settings** tab is displayed when you:
+
+The following settings are configurable:
+
+  * **Description** \- you can optionally add a short description for the database.
+  * Database Labels \- define correlations between different data split across multiple assemblies.
+  * Query Settings \- configure how data is queried from the system.
+  * Writedown Settings \- configure how data is stored in the system.
+  * Packages \- add custom code to a database.
+
+Configuration in YAML
+
+Databases can also be configured using [YAML configuration
+file](../assembly/database.html). YAML configured databases can be deployed
+using the kdb Insights CLI.
+
+## Database Labels
+
+Database labels are metadata that are used to define correlations between
+different data split across multiple assemblies (shards). Labels are used
+during [query routing](../../query/routing.html) to select specific subsets of
+a [logical database](../../glossary.html#logical-database). Labels appear in
+database tables as [virtual columns](../../glossary.html#virtual-columns)
+
+![Database labels](images/ui/database/database-labels.png)
+
+A database must have at least one label associated with it. Additionally, the
+combination of all assigned labels must be a unique set of values. Individual
+label values can be repeated, but the combination of labels must be unique to
+the particular database.
+
+To add labels, click **Add Label**. Each label has the following properties:
+
+  * **Label Name** \- When creating a new database a default **Label Name** of **kxname** is provided which maps to the database name. You may enter a new value for additional labels.
+  * **Value** \- the label value.
+
+Labels in SQL
+
+When issuing a SQL query, labels must be referenced with a **label_** prefix.
+For example, the label region is referenced as **label_region** in a SQL
+query.
+
+### Labels example
+
+This example illustrates the power of labels by splitting data across four
+assemblies, paring a region and a sector criteria across them.
+
+![Database labels](images/ui/database/assembly-labels.png)
+
+These four assemblies make up one logical database. Queries can be issued
+across the databases using the **sector** or **region** label. An individual
+database can also be directly queried using a combination of labels. You can
+query across all databases by omitting labels from the query.
+
+![Shard slicing with labels](images/insights-db-labels.png)
+
+## Query settings
+
+Query settings configure how data is queried from the system. This
+configuration determines how much redundancy is provided to query environments
+in the system.
+
+![Query settings](images/ui/database/query-settings.png)
+
+name | description  
+---|---  
+**Production Read Replicas** | This is the total number of production data access instances that are to be launched. For testing purposes, a count of 1 is sufficient. When running in a production cluster, the number of replicas must be increased to match the desired amount of availability. Use a minimum of 3 replicas when running in a production configuration to achieve redundant replication. By default, production replicas only serve the [`getData`](../../../../api/database/query/get-data.html) API. To enable SQL queries, see the [SQL support guide](../../query/sql.html).  
+**Exploratory Read Replicas** | This is the number of available query instances for running experimental queries from an explore session. By default, these read replicas have SQL support enabled and allow a high degree of freedom of queries. This value must be configured to reflect the desired availability for exploratory queries in the system.  
+  
+### Query environment variables
+
+Environment variables enable you to further customize the behavior of the
+database.
+
+To enable the environment variable input:
+
+  1. Enable the **Advanced Settings** toggle at the top of the database document. ![Query environment variables](images/ui/database/query-envs.png)
+  2. Click **Add Variable** and complete the key-value pair, where the key is the name of a variable and the value is the desired setting. 
+
+See the [Data access process environment variable
+list](../assembly/query.html#environment-variables) for the complete list of
+options.
+
+### Query size limitations
+
+Queries routing through the Service Gateway using the SQL, custom APIs, or
+`getData` APIs have no limitations on size, except those of version 6 of the
+IPC Protocol (messages can exceed 2Gb).
+
+Queries are streamed through the gateway if the response back to the UI, or
+client, would exceed `KXI_SG_STREAM_THRESHOLD` bytes.
+
+RESTful queries are never streamed. The results are uncompressed, and limited
+to 2Gb.
+
+QSQL queries
+
+QSQL queries that directly target a database are limited to 2Gb. Use SQL or
+getData if you wish to pull out more than 2Gb.
+
+## Writedown settings
+
+Writedown settings configure how data is stored in the system. Database
+writedown receives data from an incoming [stream](stream.html) and stores it
+in a tier. For high availability, replicas can be used for redundant writedown
+processes.
+
+The writedown settings shown below are described in the following sections.
+
+### Tier settings
+
+Tiers are used for accessing data with different levels of compute depending
+on the age of the data.
+
+![Tier settings](images/ui/database/tier-settings.png)
+
+The three types of tiers are:
+
+  * **Real-Time** \- Recent data is stored in a real-time tier that provides fast access at a high resource cost. 
+  * **Interval** \- Recent, but slightly older data is stored in an interval tier. This data is written to disk but is quickly accessible as it remains mapped to memory for quick access. 
+  * **Historical** \- Data that is older than a day is moved to an historical tier for longer term storage. This tier uses less resources but still allows for fast access to historical data. 
+
+For older, less relevant data, additional historical tiers can be configured
+to migrate data to object storage. Here, data is very cheap to store for long
+periods of time, but it is also much slower to access.
+
+Tier settings allow you to configure the lifecycle of data as it propagates
+across the three primary tiers. The following table outlines the default tier
+settings. For advanced tier settings, turn on the **Advanced Settings** toggle
+at the top of the page.
+
+name | description  
+---|---  
+**Disk Size** | For interval and historical tiers, this is the amount of disk space allocated for storing data on disk. The interval tier only needs to store enough data to hold a single day, while the historical tier must hold all data that isn't migrated out of the system.  
+**Compression** | Tier compression configures how data is compressed when written to disk on the interval and historical data tiers. The compression settings use the [compression options provided with kdb+](https://code.kx.com/q/kb/file-compression/). Compression settings can be set to one of the provided presets or can be tuned with custom settings.  
+\- **Fast** \- Uses Snappy compression with a block size of 12. This provides
+the fastest writedown and retrieval of data but only provides minimal
+compression.  
+\- **Balanced** \- Uses QIPC compression with a block size of 14. This
+provides a moderately fast writedown and retrieval rate while offering
+moderate compression.  
+\- **High Compression** \- Uses LZ4HC compression set at a maximum compression
+level of 12 with a block size of 20. This provides the highest rate of
+compression, but the slowest writedown and retrieval.  
+\- **Custom** \- Compression can be disabled by setting this value to
+**Custom** and choosing a **Compression Algorithm** of **None**. There are
+three preconfigured compression settings or custom. See custom compression
+settings for more details.  
+**Rollover Interval** | This value is the frequency at which data migrates between tiers. By default, data moves from the real-time tier to the interval tier every 10 minutes. Data then moves from the interval tier to the historical tier once per day. This value is currently not configurable.   
+  
+  
+#### Custom compression settings
+
+When **Custom** is selected as the compression type, the following additional
+custom settings are provided. This allows you to tune your compression
+settings specifically for your use case.
+
+![Tier compression settings](images/ui/database/compression-settings.png)
+
+name | description  
+---|---  
+**Compression Algorithm** | This is the algorithm to use for data compression. Different algorithms provide different levels of flexibility to tune the level of compression and the block size used for compressing. See the compression algorithms table below for details on what values are available.  
+**Compression Level** | This is available for some algorithms and is the ratio of compression to apply to the data. A higher level provides more compression, but requires more passes of the data and can be slower for writedown and retrieval. See the compression algorithms table below for the available options.  
+**Block Size** | When applying compression, data is split into logical blocks for chunking compression. The block size is a power of 2 between 12 and 20 indicating the number of bytes to include in each block. For example, a block size of 20 means 2 to the power of 20, or 1 MB block size.  
+  
+##### Compression Algorithms
+
+Setting the compression algorithm changes the settings that are available for
+configuration.
+
+  * All compression algorithms have an option to configure their block size between 12 and 20 but only certain algorithms can change the compression level. 
+  * To disable compression, select **None** as the compression algorithm. 
+  * The following table details compression level settings available for each algorithm. For algorithms that offer levels, the higher the level, the smaller the data is on disk, at the expense of more time and resources to perform the compression.
+
+name | levels | description  
+---|---|---  
+None | - | Disable compression.  
+**QIPC** | - | Uses native [QIPC compression](https://code.kx.com/q/ref/get/#compression) to reduce file sizes on disk.  
+**GZIP** | 0-9 | Uses [GZIP](https://www.gzip.org) to compress data offering, where the level is the number of passes of each block of data to make to reduce data size.  
+**Snappy** | - | [Snappy](http://google.github.io/snappy/) provides a fast compression algorithm focused on speed over compression ratios.  
+**LZ4HC** | 1-12 | [LZ4HC](http://lz4.github.io/lz4/) offers very fast compression while also allowing tuning of the compression level to reduce footprint.  
+  
+#### Additional historical tiers
+
+By default, historical data migrates to the final historical tier and remains
+there until all available disk space is consumed. If you have data that you
+query infrequently, but you want to maintain for extended periods of time, you
+can migrate that data to an object storage tier using an **Additional
+Historical Tier**. Data that is migrated to an object storage tier can be
+persisted for an unlimited duration but is significantly slower to access.
+Object storage offers inexpensive elastic storage allowing you to hold massive
+volumes of data at a fraction of the cost of holding it on a persistent disk.
+
+To add an additional historical tier, click **Add Historical Sub Tier** and
+set the values described below.
+
+![Additional object storage tier](images/ui/database/additional-object-
+tier.png)
+
+name | description  
+---|---  
+**Sub-tier name** | Enter a name for the sub-tier.  
+**Storage Type** | Select a storage type. The historical tier requires you to have an existing bucket in either Amazon S3, Azure Blob Storage or Google Cloud Storage. Select the vendor type for the desired bucket.  
+**Storage Location** | Enter a location within that bucket to act as the root of the database.  
+  
+**Retention Time** \- When an additional historical tier is added, the
+existing historical tier has a new **Retention Time** input field that needs
+to be configured. Enter the amount of time that the historical tier will hold
+data before migrating it to the additional historical tier.
+
+![Retention time setting](images/ui/database/retention-time.png)
+
+## Advanced Settings
+
+To further tune the behavior of database writedown, click **Advanced
+Settings** at the top of the **Database Settings** tab. Enabling advanced
+options gives you finer grain control over the settings used during writedown.
+
+![Writedown advanced settings](images/ui/database/writedown-settings-
+advanced.png)
+
+When Advanced Settings are enabled you have the following additional settings:
+
+### Advanced writedown settings
+
+name | description  
+---|---  
+**EOD Parallelization Type** | When data is written to disk, parallelization is used to maximize throughput. Data can either be split by partition or by table when writing in parallel. For most cases, using Partitioned provides the best throughput. For cases where you have a significant number of tables, it may be more efficient to write each table in parallel.  
+**Sort Limit** | When performing a sort at the end of day writedown, this limit is used to chunk the sorting of the table. This value must be set less than the allocated writedown compute. Setting a sort limit reduces writedown throughput but it is useful to set this value when wide tables are being used to reduce the amount of required memory.  
+**Writedown Batch Size** | During writedown, data can be split into chunks to reduce memory footprint. This value lets you set a row limit to split data on during writedown.  
+  
+### Writedown environment variables
+
+Environment variables allow you to further customize the behavior of the
+database. To enable the environment variable input, enable the **Advanced
+Settings** toggle at the top of the **Database Settings** tab.
+
+![Writedown environment variables](images/ui/database/writedown-envs.png)
+
+Each variable is a key-value pair where the key is the name of a variable and
+the value is the desired setting. See the [Storage Manager environment
+variable list](../assembly/storage.html#environment-variables) for the
+complete list of options.
+
+### Packages
+
+[Packages](../../../packaging/index.html) allow you to add custom code to a
+database. This allows you to install [custom
+APIs](../../../../api/database/custom/index.html) and extend the databases
+functionality.
+
+This option is displayed when you enable the **Advanced Settings** toggle at
+the top of the database document.
+
+![Packages](images/ui/database/packages.png)
+
+To add a package click **Add Package** and complete the following values:
+
+name | description  
+---|---  
+**Name** | Select the name of the package being loaded. This field contains a list of all packages on the package manager service (this includes all views/pipelines/databases).  
+**Version** | Select the version of the package being loaded. The versions listed relate to the package selected in the Name field.  
+  
+## Further Reading
+

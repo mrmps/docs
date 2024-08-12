@@ -1,0 +1,53 @@
+https://code.kx.com/platform/archive_files/
+
+# Archiving files - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/archive_files/
+
+# Archiving files
+
+Control can be configured to archive files using the `DC_ARCHIVE` process
+template. A process instance of this template can be created, for example:
+
+![Screenshot](../img/control/archive_instance.png)
+
+The `findFunct` parameter specifies the analytic which locates files to
+archive. The `fileConfig` parameter specifies the configuration to follow when
+archiving files. A task can be created to schedule archiving on a regular
+basis.
+
+## Configuration
+
+An override of the `DC_ARCHIVE_FILES` configuration parameter should be
+created and set as the `fileConfig` parameter in the process instance, for
+example:
+
+![Screenshot](../img/control/archive_config.png)
+
+Each row of the configuration parameter outlines a different action to be
+taken and when to take the action.
+
+field | description  
+---|---  
+directory | The directory to search for files  
+fileRegex | The pattern for file names to match  
+ignoreFileRegex | File names matching this pattern will be ignored and not be archived  
+destinationDirectory | If this field is populated `dxFileGzip` moves the GZIP file to that directory  
+numDaysOlderThan | Files must be older than this to be archived, if this is -1 the row is ignored  
+analytic | The action to take when archiving files  
+  
+Use of environment variables are permitted with the `directory` and
+`destinationDirectory` columns.
+
+Further customization can be carried out within a custom archive action.
+
+## Archive actions
+
+Analytics can be created to perform any archive actions required. The two
+actions included in _KX Control_ are
+
+analytic | action  
+---|---  
+dxFileDelete | Deletes files according to the conditions outlined in the configuration parameter  
+dxFileGzip | Zips files according to the conditions outlined in the configuration parameter
+

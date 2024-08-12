@@ -1,0 +1,67 @@
+https://code.kx.com/platform/stream/dw_packaging/
+
+# Packaging - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/stream/dw_packaging/
+
+# Packaging
+
+_KX Control_ contains a complete import/export facility to support deployment
+between environments. The package structure contains a definition file and a
+series of content files separated into different directories based on the
+entity class.
+
+So far we've grouped everything we created into the `KxWarehouse` package.
+This can be pushed to Git for versioning and integration with deployment and
+testing pipelines.
+
+### Git commit
+
+The package pushed directly to Git using the _Package Exporter_.
+
+Repo creation
+
+When pushing packages to Git, the repository needs to be pre-created manually
+on the Git server.
+
+  * Right-click on the `KxWarehouse` package and select _Open Package Exporter_ from the context menu.
+
+[![Screenshot](../img/serviceclass/package_exporter.jpg)](../img/serviceclass/package_exporter.jpg
+"click to expand")
+
+  * A new tab opens with a list of all the entities in the package. Add the remote git location to _Git info_.
+
+[![Screenshot](../img/serviceclass/package_exporter_tree.jpg)](../img/serviceclass/package_exporter_tree.jpg
+"click to expand")
+
+  * In the _Package Exporter_ uncheck `Include Child Dependencies`.
+
+  * Check `Include Permissions`. This means the permissions are automatically exported which will allow the set up of the same user groups, users and permissioning levels when a package is imported.
+
+  * Click on `Git commit/push`.
+
+    * The _Git Commit_ tab lists the staged changes. Add a commit message here.
+    * The _Content Diff_ allows you to diff the changes to be committed.
+  * Upon checking if the repository, branch and staged files are correct, click on _Commit_ to push the package directly to Git.
+
+### Export to disk
+
+Packages may be exported to disk in a similar manner.
+
+  * In _Package Exporter_ , make sure to specify the _Directory_.
+  * Click on `Export All` to save onto disk.
+
+See below for further documentation:
+
+[Exporting Packages](../../release_management/#package-exporter)
+
+### Import from disk
+
+Packages can be imported from disk using the _Package Importer_.
+
+  * In _Package Importer_ , you can import the zip file of the previously exported package or you can import from disk if package already there.
+
+See below for further documentation:
+
+[Importing Packages](../../release_management/#package-importer)
+

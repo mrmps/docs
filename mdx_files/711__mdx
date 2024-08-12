@@ -1,0 +1,331 @@
+https://code.kx.com/analyst/libraries-scripts/
+
+# Q build utilities - KX Analyst
+
+Original URL: https://code.kx.com/analyst/libraries-scripts/
+
+# Q build utilities
+
+Some [libraries](../libraries/) are made available as scripts to aid in using
+these outside the Analyst UI. These scripts make the use of these libraries
+much easier within automated build systems.
+
+The libraries currently available as scripts include:
+
+  * qdoc \- q documentation generator
+  * qlint \- q static code linter
+  * qcumber \- q unit and property test framework
+  * axrepo - convert Analyst `kxscm/` repositories to q script files
+
+Instead of starting a q process and using `\l` to load the library, any of the
+above libraries which are loaded _directly_ when starting q will treat the
+library as a command line script. See the [libraries overview](../libraries/)
+for the associated script files and necessary environment variables.
+
+Environment variables
+
+The _environment variable_ used here is for the separate release of Analyst
+libraries packaged in `ax-libraries.zip`. If using Analyst as part of the _KX
+Platform_ , rather than `$AXLIBRARIES_HOME` you would use `$ANALYST_HOME` to
+point to the Platform Analyst install location.
+
+On Windows PATH must include the lib directory
+
+Windows requires all `.dll` files to be contained within the `PATH`
+environment variable. After moving the contents of `ws/lib/win_x64/*` to
+`ws/lib` add the `ws/lib` directory to the end of the `PATH` variable. `set
+"PATH=%PATH%;%AXLIBRARIES_HOME%\ws\lib"`
+
+Running any library script with the `-help` flag will output help text. For
+example:
+
+    
+    
+    $ q $AXLIBRARIES_HOME/ws/qcumber.q_ -help
+    
+
+The output of the `-help` flag for each script is included below for
+convenience. Optional flags are enclosed in `[]`.
+
+## qdoc - documentation generation
+
+    
+    
+    $ q $AXLIBRARIES_HOME/ws/qdoc.q_ -help
+    
+    qDoc: q documentation generator
+    
+    Usage: q qdoc.q_ <flags>
+    
+    Flags:
+       -help               - display this help
+       -src   <dir/file>   - path to q scripts to document (allows multiple -src flags)
+       -out   <dir>        - path to store generated documentation
+       [-render]           - configure markdown files to be used with mkdocs renderer
+       [-map <from>:<to>]  - use a non-default tag name, i.e., -map description:fileoverview
+       [-exclude] <regex>  - items with a name matching the regex will not be documented
+       [-index]   <file>   - use this as the index file when rendering markdown using mkdocs
+       [-group]   <option> - (default category) use this to change item groupings in markdown files
+                               - supported options: category, subcategory
+       [-docprivate]       - (default off) include items with an @private tag
+       [-docempty]         - (default off) include items that have no qdoc tags
+       [-doctodo]          - (default off) include items that have @todo tags
+       [-norecurse]        - (default off) do not recurse into subdirectories looking for q scripts
+       [-version]          - print the library version
+    
+
+## qlint - q static linter
+
+    
+    
+    $ q $AXLIBRARIES_HOME/ws/qlint.q_ -help
+    
+    qLint: q source code linter
+    
+    Usage: q qlint.q_ <flags>
+    
+    Flags:
+        -help               - display this help
+        -src     <dir/file> - path to q script(s)
+        [-out]   <dir>      - path to a file to store results
+                                - files supported: .json, .csv, .dat (q serialized)
+        [-level] <level>    - (default info) lint level - one of error, warning, info
+        [-version]          - print the library version
+    
+
+## qcumber - test framework
+
+    
+    
+    $ q $AXLIBRARIES_HOME/ws/qcumber.q_ -help
+    
+    qCumber: q test runner
+    
+    Usage: q qcumber.q_ <flags>
+    
+    Flags:
+        -help                - display this help
+        -src      <dir>      - path to a q script to load before running tests
+        -test     <dir/file> - path to a quke file or directory of quke files to test
+        [-out]    <dir>      - path to a file to store results
+                               files supported: .json, .xml (junit), .dat (q: get `:file.dat)
+        [-insert] <key=val>  - add columns to the output: col1=val1,col2=val2,... 
+        [-times]  <number>   - number of times to run each property block
+        [-color]             - colorize the output
+        [-showAll]           - print passed and skipped tests as well as failures to stdout
+        [-quiet]             - do not print any results to stdout
+        [-reporter] <file.q> - custom report from a q file defining a function 'write[file; results]'
+        [-errorsAsFailures]          - convert all errors to failures in final output
+                                       useful for systems which only look at 'failure'
+        [-exitFailuresWith] <number> - exit code to use when script terminates and there are failing tests
+                                       defaults to '1'
+        [-breakOnErrors]             - propagate errors in unit tests to facilitate debugging
+        [-version]                   - print the library version
+    
+
+## Example: using in automated builds
+
+This example demonstrates the use of the above script utilities in an example
+build of a repository version-controlled in Analyst `kxscm/` format. The
+example here would work equivalently with a repository version-controlled as
+regular q scripts, simply by skipping the `axrepo.q_` conversion step (step 3
+below).
+
+![](../img/libraries/ui.png)
+
+The following outlines a build-and-test workflow of the above repositories
+outside of the Analyst UI.
+
+### Step 1: set up environment variables
+
+As outlined in the [libraries overview](../libraries/), the environment
+variables pointing to Analyst must be set.
+
+### Step 2: clone the repositories
+
+    
+    
+    $ git clone <origin>/project-src
+    
+
+### Step 3: convert to q scripts
+
+If using _modules_ in Analyst, the artifacts are saved in a custom `kxscm`
+format which stores each function and data item separately. When releasing the
+project, this format needs to be converted to q scripts rather than the custom
+`kxscm` structure. `axrepo.q_` will perform this conversion.
+
+Script format
+
+This step would not be required if the repositories were already in script
+format (i.e., not using Analyst _modules_).
+
+    
+    
+    $ q $AXLIBRARIES_HOME/ws/axrepo.q_ -src ./project-src -out ./workspace/out/project-src
+    
+
+The above commands create a `workspace/out/` directory with the contents of
+the repositories as regular q scripts and files.
+
+### Step 4: lint the sources
+
+Linting helps identify errors in q scripts statically. In many cases, `error`
+level issues identify problems in the script that would cause some form of
+error at runtime. We can run the linter and generate a report by running the
+below:
+
+    
+    
+    $ q $AXLIBRARIES_HOME/ws/qlint.q_ \
+        -src ./workspace/out/project-src/ \
+        -out ./workspace/reports/lint.dat
+    
+
+The above creates a `workspace/reports/` directory, and saves the result of
+linting all q files and qcumber tests in the `out` directory in a q serialized
+file `lint.dat`. We save to a file to aid in processing a final report after
+all steps of this automation have been completed.
+
+Alternatively, if running interactively, it's also possible to retrieve a
+readable output if the `out` flag is not specified, shown below.
+
+    
+    
+    $ q $AXLIBRARIES_HOME/ws/qlint.q_ -src ./workspace/out/project-src
+    
+    Starting qLint: q source code linter
+    
+    Linting q sources: workspace/out/
+    
+    warning
+        workspace/out/project-src/.math.geo.q:27  -  unreachable_code  ": c"
+    
+    info
+        workspace/out/project-test/.math.geo.test/benchmark.quke:3  -  redundant_global_assign  ".math.cities"
+        workspace/out/project-test/.math.geo.test/benchmark.quke:8  -  redundant_global_assign  ".math.table"
+        workspace/out/project-test/.math.geo.test/haversine.quke:3  -  redundant_global_assign  ".math.cities"
+    
+
+### Step 5: run the tests
+
+All [qcumber](../qcumber/) tests can be run by pointing `qcumber.q_` to the
+top-level q script and test directory. The script pointed to by the `-src`
+flag will be loaded before running any tests.
+
+    
+    
+    $ q $AXLIBRARIES_HOME/ws/qcumber.q_ \
+        -src ./workspace/out/project-src/load.q \
+        -test ./workspace/out/project-src/ \
+        -out ./workspace/reports/test.dat
+    
+
+A report will be created next to the lint report as a q serialized file.
+Again, if running interactively, it's also possible to retrieve a readable
+output if the `out` flag is not specified.
+
+    
+    
+    $ q $AXLIBRARIES_HOME/ws/qcumber.q_ \
+        -src ./workspace/out/project-src/load.q \
+        -test workspace/out/project-src/
+    
+    Starting qCumber: q test runner
+    
+    Loading src: workspace/out/project-src/.math/load.q
+    Running tests: workspace/out/project-src
+    
+    file benchmark.quke
+        feature benchmark
+            (bench) basic query performance
+                - fail
+    
+    file haversine.quke
+        feature haversine
+            (should) handle extreme coordinates
+                - fail | (expect) it to "wrap around" the international date line
+                - fail | (expect) the distance between poles to be half the Earth's circumference
+    
+            (should) work for a variety of coordinate pairs
+                - fail | (expect) a specific result
+    
+    
+    Summary
+    27 tests passed
+    1 benchmark failed
+    3 tests failed
+    0 tests skipped
+    
+
+### Step 6: generate documentation
+
+Finally, once the linter and tests are passing, accompanying documentation can
+be generated if using `qdoc` annotations. The `qdoc.q_` utility can generate
+Markdown or `mkdocs`-compatible output.
+
+MkDocs is not provided with KX Analyst
+
+`mkdocs` is a Markdown to HTML converter which can be installed by following
+the instructions at . Other Markdown to HTML converters may be used in place
+of MkDocs, however not all converters support the same Markdown syntax and the
+HTML output may not be as desired.
+
+    
+    
+    $ q $AXLIBRARIES_HOME/ws/qdoc.q_ \
+        -src ./workspace/out/project-src/ \
+        -out ./workspace/qdoc -render
+    
+
+Since the `-render` flag was given, the output in `./workspace/qdoc/doc` will
+be an MkDocs-ready directory. With `mkdocs` installed, running `mkdocs serve`
+would generate the following output.
+
+![](../img/libraries/mkdocs.png)
+
+If using MkDocs output, it is up to the user to use MkDocs to build the final
+HTML documentation, or package in any other way desired.
+
+### Result
+
+Following this example, the following directory structure has been created.
+
+  * the `out` directory contains the converted `kxscm` repositories as q scripts
+  * the `qdoc` directory contains both Markdown and an `mkdocs`-ready site
+  * the `reports` directory contains the results of the `qcumber` tests and the `qlint` static linting
+
+    
+    
+    $ tree -a workspace
+    
+    workspace/
+    ├── out
+    │   └── project-src
+    │       ├── .math
+    │       │   └── load.q
+    │       ├── .math.geo.q
+    │       ├── .math.geo.test
+    │       │   ├── benchmark.quke
+    │       │   └── haversine.quke
+    │       ├── .math.geo.test.q
+    │       ├── .math.q
+    │       ├── .math.trig.q
+    │       ├── .math.trig.test
+    │       │   ├── atan2.quke
+    │       │   ├── degToRad.quke
+    │       │   └── square.quke
+    │       └── .math.trig.test.q
+    ├── qdoc
+    │   ├── doc
+    │   │   ├── docs
+    │   │   │   ├── index.md
+    │   │   │   └── math.md
+    │   │   └── mkdocs.yml
+    │   └── md
+    │       └── math.md
+    └── reports
+        ├── lint.dat
+        └── test.dat
+    
+

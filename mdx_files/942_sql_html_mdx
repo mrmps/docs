@@ -1,0 +1,286 @@
+https://code.kx.com/insights/core/sql.html
+
+# About - kdb products
+
+Original URL: https://code.kx.com/insights/core/sql.html
+
+# KX SQL
+
+_Support for ANSI SQL is built into kdb Insights Core._
+
+SQL is the most widespread and popular database query language, which with KX
+SQL, is now available for use with kdb Insights Core. To harness the best
+performance from kdb Insights Core the q language will always be the optimum
+way to query your data. However, KX SQL means the user does not need knowledge
+of the q language to access kdb Insights Core data.
+
+## SQL language support
+
+KX SQL is a full RDBMS frontend provided with kdb Insights Core using a new
+s.k_ implementation.
+
+SQL language support includes the following:
+
+Details of compliance with ANSI SQL can be found [here](sql/sql-
+compliance.html).
+
+## Running SQL
+
+SQL can be invoked in several different ways:
+
+### Using s)
+
+SQL can be entered interactively by using the `s)` prompt. Prefix your SQL
+query with 's)' to execute SQL rather than q.
+
+This is convenient to use, as you only need to add `s)` to beginning of line.
+However, you can't save results with this method, you can only execute and
+print out the results.
+
+**Example**
+
+    
+    
+    s)SELECT * FROM trips WHERE date=2009.01.01
+    
+
+### Using .s.e
+
+`.s.e` is a function at the kdb Insights Core process command line which can
+be used to invoke SQL. The SQL query is prefixed with `s.e.` and wrapped in
+double quotes.
+
+The benefit of `.s.e` over `s)` is that you can save results to a variable for
+re-use.
+
+parameters | notes  
+---|---  
+result | Resultset of calling the query.  
+query | SQL statement to be called, wrapped in double quotes.  
+  
+Info
+
+Dot naming notation like `.s.e` is commonly seen in q and is a way to define
+namespaces. In this instance any function prefaced with `.s.` will be a
+function related to the SQL implementation.
+
+**Examples**
+
+## Parameters
+
+Parameters allow you to provide values to pass into a predefined query.
+
+### Execute directly
+
+The `.s.sp` routine can be used to inject q type parameters into the SQL
+queries. Dynamic parameters are passed into the SQL query the `$n` notation is
+used to refer to the variables.
+
+    
+    
+    parsedquery:.s.sp[query](parameter list)
+    
+
+parameters | notes  
+---|---  
+parsedquery | Resulting parsed query which is used in the `s.sx`.  
+query | SQL query where parameters are referred to with the `$n` notation. The query must be wrapped in square brackets.  
+parameter list | Must be a list and passed in using q syntax. The symbol backtick should be used instead of SQL syntax for strings: `DSS rather than 'DDS'.  
+  
+Info
+
+The parameters may also be included in the qt() function.
+
+For more information on the datatypes refer to:
+
+**Examples**
+
+#### Single parameter queries
+
+When using only a single parameter it must be converted into a single item
+list as `.s.sp` is always expecting a list as its input.
+
+To do this we need to add the [enlist](https://code.kx.com/q/ref/enlist/)
+function.
+
+    
+    
+    // adding enlist to my parameter
+    .s.sp["SELECT vendor, fare FROM trips WHERE fare>$1"](enlist 50)
+    
+
+Warning
+
+If the single parameter is not converted into a single item list the call with
+fail with a 'rank error.
+
+### Prepare and execute
+
+The default behaviour of `.s.e` is to prepare the query and execute the whole
+statement every time it is run.
+
+This means that for highly repeated queries, say running an analytic or
+running from a dashboard, the query is parsed every time it is executed. This
+parsing step adds significant, and unnecessary, overhead when it is really
+only required once.
+
+For this scenario the functions `.s.sq` and `.s.sx` can be used to allow
+parsing of the query to be done only once and then just the execution is
+executed repeatedly.
+
+The steps involved are as follows:
+
+  1. Call `.s.sq` to prepare a parameterized query. This combines parsing and compiling of the query and deduces parameter types from the parameter list.
+    
+        parsedquery:.s.sq[query;parameter list]
+    
+
+parameter | details  
+---|---  
+parsedquery | Resulting parsed query.  
+query | SQL statement to be called where parameters use the `$n` notation. Wrap square brackets around the query.  
+parameter list | Always a list and passed in using q syntax where the symbol backtick should be used instead of SQL syntax 'DDS'.  
+  
+Note
+
+The parameters passed to the prepare statement can be tables, or even
+partitioned tables.
+
+  2. Call `.s.sx` to execute a query prepared with .s.sq.
+    
+        resultset:.s.sx[parsedquery;parameter list]
+    
+
+parameter | details  
+---|---  
+resultset | Result-set of calling the query with the parameters provided.  
+parsedquery | Query being passed in to be executed with the parameters.  
+parameter list | Always a list and passed in using q syntax where the symbol backtick should be used instead of SQL syntax 'DDS'.  
+
+**Examples**
+
+  * Prepare a query `b` where column `a` is read from a table `t`, column `s` is in a range provided by a parameterised list and column `p` is greater than a parameterized value. Then execute it against the `trade` table for different `sym` and `p` values.
+    
+        b:.s.sq["select a from t where s in $1 and p>$2"](``;0n);
+    r1:.s.sx[b](`AAPL`GOOG;12.34)
+    
+    r2:.s.sx[b](`MSFT`VOD;56.78)
+    
+
+  * Prepare a query `parsedQuery` where the parameters are a table and a sym value. In this case the table schema (defined as the first parameter) is hard coded. Then execute it against the `trade` table for different `sym` values.
+    
+        parsedQuery:.s.sq["select price from $1 where sym in $2";(([]date:0#0Nd;sym:0#`;price:0#0);``)];
+    r1:.s.sx[parsedQuery](trade;`AAPL`GOOG)
+    
+    r2:.s.sx[parsedQuery](`trade;`MSFT`VOD)
+    
+
+  * Prepare a query `parsedQuery` where the parameters are a table and a sym value. In this case the table schema (defined as the first parameter) is retrieved using `.s.e` from another SQL statement. Then execute it against the `trips` table for different dates.
+    
+        //SQL set up - get table schema
+    tabSchema:.s.e"SELECT * FROM trips LIMIT 0"
+    // parse and compile the SQL statement
+    parsedQuery:.s.sq["SELECT * FROM $1 WHERE date =$2";(tabSchema;0Nd)];
+    //run the queries with chosen paramater values
+    r1:.s.sx[parsedQuery](trips;2009.01.01)
+    r2:.s.sx[parsedQuery](`trips;2009.01.02)
+    
+
+Info
+
+The backtick is optional for the table name therefore both trip and `trip can
+be used.
+
+### SQL parse tree
+
+The `.s.prx` function shows the parse tree.
+
+Warning
+
+This function is in beta stages and subject to change. Its format currently
+not the standard q parse tree and is subject to change.
+
+**Examples**
+
+    
+    
+    .s.prx"select * from trade where date='2021.11.23' and symbol in ('XBTUSD')"
+    
+    `select ($;`trade;`trade) ,((=;`date;"2021.11.23");(in;`symbol;"XBTUSD")) () ,`*`* 0b (();();())
+    
+
+### Performance estimate
+
+If you wish to get a rough estimate of the performance of a particular SQL
+statement you can look at the different stages of parse, parse and compile,
+and execute.
+
+The following steps can be time separately if required:
+
+  * The parse stage using `.s.prx`, which will show the parse tree.
+  * The combined parse and compile step using `.s.sq`.
+  * The execute step using `.s.sx`.
+
+## Integrating with q
+
+There are several Integrations with q that allow you to run call q functions
+within SQL statements and create SQL functions from q functions.
+
+### Using qt()
+
+The `qt()` function allows you to call q functions and return tables.
+
+Limitation of qt()
+
+qt() can only in be called in the 'from' section of the statement and must be
+executed before compilation.
+
+    
+    
+    s)select a from qt(f,x,y...) where ...
+    
+
+parameter | description  
+---|---  
+f | q function being called.  
+x,y.. | List of function parameters.  
+  
+Defaults
+
+qt() defaults to type 'a' instead of 'C'.
+
+**Example**
+
+### Using q()
+
+The `q()` function allows you to call q functions anywhere in the statement
+and return any q data type.
+
+parameter | description  
+---|---  
+t | return type.  
+f | q function being called.  
+x,y.. | List of function parameters.  
+  
+Defaults
+
+q() defaults to type 'a' instead of 'C'.
+
+**Examples**
+
+### Converting a q function into a SQL function
+
+Call `.s.F` to convert a q function into a SQL function.
+
+    
+    
+    `.s.F[`functionname]:.s.fx{code}`
+    
+
+**Example**
+
+Note
+
+This is strongly typed, by running it on prototype arguments you can observe
+the output type.
+

@@ -1,0 +1,309 @@
+https://code.kx.com/insights/microservices/rt/sdks/getting-started-sdks.html
+
+# Getting started - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/rt/sdks/getting-started-sdks.html
+
+# Getting started with the interfaces to kdb Insights
+
+The kdb Insights interfaces are libraries created in different languages for
+developers to integrate with _kdb Insights Enterprise_ or the _kdb Insights
+Reliable Transport_ from outside your cluster via load balancers or from
+inside your cluster without the need for load balancers.
+
+The interfaces handle the following aspects of the integration:
+
+  * Authentication
+  * Connectivity
+  * Data transfer
+  * Data validation
+
+The following interfaces, including sample programs, can be downloaded from
+the kdb Insights [Nexus](https://nexus.dl.kx.com/#browse/browse:kxi-package-
+public) registry:
+
+This section provides details on how to get started using the interfaces.
+
+## Authentication and Connectivity
+
+The interfaces can be used to publish, subscribe and query data. They rely on
+configuration details to determine information about the kdb Insights
+deployment to connect to, this includes SSL certificates and the endpoints to
+connect to. For _kdb Insights Enterprise_ you can provide this configuration
+via a file or alternatively it can be obtained via another _kdb Insights
+Enterprise_ service (the Information Service). For _kdb Insights Reliable
+Transport_ you must provide this configuration via a file.
+
+### From outside the cluster
+
+For a _kdb Insights Enterprise_ deployment, clients can rely on the
+Information Service to provide the relevant configuration. Alternatively, the
+configuration required for _kdb Insights Reliable Transport_ can be provided
+directly via a `json` file.
+
+The required configuration for a client is:
+
+    
+    
+    {
+      "name": "<client-name>",
+      "topics": {
+        "insert": "<streamid>",
+        "query": ""
+      },
+      "ca": "<ca>",
+      "cert": "<cert>",
+      "key": "<key>",
+      "insert": {
+        "insert": [
+          ":<host1:portnum>",
+          ":<host2:portnum>",
+          ":<host3:portnum>"
+        ],
+        "query": []
+      },
+      "query": [":<servicegatewayhost:portnum>"]
+    }
+    
+
+Tag names and values are described below:
+
+tagname | variable | example | details  
+---|---|---|---  
+"name" | client-name | test_client | This name is used to distinguish between two clients publishing from the same host to the same RT stream  
+"topics":"insert" | streamid | mystream | The RT stream ID that users wish to publish to. Set in values.yaml file used for deploying the RT microservice.  
+"topics":"query" | Not used |  |   
+"ca" | ca |  | Certificate of the CA used in the SSL connection  
+"cert" | cert |  | Server identity and its public key  
+"key" | key |  | Private key for the server's public key  
+"insert":"insert" | hostn:portnum | :kxi-mystream-2:5000 | Array of RT endpoints, will contain as many endpoints as the RT [replicaCount](../quickstart/kubernetes.html#application)  
+"insert":"query" | Not used |  |   
+"query" | servicegatewayhost:portnum | :kx-insights:6050 | Service Gateway endpoint used for querying the database. Not relevant for data ingest through RT.  
+  
+Note
+
+An example of configuring SSL end-points to publish data from outside the
+cluster is described [here](../quickstart/kubernetes.html#steps-to-bring-up-
+rt-chart-with-support-for-external-sdks-and-ssl).
+
+#### Authentication
+
+Before you can integrate with a _kdb Insights Enterprise_ deployment from
+outside the cluster, you must be authenticated. If your publisher is outside
+the _kdb Insights Enterprise_ cluster the Information Service can be called
+upon to gain the details on the SSL certificates and endpoints. To allow a
+publisher to use this service, you must follow the authentication steps in
+this section.
+
+To successfully authenticate, you must have a service account. [Create a
+service account](../../../enterprise/security/managing-service-accounts.html)
+
+Service account role requirements
+
+If you want to publish data to an RT stream, then the `insights.client.create`
+role must be included in your service account.
+
+#### Variables
+
+You will need the following variables to generate an authenticated _kdb
+Insights Enterprise_ client URL (`KXI_CONFIG_URL`) that allows you to
+communicate with _kdb Insights Enterprise_.
+
+#### Authentication steps
+
+Follow these steps, using the variables above, to generate an authenticated
+_kdb Insights Enterprise_ client URL (`KXI_CONFIG_URL`) that provides the
+interface with a TLS key and certificate and the endpoints that they use to
+connect to the _kdb Insights Enterprise_ and publish, subscribe or query data.
+
+  1. Identify the **stream id** from the `External Reference` field in the _External Data Sources_ section of the Stream tab of your kdb Insights Database.
+
+If you are ingesting data directly into the database without any
+transformations the `External Reference` will be under the _Stream Process_
+section, if you are transforming the data using a pipeline before it is
+ingested into the database the `External Reference` will be under the
+_Additional Stream Process_ section.
+
+![External stream in the UI](../images/external-stream-ui.png)
+
+Note
+
+The screenshot above has both streams set to **ingest data from external
+sources** to show the `External Reference` field in both sections. You might
+only have one stream that is ingesting data for an external source and
+therefore only one of these sections will be visible.
+
+  2. Authenticate using the kdb Insights CLI `kxi auth` login command or the UI and your service account details following the guidelines [here](../../../enterprise/cli/authentication.html#authenticating-as-a-service-account).
+
+  3. Enrol the client and retrieve an `SDK_CLIENT_UID` as follows:
+    
+        kxi client enrol --name test-publisher --insert-topic <stream id>
+    
+    
+        {
+    "message": "success",
+    "detail": "Client enrolled",
+    "url": "5ed6e5b7c80c8e35d07249d12f32d9eb",
+    "config_url": "https://${INSIGHTS_HOSTNAME}/informationservice/details/5ed6e5b7c80c8e35d07249d12f32d9eb"
+    }
+    
+
+  4. Create the `KXI_CONFIG_URL` variable from the `config_url` value returned in the enrolment step:
+    
+        export KXI_CONFIG_URL=<config_url>
+    
+
+Note
+
+The `KXI_CONFIG_URL` can be used by the C, Java and Python interfaces when
+connecting to _kdb Insights Enterprise_.
+
+#### Client URL response details
+
+The json content obtained from the client URL (`KXI_CONFIG_URL`) is covered
+above.
+
+#### Removing a client
+
+Once all external publishers or subscribers using a particular
+`KXI_CONFIG_URL` are no longer required, it is recommended that you remove
+access to this URL.
+
+This can be done using the kdb Insights CLI:
+
+    
+    
+    kxi client remove --name test-publisher
+    
+
+Authentication is required
+
+Removing a client requires you to first authenticate as described in the
+authentication steps above.
+
+### From inside the cluster
+
+If you wish to use the interfaces in the same cluster as _kdb Insights_ there
+is no need for the Information Service and a configuration file is used to
+provide the endpoints and certificates.
+
+The configuration file has the same format as the information passed back from
+kdb Insights Information Service, but with some important differences:
+
+  * The "useSslRt" top level key needs to be set to false
+  * The "ca", "key" and "cert" are no longer needed and will be ignored if provided.
+  * You will need to provide the internal hostnames and non-ssl RT port numbers (typically 5002) under the "insert" key
+
+Note
+
+The RT port number (5000, 5001 and 5002) refer to the default ports that the
+internal and external [replicators](../index.html#replicators) push servers
+are launched on.
+
+#### Config file
+
+The config files for a publisher or subscriber client to access a _kdb
+Insights Enterprise_ deployment:
+
+##### Publisher
+
+    
+    
+    {
+        "useSslRt":false,
+        "name":"<client-name>",
+        "topics":{
+                "insert":"<streamid>",
+                "query":"" },
+        "insert": {
+                "insert":[":<host1:portnum>",":<host2:portnum>",":<host3:portnum>"],
+                "query":[]},
+        "query":[":<servicegatewayhost:portnum>"]
+    }
+    
+
+##### Subscriber
+
+    
+    
+    {
+        "useSslRt":false,
+        "name":"test-subscribe",
+        "topics":{"subscribe":"<streamid>"},
+        "subscribe": {"subscribe":[":<host1:portnum>",":<host2:portnum>",":<host3:portnum>"]}
+    }
+    
+
+Tagnames in the config file are described below:
+
+tagname | details |   
+---|---|---  
+"useSslRt" | Always set to false when publishing to RT from inside the cluster |   
+"name" | This name is used to distinguish between two clients publishing from the same host to the same RT stream |   
+"topics":"insert" | The RT stream ID that publishers wish to send data to. This is set to the [subTopic](../../../enterprise/database/configuration/assembly/stream.html#topic-config) in the assembly. |   
+"topics":"subscribe" | The RT stream ID that subscribers wish to receive data from. |   
+"topics":"query" | Not used |   
+"insert":"insert" | Array of RT endpoints, will contain as many endpoints as the RT [replicaCount](../quickstart/kubernetes.html#application) |   
+"subscribe":"subscribe" | Array of RT endpoints, will contain as many endpoints as the RT [replicaCount](../quickstart/kubernetes.html#application) |   
+"insert":"query" | Not used |   
+"query" | Service Gateway endpoint used for querying the database. Not relevant for data ingest through RT. |   
+  
+The values for these tags can be set as described below:
+
+variable | example | details  
+---|---|---  
+streamid | mystream | Set in the UI from the Stream `External Reference` field  
+hostn:portnum | :kxi-mystream-2:5000 |   
+servicegatewayhost:portnum | :kx-insights:6050 |   
+tagname | variable | example | details  
+---|---|---|---  
+"useSslRt" |  |  | Always set to false when publishing to RT from inside the cluster  
+"name" | client-name | test_client | This name is used to distinguish between two clients publishing from the same host to the same RT stream  
+"topics":"insert" | streamid | mystream | The RT stream ID that users wish to publish to.  
+"topics":"subscribe" | streamid | mystream | The RT stream ID that users wish to subscribe to.  
+"topics":"query" | Not used |  |   
+"insert":"insert" | hostn:portnum | :kxi-mystream-2:5000 | Array of RT endpoints to publish to, will contain as many endpoints as the RT [replicaCount](../quickstart/kubernetes.html#application)  
+"subscribe":"subscribe" | hostn:portnum | :kxi-mystream-2:5001 | Array of RT endpoints to subscribe to, will contain as many endpoints as the RT [replicaCount](../quickstart/kubernetes.html#application)  
+"insert":"query" | Not used |  |   
+"query" | servicegatewayhost:portnum | :kx-insights:6050 | Service Gateway endpoint used for querying the database. Not relevant for data ingest through RT.  
+  
+### Publishing data
+
+To publish data using an interface the following are required:
+
+  * A publisher (click on the links below for getting started guides). A publisher can either be:
+  * An application that uses one of the following interfaces: 
+  * A publisher and subscriber that agree on:
+  * `stream id` and parameter usage
+  * Message format
+  * Sufficient storage: A client publisher can continue running when the RT endpoints are unavailable.
+
+If the endpoints are unavailable at any time
+
+The publisher needs to be aware of the following:
+
+  * **Disk space** : While the endpoints are unavailable, the data will continue to be written to a local log file on the publisher machine. Therefore there **MUST** be adequate disk provisioned to handle this build up.
+
+  * **Timeout** : The interface will stop if the endpoints have been offline for an hour.
+
+See details on [publishers](../publishers.html) and
+[subscribers](../subscribers.html).
+
+### Querying data
+
+Querying data from either a _kdb Insights Enterprise_ or _kdb Insights_
+deployment, over IPC, is currently only available in the [Java
+interface](java-sdk.html).
+
+See [here](query-java-sdk.html) for details on the API calls.
+
+### Subscribing to data
+
+A subscriber is an application that can receive data. They can use one of the
+following interfaces: \- [C](c-sdk.html) \- [q (rt.qpk)](rt-qpk.html)
+
+Currently subscription can be done only from inside the cluster. The
+subscriber connects to the `pull_server` replicators of RT which by default
+listens on port 5001. More details on the replicators is available
+[here](../index.html#replicators).
+

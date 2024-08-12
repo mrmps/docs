@@ -1,0 +1,279 @@
+https://code.kx.com/platform/selective_upgrades/
+
+# Selective upgrades - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/selective_upgrades/
+
+# Selective upgrades
+
+_KX Control_ supports dynamic code and schema upgrades to the system.
+Different platform processes can operate using the latest or any previous
+version of analytics, instructions, config parameters and schema. The version
+is defined with reference to the _KX Control_ revision number. This will allow
+a package to be imported, upgrading entities on _KX Control_ , without
+necessarily upgrading those entities for every process. Processes can remain
+on a previous version of the entities, before the package was imported. At a
+later time any process can update their operating version to take the entities
+upgraded by the import.
+
+This allows selectively upgrading nodes of a system while keeping others fixed
+to an old version. _KX Control_ provides multi-versioned support for the
+entities listed below. Users retain control of what nodes run on what
+versions. APIs are provided to manage this process (see below).
+
+## Entities supported by selective upgrades
+
+The entities that support operating at earlier versions are:
+
+  * analytics
+  * instructions
+  * configuration parameters
+  * schema
+
+After a process registers its version with _KX Control_ , calls to get the
+supported entities will respect that version.
+
+## Example implementation
+
+An example of using this functionality would be setting Process A to operate
+at a particular version but leaving Process B operating at the latest version.
+
+Any process can get the current version from _KX Control_ using the API
+`.pkg.getCurrentVersion`
+
+### Set operating version
+
+Any process can set its operating version using the API `.pkg.setVersion`. By
+default a process will operate at the latest version of _KX Control_. To
+revert a process that has a previous operating version set so it will operate
+at the latest version of _KX Control_ , `.pkg.setVersion` can be called with a
+null value (0Nj) as the parameter.
+
+Process A could be fixed to operate at the current _KX Control_ version (for
+example 100 in the diagram below). To achieve this, define a callback for the
+`Package.Release` topic on "Process A" to set the version.
+
+    
+    
+    verCallback:{[topic; payload]
+      .pkg.setVersion[payload`version]; }
+    
+    .px.bdc.addCallback[`Package.Release; `verCallback]
+    
+
+Broadcast a message from another process, e.g. Process B, to a specified list
+of processes with the current _KX Control_ operating version.
+
+    
+    
+    q).pkg.release[.pkg.getCurrentVersion[];enlist `ProcessA; `release]
+    
+
+This will trigger the `verCallback` function on Process A, setting the
+operating version to the current _KX Control_ version.
+
+![Screenshot](../img/control/selectiveupgrade1.png)
+
+### Import
+
+When a package is imported Process B will operate at the new, higher version
+after the import (for example 150 in the diagram below). Process A will
+continue to operate at its set version (100 in the example) and will not get
+the entity changes from the import
+
+No automatic update
+
+Processes that have an operating version set do not automatically update their
+version after an import, they continue to operate at the previously set
+version
+
+![Screenshot](../img/control/selectiveupgrade2.png)
+
+The import could be performed from another process using the API
+`.pkg.import`. Using this API will broadcast a message to all processes. A
+callback can be defined to take any action required when this message is
+received.
+
+The callback on Process A could log that the package was imported.
+
+    
+    
+    importCallback:{[topic; payload]
+      .log.out[.z.h;"Package imported: ";payload`package] }
+    
+    .px.bdc.addCallback[`Package.Import; `importCallback]
+    
+
+An example to import Package1 in the above diagram could be:
+
+    
+    
+    q)dir:`$"home/install/packages/Package1"
+    q)pkg:`Package1
+    q)action:`import
+    q).pkg.import[dir; pkg; action]
+    before| 100j
+    after | 150j
+    status| `
+    
+
+To ensure the import does not trigger entity update permission errors for the
+imported entities, the `deltacomponent` user should be an Admin user if using
+`.pkg.import`.
+
+[Security and the deltacomponent user](../security/#security-and-the-
+deltacomponent-user)
+
+### Release
+
+At a later time Process A can update to the version introduced by the import.
+This could be triggered by a ‘release’ broadcast to specified processes, this
+can be initiated via API from another process, `.pkg.release`.
+
+The ‘release’ message triggers a callback on the target processes.
+
+The callback on Process A could set the new operating version and update
+schemas and analytics. For example, if there were pre-defined entity lists
+`.upgrade.algroups` analytic groups and `.upgrade.tblgroups` schema groups,
+then the callback code to set the operating version and load the analytics and
+schemas in the groups would be:
+
+    
+    
+    releaseCallback:{[topic; payload]
+      .pkg.setVersion[payload`version];
+      .al.loadgroupfunctions each .upgrade.algroups;
+      .tbl.loadgrouptables each .upgrade.tblgroups; };
+    
+    .px.bdc.addCallback[`Package.Release; `releaseCallback]
+    
+
+In the example, the API called on "Process C" to trigger the release message
+would be:
+
+    
+    
+    q).pkg.release[150;enlist `ProcessA; `release]
+    
+
+The 150 version number was returned by the import API as the version number
+after the import.
+
+![Screenshot](../img/control/selectiveupgrade3.png)
+
+#### Entities changed between versions
+
+After an import or release has occurred, it may be useful to know what
+entities have changed between two given version numbers. This could inform a
+process what schema, analytics, or instructions would need to be re-loaded
+after a new operating version has been set. A list of entities modified
+between two given version numbers will be returned by the process API
+`.pkg.getModifiedEntities`.
+
+#### Configuration updates
+
+If a process has an operating version set before the latest, then any changes
+to subscribed config will not be published to that process. It may be
+necessary to republish the latest config update from _KX Control_ , after a
+process has updated their operating version for example. To do this for a
+given list of config parameter entities use the process API
+`.uc.republishUpdates`, which will push out config updates to all processes
+subscribed to the entities passed in to the API. This will be the latest
+config entity version up to the operating version number associated with the
+subscribing process.
+
+In the example, if Process A were subscribed to `TestParam101:DEFAULT`,
+updates to this param due to the import could be republished after the
+release.
+
+    
+    
+    q)tab:([]parameter:enlist `TestParam101;override:enlist `DEFAULT)
+    q).uc.republishUpdates[tab]
+    
+
+### Rollback
+
+A list of _KX Control_ checkpoints can be retrieved using the process API
+`.pkg.getCheckpoints`
+
+It is possible to roll back the changes from the import by reverting _KX
+Control_ to the checkpoint taken before the import. The new _KX Control_
+version number will increase but _KX Control_ will be in the same state it was
+at the checkpoint. The API to do this is `.pkg.rollback`, it rolls _KX
+Control_ back to the last checkpoint before the supplied version number. This
+API also broadcasts a message to all processes. A callback could be defined on
+Process A to set its version and refresh loaded schemas and analytics.
+
+    
+    
+    rollbackCallback:{[topic; payload]
+      .pkg.setVersion[payload`after];
+      .al.loadgroupfunctions each .upgrade.algroups;
+      .tbl.loadgrouptables each .upgrade.tblgroups; }
+    
+    .px.bdc.addCallback[`Package.Rollback; `rollbackCallback]
+    
+
+The API called on Process C to trigger the rollback would be:
+
+    
+    
+    q).pkg.rollback[100j]
+    "Successfully rolled back to version 100"
+    
+
+The 100 version number was the version number just before the import and so
+would be the version number of the checkpoint taken before import.
+
+![Screenshot](../img/control/selectiveupgrade4.png)
+
+To ensure the rollback does not trigger entity update permission errors for
+the entities that are reverted, the `deltacomponent` user should be an Admin
+user if using `.pkg.rollback`.
+
+[Security and the deltacomponent user](../security/#security-and-the-
+deltacomponent-user)
+
+## Process API
+
+The process API relating to selective upgrades can be found here.
+
+[Packaging API](../api/packaging/)
+
+If the operating version has been set for a process, getting entities from _KX
+Control_ using the following API will return the versions of the entities at
+the operating version:
+
+[Schema API](../api/schemas/)
+
+    
+    
+    .tbl.getinfo
+    .tbl.gettable
+    .tbl.loadgrouptables
+    .tbl.loadtables
+    
+
+[Analytic API](../api/analytics/)
+
+    
+    
+    .al.loadinstruction
+    .al.callfunction
+    .al.getfunction
+    .al.getfunctiondef
+    .al.loadgroupfunctions
+    
+
+[Configuration API](../api/configuration/)
+
+    
+    
+    .uc.getActiveParamValue
+    .uc.getAndSaveActiveParamValue
+    .uc.getAndSaveAllParam
+    .uc.getSavedOverrides
+    .uc.getSavedData
+    
+

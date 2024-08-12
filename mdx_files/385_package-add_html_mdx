@@ -1,0 +1,635 @@
+https://code.kx.com/insights/enterprise/packaging/package-add.html
+
+# Editing a package - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/packaging/package-add.html
+
+# Editing a package
+
+After you create a package with the instructions in [Creating a
+package](package-create.html), you can use the CLI `kxi package` subcommand to
+add, modify, and delete most of the components in the package as follows:
+
+`kxi package add --help`
+
+    
+    
+     Usage: kxi package add [OPTIONS] COMMAND [ARGS]...                             
+    
+     Add an entity to the specified package.                                        
+    
+    ╭─ Options ────────────────────────────────────────────────────────────────────╮
+    │ --to      <Package>  Package, to which, the entity will be added.            │
+    │ --help               Show this message and exit.                             │
+    ╰──────────────────────────────────────────────────────────────────────────────╯
+    ╭─ Commands ───────────────────────────────────────────────────────────────────╮
+    │ agg                Add aggregator to the specified package                   │
+    │ database           Add a database to the specified package.                  │
+    │ dep                Add a package dependency to the specified package.        │
+    │ deployment-config  Add deployment_config to the specified package            │
+    │ entitlements       Add entitlements to the specified package.                │
+    │ entrypoint         Add an entrypoint to the specified package.               │
+    │ patch              Add patch to the specified package                        │
+    │ pipeline           Add a pipeline to the specified package.                  │
+    │ rc                 Add resource coordinator to the specified package         │
+    │ ref                Add a ref to an external object in the specified package. │
+    │ router             Add a router to the specified package.                    │
+    │ shard              Add shard to the specified package                        │
+    │ stream             Add a stream to the specified database.                   │
+    │ table              Add a table to the specified package.                     │
+    │ view               Add a view to the specified package.                      │
+    ╰──────────────────────────────────────────────────────────────────────────────╯
+    
+
+`ref` objects can only be used to add a pipeline and are currently not
+recommended for use.
+
+[UDFs](package-add.html#udfs) have to be added to the package manually.
+
+addrmcopy
+
+    
+    
+     Usage: kxi package add [OPTIONS] COMMAND [ARGS]...                             
+    
+     Add an entity to the specified package.                                        
+    
+    ╭─ Options ────────────────────────────────────────────────────────────────────╮
+    │ --to      <Package>  Package, to which, the entity will be added.            │
+    │ --help               Show this message and exit.                             │
+    ╰──────────────────────────────────────────────────────────────────────────────╯
+    ╭─ Commands ───────────────────────────────────────────────────────────────────╮
+    │ agg                Add aggregator to the specified package                   │
+    │ database           Add a database to the specified package.                  │
+    │ dep                Add a package dependency to the specified package.        │
+    │ deployment-config  Add deployment_config to the specified package            │
+    │ entitlements       Add entitlements to the specified package.                │
+    │ entrypoint         Add an entrypoint to the specified package.               │
+    │ patch              Add patch to the specified package                        │
+    │ pipeline           Add a pipeline to the specified package.                  │
+    │ rc                 Add resource coordinator to the specified package         │
+    │ ref                Add a ref to an external object in the specified package. │
+    │ router             Add a router to the specified package.                    │
+    │ shard              Add shard to the specified package                        │
+    │ stream             Add a stream to the specified database.                   │
+    │ table              Add a table to the specified package.                     │
+    │ view               Add a view to the specified package.                      │
+    ╰──────────────────────────────────────────────────────────────────────────────╯
+    
+
+Calling the `package add` command removes an existing component if it shares
+the same type and name as the new component.
+
+If you run the following command, the original copy of the `mypkg` database is
+overwritten:
+
+    
+    
+    kxi package add database --to mypkg
+    # some editing of the files
+    kxi package add database --to mypkg
+    
+    
+    
+     Usage: kxi package rm [OPTIONS] COMMAND [ARGS]...                              
+    
+     Remove an entity from the specified package.                                   
+    
+    ╭─ Options ────────────────────────────────────────────────────────────────────╮
+    │ --from  -f  <Package>  Package from which the entity will be removed.        │
+    │ --help                 Show this message and exit.                           │
+    ╰──────────────────────────────────────────────────────────────────────────────╯
+    ╭─ Commands ───────────────────────────────────────────────────────────────────╮
+    │ agg                 Remove aggregator form the specified package             │
+    │ database            Remove a database from the specified package             │
+    │ dep                 Remove a pipeline from the specified package.            │
+    │ deployment-config   Remove deployment_config form the specified package      │
+    │ entitlements        Remove entitlements from the specified package.          │
+    │ entrypoint          Remove entrypoint from the specified package.            │
+    │ patch               Remove deployment_config form the specified package      │
+    │ pipeline            Remove a pipeline from the specified package.            │
+    │ rc                  Remove resource_coordinator from the specified package   │
+    │ router              Remove a router from the specified package.              │
+    │ shard               Remove a shard from the specified package                │
+    │ stream              Remove stream from the specified package                 │
+    │ table               Remove a table from the specified package                │
+    │ view                Remove a View from the specified package.                │
+    ╰──────────────────────────────────────────────────────────────────────────────╯
+    
+    
+    
+     Usage: kxi package copy [OPTIONS] COMMAND [ARGS]...                            
+    
+     Copy an entity from the specified package.                                     
+    
+    ╭─ Options ────────────────────────────────────────────────────────────────────╮
+    │ --from  -f  <Src-Package>     Package from which the entity will be copied.  │
+    │ --to    -t  <Target-Package>  Package to which the entity will be            │
+    │                               copied;[default] `from`.                       │
+    │ --help                        Show this message and exit.                    │
+    ╰──────────────────────────────────────────────────────────────────────────────╯
+    ╭─ Commands ───────────────────────────────────────────────────────────────────╮
+    │ pipeline      Copy a pipeline from the specified package.                    │
+    ╰──────────────────────────────────────────────────────────────────────────────╯
+    
+
+Each component controls some behavior of the overall package. Components can
+be broadly broken into the following groups:
+
+Understanding the package object model.
+
+The [package reference](package-object.html) provides a full object
+definition.
+
+### Deployment components
+
+The Deployment components determine what is to be deployed, with details
+including how processes need to be created and orchestrated.
+
+#### Database
+
+Databases include the following components:
+
+  * Schema
+  * Storage Manager
+  * Streams
+  * Data Access Processes
+
+Database restrictions
+
+Although currently multiple database definitions are allowed in a package,
+only one will be deployed.
+
+To add a new database to your package you can run:
+
+    
+    
+    kxi package add --to mypkg database
+    
+
+Within the package folder this will add a new directory with the following
+structure:
+
+    
+    
+    mypkg/databases/mypkg/shards/mypkg-shard.yaml
+    
+
+These files can then be deployed without any modifications, or tailored to
+meet your needs.
+
+Below are each of the fields that make up a Database.
+
+##### Database fields
+
+    
+    
+    kxi package field info Database
+    
+    
+    
+     Fields for Database                                                                                                              
+    ╭───────────────────────┬─────────────────────────────┬───────────────────────────────┬──────────────────────────────────────────╮
+    │ field                 │ required                    │ type                          │ description                              │
+    ├───────────────────────┼─────────────────────────────┼───────────────────────────────┼──────────────────────────────────────────┤
+    │ name                  │ False                       │ str                           │ DB Name                                  │
+    │ shards                │ False                       │ Shard                         │ Shards in DB                             │
+    │ tables                │ False                       │ TableList                     │ Schemas in DB                            │
+    ╰───────────────────────┴─────────────────────────────┴───────────────────────────────┴──────────────────────────────────────────╯
+    
+
+##### Shard fields
+
+    
+    
+    kxi package field info Shard
+    
+    
+    
+     Fields for Shard                                                                                                                 
+    ╭────────────────────────────┬────────────────────────┬──────────────┬───────────────────────────────────────────────────────────╮
+    │ field                      │ required               │ type         │ description                                               │
+    ├────────────────────────────┼────────────────────────┼──────────────┼───────────────────────────────────────────────────────────┤
+    │ name                       │ False                  │ str          │ Name identifier of shard                                  │
+    │ labels                     │ False                  │ str          │ Shard labels                                              │
+    │ sm                         │ False                  │ Sm           │ Storage Manager Object                                    │
+    │ daps                       │ False                  │ Dap          │ Data Access object                                        │
+    │ sequencers                 │ False                  │ Dict         │ Messsage bus into system                                  │
+    │ mounts                     │ False                  │ Dict         │ PVs used in package                                       │
+    ╰────────────────────────────┴────────────────────────┴──────────────┴───────────────────────────────────────────────────────────╯
+    
+
+##### Schema fields
+
+    
+    
+    kxi package field info Table
+    
+    
+    
+     Fields for Table                                                                                                                 
+    ╭────────────────┬───────────┬─────────┬─────────────────────────────────────────────────────────────────────────────────────────╮
+    │ field          │ required  │ type    │ description                                                                             │
+    ├────────────────┼───────────┼─────────┼─────────────────────────────────────────────────────────────────────────────────────────┤
+    │ columns        │ True      │ Column  │ A List of column schemas                                                                │
+    │ type           │ True      │ Type3   │ One of {splayed, splayed_mem, partitioned, basic}. Required                             │
+    │ name           │ False     │ str     │ Table name                                                                              │
+    │ blockSize      │ False     │ int     │ Number of rows to keep in-memory before write to disk                                   │
+    │ description    │ False     │ str     │ A string describing the purpose of this table                                           │
+    │ isSharded      │ False     │ bool    │ Specifies if a reference data table is distributed across multiple assemblies           │
+    │ oldName        │ False     │ str     │ Old table name, for automated renaming                                                  │
+    │ primaryKeys    │ False     │ List    │ Names of primary key columns                                                            │
+    │ prtnCol        │ False     │ str     │ A timestamp column name used for data partitioning                                      │
+    │ sortColsDisk   │ False     │ List    │ Names of columns to sort on when stored on disk                                         │
+    │ sortColsMem    │ False     │ List    │ Names of columns to sort on when stored in memory                                       │
+    │ sortColsOrd    │ False     │ List    │ Names of columns to sort on when stored on disk with an ordinal partition scheme        │
+    ╰────────────────┴───────────┴─────────┴─────────────────────────────────────────────────────────────────────────────────────────╯
+    
+
+##### Stream fields
+
+    
+    
+    kxi package field info Sequencer
+    
+    
+    
+     Fields for Sequencer                                                                                                             
+    ╭──────────────────────────┬──────────┬──────────────────┬───────────────────────────────────────────────────────────────────────╮
+    │ field                    │ required │ type             │ description                                                           │
+    ├──────────────────────────┼──────────┼──────────────────┼───────────────────────────────────────────────────────────────────────┤
+    │ external                 │ True     │ bool             │ Externally facing Sequencer                                           │
+    │ annotations              │ False    │ Annotations      │ Annotations to apply to resources created from Sequencer              │
+    │ args                     │ False    │ List             │ Command line arguments to be set on element container                 │
+    │ env                      │ False    │ List             │ Environment Variables to be appended to the element container         │
+    │ externalNodePort         │ False    │ bool             │ Use Node Port Type for Externally facing Sequencer service            │
+    │ image                    │ False    │ Image            │ Sequencer image details                                               │
+    │ k8sPolicy                │ False    │ K8sPolicy        │                                                                       │
+    │ maxDiskUsagePercent      │ False    │ int              │ RT Log - Maximum Percentage of disk before Archiving                  │
+    │ maxLogSize               │ False    │ str              │ RT Log Maximum size                                                   │
+    │ name                     │ False    │ str              │ Sequencer instance name                                               │
+    │ retentionDuration        │ False    │ int              │ RT Log retention period in minutes                                    │
+    │ sideCarConfig            │ False    │ SideCarConfig    │ Side Car Config Map Details                                           │
+    │ sideCarOverrides         │ False    │ SideCarOverrides │ Override Enabling Side Car for Sequencer instance                     │
+    │ size                     │ False    │ Size             │ Size is the replicaCount of the Sequencer StatefulSet                 │
+    │ staticIPs                │ False    │ List             │ Optional list of IPs to append to the External RT LoadBalancers       │
+    │ topicConfig              │ False    │ TopicConfig      │ Sequencer Topic Prefix                                                │
+    │ topicConfigDir           │ False    │ str              │ Location of RT 'pull' directory                                       │
+    │ useInternalLBAnnotations │ False    │ bool             │ Apply Service Annotations to set LoadBalancer Service as internal     │
+    │                          │          │                  │ only                                                                  │
+    │ volume                   │ False    │ Volume           │ RT Sequencer directory paths                                          │
+    │ volumeMounts             │ False    │ List             │ Mount volumes external to Assembly as defined within spec.Volumes     │
+    ╰──────────────────────────┴──────────┴──────────────────┴───────────────────────────────────────────────────────────────────────╯
+    
+
+#### Pipeline
+
+Pipelines are used to enrich and stream data; you can add multiple pipelines
+to your package.
+
+To add a new pipeline to your package you can run:
+
+    
+    
+    kxi package add --to mypkg pipeline --name my-pipeline 
+    
+
+This will add a new directory with the following structure:
+
+    
+    
+    mypkg/databases/mypkg/pipelines/my-pipeline.yaml
+    
+
+##### Pipeline fields
+
+    
+    
+    kxi package field info Pipeline
+    
+    
+    
+     Fields for Pipeline                                                                                                              
+    ╭────────────────────────────┬──────────┬────────────────────────────┬───────────────────────────────────────────────────────────╮
+    │ field                      │ required │ type                       │ description                                               │
+    ├────────────────────────────┼──────────┼────────────────────────────┼───────────────────────────────────────────────────────────┤
+    │ spec                       │ True     │ str                        │ Worker spec                                               │
+    │ base                       │ False    │ Base                       │ Image base                                                │
+    │ config                     │ False    │ Dict                       │ Additional configuration to be applied to SP Pipeline     │
+    │                            │          │                            │ Assembly element                                          │
+    │ configMaps                 │ False    │ List                       │ Pre-configured Kubernetes config maps to inject into      │
+    │                            │          │                            │ pipeline                                                  │
+    │ controller                 │ False    │ Controller                 │ Configure Pipeline Controller                             │
+    │ destination                │ False    │ str                        │ Sequencer Bus to publish to                               │
+    │                            │          │                            │ 'destination' is used to look up sequencers defined       │
+    │                            │          │                            │ within the Assembly 'elements.sequencer' or 'bus' fields. │
+    │                            │          │                            │ If 'destination' is not located, it is assumed to be an   │
+    │                            │          │                            │ existing Sequencer name, external to the Assembly.        │
+    │ env                        │ False    │ List                       │ Environment Variables to be appended to the element       │
+    │                            │          │                            │ container                                                 │
+    │ group                      │ False    │ str                        │ Groups a pipeline into a set of replicas that have a      │
+    │                            │          │                            │ matching group id                                         │
+    │ id                         │ False    │ str                        │ SP Pipeline ID                                            │
+    │ imagePullSecrets           │ False    │ List                       │ Pre-configured Kubernetes imagePullSecrets to inject into │
+    │                            │          │                            │ pipeline                                                  │
+    │ maxWorkers                 │ False    │ int                        │ Maximum worker instances                                  │
+    │ metrics                    │ False    │ Metrics                    │ Configure pipeline metrics                                │
+    │ minWorkers                 │ False    │ int                        │ Minimum worker instances                                  │
+    │ monitoring                 │ False    │ bool                       │ Enable monitoring on Pipeline pods                        │
+    │ name                       │ False    │ str                        │ SP Pipeline name                                          │
+    │ protectedExecution         │ False    │ bool                       │ Enable Protected Execution                                │
+    │ replicaAffinityTopologyKey │ False    │ ReplicaAffinityTopologyKey │ The key of node labels. If two Nodes are labelled with    │
+    │                            │          │                            │ this key and have identical                               │
+    │                            │          │                            │ values for that label, the scheduler treats both Nodes as │
+    │                            │          │                            │ being in the same topology.                               │
+    │                            │          │                            │ Used for affinity and anti-affinity rules related to      │
+    │                            │          │                            │ replicas.                                                 │
+    │ replicas                   │ False    │ int                        │ Number of pipeline replicas                               │
+    │ secrets                    │ False    │ List                       │ Pre-configured Kubernetes secrets to inject into pipeline │
+    │ source                     │ False    │ str                        │ Sequencer Bus to subscribe to.                            │
+    │                            │          │                            │ 'source' is used to look up sequencers defined within the │
+    │                            │          │                            │ Assembly 'elements.sequencer' or 'bus' fields.            │
+    │                            │          │                            │ If 'source' is not located, it is assumed to be an        │
+    │                            │          │                            │ existing Sequencer name, external to the Assembly.        │
+    │ type                       │ False    │ Type                       │ "graph" or "spec" pipeline deployment                     │
+    │ volumes                    │ False    │ List                       │ List of volumes to attach to Pipeline                     │
+    │ worker                     │ False    │ Worker                     │ Configure Pipeline Worker                                 │
+    │ spec_file                  │ False    │ str                        │                                                           │
+    ╰────────────────────────────┴──────────┴────────────────────────────┴───────────────────────────────────────────────────────────╯
+    
+
+#### Entrypoints
+
+Entrypoints are used to define custom code as part of your package and have it
+loaded by specific components.
+
+See [here](package-entrypoints.html) for more about how to configure
+entrypoints.
+
+To add a new entrypoint to the Aggregator and Data Access processes in a
+package you can run:
+
+    
+    
+    kxi package add --to mypkg entrypoint --name aggregator --path src/agg.q
+    kxi package add --to mypkg entrypoint --name data-access --path src/dap.q
+    
+
+The entrypoint name is important and needs to match the component the
+entrypoint will be associated with.
+
+##### Entrypoint fields
+
+    
+    
+    kxi package field info Entrypoint
+    
+    
+    
+     Fields for Entrypoint                                                                                                            
+    ╭─────────────────────────────────┬────────────────────────────────┬───────────────────┬─────────────────────────────────────────╮
+    │ field                           │ required                       │ type              │ description                             │
+    ├─────────────────────────────────┼────────────────────────────────┼───────────────────┼─────────────────────────────────────────┤
+    │ name                            │ False                          │ str               │                                         │
+    │ filepath                        │ False                          │ Path              │                                         │
+    ╰─────────────────────────────────┴────────────────────────────────┴───────────────────┴─────────────────────────────────────────╯
+    
+
+#### Router
+
+Query routing is managed by two primary components, the Service Gateway, and
+the Resource Coordinator. Routers are used to define the query resources when
+deploying your package.
+
+For more information on how to configure a router, refer to
+[Routing](../database/query/routing.html).
+
+To add a new router to your package you can run:
+
+    
+    
+    kxi package add --to mypkg router
+    
+
+This will add a new directory with the following structure:
+
+    
+    
+    mypkg/databases/mypkg/router/router.yaml
+    
+
+##### Router fields
+
+    
+    
+    kxi package field info Router
+    
+    
+    
+     Fields for Router                                                                                                                
+    ╭────────────┬────────────────┬─────────────────────────────┬────────────────────────────────────────────────────────────────────╮
+    │ field      │ required       │ type                        │ description                                                        │
+    ├────────────┼────────────────┼─────────────────────────────┼────────────────────────────────────────────────────────────────────┤
+    │ name       │ False          │ str                         │ Name of the router                                                 │
+    │ rc         │ False          │ Rc                          │ Resource Coordinator object                                        │
+    │ agg        │ False          │ Agg                         │ Aggregator object                                                  │
+    │ qe         │ False          │ QueryEnvironment            │ Configure Query Environments for Assembly                          │
+    ╰────────────┴────────────────┴─────────────────────────────┴────────────────────────────────────────────────────────────────────╯
+    
+
+#### Deployment configuration
+
+A Deployment Configuration is used to define global configuration for use by
+all the components when deploying your package. For example, the license
+information and any environment variables shared by all components.
+
+To add a deployment configuration to your package you can run:
+
+    
+    
+    kxi package add --to mypkg deployment-config
+    
+
+This will add a new directory with the following structure:
+
+    
+    
+    mypkg/databases/mypkg/deployment-config/deployment-config.yaml
+    
+
+A package will only deploy one deployment configuration.
+
+Although currently multiple deployment configuration definitions are allowed
+in a package, only one will be deployed.
+
+##### Deployment config fields
+
+    
+    
+    kxi package field info DeploymentConfig
+    
+    
+    
+     Fields for DeploymentConfig                                                                                                      
+    ╭──────────────────────┬────────────┬───────────┬────────────────────────────────────────────────────────────────────────────────╮
+    │ field                │ required   │ type      │ description                                                                    │
+    ├──────────────────────┼────────────┼───────────┼────────────────────────────────────────────────────────────────────────────────┤
+    │ name                 │ False      │ str       │ Name of the deployment_config object                                           │
+    │ attach               │ False      │ bool      │ Enable tty and stdin for each process in the kdb+ insights cluster             │
+    │ env                  │ False      │ List      │ Env vars for every process in the kdb+ insights cluster                        │
+    │ imagePullPolicy      │ False      │ str       │ Image pull secret policy                                                       │
+    │ imagePullSecrets     │ False      │ List      │ List of image registry secrets                                                 │
+    │ license              │ False      │ License   │ License Object to be shared for all CRs                                        │
+    │ qlog                 │ False      │ Qlog      │ Assembly logging configuration                                                 │
+    ╰──────────────────────┴────────────┴───────────┴────────────────────────────────────────────────────────────────────────────────╯
+    
+
+### Runtime components
+
+These components determine the runtime behavior when you load a package from a
+q or python session. For example when loading a packaging into the Scratchpad
+for testing or adding [Custom APIs](package-entrypoints.html) or
+[UDFs](package-udfs.html).
+
+#### Entrypoints
+
+Entrypoints define the Python/q files which are used as the initialization
+script for a package. When loading a package using q or Python, entrypoints
+provide a method by which you can specify the sub-sections of your package
+code to be loaded. See [here](package-entrypoints.html) for more details.
+
+    
+    
+    kxi package add entrypoint --help
+    
+    
+    
+     Usage: kxi package add entrypoint [OPTIONS]                                    
+    
+     Add an entrypoint to the specified package.                                    
+    
+    ╭─ Options ────────────────────────────────────────────────────────────────────╮
+    │ --name    TEXT  Name of the entrypoint to add from the package.              │
+    │ --path    PATH  Path to the entrypoint.                                      │
+    │ --help          Show this message and exit.                                  │
+    ╰──────────────────────────────────────────────────────────────────────────────╯
+    
+
+##### Entrypoint fields
+
+    
+    
+    kxi package field info Entrypoint
+    
+    
+    
+     Fields for Entrypoint                                                                                                            
+    ╭─────────────────────────────────┬────────────────────────────────┬───────────────────┬─────────────────────────────────────────╮
+    │ field                           │ required                       │ type              │ description                             │
+    ├─────────────────────────────────┼────────────────────────────────┼───────────────────┼─────────────────────────────────────────┤
+    │ name                            │ False                          │ str               │                                         │
+    │ filepath                        │ False                          │ Path              │                                         │
+    ╰─────────────────────────────────┴────────────────────────────────┴───────────────────┴─────────────────────────────────────────╯
+    
+
+#### UDFs
+
+User-Defined functions (UDFs) are functions written in Python or q which have
+special status in _kdb Insights Enterprise_. You can make use of them
+specifically to deploy named, language agnostic functions within a package to
+a Stream Processor for use in a pipeline. For more information, refer to
+[Package User-Defined functions](package-udfs.html).
+
+##### UDF fields
+
+    
+    
+    kxi package field info UDF
+    
+    
+    
+     Fields for UDF                                                                                                                   
+    ╭─────────────────┬─────────────┬────────┬───────────────────────────────────────────────────────────────────────────────────────╮
+    │ field           │ required    │ type   │ description                                                                           │
+    ├─────────────────┼─────────────┼────────┼───────────────────────────────────────────────────────────────────────────────────────┤
+    │ name            │ True        │ str    │ Name of the UDF with no spaces                                                        │
+    │ function        │ True        │ str    │ Native function name, inferred from code                                              │
+    │ language        │ True        │ str    │ Language, inferred from the file extension (py or q)                                  │
+    │ file_path       │ True        │ str    │ Location of the filepath within the package, inferred from context                    │
+    │ udf_sym         │ True        │ str    │ The udf namespace this function is stored under with no spaces                        │
+    │ description     │ False       │ str    │ A description of the udf                                                              │
+    │ category        │ False       │ str    │ The categories of the udf, list or str                                                │
+    │ tag             │ False       │ str    │ Tag for the udf e.g. 1.0.0                                                            │
+    ╰─────────────────┴─────────────┴────────┴───────────────────────────────────────────────────────────────────────────────────────╯
+    
+
+### Static Context
+
+The static content describes relationships with other packages and any
+internal configuration mutations that we can make in the form of patches.
+
+#### Package dependencies
+
+Package dependencies (or Deps) specify dependencies that a package makes use
+of and are covered in more depth in [package dependencies](package-deps.html).
+
+Add a new dependency to your package as follows:
+
+    
+    
+    kxi package add --to mypkg dep --name mynewdep --version 1.0.0
+    
+
+##### Dep fields
+
+    
+    
+    kxi package field info PackageDependency
+    
+    
+    
+     Fields for PackageDependency                                                                                                     
+    ╭─────────────────────────────────┬────────────────────────────────┬───────────────────┬─────────────────────────────────────────╮
+    │ field                           │ required                       │ type              │ description                             │
+    ├─────────────────────────────────┼────────────────────────────────┼───────────────────┼─────────────────────────────────────────┤
+    │ name                            │ False                          │ str               │                                         │
+    │ version                         │ False                          │ str               │                                         │
+    │ repo                            │ False                          │ str               │                                         │
+    │ location                        │ False                          │ str               │                                         │
+    │ path                            │ False                          │ str               │                                         │
+    │ kxi                             │ False                          │ str               │                                         │
+    ╰─────────────────────────────────┴────────────────────────────────┴───────────────────┴─────────────────────────────────────────╯
+    
+
+#### Patch
+
+Patches are snippets of configuration that act directly on the `Package`
+object and are covered in more depth in the [package and overlays](package-
+overlays.html) page.
+
+Add a new patch to your package as follows:
+
+    
+    
+    kxi package add --to my pkg patch --name my-cool-new-patch
+    
+
+##### Patch fields
+
+    
+    
+    kxi package field info Patch
+    
+    
+    
+     Fields for Patch                                                                                                                 
+    ╭────────────────────────────┬──────────────────────────────────┬────────────────────┬───────────────────────────────────────────╮
+    │ field                      │ required                         │ type               │ description                               │
+    ├────────────────────────────┼──────────────────────────────────┼────────────────────┼───────────────────────────────────────────┤
+    │ path                       │ True                             │ str                │                                           │
+    │ target                     │ False                            │ str                │                                           │
+    ╰────────────────────────────┴──────────────────────────────────┴────────────────────┴───────────────────────────────────────────╯
+    
+
+## Next steps
+

@@ -1,0 +1,675 @@
+https://code.kx.com/dashboards/chartgl/
+
+# ChartGL - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/chartgl/
+
+# ChartGL
+
+_This section describes the configuration and use of the ChartGL component,
+which enables you to visualize very large datasets._
+
+ChartGL uses [WebGL](https://www.khronos.org/webgl/) to access the graphics
+hardware on the local computer accelerating the rendering process by a factor
+of many thousand. In WebGL2 a combination of vertex shaders (position) and
+fragment shaders (color) are used to render data points providing the
+capability to display millions of data points in milliseconds.
+
+Multiple large data sources can be plotted on the same chart with high speed
+and performance using layers. The following screenshot shows an example of
+historic FX data plotted using 4 layers.
+
+![Screenshot](../img/chartgl/chartgl-demo.png)
+
+Overcoming browser WebGL limits
+
+Each ChartGL uses its own WebGL context. Browsers limit the number of active
+WebGL contexts, so when this limit is reached, charts can fail to load. To
+combat this issue we recommend adding ChartGL components to the [Layout
+Panel](../layout/) component and setting **Enable WebGL Context** for the
+layout panel. When this is enabled, every ChartGL, that is added directly to
+the Layout Panel, shares a single WebGL context, meaning the user can have an
+unlimited number of charts.
+
+This section provides information on the following:
+
+## Set up
+
+To set up a ChartGL component, click and drag the component into the workspace
+and configure the following:
+
+  1. **Click to populate Data Source** or select a **Data Source** from the Layers properties to open the Data dialog. Click New and proceed with configuring the [Data Source](../datasources/).
+
+![ChartGL Data Source](../img/chartgl/chartgl-datasource.png)
+
+ChartGL best fits your data to the chart using a wild card selector in Y-Axis
+Data. Otherwise, select your data to plot for **X-Axis Data** and **Y-Axis
+Data** in the Layers properties. Alternatively, format your axes in the
+relevant properties for each; x-axis and y-axis
+
+  2. Next define the Basics properties
+
+## Basics
+
+Open the Basics properties on the right and configure the properties described
+in the following table.
+
+![Basics properties](../img/chartgl/chartglbasics.png)
+
+Property | Description  
+---|---  
+**Name** | Enter a name for the component.  
+**Hover** | Enter a [View State Parameter](../viewstateparameters/) which stores the x-axis value contingent on where the hover bar is on the chart. For example time or date.  
+**Selected** | Enter a [View State Parameter](../viewstateparameters/) to store the x-axis value at the selected position. For example time or date.  
+**Range Selection** | When this is enabled the user can click and drag on a chart as normal, but instead of zooming, it stores the x-axis range values. The values can be accessed by assigning viewstates to the Selection Min & Selection Max properties on the x-axes. It turns the chart into a selector that stores the values in the x-axis **Selection Min** and **Selection Max** viewstate properties.  
+![Range Selection](../img/chartgl/range-selection.gif)  
+When this is checked, it overrides the **Zoom** checkbox. If both are left
+unchecked, the chart does not zoom or use the range selection.  
+  
+**Zoom** | Check to enable/disable zoom. This feature makes it possible to zoom on a region within both x and y axis, or individually on each x or y axis. Double-Clicking the chart resets the chart to its initial state.   
+![ChartGL Zoom](../img/chartgl/chartglzoom.gif)  
+Mouse scroll can be used for x-axis zoom, with mouse scroll + shift key for
+y-axis zoom.  
+**Animation Duration** | Define the zoom animation and length of time in milliseconds to complete.  
+**Animation Easing** | This drop-down list of options are used to control how the zoom animation transitions. For example bounce creates a spring like effect. There are a number of options for you to try.  
+| The Pan feature lets you pan along one axis at a time. To pan, click and
+drag from anywhere on the axis. Double-clicking the chart resets the chart to
+its initial state.  
+![ChartGl Pan](../img/chartgl/chartglpan2.gif)  
+**Track Load Time** | Enable this to set the **Load Time (ms)** value.  
+**Load Time (ms)** | Use this to set a [View State Parameter](../viewstateparameters/) used to track the load time of the chart, in milliseconds, on each update of the data. This is useful for tracking the performance of the chart to see how long it takes to load. When **Track Load Time** is checked, and **Load Time (ms)** has a viewstate set, it writes the time in ms into the viewstate. This viewstate value can then be displayed in a text component, as shown in the Chart Load Time on the following chart.  
+![ChartGL Load Time](../img/chartgl/chartgl-load-ms.png)  
+  
+## Layers
+
+Layers provide the ability to display multiple different data sources on the
+same chart. In the following example four layers have been defined;
+**Candlestick** , **Bar** , **Line** and **Bubble**.
+
+![ChartGL Layers](../img/chartgl/chartgl-layers-example.png)
+
+To add a Layer, click **Layers** and **Layer 1** to open the properties for
+the first layer.
+
+![ChartGL Layer Types](../img/chartgl/chartgllayertypes.png)
+
+Select a layer type from the dropdown. The properties displayed vary depending
+on the option selected. Click on the relevant tab, in the note section below,
+to view the properties for each type of layer.
+
+Layer Properties
+
+Bubble
+
+Bubble layers display data as individual points.
+
+![Layer properties - Bubble](../img/chartgl/chartglbubble.png)
+
+Define the following properties:
+
+Line
+
+Line layers connect each data point resulting in a continuous line.
+
+![Layer properties - Line](../img/chartgl/chartgl-line.png)
+
+Define the following properties:
+
+Bar
+
+Bar layers display data as bars.
+
+![Layer properties - Line](../img/chartgl/chartgl-bar.png)
+
+Define the following properties:
+
+Waterfall
+
+Waterfall layers display data as increase and decrease bars.
+
+![Layer properties - Line](../img/chartgl/chartgl-waterfall.png)
+
+Define the following properties:
+
+Bounds
+
+Bounds layers draw a bounding area between two points.
+
+![Layer properties - Line](../img/chartgl/chartgl-bounds.png)
+
+Define the following properties:
+
+Candlestick
+
+Candlestick layers display data as candlesticks.
+
+![Layer properties - Line](../img/chartgl/chartgl-candlestick.png)
+
+Define the following properties:
+
+Heatmap
+
+Heatmap layers draw a heatmap chart.
+
+![Layer properties - Line](../img/chartgl/chartgl-heatmap.png)
+
+Define the following properties:
+
+Baseline
+
+Baseline layers draw a line at a single point.
+
+![Layer properties - Line](../img/chartgl/chartgl-baseline.png)
+
+Define the following properties:
+
+### General layer properties
+
+The following properties are relevant to all layer types, unless otherwise
+stated.
+
+Property | Description  
+---|---  
+**Data Source** | Specify the [Data sources](../datasources/) to be used for the layer. This is not relevant to Baseline layers as they use **Baseline Value** /**Baseline Axis** to specify where the Baseline is drawn.  
+**Name** | Enter a name for the chart legend label.  
+**X-Axis** | Select the x-axis from the defined Axes.  
+**Y-Axis** | Select the y-axis from the defined Axes.  
+**X-Axis Data** | Select data columns to plot X-Axis data from the data source.  
+**Y Axis Data** | Select data columns to plot Y Axis data from the data source.  
+| **Y Axis** includes a wildcard selection (*) for multiple columns. Wildcard
+selection uses columns of the most common, single kdb type. For example, if a
+data set has one `date` type column, three `integer` type columns, and five
+`float` type columns, only the five `float` columns are plotted using the
+wildcard. The `integer` and `date` columns are ignored.  
+Regular expressions can also be used to define the y-axis.  
+When a wildcard or regular expression is used, the Color Palette defines point
+color for each added column.  
+The following kdb data types are supported; byte, char, date, datetime, float,
+int, long, minute, month, real, second, short, string, symbol, time, timespan,
+and timestamp.  
+**Open** /**High** /**Low** /**Close** | These properties only relate to Candlestick layers. Select the data columns that correspond to the open, high, low, and close price points.  
+**X1 Coordinate** | This is only relevant for Heatmap layers. Select the data column that corresponds to the X1 coordinate.  
+**X2 Coordinate** | This is only relevant for Heatmap layers. Select the data column that corresponds to the X2 coordinate.  
+**Y1 Coordinate** | This is only relevant for Heatmap layers. Select the data column that corresponds to the Y1 coordinate.  
+**Y2 Coordinate** | This is only relevant for Heatmap layers. Select the data column that corresponds to the Y2 coordinate.  
+**Score** | This is only relevant for Heatmap layers. Select the data columns that correspond to each. Colors are defined by the Score column, which uses the Color Palette.  
+**Color Enumeration** | Select a data column to apply color. When a column is selected, the Color Palette defines point color for each unique value in the column. This is not applicable to Baseline layers.  
+**Color** | Select color for single plot (non-wildcard/regex) data sets.  
+**Opacity** | Define the opacity of the points from a value between 0 (transparent) and 100 (opaque).  
+**Bar Percentage** | This is only relevant for Bar layers and defines the bar width as a percentage of its range when **Bar Percentage** is selected from **Bar Width Type**.  
+**Bar Fixed Width** | This is only relevant for Bar layers. It defines the bar width as a fixed value when **Fixed Width** is selected from **Bar Width Type**.  
+**Bar Width Type** | This is only relevant for Bar layers. Use the dropdown to select either **Bar Percentage** and **Fixed Width**.  
+**Bar Orientation** | This is only relevant for Bar layers. Use the dropdown to select either **Vertical** and **Horizontal**.  
+**Bar Increase Color** | This is only relevant for Bar layers and is used when the layer type is **Waterfall** to define the visual style of the Waterfall bar increase colors based on the previous bar value.  
+**Bar Decrease Color** | This is only relevant for Bar layers and is used when the layer type is **Waterfall** to define the visual style of the Waterfall bar decrease colors based on the previous bar value.  
+**x1** | This is used, when the layer type is **Bounds** , to define the x1 coordinates of the bounding region.  
+**x2** | This is used, when the layer type is **Bounds** , to define the x2 coordinates of the bounding region.  
+**Baseline Axis** | This is used when, the layer type is **Baseline** , to define the axis at which to draw the baseline, based on the **Baseline Value**.  
+**Baseline Value** | This is used, when the layer type is **Baseline** , to define the value at which to draw the baseline. The axis on which this is draw in set in **Baseline Axis**. This is used in place of a **Data Source**.  
+![Baseline Value](../img/chartgl/chartgl-baseline-value.png)  
+**Legend Group** | Use this dropdown to assign the layer legend to a Legend Group  
+**Show Current Tick Label** | Enable this to display the last tick in the series on the y-axis.  
+**Cache Streaming Data** | Enable this when using streaming data to improve performance by caching data.  
+**Legend Enabled** | Use this to toggle the display of the data legend.  
+**Enabled** | Use this to toggle the display of the data layer on the chart and can be tied to a [view state parameter](../viewstateparameters/).  
+  
+### Bubbles
+
+The following additional properties are configurable when the layer type is
+**Bubble** or **Line**.
+
+Property | Description  
+---|---  
+**Radius Data** | This dropdown gives options to set the variable point size for the bubbles. Select either **Fixed Size** or one of the columns from the associated data source.  
+**Radius Scaling** | Define the bubble size.  
+**Scale on Zoom** | Increase the bubble size on zoom.  
+**Icon** | Use the icon selector to choose an icon to be displayed in the position of the data points on the chart.   
+![Screenshot](../img/chartgl/iconSelector.jpg)  
+Icons also support a base64 image in a [view state
+parameter](../viewstateparameters/).  
+![Screenshot](../img/chartgl/iconase64.jpg)  
+**Color** | Set the color of bubbles when using a **Line** layer  
+**Opacity** | Set opacity of bubbles when using a **Line** layer  
+  
+### Candlestick
+
+The following additional properties are configurable when the layer type is
+**Candlestick**.
+
+Property | Description  
+---|---  
+**Bear Color** | Set the color for down day candles.  
+**Bull Color** | Set the color for up day candles.  
+**Neutral Color** | Set the color for flat days.  
+**Bar Percentage** | Define the candlestick body width as a percentage of its range when **Bar Percentage** is selected under **Bar Width Type**.  
+**Bar Fixed Width** | Define the candlestick body width as a fixed value when **Fixed Width** is selected under **Bar Width Type**.  
+**Bar Width Type** | Use the dropdown to select either **Bar Percentage** and **Fixed Width**.  
+**Bar Orientation** | Use the dropdown to select either **Vertical** or **Horizontal**.  
+  
+### Line
+
+The following additional properties are configurable when the layer type is
+**Line**.
+
+Property | Description  
+---|---  
+**Line Width** | Set the thickness of the line.  
+**Line Style** | Choose between **None** , **Dashed** , **Dotted**.  
+**Dash Gap** | When **Line Style** is **Dotted** or **Dashed** , set the size of the gaps.  
+**Dash Width** | When **Line Style** is **Dashed** , set the width of the dashes.  
+**Fill** | Select a fill option:   
+  
+**No Fill** \- No color fill  
+**Layer n** \- For color fill between the charted line and the selected layer.
+This option is only shown if there is more than one layer.  
+**Origin** \- For color fill between the chart line and X-axis  
+**Fill Color** | The color to be used for line fill for single plot (non-wildcard/regex) data sets.  
+**Fill Opacity** | The opacity used for line fill.  
+**Fade to Transparent** | Where a line fill color is employed, a transparency gradient is applied to the layer.  
+**Span Gaps** | Where there is missing data, check this to connect isolated points.  
+**Palette Theme** | Define the [Palette Theme](../palette/#palette-theme) for the Fill Palette  
+  
+#### Fill Palette
+
+This sets the line fill colors for wildcard/regex y-axis or color enumeration.
+See [Palette](../palette/#palette) for further details.
+
+#### Interpolation
+
+Interpolation lets you estimate a value between two known values explicitly
+stated in a line graph. You can specify the following interpolation
+properties.
+
+Property | Description  
+---|---  
+**Interpolation** | Choose between the following types of interpolation:   
+**Linear** \- connects data points with straight lines.  
+**Stepped** \- assumes that the function remains constant between adjacent
+data points. It creates a step-like curve where the value jumps from one data
+point to the next without any intermediate values.  
+**Monotone** \- the interpolated curve maintains monotonicity (either strictly
+increasing or strictly decreasing) between data points. Monotone Interpolation
+comes with a performance caveat, so isn't suitable for streaming.  
+**Stepped Line** | Use this to switch between stepped line chart types; **Before** and **After**.  
+**Curvature** | Set the level of curve to use for **Monotone** line charts.  
+  
+### Color Palette
+
+The Color Palette sets plot point colors for wildcard/regex y-axis or color
+enumeration. See [Palettes](../palette/#palettes) for further details.
+
+### Actions
+
+See [Actions](../action/) for full details.
+
+### Highlight rules
+
+See [Highlight Rules](../highlightrules/) for full details.
+
+### Labels
+
+Data labels can be added to any layers. They are placed next to
+datapoints/bars as desired.
+
+![Screenshot](../img/chartgl/chartgl-labels.jpg)
+
+The label properties are described in the following table.
+
+Property | Description  
+---|---  
+**Enabled** | Turn on or off data labels. This can be tied to a [viewstate](../viewstateparameters/).  
+**Label Color** | Set the color of the Label text.  
+**Label Freq** | Labels are applied to every nth data point where n is value set here.  
+**Align** | Choose the position label; top, bottom, left, right, or center of the data point.  
+**Offset** | The offset represents the distance (in pixels) to pull the label away from the data point. This can be specified as a single number (for example 4) or an x,y coordinate (for example 4,10).  
+**Rotation** | Set the clockwise rotation angle (in degrees) of the label with the rotation center point being the label center. The default value is 0 (no rotation)  
+**Max Label Quantity** | The max number of labels to draw. The default value is 10.  
+**Label Template** | Define the data to display. This must return a string; HTML is not supported.  
+  
+Select the data to display with the [Template Editor](../template/) in either
+Basic or Advanced mode. Existing data and view states can be displayed.
+Handlebar helpers can be used for formats.  
+![Screenshot](../img/chartgl/chartgl-template.jpg)  
+**Font** | Set the font settings:   
+**Bold** \- check to make the label bold  
+**Size** \- adjust the font size in pixels.  
+  
+## X-Axes
+
+ChartGL supports multiple X-axes. This is useful if you want, for example, to
+compare different scales, overlay data series, represent different time zones
+or different geographic coordinates. There is no limit on the number of x-axes
+that can be added.
+
+The following screenshot shows a ChartGl with 3 x-axes defined; 2 on the
+bottom of the chart and one on top.
+
+![ChartGL Multiple X-Axes](../img/chartgl/chartgl-multiple-xaxes.png)
+
+For each x-axis you can define the following properties:
+
+![Screenshot](../img/chartgl/chartglaxes.jpg)
+
+### X-Axis General Properties
+
+The general x-axis properties are described in the following table.
+
+Property | Description  
+---|---  
+**X-Axis Type** | Choose between **Linear** , **Category** , **Time** , or **Logaritmic** data.  
+**Position** | Select whether you want to position the axis to the **top** or **bottom** of the chart.  
+**Height** | Set the height of the tick area of the x-axis in pixels.  
+**Number of Ticks** | Set the number of ticks to display in the axis. The default is 10.  
+**Color** | Select the color of the axis.  
+**Filter Unique** | Displayed when the Axis Type is set to Category. When using non-linear data (string/symbol), some values may be the same. Filter unique is used for grouping same values together. For example a data source might have 'b' and 'b' in it twice. If filter unique is enabled it groups points for 'b' as having the same x-axis value. If disabled it shows values at different points.   
+In the following example the ChartGl named Layer1 has **Filter Unique** ticked
+and so only shows unique values. The second chart hasnt been set to **Filter
+Unique** and so the same value is displayed more than once.  
+![ChartGL Filter Unique](../img/chartgl/charetgl-filter-unique.png)  
+**Stacked** | When using a _Bar_ * chart, check this to have the bars stacked.  
+  
+### X-Axis Range
+
+The x-axis range properties are described in the following table.
+
+Property | Description  
+---|---  
+**Use Min/Max** | Enable the use of **Min** and **Max** to build the x-axis. If these are unchecked the **Min** and **Max** values, set below, are ignored.  
+**Min** | Define the minimum value for the x-axis.  
+**Max** | Define the maximum values for the x-axis. Charted data outside of the set **Min** and **Max** range is not displayed. If all data falls outside the set range, the chart is blank.  
+**Selection Min** | Pull min x-axis values on a zoom select into the assigned [view state parameters](../viewstateparameters/).  
+**Selection Max** | Pull max x-axis values on a zoom select into the assigned [view state parameters](../viewstateparameters/).  
+  
+### X-Axis Gridlines
+
+The x-axis gridline properties are described in the following table.
+
+Property | Description  
+---|---  
+**Offset GridLines** | Enable to align x-axis grid lines to the mid-point between tick values.  
+**GridLines Color** | Define the color of x-axis grid lines.  
+**GridLines Opacity** | Define the opacity (0 (transparent) to 100 (opaque)) of x-axis grid lines.  
+  
+### X-Axis Format
+
+The x-axis format properties are described in the following table.
+
+Property | Description  
+---|---  
+**Display** | Check this to enable the display of x-axis labels.  
+**Begin at Zero** | When enabled, the axis data starts at zero.  
+**Hide Trailing Zeroes** | When enabled, this hides the display of trailing zeroes in x-axis tick values.  
+**Numeric Format** | Sets the x-axis format as either **Number** , **Smart Number** , **Formatted Number**. For example 1000, 1K, 1,000.  
+**Decimal Places** | Sets the precision point for an x-axis numeric label.  
+**Font Size** | Sets the tick font size in pixels.  
+**Prefix** | Add prefix text to the tick label e.g. currency or percentage symbol.  
+**Suffix** | Add text to the tick label; e.g. currency or percentage symbol.  
+**Show Major Units** | When enabled, major ticks are generated. Each major tick represents a new parent time (based on the child minor ticks). Minor ticks are shown by default.  
+**Distribution** | **Distribution** , **Break** , and **Trigger Break** are all related and are only displayed when the **X-Axis Type** is set to **Time**. They are used when a chart, with time related data, has a break in the data, for example over a weekend when no new data comes in. This setting is used to shorten the length of the display of this empty data so there isn't a big gap shown. Choose whether to show a **Linear** or **Smart** axis. If linear is chosen it remains as is. If Smart is selected the following two properties are used.  
+**Break** | This defines the duration of time in milliseconds at which to break at. That is, the space in ms between the two data points you want to shorten: pointB - pointA.  
+**TriggerBreak** | This defines the new duration, in milliseconds from the start point; newPointB = pointA + Trigger Break (ms).  
+  
+### X-Axis Title
+
+The x-axis title properties are described in the following table.
+
+Property | Description  
+---|---  
+**Display** | Enables the display of the x-axis label.  
+**Label String** | Defines x-axes label text.  
+**Font Size** | Sets the label font size in pixels.  
+  
+## Y-Axes
+
+ChartGL supports multiple Y-axes. This is useful when you are dealing with
+data that varies significantly in value ranges. Multi-axes charts allow you to
+plot multiple data sets with different units. You can either create separate
+y-axes for each scale or include multiple series on the same scale. There is
+no limit on the number of y-axes that can be added.
+
+The following screenshot shows a ChartGl with 2 y-axes defined; one on the
+left and one on the right.
+
+![ChartGL Multiple Y-Axes](../img/chartgl/chartgl-multiple-yaxes.png)
+
+For each y-axis you can define the following properties:
+
+![Screenshot](../img/chartgl/chartglyaxes.jpg)
+
+### General Y-Axis Properties
+
+Set the general y-axis properties described in the following table.
+
+Property | Description  
+---|---  
+**Y-Axis Type** | Sets the type of y-axis to either; **Linear** , **Category** , **Time** , Logarithmic data.  
+**Position** | Sets the axis position to either Linear, **Left** or Right.  
+**Width** | Sets the width of the tick area of the y-axis in pixels.  
+**Number of Ticks** | Sets the number of ticks to display in the axis. The default is 10.  
+**Color** | Sets the color of the axis.  
+**Stacked** | When using a **Bar** chart, bars are stacked   
+  
+### Y-Axis Range
+
+Configure the following y-axis range properties.
+
+Property | Description  
+---|---  
+**Use Min/Max** | Enables the use of **Min** and **Max** to build y-axis.  
+**Min** | Defines the minimum value for the y-axis.  
+**Max** | Defines the maximum values for the y-axis. Charted data outside of the set **Min** and **Max** range is not displayed. If all data falls outside the set range, the chart is blank.  
+**Selection Min** | Pulls min y-axis values on a zoom select into assigned [view state parameters](../viewstateparameters/).  
+**Selection Max** | Pulls max y-axis values on a zoom select into assigned [view state parameters](../viewstateparameters/).  
+  
+### Y-Axis Gridlines
+
+Configure the following y-axis gridlines properties.
+
+Property | Description  
+---|---  
+**Offset GridLines** | Enables the alignment of y-axis grid lines to the mid-point between tick values.  
+**GridLines Color** | Defines the color of y-axis grid lines.  
+**GridLines Opacity** | Defines the opacity for y-axis grid lines. The range is between 0 (transparent) and 100 (opaque).  
+  
+### Y-Axis Format
+
+Configure the following y-axis format properties.
+
+Property | Description  
+---|---  
+**Display** | Toggles the display of y-axis labels.  
+**Begin at Zero** | Sets whether y-axis data starts at zero.  
+**Distribution** | **Distribution** , **Break** , and **Trigger Break** are all related, and are used when a chart has time related data, with a break in the data, for example over a weekend when no new data comes in. This setting is used to shorten the length of the display of this empty data so there isn't a big gap shown. The options are; **Linear** or **Smart**. If linear is chosen it remains as is. If Smart is selected the following two properties are used.  
+**Break** | This defines the duration of time in milliseconds at which to break at. That is, the space in ms between the two data points you want to shorten: pointB - pointA.  
+**TriggerBreak** | This defines the new duration, in milliseconds from the start point; newPointB = pointA + Trigger Break (ms).  
+**Hide Trailing Zeroes** | Hides the display of trailing zeroes in y-axis tick values.  
+**Numeric Format** | Sets the y-axis format as either; **Number** , **Smart Number** , **Formatted Number**.  
+**Decimal Places** | Sets a precision point for y-axis the numeric label.  
+**Font Size** | Sets the tick font size in pixels.  
+**Prefix** | Adds text to the start of tick label; for example currency or percentage symbol.  
+**Suffix** | Adds text to the end tick label; for example currency or percentage symbol.  
+  
+### Y-Axis Title
+
+Configure the following y-axis format properties.
+
+Property | Description  
+---|---  
+**Display** | Check to enable the display of y-axis label.  
+**Label String** | Defines the y-axis label text.  
+**Font Size** | Sets the label font size in pixels.  
+  
+## Overlay
+
+The Overlay properties define elements that are drawn on top of the chart on
+hover. This includes tooltips, crosshairs and coordinates. In the following
+example, the mouse is hovering on the chart and shows all 3 of these elements.
+
+  * The tooltip contains the x and y data from the hovered point. 
+  * The crosshair shows a horizontal and vertical dashed line on the current data position.
+  * The coordinates are on the x and y axes, showing the respective current hovered value at its position on the axis.
+
+![Screenshot](../img/chartgl/tooltip.jpg)
+
+The Overlay properties, shown in the following screenshot are defined in the
+table below.
+
+![Screenshot](../img/chartgl/chartgltooltip.jpg)
+
+Property | Description  
+---|---  
+**Show Crosshairs** | When this is checked crosshairs are shown on the chart.  
+**Show Coordinates** | When this is checked coordinates are shown on chart.  
+**Snap Crosshair to Data** | When this is checked crosshairs and coordinates move to the nearest valid point on hover.  
+**Use custom tooltip** | When this is checked the **Custom tooltip** is enabled.  
+**Custom tooltip** | Defines a custom tooltip. See [Custom Tooltips](template.md#custom-tooltips) for further details.   
+**Show all data points** | Displays all y-axis values for selected point on the x-axis.  
+**Group tooltip by layer** | When **Show all data points** is enabled this displays data points in a distinct column for each Layer instead of a continuous list.  
+      
+    
+    
+
+## Legend
+
+You can add legends to represent different data series or categories within
+the chart. These can be grouped into legend groups which are collections of
+legend entries that share common properties or characteristics.
+
+The Legend properties are described in the following table.
+
+![Screenshot](../img/chartgl/chartgl-legend.jpg)
+
+Property | Description  
+---|---  
+**Position** | The chart legend position can be defined as **Top** ,**Bottom** , **Left** , or **Right**. When legend grouping is used the position can be either **Left** or **Right**.  
+The legend is auto generated. If you are using wildcard, the legend uses the
+wildcard columns names. If you are using single y-axis value, the legend is
+defined as the value set in **Name** property for the layer.  
+  
+### Legend Groups
+
+These properties are used to define legend groups.
+
+Property | Description  
+---|---  
+**Name** | Defines a name for the Legend Group. This value is added to the list displayed under **Legend Group** in the general layer properties.  
+**Expanded** | Expands/collapses the Legend Group.  
+**Icon** | Defines the icon used for the Legend Group.  
+  
+## Annotations
+
+When enabled, Annotations allow users to define shapes or markings that
+provide additional information about specific data points or trends to help
+clarify or emphasize their significance. The annotation properties are defined
+in the following table.
+
+![Screenshot](../img/chartgl/chartgl-annotations.jpg)
+
+Property | Description  
+---|---  
+**Show Annotate Controls** | Check this to display the **Annotate** controls on the component.![Screenshot](../img/chartgl/annotate_control.jpg). These controls consist of:  
+![Screenshot](../img/chartgl/annotate_button.jpg) Turn the ability to create
+annotations on/off  
+![Screenshot](../img/chartgl/annotate_edit.jpg) Edit annotations  
+![Screenshot](../img/chartgl/annotate_undo.jpg) Undo annotations  
+![Screenshot](../img/chartgl/annotate_redo.jpg) Redo annotations  
+**Annotations** | This field stores any changes to the default annotation type and color, and information describing the annotations. When set to a [view state parameter](../viewstateparameters/) of type **string** , this information persists when saved by the user.  
+  
+### Annotations dialog
+
+Click Edit ![Screenshot](../img/chartgl/annotate_edit.jpg) to bring up the
+annotations dialog.
+
+![Screenshot](../img/chartgl/annotations_dialog.jpg)
+
+The **Annotation Settings** section is where the user can view and change the
+default annotation type and color.
+
+Property | Description  
+---|---  
+**Annotation type** | Sets the type of annotation.  
+**Annotation color** | Sets the color of the annotation to be created. Click on the field to bring up the color picker.   
+The **Edit** section contains a table of existing annotations each with a
+color button to change its color and a delete button to delete the specified
+annotation. The text note has an additional Edit button which brings up the
+text note dialog to update the text and styling of the text note. Changes made
+here appear on the chart in real-time.  
+**Delete All** | Deletes all annotations.  
+**OK** | Commits all changes in the dialog.  
+**Cancel** | Reverts all annotations to their previous state.  
+  
+#### Annotation Types
+
+The following table lists the different annotation types, available in the
+annotations dialog and how the **Annotate** toggle button appears for each
+type.
+
+Annotation type | Button | Description  
+---|---|---  
+Text note | ![Screenshot](../img/chartgl/annotate_textnote_icon.jpg). | This is the default type. A text note is text that can be added directly to the chart. Upon creation of the text note, the text note dialog is launched so users can edit the text and styling of the text note. To edit, double-click on the text note to bring up the text note dialog. The text note resizes automatically based on the text and styling. The font size of the text note does not scale when the chart is zoomed in or out. To move the text note, hover over it until the mouse pointer changes to the multidirectional cursor, then click and drag it to the new position.  
+Rectangle | ![Screenshot](../img/chartgl/annotate_rectangle_icon.jpg) | A rectangle is a 4-sided polygon having all right angles. To move the rectangle, hover over the rectangle until the mouse pointer changes to the multidirectional cursor, then click and drag the rectangle to the new position. To resize the rectangle, hover over any endpoint until the color of the square anchor changes to red ![Screenshot](../img/chartgl/annotate_anchor.jpg) and then click and drag the endpoint to its new position.  
+Horizontal line | ![Screenshot](../img/chartgl/annotate_horizline_icon.jpg) | A horizontal line is a line that extends the width of the chart. Horizontal lines can only be moved up or down. To move the horizontal line, hover over the line until the mouse pointer changes to a bidirectional cursor, then click and drag the line to its new position.  
+Vertical line | ![Screenshot](../img/chartgl/annotate_vertline_icon.jpg) | A vertical line is a line extends the height of the chart. Vertical lines can only be moved left or right. To move the vertical line, hover over the line until the mouse pointer changes to a bidirectional cursor, then click and drag the line to its new position.  
+Trend line | ![Screenshot](../img/chartgl/annotate_trendline_icon.jpg) | A trend line is a straight line connected by two points. To move the trend line, hover over the trend line until the mouse pointer changes to the multidirectional cursor, then click and drag the line to the new position. To resize the trend line, hover over either end of the line until the color of the square anchor changes to red ![Screenshot](../img/chartgl/annotate_anchor.jpg) and then click and drag that endpoint to its new position.  
+  
+### Text Note dialog
+
+When the **Annotation Type** is set to **Text note** the **Text Note** dialog
+is used to update the text and styling of the text note. Changes made to the
+annotation properties appears on the chart in real-time.
+
+![Screenshot](../img/chartgl/text_note_dialog.jpg)
+
+Property | Description  
+---|---  
+**Text** | The text to be displayed in the note.  
+**Text color** | A color picker used to set the color for the text.  
+**Font size** | The font size of the text.  
+**Bold** | When checked, the text is bold.  
+**Text margin** | Sets the space between the text note border and the text.  
+**Fill color** | Sets the fill color of the text note area. Click on the field to bring up the color picker.  
+**Fill opacity** | Sets the fill opacity of the text note area. Slide to the left for more transparency and to the right for more opacity.  
+**Border thickness** | Sets the thickness of the text note border.  
+**Border color** | Sets the border color of the text note. Click on the field to bring up the color picker.  
+**Border opacity** | Sets the border opacity of the text note. Slide to the left for more transparency and to the right for more opacity.  
+**Anchor position** | Sets the anchor position which identifies the corner of the text note that remains fixed on the chart. This property is particularly useful when you want the text note to always be positioned above or below an element when zooming in or out. Select **Top Left** when you want the text note to be precisely positioned underneath an element (for example a line, bar, or point). Select **Bottom Left** when you want the text note to be precisely positioned above an element.  
+  
+### Creating annotations
+
+Clicking **Annotate** on a chart toggles the Annotation mode. When Annotation
+mode is on, the Overlay and Zoom features are disabled, and an icon appears to
+the left of the control to indicate the current annotation type and color.
+
+![Annotation Mode](../img/chartgl/annotationmode.png)
+
+To create an annotation, click and hold the left mouse button on a desired
+area in the chart, drag the mouse to an endpoint for the annotation, and
+release the button. The following example shows a **Text Note** being added as
+an annotation.
+
+![Annotation Example](../img/chartgl/annotationadd.gif)
+
+### Undo and Redo
+
+The Undo and Redo buttons allow the user to navigate through the chronology of
+user actions affecting all annotations.
+
+Clicking **Undo** ![Screenshot](../img/chartgl/annotate_undo.jpg) reverses a
+user action affecting annotations. This includes changes made on the chart
+directly, or by way of the annotation dialogs. Continuing to press the Undo
+button reverses these user actions up to the beginning of their dashboard
+session.
+
+Clicking **Redo** ![Screenshot](../img/chartgl/annotate_redo.jpg) restores
+annotations affected by a user clicking the Undo button. If the user performs
+an action affecting annotations after an Undo button press, the Redo button is
+disabled.
+
+## File export
+
+See [Export](../publish/#file-export) for full details of common settings.
+
+## Style, Margins, Format
+
+See [Style](../style/#component-style) for full details of common settings.
+

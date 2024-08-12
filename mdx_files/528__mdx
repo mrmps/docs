@@ -1,0 +1,78 @@
+https://code.kx.com/platform/sc_support/
+
+# Framework support - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/sc_support/
+
+# Framework support
+
+As of the _4.4.0_ release, not all frameworks and components support service
+classes model. The main focus for this release was the data warehouse
+components in _KX Stream_ and ensuring solutions can be built using service
+classes to auto-scale.
+
+## Query frameworks
+
+New services will automatically register with the query frameworks and be
+available for clients. Clients should target the service class name when
+register their request or subscription and the process will be chosen
+according to the service class cluster mode.
+
+Service classes will be available in the _KX Dashboards_ as a connection group
+and also when defining analytic metadata through the _Control UI_.
+
+![Screenshot](../img/control/sc_dashboards.png)
+
+![Screenshot](../img/control/sc_analyticmeta.png)
+
+## Messaging
+
+Service classes configured to use messaging will be able to register their
+publish and subscribe topics as normal. There are no special considerations to
+be aware of.
+
+Runtime overrides
+
+If running multiple services from the same service class, be aware that you
+may share the same topics with another process. Use runtime overrides, if you
+need to distinguish between messaging streams.
+
+    
+    
+    # B service with different topics
+    ./startService.sh -i fx_rdb -n fx_rdb_b -a "-publishChannel fx_pub_b -subscriptionChannel fx_sub_b"
+    
+
+## Data warehouse
+
+Building a service-based data warehouse with _KX Stream_ is possible. The core
+components can all run as services and scale; _TPs_ , _RDBs_ , _HDBs_ ,
+_RTEs_.
+
+The main caveat is around _EOD_. The _RDB_ template uses instances to find the
+HDB on-disk location and the processes to reload. It doesn't support using a
+service class and auto-discovering the running services. For this reason, the
+_LR_ intraday write down approach must be used. The _LR_ template has been
+modified to support services for _RDBs_ , _HDBs_ and _IHDBs_. Three new
+parameters have been added to the template as seen below.
+
+It will auto-discover services for each of these classes as they come online
+and will take actions, i.e. flushing data from _RDBs_ and reloading _HDBs_.
+
+![Screenshot](../img/control/sc_lr.png)
+
+## Further support
+
+Support is planned for expanding some of the other frameworks to run as
+service but as of the _4.4.0_ release, these are not yet implemented. These
+components still run as instances, including;
+
+  * Messaging server
+  * QR
+  * QP
+  * Action tracker
+  * Report generator
+
+The _Gateway (DS_GW)_ template does not support connecting to service classes
+and there are no plans to implement at this point.
+

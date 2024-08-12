@@ -1,0 +1,121 @@
+https://code.kx.com/platform/stream/dw_add_data/
+
+# Adding your own data - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/stream/dw_add_data/
+
+# Adding your own data
+
+You can customize and enhance your data warehouse by building from scratch or
+by adding to the existing system. This tutorial was designed with the
+assumption that users will add more elements to meet their specific
+requirements. The entities and analytics named with the prefix _kxw_ signal
+that they are aimed to be reused in various settings, whereas the entities
+with _mon_ need more modification if recycled.
+
+This exhausive checklist aims at providing you the skeleton of a functional
+system and tips on where to find more information.
+
+## Directories for logfiles and loadble files
+
+  * Create directories in your system for each logfile: _TP_ , _IHDB_ , _HDB_.
+  * Create a directory for files to be loaded by the filewatcher.
+
+[Creating Directories](../dw_tickerplant/)
+
+## Package
+
+  * Create your own package or use the existing one. 
+
+[Package](../dw_intro/#build-a-package)
+
+## Schemas and schema groups
+
+  * Create your own schemas and include them in a schema group
+
+[Schemas](../dw_schema/)
+
+## Tickerplant
+
+  * Create your own tickerplant or use the existing one
+  * Set the messaging server 
+  * Set publish and subscription channels
+  * Add a log directory
+  * Decide to publish either in zero-latency or batch mode
+  * If any, set intraday tables and frequency
+  * Add the schema group
+
+[Tickerplant](../dw_tickerplant/)
+
+## Realtime database
+
+  * Create your own realtime database or use the existing one
+  * Set the messaging server
+  * Set the subscription channel to be the same as the tickerplant's publish channel
+  * Add the schema group
+
+[Realtime Database](../dw_realtime_db/)
+
+## Intraday database
+
+  * Create your intraday database or use the existing one
+  * Add a log directory
+  * Add the schema group
+
+[Intraday Database](../dw_intraday_hdb/)
+
+## Historical database
+
+  * Create your historical database process or use the existing one
+  * Add a log directory
+  * Add the schema group
+
+[Historical Database](../dw_historical_db/)
+
+## Log replay
+
+  * Create a log replay process or use the existing one
+  * Add the directory of logfiles to read
+  * Add a list of tables and a directory of intraday logfiles to write to
+  * Specify which _HDB_ services to reload
+  * Specify _RDB_ services to flush after replay
+  * Specify _IHDB_ services to reload
+  * Add the schema group
+
+[Log Replay](../dw_log_replay/)
+
+## Loading data
+
+  * Load data with either or both the filewatcher and feed
+
+### Filewatcher
+
+  * Write analytics to load data
+  * Create a filewatcher config parameter and set the filename regex, file directory and analytics
+  * Create a filewatcher service class or use the existing one
+  * Set the messaging server
+  * Set the config parameter to the service class
+  * Once this process is running and you place a file in the filewatcher directory, it should be loaded
+
+[Filewatcher](../dw_filewatcher/)
+
+### Feed
+
+  * Write your feed analytic
+  * Create your own feed process and load your feed analytic
+  * Set the messaging server
+  * Set it to publish to the tickerplant's subscription channel
+  * Add the schema group
+
+[Feed](../dw_feed/)
+
+## Aggregation engine
+
+  * Write your aggregation analytic
+  * Create your own aggregation engine and load your analytic
+  * Set the messaging server 
+  * Set it to publish only aggreagated tables to the tickerplant's subscription channel
+  * Add the schema group
+
+[Aggregation](../dw_agg/)
+

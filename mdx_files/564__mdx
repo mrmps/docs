@@ -1,0 +1,130 @@
+https://code.kx.com/dashboards/apiviewstates/
+
+# View States - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/apiviewstates/
+
+# View States
+
+The `main.js` and `app.css` files are available in the ViewState folder of [
+projects.zip](../assets/projects.zip).
+
+Most properties can be bound to a [view
+state](../DataModelInterface.QuickBase.ViewModelInterface/). If configured,
+`onSettingsChange` will pass the value of the view state to the component. If
+the view state is updated elsewhere in Dashboards, the updated value will be
+passed to the component via `onSettingsChange`.
+
+To set the value of the view states use `setProperty`.
+
+[onSettingsChange](../messages/#onsettingschange)
+
+## setProperty
+
+Set a value in the property inspector.
+
+    
+    
+    api.setProperty(path, value);
+    
+
+### Parameters
+
+#### path
+
+The path of the property. If that property has been bound to a view state by
+the user, then the value of that view state will be set instead.
+
+#### value
+
+The value to set the property to.
+
+### Example
+
+    
+    
+    api.setProperty('Basics.Selected', 'new selected value');
+    
+
+### Response
+
+None
+
+## getProperty
+
+`onSettingsChange` will keep a component updated with changes to its
+properties, including changes to any underlying bound view states, so usage of
+`getProperty` is normally not necessary. However, if needed, a component can
+retrieve the current value of a property using `getProperty`.
+
+    
+    
+    api.getProperty(path);
+    
+
+[onSettingsChange](../messages/#onsettingschange)
+
+### Parameters
+
+#### path
+
+The path of the property.
+
+### Example
+
+    
+    
+    api.getProperty('Basics.Selected');
+    
+
+### Response
+
+Value of the property. If the property is bound to a view state, the value of
+the view state will be returned instead.
+
+If further information about a property is required, use `getPropertyMeta`
+
+    
+    
+    api.getPropertyMeta(path);
+    
+
+### Parameters
+
+#### path
+
+The path of the property.
+
+### Example
+
+    
+    
+    api.getPropertyMeta('Basics.Selected');
+    
+
+### Response
+
+An object containing information about the property, and if applicable, its
+bindings. Responses will differ depending on the value set in the property.
+
+Generic properties are
+
+property | description  
+---|---  
+path | path to the property  
+type | type of binding - (`data`) if bound to a data source, (`viewstate`) if bound to a view state or (`null`) if no binding (simple property)  
+  
+If the property is a simple property, or is bound to a view state, the object
+will also contain
+
+property | description  
+---|---  
+value | value of the property  
+  
+If the property is bound to a view state, the object will also contain
+
+property | description  
+---|---  
+viewstateType | the kdb type of the view state  
+defaultValue | the default value of the view state
+

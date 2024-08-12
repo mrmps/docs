@@ -1,0 +1,171 @@
+https://code.kx.com/insights/enterprise/azure-marketplace/azure-active-directory.html
+
+# Azure Active Directory Integration - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/azure-marketplace/azure-active-directory.html
+
+# Azure Active Directory integration (optional post deployment step)
+
+You can use your organization's Active Directory to allow your users to log
+into the _kdb Insights Enterprise_ user interface with their existing
+credentials.
+
+The steps below enable Active Directory as an Identity Provider in _kdb
+Insights Enterprise_.
+
+## Prerequisites
+
+To successfully install _kdb Insights Enterprise_ on Azure, you need the
+following:
+
+  1. The [Application Administrator](https://docs.microsoft.com/en-us/azure/active-directory/roles/permissions-reference#application-administrator) role to create and manage an [App registration](https://docs.microsoft.com/en-us/graph/auth-register-app-v2) for _kdb Insights Enterprise_.
+
+  2. Access to a Bash shell to run the registration script, with the latest version of [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli) installed. You can use Azure Cloud Shell for this:
+
+![CloudShell](images/CloudShell.png)
+
+  3. The Keycloak admin password and URLs of your _kdb Insights Enterprise_ deployment.
+
+![KeycloakPassword](images/KeycloakPassword.png)
+
+![URL](images/Urls.png)
+
+  4. [kdb Insights CLI](../cli/install.html) installed.
+
+## Create the Azure Active Directory App registration
+
+You need an Azure App registration.
+
+To create an Azure App registration:
+
+  1. Visit your Azure Active Directory page in the Azure portal. ![AAD](images/kx-aad.jpg)
+
+  2. Click on Add > App registration.
+
+![AddApp](images/AAD%202.PNG)
+
+  3. Choose a user-facing display name and click `Register`.
+
+![RegisterApp](images/kx-app.jpg)
+
+  4. Wait for the App registration to be created.
+
+## Create the Azure Active Directory group
+
+You can create brand new user groups or leverage existing user groups that are
+appropriate to link with _kdb Insights Enterprise_.
+
+As an example you can create separate groups for kdb Insights Enterprise
+"Users" and "Administrators":
+
+![Groups](images/Groups1.png)
+
+## Integrate kdb Insights Enterprise roles and Azure Active Directory groups
+
+Now you need to link _kdb Insights Enterprise_ roles to the Azure Active
+Directory groups.
+
+You can either use the built-in roles in _kdb Insights Enterprise_ or you can
+[create composite roles](azure-active-directory-keycloak-composite-roles.html)
+and use those to link to your Azure Active Directory group.
+
+  1. Start a command line session ([kdb Insights CLI](../cli/install.html) needs to be available).
+  2. Create the Identity Provider in Keycloak and link it to the previously created Azure App Registration:
+    
+        kxi azure idp add \
+    --azure-tenant-id "<tenant id>" \
+    --azure-app-registration-name "<app registration name>" \
+    --hostname "<Insights URL>" \ # defaults to configured value by kxi configure
+    --keycloak-admin-clientid "<Keycloak Admin Client>" \ # defaults to "admin-cli"
+    --keycloak-admin-username "<Keycloak Admin username>" \ # can come from env var: KEYCLOAK_USER
+    --keycloak-admin-password "<Keycloak Admin password>" \ # can come from env var: KEYCLOAK_PASSWORD
+    --keycloak-idp-realm "<Keycloak realm>" \ # defaults to "insights"
+    --keycloak-idp-alias "<IdP alias>" \ # defaults to "aad-idp"
+    --keycloak-idp-display-name "<IdP display name>" # defaults to "Azure AD"
+    
+
+Example command:
+
+    
+        kxi azure idp add \
+    --azure-tenant-id "<tenant id>" \
+    --azure-app-registration-name "KX Insights Keycloak App" \
+    --hostname "https://kxinsights.westeurope.cloudapp.azure.com" \
+    --keycloak-admin-username "<Keycloak Admin username>" \
+    --keycloak-admin-password "<Keycloak Admin password>"
+    
+
+To see additional options use:
+
+  3. Link the previously created Identity Provider to an Azure Active Directory group:
+    
+        kxi azure idp mapper add \
+    --azure-tenant-id "<tenant id>" \
+    --azure-ad-group-name "<ad group name>" \
+    --hostname "<Insights URL>" \ # defaults to configured value by kxi configure
+    --keycloak-admin-clientid "<Keycloak Admin Client>" \ # defaults to "admin-cli"
+    --keycloak-admin-username "<Keycloak Admin username>" \ # can come from env var: KEYCLOAK_USER
+    --keycloak-admin-password "<Keycloak Admin password>" \ # can come from env var: KEYCLOAK_PASSWORD
+    --keycloak-idp-realm "<Keycloak realm>" \ # defaults to "insights"
+    --keycloak-idp-alias "<IdP alias>" \ # defaults to "aad-idp"
+    --keycloak-idp-mapper-name "<Mapper name>" \ # Custom name
+    --keycloak-idp-mapper-roles "<Mapper roles>" # Comma separated role names
+    
+
+Example commands:
+
+    
+        kxi azure idp mapper add \
+    --azure-tenant-id "b722186b-694e-44c2-ab48-542f468d2934" \
+    --azure-ad-group-name "KX Insights Keycloak Test Group" \
+    --hostname "https://kxinsights.westeurope.cloudapp.azure.com" \
+    --keycloak-idp-mapper-name "Maintainers" \
+    --keycloak-idp-mapper-roles "insights.role.maintainer" \
+    --keycloak-admin-username "<Keycloak Admin username>" \
+    --keycloak-admin-password "<Keycloak Admin password>"
+    
+
+To see additional options, use:
+
+    
+        kxi azure idp mapper add --help
+    
+
+[* How to find my tenant id](https://learn.microsoft.com/en-us/azure/active-
+directory/fundamentals/how-to-find-tenant)
+
+## Test the integration
+
+Once the integration is complete, follow the steps below to login to _kdb
+Insights Enterprise_ with your Azure Active Directory credentials:
+
+  1. Locate the deployment outputs.
+
+    1. Locate the resource group of your deployment in Azure.
+
+    2. Navigate to the `Deployments` menu.
+
+    3. Click on the bottom deployment.
+
+![DeploymentOutput](images/AzureInsightsDeploymentOutputs.png)
+
+    4. Click on `Outputs` in the left-hand navigation menu.
+
+![Output](images/Outputs.png)
+
+    5. Navigate to the `insightsUiUrl` value in a new browser tab.
+
+  2. Log in using your Azure credentials.
+
+![LoginAAD](images/LoginAAD.png)
+
+  3. Accept the Permissions requested by the app.
+
+  4. You will be directed to the _kdb Insights Enterprise_ user interface.
+
+![KXUi](images/insights_ui.jpg)
+
+  5. If you have already logged in using the configured Identity Provider are present in the Keycloak User menu.
+
+![KXUUser](images/KeycloakUserPage.PNG)
+

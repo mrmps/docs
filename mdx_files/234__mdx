@@ -1,0 +1,369 @@
+https://code.kx.com/platform/api/configuration/
+
+# Configuration - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/api/configuration/
+
+# Configuration
+
+Set of APIs for interacting with the configuration parameters in _Control_.
+These parameters are sets of tables defined in _Control_ , used to configure
+the system. Each parameter can have its own schema definition, defined in
+`DEFAULT` override, and each override can have different rows and values. This
+can be used to set different behavior depending on the system, host, process
+etc.
+
+**Static Configuration**
+
+A process can call to Control to retrieve configuration for a given parameter
+and override using `.uc.getActiveParamValue`. If the parameter is static or
+rarely changed, it should be retrieved once during the start-up phase and
+cached as a variable. Repeatedly calling to _Control_ to retrieve parameters
+is not advised as it increases load and risks blocking the process.
+
+**Dynamic Configuration**
+
+For frequently changing configuration it's advised to subscribe to the
+parameter using `.uc.getAndSaveActiveParamValue`. This caches the parameter
+locally in a variable from where it can be directly accessed and is updated
+automatically whenever the _Control_ version changes. Actions to run on
+receiving a change can also be specified. Parameters can also be edited using
+`.uc.editActiveSingleParamData`.
+
+In cases where the list of overrides might not be known in advance or the user
+doesn't want to worry about providing variable cache names, a utility script
+has been provided as an instruction in _Stream_ called `Configuration`. This
+wraps the calls of this module but handles the specified cases.
+
+## `.uc.deleteParam`
+
+Deletes a configuration parameter from Control.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+pName | symbol | Name of config parameter  
+pOverride | symbol | Override  
+  
+**Example:**
+
+    
+    
+     .uc.deleteParam[`new_parameter;`DEFAULT]
+    
+
+## `.uc.editActiveSingleParamData`
+
+Called to update a configuration parameter in _Control_. Schema of the table
+must match the schema of the `DEFAULT` override. The call is synchronous.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+param | symbol | Parameter name  
+orride | symbol | Override name  
+data | table | Table of updated details  
+  
+**Example:**
+
+    
+    
+     .uc.editActiveSingleParamData[`DS_EMAIL_SERVER; `DEFAULT; ([] MAIL_HOST:`fd01; MAIL_PORT:`25; MAIL_FROM:enlist `$"deltamon@firstderivatives.com")]
+    
+
+## `.uc.getActiveParamValue`
+
+Gets a configuration parameter from _Control_. If the override is blank or not
+configured, it will return the `DEFAULT`. Retrieves the parameter at the
+version the process is operating at.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+paramName | symbol | Parameter name  
+profOverride | symbol | Override name  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+table | Returns table of configuration  
+  
+**Example:** Override specified
+
+    
+    
+     .uc.getActiveParamValue[`DS_MESSAGING_SERVER; `DS]
+     /=> instance
+     /=> --------
+     /=> ds_ms_a
+     /=> ds_ms_b
+    
+
+**Example:** Override not specified, default used
+
+    
+    
+     .uc.getActiveParamValue[`DS_MESSAGING_SERVER; `]
+     /=> instance
+     /=> --------
+     /=>
+    
+
+## `.uc.getAndSaveActiveParamValue`
+
+Subscribes to a configuration parameter in _Control_. User specifies a local
+variable name to save the parameter to. When the parameter updates, the in-
+memory variable will be updated accordingly. The dictionary parameter allows
+the user to optionally specify key columns and actions to take when the
+parameter updates.
+
+Warning
+
+If the parameter has one column, the results will be returned as a list
+instead of a table.
+
+The action will not be run automatically on initial call to
+`.uc.getAndSaveActiveParamValue`
+
+Initially retrieves the parameter at the version the process is operating at.
+If the process is not operating at the latest version, updates will only be
+received when `.uc.republishUpdates` is invoked
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+paramName | symbol | Parameter name  
+profOverride | symbol | Override name  
+variableName | symbol | Name of variable to save to  
+dict | dict | Allowed keys are; keyCols {symbol[]} List of columns to key the saved details by, action {string|functional} An action to run when the parameter updates. Can be a functional form or string, will be executed using _value_  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+table|list | Returns the parameter details. List format returned if parameter only has one column.  
+  
+**Example:** With key columns and action as functional form
+
+    
+    
+     .uc.getAndSaveActiveParamValue[`DS_EMAIL_SERVER; `DEFAULT; `.email.server; `keyCols`action!(`MAIL_HOST; (`updateEmailServers; `))]
+     /=> MAIL_HOST| MAIL_PORT MAIL_FROM
+     /=> ---------| ---------------------------------------
+     /=> fd01     | 25        deltamon@firstderivatives.com
+    
+
+**Example:** Action only. In string form
+
+    
+    
+     .uc.getAndSaveActiveParamValue[`DS_EMAIL_SERVER; `DEFAULT; `.email.server; enlist[`action]!enlist "updateEmailServers[]"]
+     /=> MAIL_HOST MAIL_PORT MAIL_FROM
+     /=> -------------------------------------------------
+     /=> fd01      25        deltamon@firstderivatives.com
+    
+
+**Example:** No action or key columns specified. Result returned as list
+
+    
+    
+     .uc.getAndSaveActiveParamValue[`DS_MESSAGING_SERVER; `DS; `.dm.dmservername; ()!()]
+     /=> `ds_ms_a`ds_ms_b
+    
+
+## `.uc.getAndSaveAllParam`
+
+Subscribes to all overrides of a configuration parameter including newly added
+ones. An internal variable is created to save the parameter data to for each
+override. When the parameter updates, the in-memory variable will be updated
+accordingly.
+
+Parameters can be retrieved using `.uc.getSavedData`.
+
+Key columns can be specified and also a callback defining actions to take when
+each parameter updates. The action should be the name of a function or a
+lambda taking one parameter. It will be called with the name of the changed
+override.
+
+Warning
+
+The action will not be run automatically on initial call to
+`.uc.getAndSaveAllParam`
+
+Initially retrieves the parameter at the version the process is operating at.
+If the process is not operating at the latest version, updates will only be
+received when `.uc.republishUpdates` is invoked
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+param | symbol | Parameter name  
+keyCols | symbol[] | Columns to key by  
+callback | lambda|functional | Action to run when an override updates  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol[] | List of existing overrides  
+  
+**Example:** With key column and functional callback
+
+    
+    
+     logOverrideChange:{[x] .log.out[.z.h; "parameter update"; x]}
+     .uc.getAndSaveAllParam[`DM_ColourThresholds; `sym; `logOverrideChange]
+     0N!overrides:.uc.getSavedOverrides[`DM_ColourThresholds]
+     /=> `DEFAULT`ProcessCPU`ProcessMemory`ServerCPU`ServerFileSystem`ServerMemory
+     logOverrideChange'[overrides]
+     .uc.getSavedData[`DM_ColourThresholds; `ProcessCPU]
+     /=> sym           minThreshold maxThreshold
+     /=> ---------------------------------------
+     /=> DEFAULT       0            50
+     /=> RDB           0            10
+     /=> RTE           0            1
+     /=> DeltaControl  0            1
+    
+
+**Example:** With key columns and projection for the callback
+
+    
+    
+     logParamChange:{[x;y] .log.out[.z.h; "parameter update"; ":" sv (string x;string y)]}
+     .uc.getAndSaveAllParam[`DM_ALERT_PARAMETERS; `sym`warningThreshold; logParamChange[`DM_ALERT_PARAMETERS;]]
+     0N!overrides:.uc.getSavedOverrides[`DM_ALERT_PARAMETERS]
+     /=> `DEFAULT`MemoryUsage`Server1MinLoad`ServerCPU
+     logParamChange[`DM_ALERT_PARAMETERS;]'[overrides]
+    
+
+## `.uc.getParamVer`
+
+Calls to Control to get the list of overrides for a parameter along with the
+config tables. This will be the state of the parameter and overrides at the
+version specified
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+param | symbol | Parameter name  
+ver | long | Version number  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | Override names with values corresponding to the config tables  
+  
+**Example:**
+
+    
+    
+     param:`DC_EXPORT_FILES
+     ver:2000j
+     .uc.getParamVer[param; ver]
+     /=> DEFAULT    | +`directory`file!(,`;,`)
+     /=> DeltaStream| +`directory`file!(`ENV=DELTADOCGENREPORTJRXMLS_EXAMPLES=`ENV=DELTADOCGEN_RESOURCES=;`*`*)
+    
+
+## `.uc.getSavedData`
+
+Called to get parameter data for an override. Used in conjunction with
+`.uc.getAndSaveAllParam` where parameters are saved to hidden variables. Reads
+parameter data from local cache and therefore will return data at the version
+the process is operating at.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+parameter | symbol | Parameter  
+overr | symbol | Override  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+table | Parameter data  
+  
+**Example:**
+
+    
+    
+     .uc.getSavedData[`DM_ColourThresholds; `ProcessCPU]
+     /=> sym           minThreshold maxThreshold
+     /=> ---------------------------------------
+     /=> DEFAULT       0            50
+     /=> RDB           0            10
+     /=> RTE           0            1
+     /=> DeltaControl  0            1
+    
+
+## `.uc.getSavedOverrides`
+
+Gets the list of existing overrides for a parameter. Reads this from the local
+cache and therefore will return the list at the version the process is
+operating at.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+parameter | symbol | Parameter  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol[] | List of overrides  
+  
+**Example:**
+
+    
+    
+     .uc.getSavedOverrides[`DM_ColourThresholds]
+     /=> `DEFAULT`ProcessCPU`ProcessMemory`ServerCPU`ServerFileSystem`ServerMemory
+    
+
+## `.uc.republishUpdates`
+
+Calls to Control to push out config updates to all, or a subset of process
+instances subscribed for those entities in the table provided. This will be
+the latest config entity version up to the active version number associated
+with the process. If the config entity has been deleted at the active version
+number for a process, the subscription to it will be removed when
+.uc.republishUpdates is called with the process in the list to publish to. The
+process handle will be removed from the subscriber list for that config entity
+on Control. If the active version of a process is changed,
+.uc.republishUpdates should be called for the process to push out any relevant
+config updates for it's new active version
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+entTab | table | Entity table of parameter name and override  
+procs | symbol[] | List of process instances to publish to, `all for all, empty list to publish to calling handle only  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+| Nothing returned  
+  
+**Example:**
+
+    
+    
+     tab:([]parameter:`TestParam101`TestParam202;override:`DEFAULT`DEFAULT)
+     procs:`ds_qp_a`ds_gw_ops_a
+     .uc.republishUpdates[tab; procs]
+     /=> ::
+    
+

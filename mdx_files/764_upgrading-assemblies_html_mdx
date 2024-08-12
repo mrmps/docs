@@ -1,0 +1,192 @@
+https://code.kx.com/insights/enterprise/assemblies/upgrading-assemblies.html
+
+# Upgrading - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/assemblies/upgrading-assemblies.html
+
+# Upgrading Assemblies
+
+Deprecation of deployment with assembly yaml files
+
+The deployment of assembly yaml files using the `kxi assembly` command in the
+kdb Insights CLI has been deprecated and may be removed from future releases.
+You should instead use packages, which can be deployed and managed by both the
+UI and the kdb Insights CLI. For more information about packages, refer to
+[Packages](../packaging/index.html).
+
+For kdb Insights Enterprise 1.5 there have been significant changes to the
+definition of assembly yaml files and due to these changes the assembly API
+version has been updated from version 1 to version 2.
+
+When deployed via the kdb Insights CLI, version 1 yaml files are supported,
+however you will receive a warning stating that the yaml file is a v1 file and
+will be deprecated and that you should use v2.
+
+This page describes the changes that you need to make to a v1 assembly yaml
+file to convert it to v2.
+
+## apiVersion
+
+Change the `apiVersion` from 'insights.kx.com/v1' to 'insights.kx.com/v2'
+
+## Bus
+
+The permitted `protocol` for a `bus` object is now limited to `custom` or
+`rt`. If you have included any other protocols they need to be removed.
+
+## DAP
+
+You need to remove the following fields they are no longer required:
+
+  * `da.instances[].gwArch`
+  * `da.instances[].gwAssembly`
+
+## Sequencer
+
+The `archiver` field and all its child properties have either been moved or
+removed. Fields within this object that are still required have become part of
+the top level `sequencer` object.
+
+Configuration for `insights.kx.com/v1` is shown below:
+
+    
+    
+    apiVersion: insights.kx.com/v1
+    kind: Assembly
+    metadata:
+      name: sdk-sample-assembly
+      labels:
+        assemblyname: sdk-sample-assembly
+    spec:
+      elements:
+        sequencer:
+          north:
+            archiver:
+              maxDiskUsagePercent: 90
+              maxLogSize: 50Gi
+              retentionDuration: 10080
+    
+
+You need to change this configuration as follows:
+
+    
+    
+    apiVersion: insights.kx.com/v2
+    kind: Assembly
+    metadata:
+      name: sdk-sample-assembly
+      labels:
+        assemblyname: sdk-sample-assembly
+    spec:
+      elements:
+        sequencer:
+          north:
+            maxDiskUsagePercent: 90
+            maxLogSize: 50Gi
+            retentionDuration: 10080
+    
+
+## Stream Processor
+
+The `controller` and `worker` prefixed objects have been moved under a new
+parent object.
+
+  * `persistence`: Contents moved under a new parent
+  * `labels`: Contents moved under a new parent
+  * `controllerImage`: Field moved under a new parent
+  * `controllerK8sPolicy`: Contents moved under a new parent
+  * `workerImage`: Field moved under a new parent
+  * `workerK8sPolicy`: Contents moved under a new parent
+  * `workerThreads`: Field moved under a new parent
+
+Configuration for `insights.kx.com/v1` is shown below:
+
+    
+    
+    apiVersion: insights.kx.com/v1
+    kind: Assembly
+    metadata:
+      name: sdk-sample-assembly
+      labels:
+        assemblyname: sdk-sample-assembly
+    spec:
+      elements:
+        sp:
+          pipelines:
+            mypipe:
+              controllerImage: "image.repo/kxi-ctrl:1.2.3"
+              controllerK8sPolicy:
+                podSecurityContext:
+                  fsGroup: 65534
+                  runAsNonRoot: true
+                  runAsUser: 65534
+                  seccompProfile:
+                    type: RuntimeDefault
+              labels:
+                "label": "value"
+              persistence:
+                controller:
+                  checkpointFreq: 10
+                  class: "standard"
+                  disabled: false
+                  size: 10Gi
+                worker:
+                  disabled: true
+              workerImage: "image.repo/kxi-wrk:1.2.3"
+              workerK8sPolicy:
+                podSecurityContext:
+                  fsGroup: 65534
+                  runAsNonRoot: true
+                  runAsUser: 65534
+                  seccompProfile:
+                    type: RuntimeDefault
+              workerThreads: 2
+    
+
+You need to change this configuration as follows:
+
+    
+    
+    apiVersion: insights.kx.com/v2
+    kind: Assembly
+    metadata:
+      name: sdk-sample-assembly
+      labels:
+        assemblyname: sdk-sample-assembly
+    spec:
+      elements:
+        sp:
+          pipelines:
+            mypipe:
+              controller:
+                image: "image.repo/kxi-ctrl:1.2.3"
+                k8sPolicy:
+                  podSecurityContext:
+                    fsGroup: 65534
+                    runAsNonRoot: true
+                    runAsUser: 65534
+                    seccompProfile:
+                      type: RuntimeDefault
+                labels:
+                  "label": "value"
+                persistence:
+                  checkpointFreq: 10
+                  class: "standard"
+                  disabled: false
+                  size: 10Gi
+              worker:
+                image: "image.repo/kxi-wrk:1.2.3"
+                k8sPolicy:
+                  podSecurityContext:
+                    fsGroup: 65534
+                    runAsNonRoot: true
+                    runAsUser: 65534
+                    seccompProfile:
+                      type: RuntimeDefault
+                threads: 2
+                labels:
+                  "label": "value"
+                persistence:
+                  disabled: true
+    
+

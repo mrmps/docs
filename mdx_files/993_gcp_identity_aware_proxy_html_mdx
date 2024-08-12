@@ -1,0 +1,91 @@
+https://code.kx.com/insights/core/kurl/appendix/gcp_identity_aware_proxy.html
+
+# GCP Identity-Aware Proxy | Examples | REST client | kdb Insights Core - kdb products
+
+Original URL: https://code.kx.com/insights/core/kurl/appendix/gcp_identity_aware_proxy.html
+
+# GCP Identity-Aware Proxy
+
+This example logs into Google using OAuth2. Once logged in it creates an
+Audience with an Identity-Aware Proxy (IAP) protected HTTPS server.
+
+Prerequisites:
+
+  * You have created an IAP HTTPS Resource
+  * You have the hostname of the IAP HTTPS server
+
+(as the `-iap` flag of the example)
+
+  * You have a simple GET request endpoint that the example can use
+
+  * You have available the client ID of the IAP resource
+
+(as the `-audience` flag of the example)
+
+  * You have available an OAuth2 client ID and secret representing a user
+
+(as the `-client /path/to/client_secret.json`)
+
+The Audience
+
+The ID for your server/proxy, is called a client ID by Google. You may think
+of this ID as the audience, because you are not logging in as the IAP
+resource. Google uses this ID as the [JSON Web Token audience
+claim](https://tools.ietf.org/html/rfc7519#section-4.1.3)
+
+You log in as _you_ , and then your queries are _intended for the audience_ ,
+e.g. your HTTPS server
+
+This example implements the workflow shown here, for a Google Web App instead
+of a Desktop App.
+
+[Authenticating from a desktop
+app](https://cloud.google.com/iap/docs/authentication-
+howto#authenticating_from_a_desktop_app)
+
+Example usage:
+
+    
+    
+    q iap.q -iap https://gcp2.hello.com/greeting \
+      -audience IAP_CLIENT_ID \
+      -client ~/Downloads/client_secret_redacted-redacted.apps.googleusercontent.com.json
+    
+
+`iap.q`
+
+    
+    
+    args:.Q.opt .z.x
+    if[not all `iap`audience`client in key args;
+      '"-iap <IAP https://hostname/endpoint> -audience <IAP client ID> -client </path/to/client_secret.json> are required"]
+    iap:first args `iap
+    audience:first args `audience
+    client:.j.k "c"$read1 hsym `$first args `client
+    
+    split:"/" vs iap
+    baseurl:split[0],"//",split 2
+    
+    // Callback takes in tenant and token response.
+    // Project in any state useful to you,
+    // in this case the IAP hostname/endpoint
+    callback:{[iap; tenant; auth_response]
+      -1 "IAP is now configured and you may make calls";
+      show .kurl.sync (iap;`GET;``tenant!(::;tenant)) }[iap;]
+    
+    // Authenticate to Google as yourself,
+    //  with a callback to then grant audience for IAP.
+    // The IAP callback itself has a callback for making a sync request
+    //
+    // access_type=offline is require for Google to return a refresh_token,
+    //  needed for continual access renewal
+    // prompt=consent is required to force Google to return the refresh_token,
+    //  in the event you already have it
+    // scope=openid email is the minimum scopes needed for OpenID Connect
+    .kurl.oauth2.startLoginFlow[
+        "https://openidconnect.googleapis.com"; // Google endpoint the login is valid for (not the IAP audience)
+        client; // Leave this field null if you are using KX_OAUTH2_CLIENT_JSON env var
+        `scope`access_type`prompt!("openid email";"offline";"consent");
+        .kurl.oauth2.grantAudience[audience; baseurl; client; callback;] ]
+    
+

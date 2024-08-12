@@ -1,0 +1,241 @@
+https://code.kx.com/platform/stream/dw_qr_dashboards/
+
+# KX Dashboards - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/stream/dw_qr_dashboards/
+
+# KX Dashboards
+
+## Create a dashboard
+
+_KX Dashboards_ is an interactive data visualization tool that enables users
+to query and present data. In this example, a sample dashboard will be created
+using the extraction APIs written in the last section.
+
+  * To create one, select _Tools > Open Builder > Dashboard Builder_ from _KX Control_.
+
+[![Screenshot](../img/serviceclass/qr_db_open.jpg)](../img/serviceclass/qr_db_open.jpg
+"click to expand")
+
+  * Create a new dashboard by clicking the highlighted icon. 
+
+[![Screenshot](../img/serviceclass/qr_db_new.jpg)](../img/serviceclass/qr_db_new.jpg
+"click to expand")
+
+  * You can click on the >> button to expand the menu to see what the icons entail. 
+
+[![Screenshot](../img/serviceclass/qr_db_menu.jpg)](../img/serviceclass/qr_db_menu.jpg
+"click to expand")
+
+  * Click _Preview_ to study the interactions of the dashboard.
+
+[![Screenshot](../img/serviceclass/qr_db_preview_btn.jpg)](../img/serviceclass/qr_db_preview_btn.jpg
+"click to expand")
+
+### Data grid
+
+  * Drag a `data grid` from the icon on the left-hand side, and adjust the size.
+
+[![Screenshot](../img/serviceclass/qr_db_datagrid_new.jpg)](../img/serviceclass/qr_db_datagrid_new.jpg
+"click to expand")
+
+  * To configure the data source, click on the `data source` on the right-hand side menu.
+
+[![Screenshot](../img/serviceclass/qr_db_datagrid_menu.jpg)](../img/serviceclass/qr_db_datagrid_menu.jpg
+"click to expand")
+
+  * A pop up will appear. Click on _New_ and create a data source named _MemBucketData_. Select the `Analytic` radio button and the `.monPublic.getMemBucket` analytic from the menu. As we've defined this analytic to take in a dictionary as the parameter, select `dict` and add the parameters as below. Set the `Subscription` to `Managed`.
+
+[![Screenshot](../img/serviceclass/qr_db_datasource_membucket.jpg)](../img/serviceclass/qr_db_datasource_membucket.jpg
+"click to expand")
+
+  * Now, execute the query to see if you get data back. If successful, you should see a table returned on the bottom: 
+
+[![Screenshot](../img/serviceclass/qr_db_datasource_membucket_exec1.jpg)](../img/serviceclass/qr_db_datasource_membucket_exec1.jpg
+"click to expand")
+
+Execution Order
+
+It is important to execute the data source in this order: Execute > Apply >
+Select Item.
+
+[![Screenshot](../img/serviceclass/qr_db_datagrid_membucket.jpg)](../img/serviceclass/qr_db_datagrid_membucket.jpg
+"click to expand")
+
+### Parameterise the data grid
+
+Next, add components to parameterise the dashboard and data grid. Given are
+simple examples, but these can be altered to make it dynamic.
+
+#### Datepicker
+
+  * Next, create components to filter the same data set by the _time column_. 
+
+  * Create two datepickers. These will be later linked to the _MemBucketData_ datasource.
+
+  * Drag a datepicker and type `start:` in _Basics > Label_. Click on the text box of _Selected Date_ which will prompt a pop-up. 
+
+  * This is the screen to create a _View State_. Click on _New_ and name it _start_. Configure the _Properties_ as below and select any past date. Click _Select Item_. 
+
+[![Screenshot](../img/serviceclass/qr_db_viewstate_start.jpg)](../img/serviceclass/qr_db_viewstate_start.jpg
+"click to expand")
+
+  * Drag another datepicker and do the same for _end_ , but instead, select _Now_ for current timestamp or any future date. 
+
+[![Screenshot](../img/serviceclass/qr_db_datepickers.jpg)](../img/serviceclass/qr_db_datepickers.jpg
+"click to expand")
+
+Currently, these datepickers aren't attached to the data source so it won't do
+anything when you select the date.
+
+  * Go back to the data grid and open the _MemBucketData_ data source. In params, set the start and end as the _View States_ we've just created. The dates choosen via the datepicker now gets sent as the parameters to the _MemBucketData_ data source that calls the `.monPublic.getMemBucket` analytic. 
+
+[![Screenshot](../img/serviceclass/qr_db_datasource_membucket_dates.jpg)](../img/serviceclass/qr_db_datasource_membucket_dates.jpg
+"click to expand")
+
+  * In the _Preview mode_ , change the start and end timestamp, and test if data is correctly filtered by time. 
+
+#### Drop down list
+
+The next step is to create a drop down list. This is used to filter data by
+sym.
+
+  * Drag the drop down list icon. 
+
+  * In _Basics > Selected Value_, create a new _View State_ and name it _symList_. Set the values as below and click _Select Item_. 
+
+[![Screenshot](../img/serviceclass/qr_db_viewstate_symlist.jpg)](../img/serviceclass/qr_db_viewstate_symlist.jpg
+"click to expand")
+
+Dynamic Selection
+
+The example is hard-coded for simplicity, but they may be driven from a query
+to dynamically extract syms.
+
+[![Screenshot](../img/serviceclass/qr_db_dropdown_hc.jpg)](../img/serviceclass/qr_db_dropdown_hc.jpg
+"click to expand")
+
+  * You can play around with the settings such as changing layout sizes and the _Label_ to make it more intuitive for users. 
+
+  * Instead of attaching the _symList View State_ to the _MemBucketData_ data source, create a virtual query. 
+
+#### Virtual query
+
+Virtual queries utilize data loaded to the client. Assigned data sources to
+the virtual query do not re-query the database.
+
+  * Create a new data source named `MemBucketChart` and write a virtual query that utilize _MemBucketData_ data source. Allow filtering of multiple syms to source the data grid.
+
+[![Screenshot](../img/serviceclass/qr_db_datasource_membucketgrid.jpg)](../img/serviceclass/qr_db_datasource_membucketgrid.jpg
+"click to expand")
+
+    
+    
+    function (source, syms, callback) {
+    
+       source.rows = _.filter(source.rows, (r)=> {
+         return _.indexOf(syms, r.sym) >= 0; 
+    
+       });
+       source.rows = _.sortBy(source.rows, "time");
+    
+       callback(source);
+    }
+    
+
+### Line graph
+
+  * Next, create a line graph that displays the `physical` and `virtual` columns of a single sym on a time series. 
+
+  * Drag a `Canvas Chart` to an empty space. 
+
+### Parameterise the line graph
+
+  * To filter time, use the same `start` and `end` view state created before. 
+
+  * Drag another drop down list icon. 
+
+  * In _Basics > Selected Value_, create a new _View State_ and name it _singleSym_. Set the values as below and click _Select Item_. 
+
+[![Screenshot](../img/serviceclass/qr_db_viewstate_singlesym.jpg)](../img/serviceclass/qr_db_viewstate_singlesym.jpg
+"click to expand")
+
+  * Make sure that `Multi-select` is unchecked.
+
+  * Similarly to above, hard-code the 4 syms in _Basics > Items_.
+
+[![Screenshot](../img/serviceclass/qr_db_dropdown_hc2.jpg)](../img/serviceclass/qr_db_dropdown_hc2.jpg
+"click to expand")
+
+#### Virtual query
+
+  * Create a new data source named `MemBucketChart` and write a virtual query that utilize _MemBucketData_ data source. Allow filtering of a single sym to source the line graph.
+
+[![Screenshot](../img/serviceclass/qr_db_datasource_membucketchart.jpg)](../img/serviceclass/qr_db_datasource_membucketchart.jpg
+"click to expand")
+
+    
+    
+    function (source, sym, callback) {
+    
+       source.rows = _.filter(source.rows, (r)=> {
+         return sym === r.sym; 
+    
+       });
+       source.rows = _.sortBy(source.rows, "time");
+    
+       callback(source);
+    }
+    
+
+  * Execute the query to see if you successfully get data back. Select `Apply` and `Select Item`. 
+
+  * Now add the _MemBucketChart_ data source to the canvas chart. 
+
+  * Set two layers for colums: virtual and physical.
+
+[![Screenshot](../img/serviceclass/qr_db_chart_virtual.jpg)](../img/serviceclass/qr_db_chart_virtual.jpg
+"click to expand")
+
+[![Screenshot](../img/serviceclass/qr_db_chart_physical.jpg)](../img/serviceclass/qr_db_chart_physical.jpg
+"click to expand")
+
+-Set the axes.
+
+[![Screenshot](../img/serviceclass/qr_db_chart_axes.jpg)](../img/serviceclass/qr_db_chart_axes.jpg
+"click to expand")
+
+## Testing
+
+  * In _preview mode_ , test if you can filter the data grid and line graph by each of the associated drop-down menu. 
+
+[![Screenshot](../img/serviceclass/qr_db_preview.jpg)](../img/serviceclass/qr_db_preview.jpg
+"click to expand")
+
+## Entitlements
+
+  * Once you are done creating your Dashboard, give the user permission to access it.
+
+  * Click on an empty space in your Dashboard. On the right-hand side, open `Permissions` and check `Read Access` for `KxwUsers`.
+
+[![Screenshot](../img/serviceclass/qr_db_membucket_user_permissions.jpg)](../img/serviceclass/qr_db_membucket_user_permissions.jpg
+"click to expand")
+
+  * Logout of `Administrator` and login to **Dashboards** with `kxwUser`. You will be prompted to reset your password. In this example, we've set the new password as `kxwarehouse` which will be used in further examples.
+
+[![Screenshot](../img/serviceclass/qr_db_reset_password.jpg)](../img/serviceclass/qr_db_reset_password.jpg
+"click to expand")
+
+  * Reset your password and re-login with `kxwUser` and the new password. You should be able to see the new Dashboard.
+
+## Add to package
+
+The dashboard does not automatically get assigned to a particular package.
+Manually add this to the `KxWarehouse` package.
+
+  * Go back to _KX Control_ and find the Dashboard in the `Unpackaged Entities` on the _Navigation panel_.
+
+  * Open the _Package Exporter_ tree from _Tools > Package Exporter_.
+
+  * Drag the Dashboard into the tree and hit _Save_.
+

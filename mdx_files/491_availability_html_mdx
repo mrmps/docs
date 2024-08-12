@@ -1,0 +1,99 @@
+https://code.kx.com/insights/enterprise/configuration/availability.html
+
+# Availability - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/configuration/availability.html
+
+# Availability
+
+This section configures _kdb Insights Enterprise_ availability properties.
+Availability relates to how fault tolerant the application is to failures,
+either within the application or due to underlying infrastructure.
+
+## Pod assignments
+
+_Kubernetes_ provides applications with control over where their pods will run
+through affinities and anti-affinities. _kdb Insights Enterprise_ allows you
+to tune these settings as required.
+
+By default the application uses _hard_ , anti-affinities to provide node-level
+resilience for all services. This ensures pod replicas are all scheduled to
+different nodes to protect against node failures. The _hard_ component of this
+ensures that no two pods of the same service will be scheduled on the same
+node.
+
+[Pod affinities](https://kubernetes.io/docs/concepts/scheduling-
+eviction/assign-pod-node/)
+
+### Presets
+
+There are four different preset affinity types supported by the application;
+`hard` (default), `soft`, `hard-az`, `soft-az`.
+
+A `hard` affinity setting is the default setting for all services, ensuring
+that pods are only scheduled on nodes which do not already have a pod of the
+same service type running on them. If there is no node to satisfy the anti-
+affinity, the pod will not be scheduled.
+
+A `soft` affinity setting setting is similar to the `hard` one but may
+schedule two or more pods to the same node if the affinity settings cannot be
+satisfied.
+
+The `hard-az` and `soft-az` settings match the behavior above but apply to
+scheduling across availability zones rather than simply nodes.
+
+[Availability zones](https://kubernetes.io/docs/setup/best-practices/multiple-
+zones/)
+
+Hard anti-affinities
+
+If auto-scaling of the cluster node pool is enabled, a `hard` anti-affinity
+may cause a cluster to scale to satisfy requirements.
+
+To configure services with one of the preset anti-affinities, you can override
+the default behavior in your install _values_ file. Below configures the
+_information-service_ and _dap_ components with `soft` affinities.
+
+    
+    
+    information-service:
+      affinity: soft
+    
+    kxi-operator:
+      config:
+        dap:
+          affinity: soft
+    
+
+### Custom
+
+If the presets don't suit your needs, you can specify custom affinities and
+anti-affinities as below. Refer to the _Kubernetes_
+[documentation](https://kubernetes.io/docs/concepts/scheduling-
+eviction/assign-pod-node/#node-affinity) for the complete set of options.
+
+    
+    
+    information-service:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - topologyKey: "kubernetes.io/hostname"
+            labelSelector:
+              matchExpressions:
+              - key: "insights.kx.com/serviceName"
+                operator: In
+                values:
+                -  insights-information-service
+    
+
+## Overprovisioning
+
+_kdb Insights Enterprise_ provides support for overprovisioning your cluster
+to improve scalability and fault tolerance. This involves deploying an
+additional chart to your cluster, causing the node pool to scale. The process
+of scaling a cluster can be slow, so this chart is provided as a way of pre-
+scaling to mitigate this.
+
+[Overprovisioning](advanced/overprovisioning.html)
+

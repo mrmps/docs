@@ -1,0 +1,122 @@
+https://code.kx.com/insights/enterprise/packaging/package-components.html
+
+# Components - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/packaging/package-components.html
+
+# Package content
+
+Packages contain the following fundamental components:
+
+## Package Structure
+
+Packages consists of a folder with a set of files and sub-folders which each
+represent components that control some behavior of the overall package.
+
+The files and sub-folders for a newly created package will look like the
+listing below:
+
+    
+    
+    $ kxi package init test-package
+    $ tree test-package
+    test-package
+    ├── init.q
+    └── manifest.yaml
+    
+
+You can extend this to contain additional components. The following more
+complex package contains a database, a pipeline and arbitrary code:
+
+    
+    
+    └──pkg-a
+        ├── databases
+        │   └── mydb
+        │       ├── shards
+        │       │   └── mydb-shard.yaml
+        │       └── tables
+        ├── init.q
+        ├── manifest.yaml
+        ├── pipelines
+        │   └── pipe1.yaml
+        └── src
+            ├── init.q
+            └── pipe1.q
+    
+
+## Manifest File
+
+The `manifest.yaml` file can be regarded as the index of the packages and is
+centrally important to the use of a package. Without a defined `manifest.yaml`
+file, a package cannot be used by _kdb Insights Enterprise_.
+
+Editing the manifest file directly is not recommended.
+
+The manifest is designed to reflect what is in the package. You should
+manipulate the manifest file through the `kxi package` tool where possible. If
+you change a pipeline name in the manifest and then run the `kxi package
+refresh` command, the manifest file changes the name back to the original name
+again.
+
+On creation of a package the `manifest.yaml` file will contain the following
+structure:
+
+    
+    
+    kxi package -q init test-package --force && cat test-package/manifest.yaml
+    
+    
+    
+    uuid: 1e803ceb-0b3f-4339-8dcb-4fff1a193e83
+    name: test-package
+    version: 0.0.1
+    metadata:
+      description: ''
+      authors:
+      - {}
+    entrypoints:
+      default: init.q
+    
+
+Any keys defined as part of the creation of a package must not be deleted
+
+The following table provides a brief description of each configurable section
+within the `manifest.yaml` and whether the definition of its content is
+required.
+
+section | description | required  
+---|---|---  
+`uuid` | The unique identifier for the package. | `yes`  
+`name` | The name associated with the package by default when building it. | `yes`  
+`version` | The version number associated with the package by default when building it. | `yes`  
+`dependencies` | Any explicit dependencies on additional packages. For more information, refer to [Package dependencies](package-deps.html). | `no`  
+`metadata` | Information about the package contents and the users who have contributed to it. | `no`  
+`entrypoints` | The set of possible q/Python files used as the initialization script for a package. For more information, refer to [Package entrypoints](package-entrypoints.html). | `no`  
+`build` | Build, clean, and extra commands for a package. |   
+`system` | Information about the system conditions under which the package was generated, including the version of the CLI which was used to create the package. | `no`  
+`license` | The relative path to the license file under which the defined package is intended to be released. | `no`  
+`tables` | Tables linked to databases to deploy on kdb Insights Enterprise. | `no`  
+`databases` | The databases to deploy on kdb Insights Enterprise. | `no`  
+`pipelines` | Any Stream Processor pipeline definitions to deploy on kdb Insights Enterprise. | `no`  
+`routers` | Any Routers to deploy on kdb Insights Enterprise. | `no`  
+`reports` | Any Reports to deploy on kdb Insights Enterprise. | `no`  
+`deployment_config` | Path to deployment_config to deploy on kdb Insights Enterprise. | `no`  
+`udf_namespaces` | This denotes the tagged names which are searched when parsing the package text for user-defined functions. | `no`  
+`patches` | Patches to apply to this package. | `no`  
+  
+On initialization of a package you are presented with a `manifest.yaml` file
+with the following structure:
+
+    
+    
+    uuid: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxx
+    version: 0.0.1
+    metadata:
+      description: ''
+      authors:
+      - {}
+    entrypoints:
+      default: init.q
+    
+

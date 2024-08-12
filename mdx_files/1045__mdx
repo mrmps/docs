@@ -1,0 +1,241 @@
+https://code.kx.com/platform/api/usermanagement/
+
+# User management - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/api/usermanagement/
+
+# User management
+
+## `.px.pm.addUser`
+
+Creates a user
+
+The `dict` parameter can take the following parameters
+
+name | type | Description  
+---|---|---  
+user | symbol | Username of new user  
+password | symbol | Password for new user  
+authType | symbol | Authentication type  
+inherit | boolean | Inherit user group authentication true/false  
+policyUserGroup | symbol | Group to inherit policy from  
+maxAttempts | int | Maximum password attempts before account is locked  
+minHistory | int | Number of previous passwords the user cannot repeat  
+minLength | int | Minimum password length  
+maxLength | int | Maximum password length  
+duration | int | Number of days before password must be changed  
+policy | dict | Custom policy with number of each character type, example ``cLower`cUpper`number`special!(3i;2i;2i;1i)`  
+email | symbol | Email address  
+  
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+dict | dict | Dictionary of parameters  
+  
+**Example:**
+
+    
+    
+     dict:`user`password`inherit`maxAttempts`minHistory`minLength`maxLength`duration`policy`email!(`TestUser2;`$"PA55word^&";0b;12;11;6;13;20;`cLower`cUpper`number`special!(2i;2i;2i;2i);`$"TestUser2@emailaddress.com")
+     .px.pm.addUser[dict]
+    
+
+## `.px.pm.deleteUser`
+
+Deletes a user
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+user | symbol | Name of user  
+  
+**Example:**
+
+    
+    
+     .px.pm.deleteUser[`TestUser2]
+    
+
+## `.px.pm.getUser`
+
+Gets the details for a user
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+user | symbol | Username of user  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | Dictionary of user details  
+  
+**Example:**
+
+    
+    
+     .px.pm.getUser[`TestUser2]
+     /=> `user     | `TestUser2
+     /=> `groups   | `BSU`DashboardUsers
+     /=> `ip       | *
+     /=> `attempts | 0N
+     /=> `status   | `reset
+     ..
+    
+
+## `.px.pm.lock`
+
+Locks a users account
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+user | symbol | Username of user  
+  
+**Example:**
+
+    
+    
+     .px.pm.lock[`TestUser1]
+    
+
+## `.px.pm.resetPassword`
+
+Resets a users password
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+user | symbol | Username of user  
+pass | symbol | New password  
+  
+**Example:**
+
+    
+    
+     .px.pm.resetPassword[`TestUser1;`$"Password2"]
+    
+
+## `.px.pm.setUserGroups`
+
+Updates groups for a user
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+user | symbol | Username of user  
+groups | symbol[] | Groups to set for user  
+  
+**Example:**
+
+    
+    
+     .px.pm.setUserGroups[`TestUser2;()]
+     .px.pm.setUserGroups[`TestUser2;`BSU]
+     .px.pm.setUserGroups[`TestUser2;`DashboardUsers`BSUManagers]
+    
+
+## `.px.pm.unlockuser`
+
+Unlocks a users account
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+user | symbol | Username of user  
+  
+**Example:**
+
+    
+    
+     .px.pm.unlock[`TestUser1]
+    
+
+## `.px.pm.updatePolicy`
+
+Updates password policy for user
+
+name | type | Description  
+---|---|---  
+user | symbol | Username of user  
+inherit | boolean | Inherit user group authentication true/false  
+policyUserGroup | symbol | Group to inherit policy from  
+maxAttempts | int | Maximum password attempts before account is locked  
+minHistory | int | Number of previous passwords the user cannot repeat  
+minLength | int | Minimum password length  
+maxLength | int | Maximum password length  
+duration | int | Number of days before password must be changed  
+policy | dict | Custom policy with number of each character type, example ``cLower`cUpper`number`special!(3i;2i;2i;1i)`  
+  
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+dict | dict | Dictionary of parameters  
+  
+**Example:**
+
+    
+    
+     dict:`user`policyUserGroup`inherit`maxAttempts`minHistory`minLength`maxLength`duration`policy!(`TestUser2;();0b;10;11;6;13;20;`cLower`cUpper`number`special!(2i;2i;2i;2i))
+     .px.pm.updatePolicy[dict]
+    
+
+**Example:**
+
+    
+    
+     dict:`user`policyUserGroup`inherit!(`TestUser2;`BSU;1b)
+     .px.pm.updatePolicy[dict]
+    
+
+## `.px.pm.updateUser`
+
+Updates details for a user
+
+The `dict` parameter can take the following parameters
+
+name | type | Description  
+---|---|---  
+user | symbol | Username of user  
+groups | symbol[] | Groups user will belong to  
+inherit | boolean | Inherit user group authentication true/false  
+policyUserGroup | symbol | Group to inherit policy from  
+maxAttempts | int | Maximum password attempts before account is locked  
+minHistory | int | Number of previous passwords the user cannot repeat  
+minLength | int | Minimum password length  
+maxLength | int | Maximum password length  
+duration | int | Number of days before password must be changed  
+policy | dict | Custom policy with number of each character type, example ``cLower`cUpper`number`special!(3i;2i;2i;1i)`  
+email | symbol | Email address  
+  
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+dict | dict | Dictionary of parameters  
+  
+**Example:**
+
+    
+    
+     dict:`user`groups`inherit`maxAttempts`minHistory`minLength`maxLength`duration`policy`email!(`TestUser1;`BSU`DashboardUsers;0b;12;11;6;13;20;`cLower`cUpper`number`special!(2i;3i;2i;1i);`$"TestUser1New@emailaddress.com")
+     .px.pm.updateUser[dict]
+    
+
+**Example:**
+
+    
+    
+     dict:`user`policyUserGroup`groups`inherit!(`TestUser2;`BSU;`BSU`DashboardUsers;1b)
+     .px.pm.updateUser[dict]
+    
+

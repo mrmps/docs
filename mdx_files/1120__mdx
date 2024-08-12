@@ -1,0 +1,740 @@
+https://code.kx.com/dashboards/offlinemaps/
+
+# OfflineMaps - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/offlinemaps/
+
+# Offline Maps
+
+The Offline Map component enables you to create visually appealing, engaging
+and performant geographic maps. Utilizing WebGL technologies, Offline Maps
+render quickly and smoothly which is highly beneficial when working with large
+datasets. The benefit of using Offline Maps over the standard Map component is
+that you do not need to have external access to the internet or external APIs.
+
+There are a wide range of customizations available for the Offline Map
+including adjusting styles, colors, fonts, adding custom icons and interactive
+layers (including Points, Circles, Lines, Animated Points, Heatmaps, and
+customizable Layers).
+
+The following screenshot illustrates a sample Offline Map with defined
+circles.
+
+![Screenshot](../img/offlineMaps/overview.png)
+
+The Offline Map has features that enable you to:
+
+  * Visualize and animate geographic data
+  * Visualize streaming and moving data geographically
+  * Display and interact with large quantities of data on a map
+  * Query and filter features on a map
+  * Dynamically display and style custom client-side data on a map
+  * Add points, circles, lines, and popups to maps programmatically
+  * Annotate polygons and lines on geographic data and store annotated points in view states for use in other components
+  * Lay multiple layers of data on top of each other
+
+The following sections describe how to configure the properties of the Offline
+Map. These properties are accessed by clicking and dragging the Offline Map
+component into the workspace and then updating the following properties on the
+left-hand panel.
+
+## Basics
+
+The Basics just require you to set a name for the component.
+
+![Basic properties](../img/offlineMaps/mapbasics.png)
+
+_Name_
+
+    Enter a name for the component.
+
+## Map
+
+The Map properties allow you to configure the zoom setting for the map when it
+loads latitude and longitude coordinates and the style of the map.
+
+![Map Properties](../img/offlineMaps/propertyMap.png)
+
+_Map Box Key_
+
+    This key (access token) associates API requests with a Mapbox account. This is required for online mode only.
+_Offline_
+
+    Click this to switch between offline mode and online mode. Offline mode requires no access to the internet. This must be unchecked for an Offline Map. 
+_Center Latitude/Longitude_
+
+    This sets the map center when the dashboard loads. This is defined in longitude and latitude values.
+_Zoom_
+
+    This is the initial zoom level.
+_Style Override_
+
+    
+
+When this is set, the default style is overridden with the JSON/GeoJSON (for
+Offline mode) or URL string (for Online mode) set in the style.
+
+Offline mode
+
+The map component is set with a default map style.
+
+This style uses:
+
+  1. a baked in vector and a country tile server (.pbf file) for its source.
+  2. a baked in font for the glyphs
+  3. a set of countries defined with a color scheme for the layout.
+
+These default style settings can be overridden by this property.
+
+The default properties are part of the component and no external API requests
+are needed.
+
+Online mode
+
+For Online mode we use the following default styles
+
+  * For the Dark Theme : "mapbox://styles/mapbox/dark-v11"
+  * For the Light Theme : "mapbox://styles/mapbox/light-v11" 
+
+## Points
+
+Through the Points properties you can configure a custom point image at
+specific geographic coordinate, with an option to add clustering. The
+following screenshot shows an Offline Map with clustering.
+
+![Map with points using clustering](../img/offlineMaps/demoPoints.png)
+
+The Point properties illustrated in the following screenshot are described
+below.
+
+![Point properties](../img/offlineMaps/propertyPoint.png)
+
+_Cluster_
+
+    When this is checked, grouped individual points are replaced with a numeric cluster icon. Circles outside the cluster remain displayed as individual points.
+_Load points in view_
+
+    When this is checked, the map zooms and pans to the area of the map that contains points. When unchecked, the default zoom and center point is set.
+_Data Source_
+
+    A [data source](../datasources/) that includes geographic coordinates.
+_ID_
+
+    A distinct identifier for a point.
+_Latitude / Longitude Data_
+
+    The data source columns to be used for latitude and longitude.
+_Color_
+
+    The color of the map point graphic.
+_Icon_
+
+    The shape of the map point graphic. A pointer is used by default.
+_Icon Scale_
+
+    The proportional size of the shape. A value of 1 is used by default.
+_Icon Rotation_
+
+    This sets the rotation angle of the icon from 0-360. 
+_Use Labels_
+
+    When this is checked, the Offline Map displays a label for each of the points.
+_Label_
+
+    The label displayed next to each point.
+_Label Size_
+
+    The label font size.
+_Tooltip_
+
+    When this is checked, this displays a tooltip on points mouseover.
+_Zoom on Select_
+
+    When this is checked, the map is centred and zoomed in on this point for a selected point click event.
+_Track Selected_
+
+    When this is checked, you can link/track a selected point on the map.
+
+### Selected
+
+The Selected properties relating to the Points you have configured, are shown
+in the following screenshot and described below.
+
+![Selected Properties](../img/offlineMaps/selected.png)
+
+_Color_
+
+    The color of the selected point.
+_Column_
+
+    The data source column used in the selected row(s). 
+_Selected Item_
+
+    The current selected value.
+_Annotated Items_
+
+    
+
+When annotations are enabled, as described here, you can draw a polygon around
+a set of circles or points. Once the polygon shape is drawn, the map component
+captures the corresponding coordinates and selects all point ids that exist
+within the coordinate range. These are then stored in this Annotated Items
+view state. You can then use these view state values in other components, for
+example in a data grid. If you then update the polygon, the values in the grid
+update.
+
+Selected
+
+A point is highlighted with the color specified if the Selected Item value
+equals the value for the specified Column.
+
+### Action
+
+-[Click here to read more about Actions](../action/)
+
+## Circles
+
+You can configure custom circles with clustering as illustrated in the
+following screenshot.
+
+![A map with circles showing clustering](../img/offlineMaps/demoCircles.png)
+
+The Circle properties shown in the following screenshot are described below.
+
+![Circles properties](../img/offlineMaps/propertyCircle.png)
+
+_Cluster_
+
+    When this is checked, grouped individual Circles are replaced with a numeric cluster icon. Circles outside the cluster remain displayed as individual Circles.
+_Data Source_
+
+    A [data source](../datasources/) that includes geographic coordinates.
+_ID_
+
+    A distinct identifier for a circle.
+_Latitude / Longitude Data_
+
+    The data source columns for latitude and longitude.
+_Color_
+
+    The color of the map circle graphic.
+_Radius_
+
+    The radius of the map circle graphic.
+_Stroke Color_
+
+    The border color of the map circle graphic.
+_Stroke Width_
+
+    The border width of the map circle graphic.
+_Use Labels_
+
+    When this is checked, the circle display a label for each of the circles.
+_Label_
+
+    The label displayed next to each circle.
+_Label Size_
+
+    The label font size.
+_Tooltip_
+
+    When this is checked, the circles display a tooltip when on mouseover.
+_Zoom on Select_
+
+    When this is checked, the map is centred and zoomed in on this circle for a selected circle click event.
+_Track Selected_
+
+    When this is checked, you can link/track a selected circle on the map.
+
+### Selected
+
+The Selected properties, shown in the following screenshot, are described
+below.
+
+![Screenshot](../img/offlineMaps/selected.png)
+
+_Color_
+
+    The color of the selected circle.
+_Column_
+
+    The Data Source column used in the selected row(s). 
+_Selected Item_
+
+    The current selected value
+
+Selected
+
+A circle is highlighted with the "Color" property specified if the **Selected
+Item** value equals the value for the specified **Column**
+
+_Annotated Items_
+
+    
+
+When annotations are enabled as described here you can draw a polygon around a
+set of Circles or Points.  
+Once the polygon shape is drawn, the map component captures the corresponding
+coordinates and selects all circle ids that exist within the coordinate range.  
+These coordinates are stored in this Annotated Items view state. You can use
+these view state values in other components, for example in a data grid. When
+you update the polygon on the map, the values in the grid update.
+
+### Action
+
+## Lines
+
+The Lines properties enable you to configure lines with customizable styling,
+as illustrated in the following screenshot.
+
+![A map with a line layer](../img/offlineMaps/demoLines.png)
+
+The Lines properties, shown in the following screenshot are described below.
+
+![Lines properties](../img/offlineMaps/propertyLine.png)
+
+_Load lines in view_
+
+    Positions the map , so that all points are zoomed in on and in view when the map is loaded 
+_Data Source_
+
+    A [data source](../datasources/) that includes geographic coordinates.
+_ID_
+
+    
+
+Lines are grouped by common ids.
+
+Multiple Lines
+
+To draw multiple lines from a single data source, simply group each set of
+lines by the same _ID_.
+
+_Latitude / Longitude Data_
+
+    The data source columns for latitude and longitude.
+_Color_
+
+    The color of the map line graphic.
+_Width_
+
+    The width of the map line graphic.
+_Use Labels_
+
+    When this is checked, each line displays a label.
+_Label_
+
+    The label displayed next to each line.
+_Label Size_
+
+    The label font size.
+_Current Point Index_
+
+    You can set a value or view state with the current point index and this highlights the point on the line.
+_Tooltip_
+
+    When this is checked, the Offline Map displays a tooltip when you mouseover a line.
+_Gradient_
+
+    This sets a line to a gradient color.
+
+### Colors
+
+These properties set the gradient colors for lines.
+
+![Lines properties to specify gradient
+colors](../img/offlineMaps/propertyLineColors.png)
+
+_Color_
+
+    The gradient color stop value.
+_Percentage_
+
+    The color-stop's position can be explicitly defined by using a percentage
+
+### Point
+
+These properties, shown below, set the color and size of a tracked points on
+Lines.
+
+![Lines selected point properties](../img/offlineMaps/propertyLinePoint.png)
+
+_Color_
+
+    The color of the tracked point on a line.
+_Size_
+
+    The size of the tracked point on a line.
+
+### Actions
+
+## Heatmap
+
+Heatmaps show the density of points over an area by displaying a continuous
+gradient between points.
+
+As well as being useful for visualizing point density, heatmaps also help you
+to visualize relative differences between those points. The following
+screenshot shows an example of a heatmap.
+
+![An offline map with a heatmap](../img/offlineMaps/demoHeatmap.png)
+
+The Heatmap properties, shown in the following screenshot, are described
+below.
+
+![Heatmap properties](../img/offlineMaps/propertyHeatmap.png)
+
+_Data Source_
+
+    A [data source](../datasources/) that includes geographic coordinates.
+_ID_
+
+    A distinct identifier for a point.
+_Latitude / Longitude Data_
+
+    The data source columns for latitude and longitude.
+_Weight_
+
+    This determines the weight for each individual node.
+_Tooltip_
+
+    When this is checked a tooltip is displayed when you move the mouse over points on the map.
+_Show Gradient_
+
+    When this is checked the color gradient indicator is shown.
+
+### Colors
+
+These settings, shown below, specify the gradient colors used in the Heatmap.
+
+![Heatmap colors](../img/offlineMaps/propertyHeatmapColors.png)
+
+_Color_
+
+    These allow you to set the gradient color from minimum density to maximum density.
+
+## Bounds
+
+The **Bounds** properties shown in the following screenshot are described
+below.
+
+![Bounds properties](../img/offlineMaps/propertyBounds.png)
+
+_Current Bounds_
+
+    A bound is defined by its southwest and northeast points in longitude and latitude. If you zoom in or out on the map, the current bound location is saved to this property. This is used to map selected bounds coordinates of to a [View State Parameter](../viewstateparameters/).
+_Track Point click Bounds_
+
+    When this is checked, you can track the bounds coordinates of a point when clicked.
+_Current Bounds_
+
+    This property is used to define a bounds around a point. This allow you to click on a point and draw a rectangle around the point . The width and height of the rectangle is defined by this property.
+_Current Point Bounds_
+
+    Displays the point bounds coordinates. 
+
+## Annotation
+
+The Annotation properties, shown below, enable you to add annotations to the
+map using lines or polygon shapes.
+
+![Screenshot](../img/offlineMaps/propertyAnnotation.png)
+
+_Enable_
+
+    When this is checked, you can annotate on the map, using either lines or polygons. A set of annotation controls are displayed on the left-hand side of the map.
+
+Annotation controls
+
+There are 3 options in the annotation controls.
+
+![Screenshot](../img/offlineMaps/annotationControl.png)
+
+  1. Line Draw
+  2. Polygon Draw
+  3. Delete Annotation
+
+_Filter on Draw_
+
+    This is used when you are drawing a polygon on an area of the map. When this box is checked and when you are finished drawing, all the points/circles inside the area remain and the rest of the points/circles are filtered out.
+_Zoom on Draw_
+
+    This is used when you are using a polygon to draw on an area of the map. When this box is checked the map zooms to the area after you finish drawing.
+
+### Drawing a line
+
+This section describes how to draw a line on a map to calculate the distance
+between 2 or more spots. Once the line is drawn, the distance (in kilometers)
+is shown in a popup. An example of this is illustrated in the following
+screenshot.
+
+![Line annotation](../img/offlineMaps/demoAnnotationLine.png)
+
+To draw a line annotation on an Offline Map: 1\. In the annotation control, on
+the right-hand side of the map, click on the line icon. 1\. Select the
+starting point on the map by using a left or right mouse click. 1\. You can
+click at any other point on the map to connect this line. 1\. The line is
+displayed as a yellow dashed line while editing. 1\. Once you are finished
+editing you can click on the line. This sets the line to blue.
+
+To delete a line from an Offline Map: 1\. Select the line and click on the
+trash icon in the annotations properties, on the left-hand side of the map.
+
+### Drawing a polygon
+
+This section describes how to draw a polygon on an Offline Map by selecting a
+set of points/circles. This is illustrated in the following screenshot.
+
+![Draw a polygon on a map](../img/offlineMaps/demoAnnotationPolygon.png)
+
+To draw a polygon on an Offline Map: 1\. In Preview mode, click on the polygon
+icon in the annotation controls, on the right-hand side of the map. 1\. Click
+on the map where you want to start the polygon and then click on multiple
+sections of the map to connect the polygon points. 1\. The polygon is
+displayed as a yellow dashed line while editing. 1\. Once you are finished
+editing, you can click on the line. This sets the polygon to blue.
+
+Note
+
+If **Zoom on Draw** is checked then the map zooms in on the polygon after the
+polygon is applied. If **Filter on Draw** is checked then the map only
+displays the points/circles inside the polygon shape after the polygon is
+applied.
+
+To delete a polygon: 1\. Select the polygon and click on the trash icon in the
+annotations menu.
+
+## Animated Circles
+
+These properties enable you to configure customized animated circles on your
+map, as illustrated below.
+
+![A map with animated circles](../img/offlineMaps/demoAnimatedCircles.png)
+
+The Animated Circles properties, shown in the following screenshot, are
+described below.
+
+![Animated circles properties](../img/offlineMaps/propertyAnimatedCircle.png)
+
+_Data Source_
+
+    A [data source](../datasources/) that includes geographic coordinates.
+_ID_
+
+    A distinct identifier for an animated circle. 
+_Latitude / Longitude Data_
+
+    The data source columns for latitude and longitude.
+_Color_
+
+    The color of the animated circle graphic.
+_Radius_
+
+    The radius of the animated circle graphic.
+_Use Labels_
+
+    When this is checked the map displays a label for each of the animated circles.
+_Label_
+
+    The label displayed next to each animated circle.
+_Label Size_
+
+    The label font size.
+_Tooltip_
+
+    When this is checked, the map displays a tooltip on animated circle mouseover.
+
+### Action
+
+## Icons
+
+These properties present a list of icons that have been added to the
+`css\assets\images` folder on the server. These icons, shown in the following
+screenshot, can be used by the Icon properties in the Points properties.
+
+![Icon properties](../img/offlineMaps/propertyIcons.png)
+
+## Night/Day Layer
+
+These properties enable you to add a layer to determine the region of day and
+night time based on a current date/time value, as illustrated below.
+
+![A map with a nigh/day layer](../img/offlineMaps/demoNightDay.png)
+
+The properties, shown in the following screenshot, are described below.
+
+![Night and day later
+properties](../img/offlineMaps/propertyLayersNightDay.png)
+
+_Show Layer_
+
+    Use this toggle to specify whether the map shows the Night and Day layer.
+_Current_
+
+    The current date/time value. 
+
+## Style
+
+You can use the Style properties, shown below, to override the default colors
+used in the map component.
+
+![Style properties](../img/offlineMaps/propertyStyle.png)
+
+## Layers
+
+The Layers properties, shown below, enable you to add the following types of
+layers on to your map.
+
+![Layers properties](../img/offlineMaps/layers2.png)
+
+### Data Layers
+
+A Data layer is layer that combines GeoJSON geometric coordinates with kdb+
+data. You can draw regions on the map based on GeoJSON coordinates and then
+map kdb+ data to each of these regions to create insightful visualizations.
+This enhances your ability to derive meaningful insights from complex
+geographic and tabular datasets. The following example shows unemployment rate
+data across US states. Values are highligthed in color gradient from highst
+(bright red) to lowest (bright green).
+
+![Data Layers example](../img/offlineMaps/datalayerexample.png)
+
+The Data Layers properties, shown in the following screenshot, are described
+below. ![Data layers properties](../img/offlineMaps/properties-data-
+layers.png)
+
+_DataSource_
+
+    
+
+A data source that defines the underlying dataset to be used by the Layer.
+
+_File_
+
+    Set the file name for the GeoJSON file. Files must be hosted locally in the Offline Map modules directory for example modules\OfflineMap\css\assets\layers.
+_File Id_
+
+    This is the id used in the GeoJSON file. It is used to link coordinates from the GeoJSON file with the kdb+ Data.
+_Id_
+
+    This is the ID used in the kdb+ data. It is used to link data with the GeoJSON file coordinates.
+_DataValue_
+
+    A column from the data source that is used to define the color of each of the regions.
+_Show Zero & Null Values_
+
+    When this is checked, any region that has a zero or null value is displayed. If unchecked regions with zero or null values are not displayed.
+_Tooltip_
+
+    This displays a tooltip over each map region. By default we map the color, id and value of the region
+
+A media layer allows you to add a georeferenced video or image on top of a map
+layer, as illustrated in the following screenshot.
+
+![Video overlay on a map](../img/offlineMaps/demoLayersVideo.png)
+
+The Media Layer properties, illustrated in the following screenshot are
+described below.
+
+![Media Layers properties](../img/offlineMaps/propertyLayersVideo.png)
+
+_File_
+
+    Set the file name. Files must be hosted locally in the Offline Map modules directory for example modules\OfflineMap\css\assets\layers. The file can be either a video or image file.
+_Coordinates_
+
+    
+
+Set the georeferenced coordinates
+
+Example
+
+[ [-122.51596391201019, 37.56238816766053], [-122.51467645168304,
+37.56410183312965], [-122.51309394836426, 37.563391708549425],
+[-122.51423120498657, 37.56161849366671] ]
+
+_Image_
+
+    This must be checked if the media file is an image.
+
+### Hosted Layers
+
+You can add a hosted GeoJSON layer to your maps. Each layer provides rules
+about how the renderer must draw certain data in the browser and the renderer
+uses these layers to draw the map on the screen, as illustrated below.
+
+![Overlay hosted layer](../img/offlineMaps/demoLayerHosted.png)
+
+The Hosted Layers properties, shown in the following screenshot, are described
+below.
+
+![Hosted layer properties](../img/offlineMaps/propertyLayersHosted.png)
+
+_File_
+
+    
+
+Example
+
+Files must be hosted locally in the Offline Map modules directory e.g.
+modules\OfflineMap\css\assets\layers
+
+_Properties_
+
+    
+
+The properties section defines the colors used by the layer. For example `{
+"paint": { "fill-color": "#f08", "fill-opacity": 0.4 .} }`
+
+### Simple Layers
+
+You can add a text based GeoJSON layer to the maps. Each layer provides rules
+about how the renderer draws certain data in the browser and the renderer uses
+these layers to draw the map on the screen. An example of a text file
+converted to GeoJSON is shown below.
+
+![Simple layers example](../img/offlineMaps/demoLayerSimple.png)
+
+The Simple Layers properties, shown in the following screenshot, are described
+below.
+
+![Simple Layers properties](../img/offlineMaps/propertyLayersSimple.png)
+
+_Type_
+
+    Determine the layer type (either GeoJSON or vector)
+_Data_
+
+    
+
+The data used by the layer (specified in either JSON or GeoJSON format)
+
+Example
+
+{ "type":"FeatureCollection", "features": [{ "type":"Feature", "properties": {
+"scalerank":3, "area_sqkm":1002.565, "featureclass":"Urban area" },
+"geometry": { "type":"Polygon", "coordinates":
+[[[-121.37881303595779,38.39168793390614],[-121.37881303595779,38.39168793390614],[-121.37881303595779,38.39168793390614],[-121.42144609259859,38.3858743352733],[-121.48040890184362,38.39168793390614],[-121.51616899298959,38.444811306302185],[-121.58203060594559,38.4678848333205],[-121.5930118478076,38.626428127591964],[-121.46772233771595,38.671102403308296],[-121.39491024461671,38.75068410903778],[-121.31532853888723,38.82349620213702],[-121.23913163947286,38.82349620213702],[-121.19226111538413,38.73701569269657],[-121.13750993537089,38.65836416274834],[-121.19386308478518,38.61312144627681],[-121.26453060594432,38.58219310155013],[-121.32057369676485,38.53666616470099],[-121.37881303595779,38.4933096380081],[-121.37062232143953,38.43667226821621],[-121.37881303595779,38.39168793390614]]]
+} } }] }
+
+_Properties_
+
+    
+
+The style properties used by the layer
+
+Example
+
+{ "id": "urban-areas-fill", "type": "fill", "source": "urban-areas", "layout":
+{}, "paint": { "fill-color": "#f08", "fill-opacity": 0.4 } }
+
+Asset storage
+
+To avoid having to use any external APIs - we store all our assets including
+glyphs, images, and tiles in the "css\assets\" folder inside the component
+code.
+
+MapboxGL
+
+The offline map component is built using the MapboxGL libraries.
+

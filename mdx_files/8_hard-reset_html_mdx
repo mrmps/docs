@@ -1,0 +1,97 @@
+https://code.kx.com/insights/microservices/rt/hard-reset.html
+
+# Hard reset - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/rt/hard-reset.html
+
+# RT Hard Reset
+
+A hard reset removes _all_ messages from the RT stream to allow the reliable
+transport to be restarted with an empty stream.
+
+Warning
+
+This removes all messages from the stream and can result in duplicate or lost
+data. We recommend you only use this feature if advised to do so by KX
+Support.
+
+## Hard Reset Workflow
+
+The API to execute the Hard Reset can be configured, however the default
+behavior is listed below:
+
+  1. The following directories on the PVCs are deleted:
+
+  2. The `/s/out/` logs are truncated, rather than deleted. This ensures that all messages sent prior to the reset are removed from the stream and each subscriber eventually. See note below on truncation.
+
+  3. The session number of the output merged log files being is incremented, i.e. from `log.x.y` to `log.x+1.y`
+
+  4. The RT service is restarted.
+
+Note
+
+The session number is maintained in a config map, which is managed outside of
+the PVCs.
+
+Truncating `/s/out/` directory logs
+
+The effect of truncating the out logs, is that after the reset each
+subscriber's corresponding logs will also be truncated. This ensures that all
+messages sent prior to the reset are removed from the RT and subscribe nodes.
+
+## Consequences of a Hard Reset
+
+### Duplicate data
+
+RT keeps track of what data it has processed to avoid sending duplicate data
+to a subscriber. When executing the hard reset, RT loses knowledge of what it
+has processed. Therefore, after carrying out a hard reset, RT will have no
+knowledge of what data has been replicated/merged from a publisher.
+
+If any data resides on the publisher, it will be (re)replicated back into the
+RT cluster and published on to the subscriber.
+
+To avoid duplicate data, you should take the following steps:
+
+  1. Publisher taken down
+  2. Client log files removed
+  3. Hard Reset executed
+
+Warning
+
+Taking down the publisher may result in data loss.
+
+### Data loss
+
+Data loss can become a factor if the steps above in the duplicate data section
+are followed.
+
+Beside that, data loss can be a reason for needing a hard reset. For example,
+if an internal RT log were to become corrupted, a hard reset would be required
+to get the system back to a healthy state. A hard reset would not be the cause
+of the data loss in this scenario, but a resolution to a corrupted log. This
+is similar to a tickerplant becoming corrupted, data can be recovered up to
+the point the log file was corrupted.
+
+## Triggering a Hard Reset
+
+You can call an API on the RT supervisor process running in you kubernetes
+cluster to trigger a hard reset. This only needs to be performed on one of the
+nodes in the RT cluster, RT automatically manages the orchestration of the
+hard reset across the other nodes.
+
+Details on this API are available [here](rest/hardreset.html).
+
+### Status
+
+The `reset-status` REST request can be called on any of the RT nodes in an RT
+cluster and provides the reset status of that node. This allows the user to
+identify whether the RT node is in the middle of a hard reset, or whether it
+is available for a hard reset.
+
+Warning
+
+RT can only handle one reset request at a time. If the RT pod is in the middle
+of executing a reset command, it will return to a HTTP request with a status
+of 503 (unavailable).
+

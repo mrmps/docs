@@ -1,0 +1,165 @@
+https://code.kx.com/insights/enterprise/security/backup-and-restore.html
+
+# Keycloak backup and restore - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/security/backup-and-restore.html
+
+# Backup and restore
+
+This guide provides steps for backing up authentication data from the Keycloak
+components within _kdb Insights Enterprise_.
+
+## Variables
+
+Certain variables are referenced throughout this document:
+
+name | description  
+---|---  
+`RELEASE_NAME` | Name of the Insights release  
+`ACCESS_USER` | User for Nexus  
+`ACCESS_PASS` | Password for `ACCESS_USER`  
+`KEYCLOAK_STATEFULSET` | Name of the Keycloak statefulset  
+`KEYCLOAK_POD` | Name of the Keycloak pod  
+`POSTGRESQL_PRIMARY_POD` | Name of the Postgresql primary pod  
+`POSTGRESQL_SECRET` | Name of the secret containing Postgresql passwords  
+`POSTGRESQL_USER` | User name for connecting to Postgresql  
+`POSTGRESQL_PASSWORD` | Password for `POSTGRESQL_USER`  
+`POSTGRESQL_DB` | Name of the Postgresql database  
+`POSTGRESQL_PORT_NUMBER` | Port of the Postgresql database  
+  
+The variables that must be set explicitly are:
+
+    
+    
+    export RELEASE_NAME=<release name> # consult 'helm list' if you are unsure of the release name
+    
+
+All other variables can be inferred as follows:
+
+    
+    
+    export KEYCLOAK_POD=$(kubectl get pods -l app.kubernetes.io/instance=$RELEASE_NAME,app.kubernetes.io/name=keycloak -o jsonpath="{.items[0].metadata.name}")
+    
+    export KEYCLOAK_STATEFULSET=$(kubectl get statefulset -l app.kubernetes.io/instance=$RELEASE_NAME,app.kubernetes.io/name=keycloak -o jsonpath="{.items[0].metadata.name}")
+    
+    export POSTGRESQL_PRIMARY_POD=$(kubectl get pods -l app.kubernetes.io/instance=$RELEASE_NAME,app.kubernetes.io/name=postgresql,app.kubernetes.io/component=primary -o jsonpath="{.items[0].metadata.name}")
+    
+    export POSTGRESQL_USER=$(kubectl get pods -l app.kubernetes.io/instance=$RELEASE_NAME,app.kubernetes.io/name=postgresql,app.kubernetes.io/component=primary -o jsonpath="{.items[0].spec.containers[0].env[?(@.name=='POSTGRES_USER')].value}")
+    
+    export POSTGRESQL_SECRET=$(kubectl get pod -l app.kubernetes.io/name=postgresql -o jsonpath='{.items[*].spec.containers[0].env[?(@.name=="POSTGRES_PASSWORD")].valueFrom.secretKeyRef.name}')
+    
+    export POSTGRESQL_PASSWORD=$(kubectl get secret $POSTGRESQL_SECRET -o jsonpath="{.data.password}" | base64 --decode)
+    
+    export POSTGRESQL_DB=$(kubectl get pods -l app.kubernetes.io/instance=$RELEASE_NAME,app.kubernetes.io/name=postgresql,app.kubernetes.io/component=primary -o jsonpath="{.items[0].spec.containers[0].env[?(@.name=='POSTGRES_DB')].value}")
+    
+    export POSTGRESQL_PORT_NUMBER=$(kubectl get pods -l app.kubernetes.io/instance=$RELEASE_NAME,app.kubernetes.io/name=postgresql,app.kubernetes.io/component=primary -o jsonpath="{.items[0].spec.containers[0].env[?(@.name=='POSTGRESQL_PORT_NUMBER')].value}")
+    
+
+## Backup Guide
+
+### Keycloak
+
+Keycloak uses a PostgreSQL database as its backing database. This database
+stores all of Keycloak's application data.
+
+Before performing an upgrade, it is recommended to backup the realm and the
+database.
+
+#### Backing up the realm
+
+  1. Connect to the Keycloak pod.
+    
+        kubectl exec -it $KEYCLOAK_POD -- /bin/bash
+    
+
+  2. Run Keycloak with the arguments below to export the realm.
+    
+        . /opt/bitnami/scripts/keycloak-env.sh $KEYCLOAK_BIN_DIR/kc.sh export --file /tmp/realm.json --realm insights
+    
+
+Large number of users
+
+If your Keycloak instance contains more than 500 users, export to a directory
+instead of a single file using
+
+    
+        . /opt/bitnami/scripts/keycloak-env.sh
+    $KEYCLOAK_BIN_DIR/kc.sh export --dir /tmp/export --realm insights --users different_files
+    
+
+  3. Shutdown using CTRL+C and detach from the pod using CTRL+P,CTRL+Q.
+
+  4. Copy the file to your local machine using:
+    
+        kubectl cp $KEYCLOAK_POD:/tmp/realm.json realm.json
+    
+
+The full realm now exists in `realm.json` in the current local directory.
+
+#### Backing up the database
+
+Keycloak uses a PostgreSQL database that can be backed up using `pg_dump`
+
+This can be done using the following command:
+
+    
+    
+    kubectl exec $POSTGRESQL_PRIMARY_POD -- bash -c "pg_dump --dbname=postgresql://$POSTGRESQL_USER:$POSTGRESQL_PASSWORD@127.0.0.1:$POSTGRESQL_PORT_NUMBER/$POSTGRESQL_DB" > database.sql
+    
+
+The database dump now exists in `database.sql` in the current local directory.
+
+## Restore Guide
+
+In the event of data loss, it may be necessary to restore a backup.
+
+We recommend restoring a backup on the same version of the kdb Insights
+Enterprise that is was created on.
+
+## Keycloak
+
+The Postgresql database that is used by Keycloak can be restored from a
+`pg_dump` backup as follows:
+
+  1. Set the number of replicas to 0 for the Keycloak statefulset to prevent modifications to the database while it is being restored.
+    
+        kubectl scale statefulsets $KEYCLOAK_STATEFULSET --replicas=0
+    
+
+  2. Copy the backup into the Postgresql primary pod and connect to it.
+    
+        tar cf - <backup file> | kubectl exec -i $POSTGRESQL_PRIMARY_POD -- tar xf - -C /opt/
+    kubectl exec -it $POSTGRESQL_PRIMARY_POD -- /bin/bash
+    
+
+  3. Drop the existing database.
+    
+        cat <<EOF > /opt/init.sql
+    drop database $POSTGRES_DB;
+    create database $POSTGRES_DB;
+    create user $POSTGRES_USER;
+    alter role $POSTGRES_USER with password '$POSTGRES_PASSWORD';
+    grant all privileges on database $POSTGRES_DB to $POSTGRES_USER;
+    alter database $POSTGRES_DB owner to $POSTGRES_USER;
+    EOF
+    
+    
+        # This command will prompt for a password
+    # The password for the 'postgres' user can be view in the environment variable POSTGRESQL_POSTGRES_PASSWORD
+    psql -U postgres < /opt/init.sql;
+    
+
+  4. Restore the backup (replacing  with the appropriate value).
+    
+        # This command will prompt for a password
+    # The password for the 'postgres' user can be view in the environment variable POSTGRESQL_POSTGRES_PASSWORD
+    psql -U postgres $POSTGRES_DB < /opt/<backup file>;
+    
+
+  5. Detach from the pod using CTRL+P,CTRL+Q.
+
+  6. Scale the number of Keycloak replicas back to 1.
+    
+        kubectl scale statefulsets $KEYCLOAK_STATEFULSET --replicas=1
+    
+

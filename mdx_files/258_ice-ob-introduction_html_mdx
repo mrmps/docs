@@ -1,0 +1,63 @@
+https://code.kx.com/insights/accelerators/fsi/ice-ob-introduction.html
+
+# Order Book Overview - kdb products
+
+Original URL: https://code.kx.com/insights/accelerators/fsi/ice-ob-introduction.html
+
+# KX Order Book Building for ICE® Data Accelerator Overview
+
+## Introduction
+
+The ICE Order Book Building Accelerator constructs order books from ICE® (The
+Intercontinental Exchange, Inc.®) Realtime L2 market data and persists them in
+kdb Insights Enterprise. Order Book data can be streamed directly into custom
+Realtime streaming analytic pipelines, queried using SQL, or analyzed using
+enhanced Accelerator APIs via Python or any downstream application using REST.
+
+The entire Accelerator can be configured and launched on an existing kdb IE
+installation in minutes. Quants, business users, and developers can get
+instant access to high quality ICE data, paired with the power and performance
+of kdb Insights Enterprise, all without a lengthy implementation project.
+
+![Realtime-Orderbook-View](images/ice-ob-dash.gif)
+
+## Use cases
+
+kdb Insights Enterprise + KX Order Book Accelerator can power use cases such
+as:
+
+  * **Backtesting** – Providing faster backtesting runs, which means quicker algo development iteration
+  * **Post-trade analytics and TCA** – Gain fine grained access to L2 book snapshots for execution traces and true cost analyzes. Addresses compliance needs and gives better informed order entry strategies.
+
+## Architecture and features
+
+The Accelerator delivers a scalable, performant architecture including:
+
+  * The ICE Realtime Feed Handler
+  * Pipelines for L1 Trade and Quote data ingest `icerealtime1-sp`
+  * Pipelines for L2 Quote data ingest `icerealtime2-sp` and orderbook construction `orderbook-sp`
+  * Schemas for L1 data (`Trade` and `Quote`), L2 data (`L2Quote`), and constructed order book data
+    * Snapshot formatting, with arrays of price levels in a single field `OrderBookSnapshots`
+    * Depth formatting, with order book levels on individual rows `Depth`
+  * Query and analytic APIs via the [FSI Library](fsi-lib-overview.html)
+  * An example Insight View for displaying streaming data
+  * Example Jupyter notebooks, demonstrating Python and REST API access
+
+![ICE Order Book Accelerator Architecture](images/kdbie-accel-ice-ob.png)
+
+### Further details
+
+## About ICE
+
+[ICE](https://www.ice.com/) is a Fortune 500 company that designs, builds, and
+operates digital networks that combine data, technology, and expertise to
+connect people to opportunity. They operate exchanges, including the New York
+Stock Exchange, clearing houses, and mortgage technology that help people
+invest, raise capital and manage risk across asset classes. By aligning global
+price discovery data, comprehensive reference, alternative data, events data
+(corporate actions), analytics and benchmark solutions with proprietary fixed
+income & OTC capabilities, ICE is uniquely positioned to support the
+investment community. In addition to continuous investments in technology,
+what sets ICE apart is the human capital investment of professionals to
+monitor both liquid and illiquid markets.
+

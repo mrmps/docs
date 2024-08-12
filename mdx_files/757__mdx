@@ -1,0 +1,246 @@
+https://code.kx.com/platform/stream/dw_qr_kxc_python_appendix/
+
+# KX Connect (Python) - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/stream/dw_qr_kxc_python_appendix/
+
+# KX Connect (Python) appendix
+
+Code below will work with both Python2 and Python3.
+
+## Python dependencies
+
+    
+    
+    // Core dependencies
+    pip
+    requests
+    uuid
+    sys
+    hashlib
+    datetime
+    json
+    base64
+    Crypto.Hash
+    argparse
+    
+    // Below are additionally required for CSV export and plotting
+    csv
+    matplotlib
+    numpy
+    pandas
+    
+
+## connectSample.py
+
+    
+    
+    # Import dependencies
+    import requests
+    import uuid
+    import sys
+    import hashlib
+    from datetime import datetime
+    import json
+    from base64 import b64encode
+    from Crypto.Hash import HMAC
+    from Crypto.Hash import SHA
+    import argparse
+    
+    ## Add below if you wish to call optional functions (CSV and plot export)
+    # import exportPlot
+    
+    
+    # Get input parameters
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--hp", help="enter host:port", nargs='?', const="localhost:8080", default="localhost:8080")
+    parser.add_argument("--user", help="enter username", nargs='?', const="Administrator", default="Administrator")
+    parser.add_argument("--pw", help="enter password", nargs='?', const="password", default="password")
+    parser.add_argument("--method", help="enter method name", nargs='?', const="getMem", default="getMem")
+    args = vars(parser.parse_args())
+    
+    ## Define variables
+    HTTP_HOST = "http://" + args["hp"]
+    BASE_URL = HTTP_HOST +  "/connect/api"
+    USERNAME = args["user"]
+    PASSWORD = args["pw"]
+    METHOD_NAME = args["method"]
+    METHOD_GROUP = "monPublic" # See Resource Information of Endpoint
+    METHOD_REQUEST = METHOD_NAME + "Req" # See Endoint Request
+    PARAMS = {}
+    ID = str(uuid.uuid4())
+    dateStr = datetime.now().strftime("%a, %d %b %Y %H:%M:%S ") + "GMT"
+    
+    # Define login info
+    LOGIN_URL = BASE_URL + "/auth/login"
+    LOGIN_DATA = {
+        "msg" : [{
+            "username" : USERNAME,
+            "password" : PASSWORD
+        }],
+        "type" : "LoginReq",
+        "id": ID,
+        "date" : dateStr
+    }
+    
+    # All users accessing Connect API must login before sending further requests
+    # Call login API
+    print("Making a login request to " + LOGIN_URL + " with user " + USERNAME)
+    response = requests.post(url = LOGIN_URL, verify = False, data = json.dumps(LOGIN_DATA))
+    if response.status_code != 200:
+        print("Login failed. Received response: " + str(response.status_code))
+        print("Data" + response.text)
+        quit()
+    
+    
+    # Got successful login
+    responseData = json.loads(response.text)
+    # Build REST request string
+    requestPath = BASE_URL + "/" + METHOD_GROUP + "/" + METHOD_NAME
+    # Auth is a subset of this
+    authPath = "/connect/api/" + METHOD_GROUP + "/" + METHOD_NAME
+    
+    QUERY_DATA = {
+        "type" : METHOD_REQUEST,
+        "msg" : [
+            PARAMS
+        ],
+        "id" : ID,
+        "date" : dateStr
+    }
+    
+    
+    # Content message must be hashed using MD5
+    queryMd5Str = hashlib.md5(json.dumps(QUERY_DATA).encode("UTF-8")).hexdigest()
+    
+    mimeHeader = "application/json"
+    
+    # Get session ID from login response
+    if sys.hexversion >= 0x3000000:
+        sessionId = responseData["msg"][0]["sessionId"]
+    else:
+        sessionId = responseData["msg"][0]["sessionId"].encode("utf-8")
+    
+    # Create signed input string  
+    stringToSign = "POST\n" + authPath + "\n" + USERNAME + "\n" + queryMd5Str +  \
+        "\n" + mimeHeader + "\n" + dateStr + "\n" + sessionId
+    print("Data: " + stringToSign) # Can be compared to server logs (connect.log) to confirm it matches
+    
+    # Create signature
+    if sys.hexversion >= 0x3000000:
+        hmacEncStr = HMAC.new(sessionId.encode("UTF-8"), (stringToSign.encode("UTF-8")), SHA).digest()
+        signature = b64encode(hmacEncStr).decode()
+    else:
+        hmacEncStr = HMAC.new(sessionId, stringToSign.encode("utf-8"), SHA).digest()
+        signature = b64encode(hmacEncStr)
+    print("HMAC:" + str(hmacEncStr)) # Can be compared to server logs (connect.log) to confirm it matches
+    
+    # Authorization HTTP header = username + last 5 characters of the session Id : signature value
+    authorization = USERNAME + sessionId[len(sessionId)-5:len(sessionId)] + ":" + signature
+    print("Auth:" + authorization) # Can be compared to server logs (connect.log) to confirm it matches
+    
+    headers = {
+        "Content-Type" : mimeHeader,
+        "Authorization" : authorization
+    }
+    
+    # Send REST API request
+    queryResp = requests.post(url=requestPath, verify=False, data=json.dumps(QUERY_DATA), headers=headers)
+    
+    print(queryResp.text) # This should contain results
+    
+    
+    # OPTIONAL
+    ## Checks if data is a valid JSON, then exports as CSV and plots 
+    def optFunc(data, method):
+        try:
+            json_object = json.loads(data.text)
+        except ValueError as e:
+            print("Cannot export: data is not a valid JSON")
+            return
+        else:
+            date = datetime.today().strftime("%Y-%m-%d")
+            # Column to plot
+            col = "virtual";
+            exportPlot.csvExport(data, method, date)
+            exportPlot.plotExport(method, date, col)
+    
+    
+    ## Call below if you wish to export CSV or line graph
+    # optFunc(queryResp, METHOD_NAME)
+    
+
+## exportPlot.py
+
+    
+    
+    # This file contains optional functionalities:
+    ## export data to CSV
+    ## export line graph as png
+    # Import this file to ConnectSample.py if you wish to use these functionalities.
+    
+    # Import dependencies
+    import csv
+    import matplotlib
+    matplotlib.use('TkAgg')
+    import matplotlib.pyplot as plt
+    import pandas as pd
+    
+    
+    # Export to CSV
+    def csvExport(queryResp, METHOD_NAME, date): 
+        ## Create filepath to tmp directory
+        filepath = "/tmp/" + METHOD_NAME + "_" + date + ".csv";
+    
+        ## Get the response message
+        resp_json = queryResp.json()
+        resp_data = resp_json["msg"]
+    
+        ## Open a file for reading and writing
+        response_data = open(filepath, "w")
+    
+        ## Create the csv writer object
+        csvwriter = csv.writer(response_data)
+    
+        ## Write to CSV
+        count = 0
+        for resp in resp_data:
+            if count == 0:
+                    header = resp.keys()
+                    csvwriter.writerow(header)
+                    count += 1
+            csvwriter.writerow(resp.values())
+        response_data.close()
+    
+        print("CSV export complete")
+    
+    
+    # Export line graph as image
+    def plotExport(METHOD_NAME, date, aggc):
+        ## Create CSV and image filepaths
+        csvFP = "/tmp/" + METHOD_NAME + "_" + date + ".csv";
+        imgFP = "/tmp/" + METHOD_NAME + "_" + date + ".png";
+    
+        ## Plot size
+        fig, ax = plt.subplots(figsize = (20,10))
+    
+        ## Create dataframe
+        df = pd.read_csv(csvFP, parse_dates=True)
+        df.time = pd.to_datetime(df.time, format = "%Y-%m-%d %H:%M:%S.%f")
+    
+        df.set_index("time", inplace=True)
+        df.groupby("sym")[aggc].plot()
+    
+        ax.legend(loc="best")
+        ax.set_ylabel(aggc + " usage(%)")
+        ax.set_ylim(ymin=0,ymax=100)
+        plt.title(METHOD_NAME)
+    
+        ## Save image to disk
+        fig.savefig(imgFP)
+        print("Image export complete")
+    
+        # Show on console. This needs to be below savefig()
+        # plt.show()
+    
+

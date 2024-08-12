@@ -1,0 +1,200 @@
+https://code.kx.com/dashboards/daterangepicker/
+
+# Date Range Picker - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/daterangepicker/
+
+# Date Range Picker
+
+This Date Range Picker allows users to define a date range by specifying the
+start date and the end date for a range of dates. The dates can be selected by
+either clicking on the calendar or entering text. By default, the start and
+end dates are today and tomorrow. If the current date is outside of the date
+range, it is highlighted in the calendar. The following screenshot shows a
+Date Range Picker with the date range highlighted.
+
+![Screenshot](../img/daterangepicker/daterangepicker.png)
+
+This page describes how to:
+
+## Set up a Date Range Picker
+
+  1. In the Design view, click and drag the **Date Range Picker** onto your workspace.
+
+![Add a date range picker](../img/daterangepicker/daterangepickeradd.gif)  
+
+  2. Configure the following properties for this component:
+
+## Basics
+
+The **Basics** properties, illustrated in the following screenshot, are
+described below.
+
+![Screenshot](../img/daterangepicker/daterangepickerbasics.png)
+
+_Name_
+
+    Enter a name for the component. 
+_Data Source_
+
+    
+
+You have the option to set a list of valid dates. When this is set, the list
+of dates in the data source sets the available dates presented by the date
+range component.
+
+kdb+ date
+
+The data source for this component must return values of kdb+ type "date".
+
+For example, the following kdb+/q syntax can be used to create a data source
+resulting in 365 sequential date values starting with March 1, 2024.
+
+    
+    
+        ([]
+            d: (2024.03.01 + til 365))
+    
+
+_Start Date Label_
+
+    Enter a text label to be displayed beside the first date.
+_End Date Label_
+
+    Enter a text label to be displayed beside the second date.
+_Selected Start Date_
+
+    You can specify a view state parameter of type date, datetime, or timestamp for the start date. Note that View States with time values are set to midnight.
+_Selected End Date_
+
+    You can specify a view state parameter of type date, datetime, or timestamp for the end date. Note that view states with time values are set to midnight.
+_Start Date Label Width_
+
+    This defines the width in pixels for the first field label.
+_End Date Label Width_
+
+    This defines the width in pixels for the second field label.
+_Input Field Width_
+
+    This defines the width in pixels for both input fields.
+_Input Field Orientation_
+
+    This defines the layout (horizontal, vertical) for the input fields.
+_Horizontal Alignment_
+
+    This defines the horizontal position (left, center or right) for the input fields and labels within the component boundary.
+_Vertical Alignment_
+
+    This defines the vertical position (top, middle, bottom) for the input fields and labels within the component boundary.
+_Tooltip_
+
+    This is the text description which appears when you mouse over the Date Range Picker.
+_Allow Keyboard Input_
+
+    When this is checked, you can enter dates using the keyboard.
+
+## Using the Date Range Picker
+
+You can provide input for the Date Range Picker with the mouse or keyboard:
+
+### Mouse Input
+
+To use the Date Range Picker with mouse input:
+
+  1. In Preview mode or the End-User version of the Dashboard click on the start field to open the calendar.
+  2. A calendar is displayed and its position is aligned with the start date input field. If this display includes days within the date range, those days are highlighted.
+
+![Calendar aligned to start
+date](../img/daterangepicker/calendarstartdate.png)
+
+  3. Click on the desired start date. 
+
+The start date field is updated with the selected value.
+
+A calendar is displayed and its position is aligned with the end date input
+field. If this display includes days within the date range, those days are
+highlighted.
+
+![Calendar aligned to end date](../img/daterangepicker/calendarenddate.png)
+
+  4. Click on the desired end date. The end date field is updated and the calendar closes.
+
+### Keyboard Input
+
+To use the Date Range Picker with keyboard input:
+
+  1. In Preview mode or the End-User version of the Dashboard click on the start field to open the calendar. The calendar opens for the start date. Type in the desired date.
+
+![Calendar aligned to start
+date](../img/daterangepicker/calendarstartdate.png)
+
+  2. Click on the end field or press TAB to move to the end date field. 
+
+A calendar is displayed and its position is aligned with the end date input
+field. If this display includes days within the date range, those days are
+highlighted.
+
+![Calendar aligned to end date](../img/daterangepicker/calendarenddate.png)
+
+  3. Type in the desired end date.
+
+  4. Click outside of the component, or press TAB or Enter to complete the entry. The calendar closes.
+
+## Validation
+
+This component verifies all values entered. If invalid data is entered, a
+label with a red border is displayed around the relevant input field, as shown
+below.
+
+![Data Validation error example](../img/daterangepicker/datevalidation.png)
+
+Validation occurs as you are typing, selecting a date from the calendar,
+navigating to a different area of the Dashboard, and upon initialization. If a
+value is not valid, the selected Start/End Date properties are not updated,
+and one of the error labels in the following table appears:
+
+Label | Error details  
+---|---  
+**Invalid date** | This appears when the value does not represent an actual calendar day (for example if `00` is entered for the day). If you don't correct the date, the previously held values are used.  
+**Date out of scope** | This is displayed when the date value is not in the list of available dates provided by the data source. This error label remains visible until a valid value is provided.  
+**Dates out of order** | This is displayed when the start date does not occur before the end date. This error label remains visible until the condition is corrected.   
+When you enter dates that are out of order, both input fields have the red
+border.  
+When the date selection via mouse click causes this error, you are directed to
+the opposite end of the date range and prompted to enter its value.  
+  
+## Using Date Range Picker with view states
+
+You can use the Date Range Picker to set up view state parameters which can be
+used by another component.
+
+The following example shows the Date Range Picker being used to provide the
+filter date for the data grid. The data is filtered based on the date range
+selected.
+
+![Date Range Picker providing input to a data
+grid](../img/daterangepicker/daterangepickerviewstate.gif)
+
+In the example above view state parameters have been set up for the Selected
+Start Date and Selected End Date properties in the basic properties. The data
+dialog with the 2 view states, `startDate` and `endDate`, is shown below.
+
+![Date Range Picker with 2 view state
+parameters](../img/daterangepicker/daterangepicker2viewstates.png)
+
+[Click here to read more about the view state
+dialog.](https://code.kx.com/dashboards/viewstateparameters/#view-state-
+dialog)
+
+These view states are set up as inputs to the data source query for the Data
+Grid. The `sd` and `ed` variables are defined at the start of the function.
+These are mapped to the `startDate` and `endDate` view states. This mapping is
+visible in the lower part of the data dialog, shown below.
+
+![View states passed into data source
+query](../img/daterangepicker/datarangepickerviewstatequery.png)
+
+[Click here to read more about referencing view states in the query
+editor.](https://code.kx.com/dashboards/viewstateparameters/#viewstates-in-
+query-editor)
+

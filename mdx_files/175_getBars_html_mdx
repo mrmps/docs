@@ -1,0 +1,247 @@
+https://code.kx.com/insights/accelerators/fsi/getBars.html
+
+# Overview - kdb products
+
+Original URL: https://code.kx.com/insights/accelerators/fsi/getBars.html
+
+# getBars
+
+The purpose of the `getBars` API is to quickly and efficiently retrieve
+aggregate values from large tick databases. It provides high performance for
+large window aggregation queries.
+
+The `getBars` API is used to retrieve data for pre-aggregated bars. The API
+operates against pre-aggregated and persisted time-bar analytics, which allows
+for faster and less intensive queries on certain granularity units.
+
+As such, the `getBars` API works only on historical, aggregated data that has
+already been generated. How to customize the aggregated data generated is
+outlined here [customizing Data for use with
+getBars](generateGetBarsData.html).
+
+qREST
+
+Gateway URL
+
+The `gw` variable below is defined as an IPC connection to the Service
+Gateway. For example `:insights-qe-gateway:5050 would connect to the query
+environment gateway within an insights namespace.
+
+    
+    
+    // API arguments dictionary.
+    
+    args: (!) . flip (
+        (`table;            `Trade);
+        (`startTS;          (.z.d-1)+09:00:00.000);
+        (`endTS;            (.z.d-1)+23:00:00.000);
+        (`idList;           `AMD);
+        (`analytics;        `minFirstPrice`sumLastPrice`maxAvgPrice`sumMedPrice);
+        (`granularity;      1);
+        (`granularityUnit;  `hour)
+        )
+    
+    opts:()!()
+    last gw(`getBars;args;`callback;opts);
+    
+    eventTimestamp                instrumentID minFirstPrice sumLastPrice maxAvgPrice sumMedPrice
+    ---------------------------------------------------------------------------------------------
+    2023.04.24D09:00:00.000000000 AMD          74.13         745.29       75.05       745.26
+    2023.04.24D10:00:00.000000000 AMD          73.3          523.86       75.58       523.875
+    2023.04.24D11:00:00.000000000 AMD          73.3          526.35       75.73       526.335
+    2023.04.24D12:00:00.000000000 AMD          75.65         378.8        75.92       378.79
+    2023.04.24D13:00:00.000000000 AMD          75.8          834.7        75.99       834.705
+    2023.04.24D14:00:00.000000000 AMD          73.15         678.62       75.735      678.655
+    ...
+    
+
+Gateway URL
+
+The `$INSIGHTS_URL`, `$INSIGHTS_CLIENT_ID`, `$INSIGHTS_CLIENT_SECRET`
+variables should point at your kdb Insights install.
+
+    
+    
+    INSIGHTS_TOKEN=`curl -s --header "Content-Type: application/x-www-form-urlencoded" \
+        -d "grant_type=client_credentials&client_id=$INSIGHTS_CLIENT_ID&client_secret=$INSIGHTS_CLIENT_SECRET" \
+        "${INSIGHTS_URL}/auth/realms/insights/protocol/openid-connect/token" | jq -cr ".access_token"`
+    
+    DATA=`curl -s -X POST "${INSIGHTS_URL}/servicegateway/fsi/getBars" \
+        -H "Content-Type: application/json" \
+        -H "Accept: application/json" \
+        -H "Authorization: Bearer $INSIGHTS_TOKEN" \
+        -d "$(jq -n \
+            '{
+                table           : "Trade",
+                startTS         : "2023.04.24D09:00:00.000000000",
+                endTS           : "2023.04.24D23:00:00.000000000",
+                idList          : "AMD",
+                analytics       : ["minFirstPrice","sumLastPrice","maxAvgPrice","sumMedPrice"],
+                granularity     : "1",
+                granularityUnit : "hour"
+            }' | jq -cr .)"`
+    
+    echo $DATA | jq -cr '.payload'    
+    
+
+When issuing an IPC request, synchronous requests return a tuple where the
+first element is the response payload and the second is the response data. See
+the [asynchronous
+requests](https://code.kx.com/insights/1.4/api/database/query/get-
+data.html#asynchronous-requests) section for how to use the callback parameter
+to get an asynchronous response. See the [extended
+options](https://code.kx.com/insights/1.4/api/database/query/get-
+data.html#extended-options) section for how to use the options like timeouts
+for your IPC call.
+
+## Parameters
+
+`getBars` inherits arguments from `getTicks` and `getStats` with some
+exceptions;
+
+name | required | type | default | example | description  
+---|---|---|---|---|---  
+table | yes | symbol | N/A | `Trade | Name of table to retrieve aggregations for.  
+startTS | yes | timestamp | -0Wp | .z.p-1D | Inclusive start time of period of interest. It is recommended that this field is always used to limit scope of data in the response and to maximize query efficiency.  
+endTS | yes | timestamp | 0Wp | .z.p | Exclusive end time of period of interest. It is recommended that this field is always used to limit scope of data in the response and to maximize query efficiency.  
+inputTZ | no | symbol | UTC | `America/New_York | Timezone of startTS and endTS, UTC if not provided.  
+outputTZ | no | symbol | UTC | `America/New_York | Timezone of output timestamp columns, UTC if not provided.  
+groupBy | no | symbol[] | identifier column | `exch | List of columns to group aggregation result by.  
+fill | no | symbol | () | `forward | Will fill the outbound result after aggregation. Using any fill will "rack" the data, giving rows for windows that did not happen. Options are `null`zero`forward`linear`linearStep  
+temporality | no | symbol | `snapshot | `slice | Sets the range of data in view for each day within the query. Support two types of temporality: `snapshot (default) which takes a continuous range of the data, and `slice which returns data within the startTS and endTS dates that is between the times defined in the slice argument.  
+slice | no | symbol | () | (0D12:00:00;0D13:00:00) | Sets the time range to grab between each date in the startTS and endTS range when using a temporality of slice.  
+sortCols | no | symbol[] | () | (`desc;`instrumentID) | Columns to sort (ascending) result data on.  
+granularity | no | integer | 1 | 30 | Size of the time bucket for the aggregation. Used in conjunction with granularityUnit  
+granularityUnit | no | symbol | N/A | `minute | Unit of the time bucket for the aggregation. Used in conjunction with granularity. Options are `minute`hour`day`week`month  
+analytics | no | symbol[] | () | `maxAvgPrice | A list of symbols for analytics to apply. See Analytics section for more detail.  
+idList | no | symbol[] | ` | `A`B`C | List of identifiers to select.  
+  
+See the [getStats](getStats.html) and [getTicks](getTicks.html) documentation
+for detailed examples of use.
+
+### Paramater Differences Compared to `getTicks` and `getStats`
+
+  * `analytics` and `granularity/granularityUnit`
+
+There are subtle differences in the valid inputs for analytics and
+granularity/granularityUnit, see corresponding sections below for details.
+
+The `getBars` API queries pre-aggregated bars so specific filters differing
+from the default are not supported.
+
+This could be used but the pre-aggregated data has already been grouped by the
+identifier column.
+
+Specifying aggregations in the `getBars` API is not supported. Any custom
+aggregations required can be generated if configured [custom
+aggregations](generateGetBarsData.html#adding-custom-aggregations)
+
+The buckets that the `getBars` API is querying have already been generated, as
+such applying a modifier at query time is not supported.
+
+Currently only supported by the `getStats` API.
+
+The buckets that the `getBars` API is querying have already been generated
+using the default parition time column, as such using a different time column
+at query time is not supported.
+
+The pre-aggregated data has already been generated using the identifier
+column, as such using a different id column at query time is not supported.
+
+## Analytics
+
+The purpose of the `getBars` API is to quickly and efficiently retrieve
+aggregate values for fields from configured tables.
+
+The API queries pre-calculated stats for the configured tables. These stats
+are updated at the end of every day.
+
+The pre-calculated values available to `getBars` are generated using analytics
+that are common to the `getStats` analytics, for example, sumPrice, sumVolume,
+firstPrice, lastPrice, and so on, although there are some exceptions.
+
+These analytics are built dynamically. Generic operations `(`first;`last)` are
+applied to all columns, and numerical operations `(`min;`max;`avg;`sum;`med)`
+are applied where applicable based on the table schema. The naming convention
+is the aggregate keyword and the column to which it is applied. For example,
+avgPrice is equivalent to `(avg;`price)`.  [getStats](getStats.html#analytics)
+
+The `getBars` API then calculates aggregations from these pre-calculated
+aggregations, for example, firstSumPrice.
+
+The aggregate values are pre-calculated at 1-minute and 1-day granularity,
+allowing `getBars` to support user specified granularity units  Granularity.
+
+Due to this user-defined granularity level, `getBars` often returns
+aggregations of aggregations, so this should be considered when values are
+returned from `getBars`.
+
+The full list of aggregations available to the `getBars` API can be seen using
+the `.fsi.bar.tableFunctions` variable. For the `Trade` table this would be:
+
+    
+    
+    key .fsi.bar.tableFunctions`Trade
+    
+    tradeCount                     firstMinExchTime        firstMedVolume                lastLastTradedExchange  lastSumVolume
+    firstFirstEventTimestamp       firstMinPrice           firstMedSequenceNumber        lastLastSequenceNumber  lastSumSequenceNumber
+    firstFirstInstrumentID         firstMinVolume          firstMedAccVol                lastLastAccVol          lastSumAccVol
+    firstFirstExchTime             firstMinSequenceNumber  firstMedTickCount             lastLastTickCount       lastSumTickCount
+    firstFirstPrice                firstMinAccVol          firstVWAP                     lastLastExecutionID     lastMedEventTimestamp
+    firstFirstVolume               firstMinTickCount       firstTurnover                 lastLastSrcSys          lastMedExchTime
+    firstFirstConditions           firstMaxEventTimestamp  firstTWAP                     lastMinEventTimestamp   lastMedPrice
+    firstFirstNormalisedCondition  firstMaxExchTime        firstTradeCount               lastMinExchTime         lastMedVolume
+    firstFirstTickDirection        firstMaxPrice           lastFirstEventTimestamp       lastMinPrice            lastMedSequenceNumber
+    firstFirstTradedExchange       firstMaxVolume          lastFirstInstrumentID         lastMinVolume           lastMedAccVol
+    firstFirstSequenceNumber       firstMaxSequenceNumber  lastFirstExchTime             lastMinSequenceNumber   lastMedTickCount
+    firstFirstAccVol               firstMaxAccVol          lastFirstPrice                lastMinAccVol           lastVWAP
+    firstFirstTickCount            firstMaxTickCount       lastFirstVolume               lastMinTickCount        lastTurnover
+    firstFirstExecutionID          firstAvgEventTimestamp  lastFirstConditions           lastMaxEventTimestamp   lastTWAP
+    firstFirstSrcSys               firstAvgExchTime        lastFirstNormalisedCondition  lastMaxExchTime         lastTradeCount
+    firstLastEventTimestamp        firstAvgPrice           lastFirstTickDirection        lastMaxPrice            minFirstEventTimestamp
+    firstLastInstrumentID          firstAvgVolume          lastFirstTradedExchange       lastMaxVolume           minFirstExchTime
+    firstLastExchTime              firstAvgSequenceNumber  lastFirstSequenceNumber       lastMaxSequenceNumber   minFirstPrice
+    firstLastPrice                 firstAvgAccVol          lastFirstAccVol               lastMaxAccVol           minFirstVolume
+    firstLastVolume                firstAvgTickCount       lastFirstTickCount            lastMaxTickCount        minFirstSequenceNumber
+    firstLastConditions            firstSumEventTimestamp  lastFirstExecutionID          lastAvgEventTimestamp   minFirstAccVol
+    firstLastNormalisedCondition   firstSumExchTime        lastFirstSrcSys               lastAvgExchTime         minFirstTickCount
+    firstLastTickDirection         firstSumPrice           lastLastEventTimestamp        lastAvgPrice            minLastEventTimestamp
+    firstLastTradedExchange        firstSumVolume          lastLastInstrumentID          lastAvgVolume           minLastExchTime
+    firstLastSequenceNumber        firstSumSequenceNumber  lastLastExchTime              lastAvgSequenceNumber   minLastPrice
+    firstLastAccVol                firstSumAccVol          lastLastPrice                 lastAvgAccVol           minLastVolume
+    firstLastTickCount             firstSumTickCount       lastLastVolume                lastAvgTickCount        minLastSequenceNumber
+    firstLastExecutionID           firstMedEventTimestamp  lastLastConditions            lastSumEventTimestamp   minLastAccVol
+    firstLastSrcSys                firstMedExchTime        lastLastNormalisedCondition   lastSumExchTime         minLastTickCount
+    firstMinEventTimestamp         firstMedPrice           lastLastTickDirection         lastSumPrice            minMinEventTimestamp
+    ...
+    
+
+### Complex and Custom Analytics
+
+Aggregations of complex named analytics or any custom named aggregations can
+also be queried using `getBars`, for example, firstVWAP in the above list. For
+more details on complex named analytics and custom named aggregations see
+[getStats](getStats.html#analytics)
+
+Custom aggregations can be generated to be available for `getBars` to query
+[custom aggregations](generateGetBarsData.html#adding-custom-aggregations)
+
+## Granularity and granularity unit
+
+The granularity is the size of the time bucket for the aggregation and is used
+in conjunction with granularityUnit. The granularityUnit is the unit of the
+time bucket for the aggregation. As `getBars` uses pre-aggregated time bars,
+the supported granularity units are restricted; however, performance is
+improved as a result. The supported granularity units are:
+
+  1. minute
+  2. hour
+  3. day
+  4. week
+  5. month
+
+Specify the size of bars by setting granularity and the granularity units, for
+example, a granularity of three and a granularity unit of day will give 3-day
+buckets within the time window. Similarly, for supported granularity units
+minute/hour/day/week/month within the specified time window.
+

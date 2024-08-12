@@ -1,0 +1,392 @@
+https://code.kx.com/dashboards/luna/
+
+# Luna - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/luna/
+
+# Luna
+
+Kx Luna is a high-performance temporal geospatial visualisation component.
+
+## Features
+
+Luna is a high performance in-browser rendering solution for massive temporal
+geospatial data. It is capable of rendering 100,000+ primitives fully
+scrubbable across time.
+
+  * High-performance 60FPS/120FPS rendering of both temporal and static geospatial data
+  * Capable of showing 100,000+ tracked objects on-screen with fluid temporal scrubbing
+  * Websocket support for high-velocity real-time pubilshed data streams
+  * Multiple stacked/overlaid and temporally-linked layers, each depicting points across time
+  * Points/markers may be represented as icons/glyphs/markers with position and rotation
+  * Layers are individually interactive, enabling temporal tracking of multiple objects-of-interest
+  * Objects-of-interest selections are synchronised between Luna and View State, to tie maps to other components e.g. tables of data
+  * Labels for objects-of-interest can be updated in real-time via Websockets for e.g. captioning, threat status
+  * Time representation t in Luna synchronised to View State, for use in queries in other components e.g. tables/charts
+
+# Architecture
+
+Luna for Kx Dashboards comprises:
+
+  * Luna for Kx Dashboards component
+    * An embedded version of Luna which runs inside of Kx Dashboards
+  * Related Q code on the kdb+ server which exposes the .luna namespace and functions used in this document, for rendering temporospatial data to Luna's internal blob format. In Kx Dashboards Direct the q code can be found in `dash/sample/luna.q`.
+
+# Key Concepts
+
+## Layers
+
+Each Layer in Kx Luna comprises a single temporal geospatial dataset. You can
+have multiple Layers loaded at the same time, and scrubbing through time
+(using the timeslider in the bottom-centre of the scren) will you render all
+objects across all visible Layers, for that timestep.
+
+In the top-right of the screen are your Layer interaction buttons, followed by
+a drop down menu for Layer configuration options.
+
+### Layer Interaction and Object Selection
+
+Each currently visible Layer has an associated Layer Interaction button in the
+top-right of the screen. Clicking this makes interactions with objects on-
+screen happen in the context of that Layer. Click the Layer Interaction
+button, and then click on an on-screen object to select it. The object is now
+selected, and be visually distinguished. This selection will be retained even
+if the object moves during scrubbing. The selection is local to the Layer, and
+you can have other objects selected in other Layers at the same time.
+
+Once an object is selected, the SelectedObjectId field in the Luna Layer is
+updated with the new id value. See the View States for more information on
+utilising this feature.
+
+### Layer Configuration (Runtime)
+
+In the top-right of the screen is a chevron which may be clicked to show the
+loaded Layers and their Properties (note: this is separate to the Luna
+Configuration in Design mode of Kx Dashboards). These panels are for runtime
+configuration of the Layers, and - depending on Layer Type - will show e.g.
+visibility, opacity, point size and other configuration variables which assist
+in correlating the on-screen data across layers, visually. You can also remove
+Layers at runtime, though this only affects your current session and they will
+re-appear on reload.
+
+## View States
+
+View States can be used to tie Luna and Kx Dashboards properties together,
+such that one affects the other (bi-directionally). Values exposed include the
+global map time (t), and per-layer selectedObjectId.
+
+### View States - Time (global)
+
+Kx Dashboard's Luna component exposes time (t) as a View State for
+synchronisation of other components (e.g. tables/charts) to the Luna time-
+slider on scrubbing.
+
+  * Design > Luna > Time 
+  * Add a new View State by pressing the "eye" icon
+  * New > "t" (or another name) > Type string
+  * To test, add another field e..g Input Text and set its Text attribute to the same View State
+  * On scrubbing the time slider on the Luna map, the time will stay synchronised
+  * You can use this to update other tables by using your new View State attribute in Data Source queries
+
+### View States - selectedObjectId (per layer)
+
+By using a View State variable to this property, you can have an item selected
+in Luna synchronise to a table row in another component, as well as causing
+the selection of a row in a table, cause the corresponding object on the map
+to be selected.
+
+### View States - Latitude, Longitude, Zoom
+
+At Luna load time, the ILatitude, ILongitude and IZoom fields are used to
+position the initial map co-ordinates. Once loaded, panning and zooming of the
+map will update the Latitude, Longitude and Zoom fields (note: sans
+"I"-prefix). Binding these properties to a View State allows you to use these
+values elsewhere in the Dashboard, as well as re-positioning the map in
+response to triggers.
+
+## Layer Types
+
+There are multiple Luna Layer Types for rendering different types of data,
+including points/icons, line segments, polygons and others however in the
+current release only points/icons are exposed to the user.
+
+## Layer Modes
+
+There are three types of Layer Modes in Kx Luna: Layers, Live Layers and
+(deprecated) Baked Layers.
+
+Static Layers (configured via the "Data Source" field) are populated by a
+query (which may or may not be polled/refreshed on a timer, or updated in
+response to a field change). The query results populate the Timeline in
+entirety on each poll, and the timeline is flushed beforehand.
+
+Live Layers (configured via the "Data Source (Live)" field) are populated via
+a streaming WebSocket connection to the Kx Dashboards server, using `u.q`.
+They additively "top up" the timeline with new data, typically adding just-in-
+time / real-time timesteps.
+
+Data Source is used for initial and just-in-time loading, for example in
+response to altering a time selection component on the canvas, which could
+cause the Luna map to show a new temporal range. Any time the Data Source is
+polled either initially on-load, or by a user clicking e.g. a query button
+tied to a View State dependency, the existing Luna timeline is flushed and the
+Data Source re-queries and populates as much of the timeline as it can.
+
+If the user scrubs to the extreme right of the Luna timeline, this engages the
+Live Layers Real-time mode. A blinking red dot next to the scrubber will
+indicate that it is active. In this mode, the "Data Source (Live)" is used for
+subsequent (polling or streaming) updates which are smaller (timestep-by-
+timestep), and which are additive to the timeline.
+
+Live Layers Real-time mode is activated for all Layers simultaneously where
+Streaming Data Sources are configured. New data from the Streaming Data Source
+will be displayed immediately, and the timeline updated, with the time
+scrubber anchoring to the far-right to show the latest data. To disengage, the
+user simply scrubs the slider elsewhere in the timeline (note: new data will
+not subsequently be added to the timeline until Live Layers Real-time mode is
+re-engaged, at present).
+
+Static and Live Layers can be used together, or separately depending on your
+use case. Initial load can also be done using the Live Layers stream, without
+needing to use a Static Layer query.
+
+It is common to utilise both Layers and Live Layer modes simultaneously, the
+former for the initial load of data (or in response to a time range
+selection), and the latter for real-time situational awareness. Live Layers
+are engaged by scrubbing to the far-right of the timeline.
+
+Luna Baked Layers are a (deprecated) off-line pre-processed format that are
+delivered via static assets (not queries) to the Luna client, and are outside
+the scope of this document.
+
+## Annotations
+
+Annotations are another data source configured per-Layer, which are used for
+individual Object labels presented on the Map. They are delivered through a
+discrete data source enabling them to be updated in real-time, either through
+a streaming query or polling, without requiring the same interval/push of
+timeline data.
+
+# Adding Luna to the Kx Dashboards Canvas
+
+  * Enter Design mode in Kx Dashboards
+  * Drag & Drop the Luna component onto the canvas and size appropriately, if you have not done already
+  * Click on the Luna component and modify the configuration parameters on the right
+  * Optionally set a Title and Subtitle (shown in the bottom-left of the map)
+  * Click on the Eye icon in the Time field and add a new View State "Time" of type Float (Luna will update this View State when you scrub the time-slider, which you can then use to update other components on your Dashboard)
+  * Flip to Preview and pan and zoom on the map to the location of initial interest
+  * Switch back to Design mode and copy-paste the Latitude, Longitude and Zoom values to the ILatitude, ILongitude and IZoom fields respectively – this will set the initial location of the map each time the Dashboard loads (see the View States section for run-time use of these properties)
+
+# Adding a Layer
+
+In this example, we will add a Layer to the Luna map making use of both Static
+and Live Layers functionality.
+
+Luna Live Layers allow you to stream data using Kx Dashboards
+queries/analytics to the Luna component running client-side, both for initial
+load (or just-in-time historical query) and streaming/polling updates.
+
+Decide on the type of Layer (e.g. Points), and add your Layer as follows:
+
+  * Add the Layer by opening the "Layers" section in parameters and clicking "+"
+  * Set the Name to a name that will be shown on the map (used for presentation only)
+  * Set the Type to the relevant Layer Type (e.g. Points)
+  * Prepare your input table using the relevant section of 4.5.1 and configure your new Layer with any additional parameters that may be mentioned.
+
+## Layer Type: Points
+
+### Additional Layer configuration options
+
+  * The sprites/icon/marker used for each object is selected from your input table's spriteidx column, and configured in the Layer component. The spriteidx can be changed in your dataset from timestep to timestep. You may use any of the following as the value in the configuration:
+  * A Font Awesome Free v5 Icon Name and optional colour e.g. fa-car green [https://fontawesome.com/v5/search?q=car&m=free](https://fontawesome.com/v5/search?q=car&m=free)
+  * A relative path to an image file e.g. circle.png (relative to /modules/Luna/luna/assets/)
+  * Empty, which will use the default icon (dot.png)
+
+### Data Preparation
+
+Prepare your input tables as follows.
+
+#### Object Data
+
+The table must contain at least the following columns:
+
+  * t (timestamp) – Object was at lat,lng at time t
+  * id (long) – Unique numerical ID for each object
+  * lat (real) - Latitude
+  * lng (real) – Longitude (note: "lng", not "long")
+  * heading (real) – Heading/angle (in degrees)
+  * spriteidx (integer) – The index of the icon/sprite to use
+
+Each row should represent a single object's positional co-ordinate in time
+(but you do not necessarily need to represent all objects at every timestep).
+
+    
+    
+    / Load the Luna transform functions
+    \l dash/sample/luna.q
+    
+    n:32; / Number of objects
+    s:30.0; / Perturbation for lat/lng
+    / Generate a single timestep/timeslice of n objects at random lat/lng/spriteidx
+    tdf:([]id:til n;t:n#.z.p;lat:`float$(n?s)+(n#-24.980184016155846);lng:`float$(n?s)+(n#132.99999999999932);heading:`float$n?360.0;spriteidx:`int$n?til 4);
+    
+    df:tdf;
+    
+    / Using the above as a template, generate 64x more timesteps
+    {df2:tdf;df2:update t:(first exec max t from df)+0D00:00:01,lat:`float$(n?s)+(n#-24.980184016155846),lng:`float$(n?s)+(n#132.99999999999932),heading:`float$n?360.0 from df2; df::df,df2} each til 64
+    
+    / Add random 6-letter callsigns for each object
+    anno:([]id:til 32;anno:{x;6?.Q.A}'[til 32]);
+    
+    / Ensure we have a sequential id for each object
+    df:update id:((distinct df`id)!(til count distinct df`id))[id] from df;
+    
+    / Use table2layer_raw to generate layer metadata and pivot the temporal table into by-timestep rows
+    .luna.layer:.luna.table2layer_points[df]
+    
+    / You then use .luna.data2blob to encode Luna blobs from the by-timestep rows
+    / This can be done at query time, or to publish to a stream
+    blobs:select time:t,blob:.luna.data2blob each data from .luna.layer`data
+    
+
+Is it important for Luna, that the id of your objects is sequential and
+contiguous (no gaps). If it is not you should map your id's to a sequential
+counterpart. Assuming a table `df`:
+
+    
+    
+    / Ensure we have a sequential id for each object
+    df:update id:((distinct df`id)!(til count distinct df`id))[id] from df;
+    
+
+This would create a sequential id column in `df` mapping to each of your
+original id's.
+
+Each `t timestep in your table represents a slice of time that will be
+delivered to the Luna client. It is not necessary in this example, but you
+should snap and quantise your times to a regular cadence (e.g. `df:update
+time:0D00:00:30 xbar time from df`) so as to limit the total number of slices.
+
+Note: The resident set size of data loaded into Luna is limited only by
+browser GPU VRAM, though we suggest a resident limit of 10,000 slices. This is
+a somewhat arbitrary limit equating to a reasonable download time of all
+slices for a Points layers, assuming an interactive initial-load time at load
+with typical bandwidth. In a LAN or high-bandwidth WAN environment this could
+be substantially increased.
+
+The spriteidx field, Luna will use the related iconography for your object
+based on the this value. It is an integer which maps to the icon/sprite
+configuration of your component as configured in Kx Dashboards.
+
+### Data Source Configuration
+
+#### Data Source aka Static Layers
+
+Now that your input table is ready, we need to pivot it such that each row
+represents one timestep. The id,lat,lng,heading,spriteidx values for that
+timestep will be encoded into a single binary blob. Assuming an input table
+`df` prepared as above (and having loaded `dash/sample/luna.q`), you can run:
+
+`.luna.layer_df:.luna.table2layer_points[df]`
+
+In your `Data Source` field set the query to `blobs` and tick Enable, you
+should now see your data displayed on the Luna map.
+
+#### Data Source (Live) aka Live Layers
+
+Live Layer data sources can be configured with a query or a streaming query.
+
+If a query, each successive poll of the query will add the resulting timesteps
+to the tail end of the timeline. In the example above, you could simply
+configure it with `enlist last blobs` and on each successive poll, the last
+timestep will be duplicated on your timeline.
+
+If a streaming query, the ring buffer will return all timesteps on-load,
+populate the tail end of the timeline, and subsequent publishes to the stream
+will be additive to the timeline.
+
+A separate example (unrelated to the above) running inside of Dashboards
+Direct `demo.q` streams (and loops) on a temporal geospatial Luna table
+(`.luna.layer`) previously generated by e.g. `.luna.table2layer_points` to a
+stream called `.stream.luna`:
+
+    
+    
+    lunaI:0-1;
+    luna:100000#([]time:`timestamp$(); blob:());
+    lunaJ:0j;
+    lunaGen:{
+    lunaJ::$[lunaJ\>(count .luna.layer`data);0;1+lunaJ];
+    blob:.luna.layerts2blob[.luna.layer;lunaJ];
+    lasttransmit::blob;
+    res: enlist `time`blob!(.z.p;enlist blob);
+    .ringBuffer.write[`.stream.luna;res;lunaI+:1];
+    res
+    }
+    
+
+Note: currently Luna expects the data presented by the Streaming Data Source
+to be timely i.e. having occurred recently in real-time, and ignores any time
+values presented (overriding them with the current .z.p). This will be changed
+in a future update.
+
+In the above, periodically (\t) lunaGen is called, which publishes a blob to
+the stream. The blob is generated by .luna.layerts2blob, and holds all of the
+geospatial data for a single time-slice or "moment in time". When the
+associated Luna Layer in Kx Dashboards - which is subscribed to the stream –
+is inLive Layers Real-time mode and receives new data, it will be appended to
+the resident set in the browser. Should browser memory pressure occur, the
+oldest timesteps on the Luna timeline will be purged.
+
+As an aside, both Data Sources can also be set to use a Polling or Streaming
+query in Kx Dashboards. Polling on a timer can be useful for e.g.
+automatically refreshing maps, without having to setup streaming queries. In
+the case of a stream, a previously published u.q stream can be selected. This
+stream must have at a minimum the id,lat,lng,spriteidx columns.
+
+#### Annotations
+
+Annotations are used to show per-Object labels (currently only on those
+selected) on the Luna map. Create a separate table for these annotations, a
+simple id to annotation map e.g.
+
+    
+    
+    / Add random 6-letter callsigns to each object
+    anno:([]id:til 32;anno:{x;6?.Q.A}'[til 32]);
+    
+
+If you set the Annotations data source to a polling or streaming query, the
+labels can be updated in real-time in kdb+ and will immediately be shown on
+the Luna map. The table is accessed directly and does not need to be encoded
+further.
+
+# Advanced Development
+
+## Layer Blobs
+
+To fully understand how Luna Layers are rendered you should be familiar with
+3D graphics programming, shaders and THREE.js. Luna uses a combination of
+custom-developed shaders and THREE.js (<https://threejs.org/>).
+
+The .luna files or blobs generated by luna.q are packed binaries of vertices,
+which will be interpreted and rendered differently depending on the underlying
+Layer type.
+
+You can inspect the packed 4-byte real floats for a blob of type Points like
+this:
+
+    
+    
+    q) 0N 4#first (enlist "e";enlist 4) 1: `:tutorial1/tutorial1\_3503x16x8\_0000.luna
+    235.4631805419922 153.6441192626953 153.6441192626953 1
+    23 0848693847656 157.095947265625 157.095947265625 1
+    210.3829956054688 152.2342224121094 152.2342224121094 1
+    235.1441802978516 144.9589538574219 144.9589538574219 1
+    …
+    q)
+    
+
+For example, a layer of type Points expects each slice to contain successive
+vectors of 4x 4-byte real floats representing x,y,z,w (for each object).
+

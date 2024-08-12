@@ -1,0 +1,30 @@
+https://code.kx.com/insights/microservices/rt/rest/softreset.html
+
+# Soft reset - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/rt/rest/softreset.html
+
+# Soft reset
+
+This API allows you to restart the sequencer without losing any messages
+because the soft reset ensures RT retains the knowledge of what has been
+replicated/merged from a publisher.
+
+Note
+
+The [soft reset](../soft-reset.html) guide contains all the technical details.
+
+To call the REST API, you can use:
+
+## Response
+
+The response includes a response header and a payload, where the payload
+members are:
+
+member | type | description  
+---|---|---  
+hostname | string | The name of the sequencer node to reset.  
+status | string | Success/unsuccess status of the call.  
+  
+## Example
+

@@ -1,0 +1,81 @@
+https://code.kx.com/dashboards/playback/
+
+# Playback - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/playback/
+
+# Playback
+
+![Screenshot](../img/playback/playbackhtmllight.jpg)  
+_A Bar Chart with a Playback component_
+
+Replays time-series data in Data Grid and charting components
+
+## Set up
+
+  1. Set a data source with a time series component.
+
+  2. Assign a view state to _Selected Value_ for selected time.
+
+  3. Set the _Time Column_ from the data source.
+
+  4. Set the _Interval Time_ to define update frequency on playback. 
+
+## Basics
+
+![Screenshot](../img/playback/playbackmenu.png)
+
+_Name_
+
+    A name for the component provided by the user. 
+_Data Source_
+
+    A [data source](../datasources/) containing a time series (number, dates or timestamps), shared with the component being played back. 
+_Selected Value_
+
+    A [View State Parameter](../viewstateparameters/) for the time series.
+_Selected Column_
+
+    An Integer or temporal column from the _Data Source_ , used in playback sequence.
+_Time Column_
+
+    A temporal column from the _Data Source_ (can be the _Selected Column_).
+_Mode_
+
+    Governs the rate of replay: in `Event` mode, each event is one unit; in `Time` mode, units are temporal.
+_Speed Controls_
+
+    
+
+When checked, offers a choice of replay speeds.
+
+![Screenshot](../img/playback/speedcontrolhtmllight.jpg)
+
+_Multi Controls_
+
+    
+
+When checked, offers fast-forward and rewind.
+
+![Screenshot](../img/playback/multicontrolshtmllight.jpg)
+
+_Max Overall Time_
+
+    Upper limit in data points (of the _Time Column_ , e.g. seconds, nanaoseconds) for replay based on _Selected Value_ View State Parameter.
+_Interval Time_
+
+    Sampling interval of the _Selected Value_ View State Parameter: values above `1` will skip data points; e.g. a value of `2` will use every second data point of the _Selected Value_ View State Parameter.
+_Speed_
+
+    Define default speed for playback.
+_Playing_
+
+    Define for playback: `0` is static, `1` plays forward, `-1` plays backwards. Multiples, e.g. `4` will play at x4 speed. 
+_Display Warning Message_
+
+    Support messaging enabled.
+
+## Margins, Style and Format
+
+[Style](../style/#component-style) for common settings
+

@@ -1,0 +1,277 @@
+https://code.kx.com/insights/enterprise/infrastructure/docs/kxi-terraform-azure.html
+
+# Configure a kubernetes cluster on Azure - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/infrastructure/docs/kxi-terraform-azure.html
+
+# Configure a kubernetes cluster on Azure
+
+## Objectives
+
+The goal of this tutorial is to set up and configure a Kubernetes cluster on
+Azure to allow users to install a [kdb Insights
+Enterprise](../../installation/insights.html).
+
+## Terraform artifacts
+
+If you have a full commercial license, kdb Insights Enterprise provides
+default Terraform modules which are delivered as a TGZ. These modules are
+available through the [KX Downloads
+Portal](https://portal.dl.kx.com/assets/raw/kxi-terraform/).
+
+You will need to download the artifact and extract it.
+
+## Prerequisites
+
+For this tutorial you will need:
+
+An Azure [Account](https://azure.microsoft.com/en-us/free).
+
+An Azure [Service Principal](https://docs.microsoft.com/en-us/azure/active-
+directory/develop/app-objects-and-service-principals).
+
+Sufficient [Quotas](https://docs.microsoft.com/en-us/azure/azure-resource-
+manager/management/azure-subscription-service-limits) to deploy the cluster.
+
+A client machine with [Azure CLI](https://docs.microsoft.com/en-
+us/cli/azure/install-azure-cli).
+
+A client machine with [Docker](https://docs.docker.com/get-docker).
+
+## Environment Setup
+
+To extract the artifact, execute the following:
+
+    
+    
+    tar xzvf kxi-terraform-*.tgz
+    
+
+The above command will create the **kxi-terraform** directory. The commands
+below are executed within this directory and thus use relative paths.
+
+To change to this directory execute the following:
+
+The deployment process is performed within a Docker container which includes
+all tools needed by the provided scripts. A Dockerfile is provided in the
+**config** directory that can be used to build the Docker image. The image
+name should be **kxi-terraform** and can be built using the below command:
+
+    
+    
+    docker build -t kxi-terraform:latest ./config
+    
+
+## Service Principal Setup
+
+The Terraform scripts require a Service Principal with appropriate permissions
+which are defined in the **config/kxi-azure-tf-policy.json** file. The service
+principal should already exist.
+
+Note
+
+The below commands should be run by a user with admin privileges.
+
+Update **config/kxi-azure-tf-policy.json** and replace the following:
+
+  * **< role-name>** with your desired role name
+  * **< subscription-id>** with your Azure Subscription ID
+
+Create role:
+
+    
+    
+    az role definition create --role-definition config/kxi-azure-tf-policy.json
+    
+
+Note
+
+The role only needs to be created once and then it can be reused.
+
+Assign role to Service Principal:
+
+    
+    
+    az role assignment create --assignee "${CLIENT_ID}" --role "${ROLE_NAME}" --subscription "${SUBSCRIPTION_ID}"
+    
+
+where:
+
+  * **CLIENT_ID** is the Application (client) ID of an existing Service Principal
+  * **ROLE_NAME** is the role name created in the previous step
+  * **SUBSCRIPTION_ID** is the Azure Subscription ID
+
+## Configuration
+
+The Terraform scripts are driven by environment variables which configure how
+the Kubernetes cluster will be deployed. These variables are stored in the
+**kxi-terraform.env** file in the base directory.
+
+Copy environment file to base directory
+
+Update **kxi-terraform.env** file and populate the following variables:
+
+  * **ARM_CLIENT_ID** : Client ID of the Service Principal
+
+  * **ARM_CLIENT_SECRET** : Service Principal Secret
+
+  * **ARM_SUBSCRIPTION_ID** : Azure Subscription ID
+
+  * **ARM_TENANT_ID** : Tenant ID of the Service Principal
+
+  * **ENV** : Unique identifier for all resources. You will need to change it if you want to repeat the process and create an additional cluster. The variable can only contain lowercase letters and numbers
+
+  * **REGION** : Region to deploy the cluster. Make sure you update this to your desired region
+
+  * **TF_VAR_enable_metrics** : Enables forwarding of container metrics to Azure Monitor. This is disabled by default and can be enabled by setting the variable to **true**.
+
+  * **TF_VAR_enable_logging** : Enables forwarding of container logs to Azure Log Analytics. This is disabled by default and can be enabled by setting the variable to **true**.
+
+  * **TF_VAR_letsencrypt_account** : Email account for Let's Encrypt registration and notifications. If you intend to use cert-manager to issue certificates then you will need to provide a valid email address if you wish to receive notifications related to certificate expiration
+
+  * **TF_VAR_bastion_whitelist_ips** : The list of IPs/Subnets in CIDR notation that are allowed VPN/SSH access to the bastion host.
+
+  * **TF_VAR_insights_whitelist_ips** : The list of IPs/Subnets in CIDR notation that are allowed HTTP/HTTPS access to the Virtual Network.
+
+  * **TF_VAR_letsencrypt_enable_http_validation** : Enables issuing Let's Encrypt certificates using cert-manager HTTP validation. This is disabled by default to allow only pre-existing certificates.
+
+### Kubernetes Nodes Setup
+
+Depending on the requirements, the following three options are available:
+
+#### Default node pool and Dedicated node pool for rook-ceph - Local SSDs for
+rook-ceph (default option)
+
+  * **TF_VAR_default_node_type** : Instance type for Kubernetes nodes. Default value is sufficient in most cases.
+
+  * **TF_VAR_enable_rook_ceph_node_pool** : Enables the dedicated node pool for rook-ceph
+
+  * **TF_VAR_rook_ceph_pool_node_type** : Instance type for the dedicated node pool for rook-ceph. The node type should support Local SSDs. Default value is sufficient in most cases.
+
+#### Default node pool - Local SSDs for rook-ceph
+
+  * **TF_VAR_default_node_type** : Instance type for Kubernetes nodes. The node type should support Local SSDs. Default value is sufficient in most cases.
+
+Autoscaling Consideration
+
+The default node type uses local SSDs to provide the best possible
+performance. This will allow the cluster to scale up but block scaling down
+operations if the utilization is low since the cluster autoscaler cannot
+remove nodes that run pods using local storage. Therefore, additional costs
+may be incurred.
+
+#### Default node pool - Cloud Storage for rook-ceph
+
+  * **TF_VAR_default_node_type** : Instance type for Kubernetes nodes. Default value is sufficient in most cases.
+
+  * **TF_VAR_rook_ceph_storage_type** : Storage Class available in Kubernetes. Variable should not be changed in most cases.
+
+  * **TF_VAR_rook_ceph_storage_size** : Size of usable data provided by rook-ceph.
+
+Note
+
+The last two variables should be enabled only if using a node type that
+supports Cloud Storage.
+
+The `config/default_tags.json` file includes the tags that will be applied to
+all resources. You can add your own tags in this file to customize your
+environment.
+
+## Deployment
+
+To deploy the cluster and apply configuration, execute the following:
+
+Note
+
+A pre-deployment check will be performed before proceeding further. If the
+check fails, the script will exit immediately to avoid deployment failures.
+You should resolve all issues before executing the command again.
+
+This script will execute a series of Terraform and custom commands and may
+take some time to run. If the command fails at any point due to network
+issues/timeouts you can execute again until it completes without errors. If
+the error is related with the Cloud Provider account (e.g. limits) you should
+resolve them first before executing the command again.
+
+If any variable in the configuration file needs to be changed, the cluster
+should be destroyed first and then re-deployed.
+
+For easier searching and filtering, the created resources are named/tagged
+using the **azure-${ENV}** prefix. For example, if the ENV is set to **demo**
+, all resource names/tags include the **azure-demo** prefix.
+
+## Cluster Access
+
+To access the cluster, execute the following:
+
+The above command will start a shell session on a Docker container, generate a
+kubeconfig entry and connect to the VPN. Once the command completes, you will
+be able to manage the cluster via helm/kubectl.
+
+Note
+
+The **kxi-terraform** directory on the host is mounted on the container on
+**/terraform**. Files and directories created while using this container will
+be persisted if they are created under **/terraform** directory even after the
+container is stopped.
+
+Note
+
+If other users require access to the cluster, they will need to download and
+extract the artifact, build the Docker container and copy the **kxi-
+terraform.env** file as well as the **terraform/azure/client.ovpn** file
+(generated during deployment) to their own extracted artifact directory on the
+same paths. Once these two files are copied, the above script can be used to
+access the cluster.
+
+Below you can find kubectl commands to retrieve information about the
+installed components.
+
+List Kubernetes Worker Nodes
+
+List Kubernetes namespaces
+
+List cert-manager pods running on cert-manager namespace
+
+    
+    
+    kubectl get pods --namespace=cert-manager
+    
+
+List nginx ingress controller pod running on ingress-nginx namespace
+
+    
+    
+    kubectl get pods --namespace=ingress-nginx
+    
+
+List rook-ceph pods running on rook-ceph namespace
+
+    
+    
+    kubectl get pods --namespace=rook-ceph
+    
+
+## Environment Destroy
+
+Before you destroy the environment, make sure you don't have any active shell
+sessions on the Docker container. You can close the session by executing the
+following:
+
+To destroy the cluster, execute the following:
+
+If the command fails at any point due to network issues/timeouts you can
+execute again until it completes without errors.
+
+Note
+
+In some cases, the command may fail due to the VPN being unavailable or Azure
+resources not cleaned up properly. To resolve this, delete
+**terraform/azure/client.ovpn** file and execute it again.
+
+Note
+
+Even after the cluster is destroyed, the disks created dynamically by the
+application may still be present and incur additional costs. You should review
+the Azure Disks to verify if the data is still needed.
+

@@ -1,0 +1,434 @@
+https://code.kx.com/platform/deployment/tls_overview/
+
+# TLS - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/deployment/tls_overview/
+
+# TLS overview
+
+Kdb+ version 3.4 onwards supports SSL/TLS connections. The _KX Delta Platform_
+supports TLS from version 4.0.2 onwards on both Linux and Windows.
+
+In order to use TLS you need to provide the following certificates and key
+files.
+
+Name | Description  
+---|---  
+server-crt.pem | Server certificate file  
+server-key.pem | Server key file  
+ca.pem | Certificate Authority file  
+  
+You can generate self-signed certs for testing using the instructions provided
+on [code.kx.com/q/kb/ssl](https://code.kx.com/q/kb/ssl/).
+
+The following components in the _KX Delta Platform_ support TLS
+
+Component | TLS Enabled  
+---|---  
+KX Control | All connections to KX Control are required to be secure (attempted insecure connections will result in `TLS only to be displayed in the DeltaControl.log)  
+KX Delta Platform Processes | KX Delta Platform processes can have TLS turned on in their instance configuration. This will restrict connects to secure only.  
+AppServer | Connections to and from the AppServer must be secure. AppServer loads a Java Keystore.  
+  
+## Linux TLS configuration
+
+### Enabling TLS at deploy time
+
+#### Bundle Installer
+
+Place the files above in a known location on each deploy host. When prompted
+to Deploy with TLS/SSL Encryption Enabled answer yes.
+
+    
+    
+    Encryption
+     Deploy with TLS/SSL Encryption Enabled [no] : yes
+    
+
+##### Mixed mode
+
+KX Delta Platform 4.3.0 supports running Control and/or individual processes
+in TLS mixed mode. Processes in mixed mode can accept connections that are
+initiated with/without TLS.
+
+To enable answer yes when prompted to deploy with Control in TLS mixed mode.
+
+    
+    
+      Deploy Control using TLS Mixed Mode [no] : yes
+    
+
+**Note** : answering YES will also result in the following setting in the
+delta.profile
+
+    
+    
+    export DELTACONTROL_TLS=MIXED
+    
+
+The `DELTACONTROL_TLSMIXED_DEFAULT` environment variable in the delta.profile
+controls the default connection type for processes connecting to processes
+running in mixed mode.
+
+If the value is NO the connection will default to non TLS if it is YES then
+all connections made to mixed mode processes will use TLS.
+
+The value can be configured post deploy.
+
+##### Client certs
+
+By default TLS configuration omits the Client certificate but if you wish to
+include your client Certificate in the TLS deploy you can do so by answering
+yes to the prompt below.
+
+    
+    
+      Deploy TLS/SSL Client Certificate [client-crt.pem] [no] : yes
+    
+
+##### Certificates
+
+The installer will prompt for the location of a directory containing your
+certificates. Each certificate it finds will be copied into the scripts
+directory which is the default location for the installer.
+
+    
+    
+    TLS/SSL Certificates
+      Location of server certificate file (server-crt.pem]) [dir] : ~/certs
+    
+
+The deploy should now proceed with TLS enabled.
+
+    
+    
+    Using certificate [/home/user/certs/server-crt.pem]
+    Using certificate [/home/user/certs/server-key.pem]
+    Using certificate [/home/user/certs/ca.pem]
+    
+
+The script will check the current directory, the scripts directory and any
+directory you provide when prompted for each of the required certificate
+files. Any files which are not found in these locations will be prompted for.
+
+In the example below the certificate directory has been provided but the
+ca.pem is not present so the script prompts for the location of this file:
+
+    
+    
+      Location of server certificate file (server-crt.pem]) [dir] : ~/certs
+      Using certificate [/home/user/certs/server-crt.pem]
+      Using certificate [/home/user/certs/server-key.pem]
+      Location of certificate authority file (ca.pem]) [dir] :
+    
+
+#### Custom installation
+
+If you are installing using a custom install config with the bundle installer
+(install.sh) or the main install script (`installKxPlatform.sh`) then you can
+configure the TLS options in your config file as follows:
+
+    
+    
+    tls-encryption-enabled=1
+    ssl-server-cert-file=server-crt.pem
+    ssl-server-key-file=server-key.pem
+    ssl-ca-cert-file=ca.pem
+    
+
+##### Additional options
+
+To enable client authentication add the following to the install.config
+
+    
+    
+    tls-include-client-certificate=1
+    ssl-client-cert-file=client-crt.pem
+    
+
+To enable TLS mixed mode add the following:
+
+    
+    
+    tls-encryption-mixed-mode=1
+    
+
+### Enabling TLS post deploy
+
+If TLS was not enabled at deploy time it can be enabled post deploy using the
+following steps.
+
+The required certificates should be copied into the config/tls-certs directory
+inside the deploy (`delta-bin/config/tls-certs`).
+
+These certificates are referenced in the delta.profile as follows:
+
+    
+    
+    export KX_SSL_CERT_FILE=${DELTA_CONFIG}/tls-certs/server-crt.pem
+    export KX_SSL_KEY_FILE=${DELTA_CONFIG}/tls-certs/server-key.pem
+    export KX_SSL_CA_CERT_FILE=${DELTA_CONFIG}/tls-certs/ca.pem
+    
+
+When you place the files above in the tls-certs directory the environment
+variables will point to the location to each file.
+
+##### Generating keystore
+
+Once the certificates above are in place you need to use them to create a Java
+Keystore which will be used by the App Server to connect to the TLS enabled
+kdb+ processes including _KX Control_.
+
+In order to create the keystore you must have openssl (1.0.1+) installed and a
+Java JRE/JDK 1.8 on your PATH.
+
+To create the keystore cd into the delta-bin/config/tls-certs directory and
+run the following commands.
+
+    
+    
+    $ cd ~/kxinstall/delta-bin/config/tls-certs
+    $ cat server-crt.pem ca.pem > all.pem
+    $ openssl pkcs12 -export -inkey server-key.pem -in all.pem -name serverKeyStore -out all.p12 -passin pass:changeit -passout pass:changeit
+    $ keytool -importkeystore -srckeystore all.p12 -srcstoretype pkcs12 -destkeystore keystore.jks -srcstorepass changeit -deststorepass changeit
+    $ rm all.p12 all.pem
+    
+
+You should now a Java Keystore named keystore.jks inside the tls-certs dir.
+
+    
+    
+    $ ls -1
+    all.pem
+    ca.pem
+    keystore.jks
+    server-crt.pem
+    server-key.pem
+    
+
+#### Enabling TLS on control
+
+With the certificates and keystore in place the next step is to enable TLS by
+opening the delta.profile and setting:
+
+    
+    
+    $ vi ~/kxinstall/delta-bin/delta.profile
+    export DELTACONTROL_TLS=ON
+    
+
+If you wish to use Mixed Mode TLS then you can enable this by setting
+
+    
+    
+    $ vi ~/kxinstall/delta-bin/delta.profile
+    export DELTACONTROL_TLS=MIXED
+    
+
+#### 4.1.0+ additional steps
+
+If enabling TLS on a 4.1.0+ deploy there is an additional step required if you
+are using HTTPS Tomcat connectors with TLS enabled back end. The additional
+step involves exporting your certificates from the connector keystore and
+importing it into your `javax.net.ssl.trustStore` (`delta-bin/config/tls-
+certs/keystore.jks`).
+
+The steps required to do this are given below and they assume your connector
+keystore is in your home dir (~/.keystore).
+
+    
+    
+    $ cd ~/kxinstall/delta-bin/config/tls-certs
+    $ keytool -export -alias tomcat -keystore ~/.keystore -rfc -file tomcat.cer -srcstorepass changeit -deststorepass changeit
+    $ keytool -import -alias tomcat -keystore keystore.jks -rfc -file tomcat.cer -srcstorepass changeit -deststorepass changeit -noprompt
+    $ rm -f tomcat.cer
+    
+
+The command above assumes the key you wish to export has the alias "tomcat" in
+the connector keystore (~/.keystore) and that the password of that keystore is
+`changeit` (-srcstorepass changeit).
+
+**Restart Environment**
+
+Any configuration changes made post-deploy will require a full restart to pick
+them up.
+
+See the [Linux Administration](../lin_administration/) section for more
+details
+
+## Windows TLS configuration
+
+### Enabling TLS at deploy time
+
+#### Bundle installer
+
+Place the files above in a known location on each deploy host. When prompted
+to Deploy with TLS/SSL Encryption Enabled answer Y.
+
+    
+    
+    +-----------------------------------------------------------+
+    Deploy with TLS/SSL Encryption? [Y/N]: Y
+    +-----------------------------------------------------------+
+    
+
+##### Client certs
+
+By default TLS configuration omits the Client certificate but if you wish to
+include your client Certificate in the TLS deploy you can do so by answering Y
+to the prompt below.
+
+    
+    
+    Deploy TLS/SSL Client Certificate [client-crt.pem]? [Y/N]: Y
+    
+
+##### Certificates
+
+The installer will prompt for the location of a directory containing your
+certificates. Each certificate it finds will be copied into the scripts dir
+which is the default location for the installer.
+
+    
+    
+    Location of TLS Certs [dir] :C:\certs
+    Using certificate [C:\certs\ca.pem]
+    Using certificate [C:\certs\server-crt.pem]
+    Using certificate [C:\certs\server-key.pem]
+    
+
+##### Mixed mode
+
+KX Delta Platform 4.3.0 supports running Control and/or individual processes
+in TLS mixed mode. Processes in mixed mode can accept connections that are
+initiated with/without TLS.
+
+To enable answer yes when prompted to deploy with Control in TLS mixed mode.
+
+    
+    
+    Deploy Control using TLS Mixed Mode? [Y/N]: Y
+    
+
+**Note** : answering Y will also result in the following setting in the
+delta.profile
+
+    
+    
+    export DELTACONTROL_TLS=MIXED
+    
+
+The `DELTACONTROL_TLSMIXED_DEFAULT` environment variable in the delta.profile
+controls the default connection type for processes connecting to processes
+running in mixed mode.
+
+If the value is NO the connection will default to non TLS if it is YES then
+all connections made to mixed mode processes will use TLS.
+
+The value can be configured post deploy.
+
+### Enabling TLS post deploy
+
+If TLS was not enabled at deploy time it can be enabled post deploy using the
+following steps.
+
+The required certificates should be copied into the tls-certs dir inside the
+deploy (delta-bin\config\tls-certs).
+
+These certificates are referenced in the delta.profile.bat as follows:
+
+    
+    
+    set KX_SSL_CERT_FILE=%DELTA_CONFIG%\tls-certs\server-crt.pem
+    set KX_SSL_KEY_FILE=%DELTA_CONFIG%\tls-certs\server-key.pem
+    set KX_SSL_CA_CERT_FILE=%DELTA_CONFIG%\tls-certs\ca.pem
+    
+
+When you place the files above in the tls-certs directory the environment
+variables will point to the location to each file.
+
+##### Generating keystore
+
+Once the certificates above are in place you need to use them to create a Java
+Keystore which will be used by the App Server to connect to the TLS enabled
+kdb+ processes including _KX Control_.
+
+In order to create the keystore you must have openssl (1.0.2+) installed and a
+Java JRE/JDK 1.8 on your PATH.
+
+To create the keystore cd into the delta-bin\config\tls-certs directory and
+concatenate the certificates together as follows:
+
+    
+    
+    > type client-crt.pem > all.pem
+    > type server-crt.pem >> all.pem
+    > type ca.pem >> all.pem
+    
+
+Next use openssl.exe to generate a PFX binary file from the certificates by
+running the following command inside the tls-certs dir:
+
+    
+    
+    > openssl pkcs12 -export -inkey server-key.pem -in all.pem -name serverKeyStore -out all.p12 -passin pass:changeit -passout pass:changeit
+    
+
+Now use Java keytool to import the PFX binary file into a keystore which will
+be used by all Java components in KX Delta Platform (Daemon, Email Server,
+Tomcat).
+
+    
+    
+    > keytool -importkeystore -srckeystore all.p12 -srcstoretype pkcs12 -destkeystore keystore.jks -srcstorepass changeit -deststorepass changeit
+    
+
+You should now have a Java Keystore file called `keystore.jks` in the tls-
+certs directory.
+
+#### Enabling TLS on control
+
+With the certificates and keystore in place the next step is to enable TLS by
+opening the `delta.profile.bat` and setting:
+
+    
+    
+    set DELTACONTROL_TLS=ON
+    
+
+If you wish to use Mixed Mode TLS then you can enable this by setting
+
+    
+    
+    set DELTACONTROL_TLS=MIXED
+    
+
+#### 4.1.0+ additional steps
+
+If enabling TLS on a 4.1.0+ deploy there is an additional step required if you
+are using HTTPS Tomcat connectors with TLS enabled back end. The additional
+step involves exporting your certificates from the connector keystore and
+importing it into your javax.net.ssl.trustStore (delta-bin\config\tls-
+certs\keystore.jks).
+
+The steps required to do this are given below and they assume your connector
+keystore is in dir (C:\user\test\keystore).
+
+    
+    
+    > cd C:\kxinstall\KxPlatformWinDeploy_4_4_1_1910111311\delta-bin\config\tls-certs
+    > keytool -export -alias tomcat -keystore C:\user\test\keystore\keystore -rfc -file tomcat.cer
+    > key tool -import -alias tomcat -keystore keystore.jks -rfc -file tomcat.cer
+    
+
+The command above assumes the key you wish to export has the alias `tomcat` in
+the connector keystore (C:\user\test\keystore\keystore) and that the password
+of that keystore is `changeit` (-srcstorepass changeit).
+
+**Restart Environment**
+
+Any configuration changes made post-deploy will require a full restart to pick
+them up.
+
+See the [Windows Administration](../win_administration/) section for more
+details.
+

@@ -1,0 +1,63 @@
+https://code.kx.com/pykx/api/streamlit.html
+
+# Streamlit Integration - PyKX
+
+Original URL: https://code.kx.com/pykx/api/streamlit.html
+
+Evaluate a query on the connected q process over IPC.
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`query` |  `[str](https://docs.python.org/3/library/stdtypes.html#str)` | A q expression to be evaluated. |  _required_  
+`*args` |  | Arguments to the q query. Each argument will be converted into a `pykx.K` object. Up to 8 arguments can be provided, as that is the maximum supported by q. |  `()`  
+`format` |  | What execution format is to be used, should the function use the `qsql` interface, execute a `sql` query or run `q` code. |  `'q'`  
+  
+**Raises:**
+
+Type | Description  
+---|---  
+`[RuntimeError](https://docs.python.org/3/library/exceptions.html#RuntimeError)` | A closed IPC connection was used.  
+`[QError](exceptions.html#pykx.exceptions.QError "pykx.exceptions.QError")` | Query timed out, may be raised if the time taken to make or receive a query goes over the timeout limit.  
+`[TypeError](https://docs.python.org/3/library/exceptions.html#TypeError)` | Too many arguments were provided - q queries cannot have more than 8 parameters.  
+`[ValueError](https://docs.python.org/3/library/exceptions.html#ValueError)` | Attempted to send a Python function over IPC.  
+  
+**Examples:**
+
+Connect to a q process at `localhost` on port `5050` as a streamlit
+connection, querying using q
+
+    
+    
+    >>> import streamlit as st
+    >>> import pykx as kx
+    >>> conn = st.connection('pykx', type=kx.streamlit.PyKXConnection,
+    ...                      host = 'localhost', port = 5050)
+    >>> df = conn.query('select from tab').pd()
+    >>> st.dataframe(df)
+
+Connect to a q process at `localhost` on port `5050` as a streamlit
+connection, querying using qsql
+
+    
+    
+    >>> import streamlit as st
+    >>> import pykx as kx
+    >>> conn = st.connection('pykx', type=kx.streamlit.PyKXConnection,
+    ...                      host = 'localhost', port = 5050)
+    >>> df = conn.query('tab', where='x>0.5', format='qsql').pd()
+    >>> st.dataframe(df)
+
+Connect to a q process at `localhost` on port `5050` as a streamlit
+connection, querying using sql
+
+    
+    
+    >>> import streamlit as st
+    >>> import pykx as kx
+    >>> conn = st.connection('pykx', type=kx.streamlit.PyKXConnection,
+    ...                      host = 'localhost', port = 5050)
+    >>> df = conn.query('select * from tab where x>0.5', format='sql').pd()
+    >>> st.dataframe(df)
+

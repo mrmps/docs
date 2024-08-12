@@ -1,0 +1,189 @@
+https://code.kx.com/platform/schemas/
+
+# Schemas - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/schemas/
+
+# Schemas
+
+Set of APIs for dealing with schemas defined in _Control_.
+
+Schemas loaded from _Control_ will automatically register meta information in
+the `.schema` data structures;
+
+    
+    
+    q).schema.cols[`dxAlert]
+    `time`sym`alertkey`triggered`source`tag1`tag2`description`data
+    
+    q).schema.tab[`dxAlert]
+    time sym alertkey triggered source tag1 tag2 description data
+    -------------------------------------------------------------
+    
+
+## `.tbl.compareTableWithSchema`
+
+_Compare in-memory table to Control version_
+
+Syntax: `.tbl.compareTableWithSchema[tabName;configProfile;scemaName]`
+
+Where
+
+  * `tabName` is the name of a table to compare (symbol)
+  * `configProfile` is a config profile as a symbol. Use a null symbol or `.ex.configprofile`.
+  * `schemaName`is a schema name as a symbol
+
+returns a table of meta info joined from both tables. See example for full
+format:
+
+    
+    
+    q).tbl.compareTableWithSchema[`dfxTrade; `; `dfxTrade]
+    column  idx dataType  dataTypeChar attribute columnNew idxNew dataTypeNew dataTypeCharNew attributeNew defaultNew
+    -----------------------------------------------------------------------------------------------------------------
+    time    0   Timestamp p                      time      0      Timestamp   p                            0Np
+    sym     1   Symbol    s            g         sym       1      Symbol      s               g            `
+    price   2   Float     f                      price     2      Float       f                            0n
+    size    3   Integer   i                      size      3      Integer     i                            0Ni
+    seqNum  4   Long      j                      seqNum    4      Long        j                            0N
+    src     5   Symbol    s                      src       5      Symbol      s                            `
+    srcTime 6   Timestamp p                      srcTime   6      Timestamp   p                            0Np
+    cond    7   Symbol    s                      cond      7      Symbol      s                            `
+    status  8   Symbol    s                      status    8      Symbol      s                            `
+    side    9   Character c                      side      9      Character   c                            " "
+    msgrcv  10  Timestamp p                      msgrcv    10     Timestamp   p                            0Np
+    
+
+## `.tbl.getloadedschemas`
+
+_List of loaded schemas_
+
+Syntax: `.tbl.getloadedschemas[]`
+
+Returns schema names as a symbol list.
+
+    
+    
+    q).tbl.getLoadedSchemas[]
+    `dfxAsk`dfxBbo`dfxBid`dfxBookSnapshot`dfxOrder`dfxQuote`dfxQuote_midprice`dfxTrade..
+    
+
+## `.tbl.getinfo`
+
+_Schema metadata at the version the process is operating at_
+
+Syntax: `.tbl.getinfo tbls`
+
+Where `tbls` is schema names as a symbol list returns a table of schema
+metadata.
+
+If `tbls` is empty, information on all schemas is returned.
+
+    
+    
+    q).tbl.getinfo[`schema1]
+    table    keycols colnames     coltype                 colattr tablegroup
+    ------------------------------------------------------------------------
+    schema1          time sym src Timestamp Symbol Symbol  g      dtxFX
+    
+
+## `.tbl.gettable`
+
+_Load a schema into memory_
+
+Syntax: `.tbl.gettable sn`
+
+Where `sn` is the name of a schema as a symbol, loads the schema into memory.
+
+    
+    
+    q).tbl.gettable[`dfxTrade]
+    
+
+## `.tbl.gettabledetails`
+
+_Schema metadata_
+
+Syntax: `.tbl.gettabledetails sn`
+
+Where `sn` is the name of a schema as a symbol, returns a dictionary of schema
+metadata.
+
+Executed on Control as `deltacomponent`. If `deltacomponent` is configured to
+be a non-Administrator user then the results will be subject to a permission
+check.
+
+    
+    
+    q).tbl.gettabledetails[`dfxTrade]
+    ucname      | `delta_install_default
+    table       | `dfxTrade
+    keycols     | `symbol$()
+    description | "Schema for the dfxTrade table"
+    colnames    | `time`sym`price`size`seqNum`src`srcTime`cond`status`side`msgrcv
+    coltype     | `Timestamp`Symbol`Float`Integer`Long`Symbol`Timestamp`Symbol`Symbol`Character`Timestamp
+    default     | ("";"";"";"";"";"";"";"";"";"";"")
+    colattr     | ``g`````````
+    coldesc     | ("";"";"";"";"";"";"";"";"";"";"")
+    schemagroups| ,`dtxFX
+    
+
+## `.tbl.gettablesbygroup`
+
+_List schemas for a group_
+
+Syntax: `.tbl.gettablesbygroup gn`
+
+Where `gn` is the name of a schema group as a symbol, returns the schema names
+for that group as a symbol list.
+
+    
+    
+    q).tbl.gettablesbygroup[`DM_Monitoring]
+    `.yday.dmxJobScheduling`.yday.dmxJobSummary`dmxFileChange`dmxFiles`dmxJobScheduling`dmxJobSummary`dmxPing..
+    
+
+## `.tbl.loadgrouptables`
+
+_Load all schemas for a group_
+
+Syntax: `.tbl.loadgrouptables gn`
+
+Where `gn` is the name of a schema group as a symbol, loads all schemas for
+that group.
+
+    
+    
+    q).tbl.loadgrouptables[`dtxFX]
+    
+
+## `.tbl.loadtables`
+
+_Load a list of schemas_
+
+Syntax: `.tbl.loadtables sns`
+
+Where `sns` is a list of schema names as a symbol vector, loads the schemas.
+
+    
+    
+    q).tbl.loadtables[`dfxTrade`dfxQuote]
+    
+
+## `.tbl.regTab`
+
+_Register meta information for a table_
+
+Syntax: `.tbl.regTab sn`
+
+Where `sn` is the name of a table as a symbol, populates the table schema and
+columns in `.schema.tab` and `.schema.cols` respectively. Structures can be
+accessed directly.
+
+Handled automatically for schemas loaded from _Control_.
+
+    
+    
+    q).tbl.regTab[`dxQuote]
+    
+

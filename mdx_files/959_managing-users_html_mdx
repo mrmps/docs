@@ -1,0 +1,94 @@
+https://code.kx.com/insights/enterprise/security/managing-users.html
+
+# Managing users - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/security/managing-users.html
+
+# Managing users
+
+Users are entities that are able to log into your system. They can be assigned
+[group](managing-groups.html) membership for use with [data
+entitlements](../entitlements/index.html) and have specific
+[roles](authentication.html#roles) assigned to them.
+
+## Creating users
+
+  1. Log into the administration console.
+  2. Choose the target realm (`$REALM_NAME`) from the top-left realm drop-down.
+  3. Click **Users** in the menu.
+  4. Click **Add User**.
+  5. Enter the details for the new user.
+  6. Click **Save**.
+  7. Give the user credentials:
+    1. Click the **Credentials** tab
+    2. Click **Set password**
+    3. Choose a password and leave **Temporary** set to on
+    4. Click **Save**
+    5. Confirm by clicking on **Save password**
+
+Ensure the correct realm is selected
+
+Ensure you select the correct realm (`$REALM_NAME`) as the UI defaults to the
+`Master` realm on login.
+
+Use `kxi user` to create a new user.
+
+    
+    
+    kxi user create $USERNAME \
+        --email $EMAIL \
+        --password $PASSWORD \
+        --temporary
+    
+
+Replace the following:
+
+  * `$USERNAME`: Username for the new user.
+  * `$EMAIL`: Email for the new user.
+  * `$PASSWORD`: Password for the new user.
+
+Note
+
+The user will be asked to reset their password on first login when the
+`--temporary` flag is set
+
+## Assigning roles
+
+## Password resets
+
+## Forgotten passwords
+
+The application can provide password reset functionality via email if the
+realm is configured with an [email server](authentication.html#configuring-
+email).
+
+  1. Log into the administration console.
+  2. Click **Realm settings** in the menu.
+  3. Click the **Login** tab.
+  4. Toggle **Forgot password** to ON.
+
+A 'Forgot password?' link will now be displayed on the login screen.
+
+## Identity brokering
+
+To use an identity provider other than Keycloak to authenticate users,
+configure this under **Identity Providers** in the menu.
+
+The setup for this varies depending on the type of identity provider.
+
+Read the Keycloak documentation for your specific use case.
+
+[Keycloak Identity
+Brokering](https://www.keycloak.org/docs/latest/server_admin/#_identity_broker)
+
+First login
+
+A user that authenticates via a different identity provider than Keycloak must
+log in at least once before roles can be assigned to them.
+
+Identity provider is not visible on the login screen
+
+If an identity provider is configured but you can't see it on the login
+screen, ensure you are getting redirected to the correct login page:
+`https://${INSIGHTS_HOSTNAME}/auth/admin/${REALM_NAME}/console/`
+

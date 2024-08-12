@@ -1,0 +1,447 @@
+https://code.kx.com/insights/enterprise/walkthrough/database.html
+
+# kdb Insights Enterprise guided walkthrough - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/walkthrough/database.html
+
+
+    [
+        {
+            "name": "weather",
+            "type": "partitioned",
+            "primaryKeys": [],
+            "prtnCol": "timestamp",
+            "sortColsDisk": ["airtemp"],
+            "sortColsMem": ["timestamp"],
+            "sortColsOrd": ["sensor"],
+            "columns": [
+            {
+                "type": "timestamp",
+                "name": "timestamp",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "compound": false
+            },
+            {
+                "name": "sensor",
+                "type": "symbol",
+                "attrMem": "",
+                "attrOrd": "sorted",
+                "attrDisk": "",
+                "compound": false
+            },
+            {
+                "name": "airtemp",
+                "type": "float",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "sorted",
+                "compound": false
+            },
+            {
+                "name": "name",
+                "type": "symbol",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "compound": false
+            },
+            {
+                "name": "borough",
+                "type": "symbol",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "compound": false
+            },
+            {
+                "name": "longitude",
+                "type": "float",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "compound": false
+            },
+            {
+                "name": "latitude",
+                "type": "float",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "compound": false
+            },
+            {
+                "name": "color",
+                "type": "symbol",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "compound": false
+            }
+            ]
+        },
+        {
+            "columns": [
+            {
+                "type": "symbol",
+                "name": "trip_id",
+                "attrMem": "sorted",
+                "attrOrd": "",
+                "attrDisk": "",
+                "compound": false
+            },
+            {
+                "name": "arrival_time",
+                "type": "timestamp",
+                "attrMem": "",
+                "attrOrd": "sorted",
+                "attrDisk": "",
+                "compound": false
+            },
+            {
+                "name": "stop_id",
+                "type": "symbol",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "sorted",
+                "compound": false
+            },
+            {
+                "name": "stop_sequence",
+                "type": "long",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "compound": false
+            },
+            {
+                "name": "stop_name",
+                "type": "symbol",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "compound": false
+            },
+            {
+                "name": "stop_lat",
+                "type": "float",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "compound": false
+            },
+            {
+                "name": "stop_lon",
+                "type": "float",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "compound": false
+            },
+            {
+                "name": "route_id",
+                "type": "long",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "compound": false
+            },
+            {
+                "name": "trip_headsign",
+                "type": "symbol",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "compound": false
+            },
+            {
+                "name": "direction_id",
+                "type": "symbol",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "compound": false
+            },
+            {
+                "name": "route_short_name",
+                "type": "symbol",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "compound": false
+            },
+            {
+                "name": "route_long_name",
+                "type": "symbol",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "compound": false
+            },
+            {
+                "name": "route_desc",
+                "type": "string",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "compound": false
+            },
+            {
+                "name": "route_type",
+                "type": "long",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "compound": false
+            },
+            {
+                "name": "route_url",
+                "type": "symbol",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "compound": false
+            },
+            {
+                "name": "route_color",
+                "type": "symbol",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "compound": false
+            }
+            ],
+            "primaryKeys": [],
+            "type": "partitioned",
+            "prtnCol": "arrival_time",
+            "name": "subway",
+            "sortColsDisk": ["stop_id"],
+            "sortColsMem": ["trip_id"],
+            "sortColsOrd": ["arrival_time"]
+        },
+        {
+            "columns": [
+            {
+                "type": "string",
+                "name": "name",
+                "attrMem": "sorted",
+                "attrOrd": "",
+                "attrDisk": "",
+                "compound": false
+            },
+            {
+                "name": "lat",
+                "type": "float",
+                "attrMem": "",
+                "attrOrd": "sorted",
+                "attrDisk": "",
+                "compound": false
+            },
+            {
+                "name": "long",
+                "type": "float",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "sorted",
+                "compound": false
+            },
+            {
+                "name": "neighborhood",
+                "type": "string",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "compound": false
+            },
+            {
+                "name": "airquality",
+                "type": "float",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "compound": false
+            },
+            {
+                "name": "trafficcongestion",
+                "type": "float",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "compound": false
+            },
+            {
+                "name": "bikeacccnt",
+                "type": "int",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "compound": false
+            },
+            {
+                "name": "caracccnt",
+                "type": "int",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "compound": false
+            },
+            {
+                "name": "timestamp",
+                "type": "timestamp",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "compound": false
+            }
+            ],
+            "primaryKeys": [],
+            "type": "partitioned",
+            "prtnCol": "timestamp",
+            "name": "health",
+            "sortColsDisk": ["long"],
+            "sortColsMem": ["name"],
+            "sortColsOrd": ["lat"]
+        },
+        {
+            "columns": [
+            {
+                "type": "symbol",
+                "name": "event_id",
+                "attrMem": "sorted",
+                "attrOrd": "",
+                "attrDisk": "",
+                "compound": false
+            },
+            {
+                "name": "incident_time",
+                "type": "timestamp",
+                "attrMem": "",
+                "attrOrd": "sorted",
+                "attrDisk": "",
+                "compound": false
+            },
+            {
+                "name": "nypd_precinct",
+                "type": "symbol",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "sorted",
+                "compound": false
+            },
+            {
+                "name": "borough",
+                "type": "symbol",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "compound": false
+            },
+            {
+                "name": "patrol_borough",
+                "type": "symbol",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "compound": false
+            },
+            {
+                "name": "call_x_geo",
+                "type": "long",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "compound": false
+            },
+            {
+                "name": "call_y_geo",
+                "type": "long",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "compound": false
+            },
+            {
+                "name": "radio_code",
+                "type": "symbol",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "compound": false
+            },
+            {
+                "name": "description",
+                "type": "string",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "compound": false
+            },
+            {
+                "name": "crime_in_progress",
+                "type": "string",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "compound": false
+            },
+            {
+                "name": "call_timestamp",
+                "type": "timestamp",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "compound": false
+            },
+            {
+                "name": "dispatch_timestamp",
+                "type": "timestamp",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "compound": false
+            },
+            {
+                "name": "arrival_timestamp",
+                "type": "timestamp",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "compound": false
+            },
+            {
+                "name": "closing_timestamp",
+                "type": "timestamp",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "compound": false
+            },
+            {
+                "name": "latitude",
+                "type": "float",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "compound": false
+            },
+            {
+                "name": "longitude",
+                "type": "float",
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "compound": false
+            }
+            ],
+            "primaryKeys": [],
+            "type": "partitioned",
+            "prtnCol": "arrival_timestamp",
+            "name": "crime",
+            "sortColsDisk": ["nypd_precinct"],
+            "sortColsMem": ["event_id"],
+            "sortColsOrd": ["incident_time"]
+        }
+        ]
+    
+

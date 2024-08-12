@@ -1,0 +1,470 @@
+https://code.kx.com/platform/deployment/lin_administration/
+
+# Linux - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/deployment/lin_administration/
+
+# Linux
+
+## Single node deploy
+
+### Start-up
+
+When starting a single-node deploy, KX Delta Platform can be started from the
+delta-bin/bin dir.
+
+The installer will start your environment after the initial deploy but for
+subsequent restarts you will need to follow these steps:
+
+    
+    
+    $ cd ~/kxinstall/delta-bin/bin/
+    $ ./startup.sh
+    +-----------------------------------------------------------+
+     KX Delta Platform Start-up
+     [kxplatform@control-a.fd.com]
+    +-----------------------------------------------------------+
+     Starting Control                                  .....done
+     Starting Daemon                                   .....done
+     Starting App Server                               .....done
+     Starting Workflow [DS_launch_MS_A]                .....done
+     Starting Workflow [DS_launch_ALERT_A]             .....done
+     Starting Workflow [DS_launch_OPS_A]               .....done
+     Starting Workflow [DS_launch_REPORT_A]            .....done
+     Starting Workflow [DS_launch_AT_A]                .....done
+    +-----------------------------------------------------------+
+     Control:
+       [http://control-a.fd.com:8080/control]
+     Dashboards:
+       [http://control-a.fd.com:8080/dashboards]
+     Analyst:
+       [http://control-a.fd.com:8080/analyst]
+    +-----------------------------------------------------------+
+     Finished.
+    
+
+### Shutdown
+
+When stopping a single-node deployment, the KX Delta Platform can be brought
+down from the delta-bin/bin dir.
+
+    
+    
+    $ cd ~/kxinstall/delta-bin/bin/
+    $ ./shutdown.sh
+    +-----------------------------------------------------------+
+     KX Delta Platform Shutdown
+     [kxuser@control-a.fd.com]
+    +-----------------------------------------------------------+
+     Stopping App Server                               .....done
+     Stopping Workflow [DS_launch_MS_A]                .....done
+     Stopping Workflow [DS_launch_ALERT_A]             .....done
+     Stopping Workflow [DS_launch_OPS_A]               .....done
+     Stopping Workflow [DS_launch_REPORT_A]            .....done
+     Stopping Workflow [DS_launch_AT_A]                .....done
+     Stopping Workflow [ALL]                           .....done
+     Stopping Remaining Processes                      .....done
+     Stopping Daemon                                   .....done
+     Stopping Control                                  .....done
+    +-----------------------------------------------------------+
+     Finished.
+    
+
+Once the shutdown scripts have been executed a final check should be performed
+at OS level on all hosts in the deploy to ensure the processes have
+successfully terminated.
+
+You can check that the processes have been shut down using the `ps` command if
+you know the install directory (default in `$HOME/kxinstall`. To do this run
+the `ps` command as follows.
+
+    
+    
+    $ ps -ef | grep $USER/kxinstall | grep -v grep
+    
+
+If the running the command above gives no output as above then the environment
+has been successfully shutdown. If there are still processes running they
+should be killed using the "kill" command.
+
+## Multi-node deploy
+
+### Start-up
+
+When starting a multi-node deploy the order in which each of the nodes are
+brought up in is important. The Control layer should always be started before
+the web layer. The steps to bring up a multi-node deploy are detailed below.
+
+#### KX Control layer
+
+The process for starting the _KX Control_ instances depends on the type of
+Deploy i.e. clustered or standalone.
+
+##### KX Control cluster
+
+When starting a clustered Deploy the preferred _KX Control_ leader node should
+be started first with the follower node being start immediately afterwards.
+
+The _KX Control_ process can be started on each cluster node as follows:
+
+    
+    
+    $ cd ~/kxinstall/delta-bin/bin/
+    $ ./startDeltaControl.sh
+    Sourcing [../delta.profile]
+    Sourcing [../delta_user.profile]
+    Sourcing [../delta.instance.profile]
+    KDB+ license valid
+    Setting CPU Affinity using [taskset -c 0]
+    Starting Control 4.4.0P6 on port 2001 using KDB+ 3.6.0
+    Control [PID:17879] started successfully
+    
+
+With both _KX Control_ nodes started check the status of each node as follows:
+
+This node is the leader
+
+    
+    
+    $ cd ~/kxinstall/delta-bin/bin/
+    $ grep "This process is now" ../../delta-data/DeltaControlData/logdir/DeltaControl.log
+    <->2019.12.10D15:43:24.844 ### control-a   ### normal ### (17879): This process is now the leader ###
+    
+
+This node is a follower
+
+    
+    
+    $ cd ~/kxinstall/delta-bin/bin/
+    $ grep "This process is now" ../../delta-data/DeltaControlData/logdir/DeltaControl.log
+    <->2019.12.10D15:43:25.422 ### control-b   ### normal ### (17927): This process is now a follower and has synced with leader ### `host`port`handle`uid!(`control-a.firstderivatives.com;2001i;11i;0)
+    
+
+With the _KX Control_ instances running the Daemon process should now be
+started on each _KX Control_ Cluster node. This process allows backup
+instances to be run on the follower nodes as well as being responsible for
+collecting stats for the Monitoring workflows.
+
+To start the Daemon run the following on each node.
+
+    
+    
+    $ cd ~/kxinstall/delta-bin/bin/
+    $ ./startDeltaControlDaemon.sh
+    Sourcing [../delta.profile]
+    Sourcing [../delta_user.profile]
+    Setting CPU Affinity using [taskset -c 0]
+    Starting Daemon from [/home/kxplatform/kxinstall/delta-bin/software/DeltaControl_4_4_0P5/jcore/Daemon]
+    Daemon running as pid 16075
+    Daemon [PID:16075] started successfully
+    
+
+##### KX Control single server
+
+When starting a non-clustered deploy the _KX Control_ process can be started
+on as follows:
+
+    
+    
+    $ cd ~/kxinstall/delta-bin/bin/
+    $ ./startDeltaControl.sh
+    Sourcing [../delta.profile]
+    Sourcing [../delta_user.profile]
+    Sourcing [../delta.instance.profile]
+    KDB+ license valid
+    Setting CPU Affinity using [taskset -c 0]
+    Starting Control 4.4.0P6 on port 2001 using KDB+ 3.6.0
+    Control [PID:17879] started successfully
+    
+
+The Daemon process should be started next
+
+    
+    
+    $ cd ~/kxinstall/delta-bin/bin/
+    $ ./startDeltaControlDaemon.sh
+    Sourcing [../delta.profile]
+    Sourcing [../delta_user.profile]
+    Setting CPU Affinity using [taskset -c 0]
+    Starting Daemon from [/home/kxplatform/kxinstall/delta-bin/software/DeltaControl_4_4_0P5/jcore/Daemon]
+    Daemon running as pid 16075
+    Daemon [PID:16075] started successfully
+    
+
+#### Web layer
+
+The process for starting the Web Server instances depends on the architecture
+of the Deploy.
+
+##### Separate web nodes
+
+If the deploy contains separate Web Nodes then the Daemon process which is
+used to start the AppServer (Tomcat) process should have been started at
+deploy time.
+
+The daemon will continuously try and connect and should registrar with the _KX
+Control_ instances when they are brought online.
+
+Before starting the _KX Control_ cluster check that the daemons are running by
+logging onto each Web node and using ps to check for the Daemon process as
+follows:
+
+    
+    
+    $ ps uxwww | grep DeltaDaemonServiceMain
+    
+
+If the command above does not return process information then the Daemon
+should be started manually from the command line on the Web node as follows:
+
+    
+    
+    $ cd ~/kxinstall/delta-bin/bin/
+    $ ./startDeltaControlDaemon.sh
+    Sourcing [../delta.profile]
+    Sourcing [../delta_user.profile]
+    Setting CPU Affinity using [taskset -c 0]
+    Starting Daemon from [/home/kxplatform/kxinstall/delta-bin/software/DeltaControl_4_4_0P5/jcore/Daemon]
+    Daemon running as pid 16075
+    Daemon [PID:16075] started successfully
+    
+
+Before proceeding check that the Daemon processes have registered with _KX
+Control_.
+
+This can be done by logging onto the _KX Control_ leader node and running:
+
+    
+    
+    kxplatform@control-a [bin] > grep "Daemon logon from" ../../delta-data/DeltaControlData/logdir/DeltaControl.log
+    <->2019.12.10D15:43:27.628 ### control-a   ### normal ### (17879): Daemon logon from web-a.firstderivatives.com:0 ### `ip`OS`handle!(`192.168.99.105;`linux;11i)
+    <->2019.12.10D15:43:27.723 ### control-a   ### normal ### (17879): Daemon logon from web-b.firstderivatives.com:0 ### `ip`OS`handle!(`192.168.99.106;`linux;13i)
+    
+
+##### Start web application
+
+The Web Application is started via the startAppServer.sh script which is run
+on the leader _KX Control_ node. The script will attempt to start 2 workflows
+(DS_launch_APPSERVER_A, DS_launch_APPSERVER_B) which contain the App Server
+processes and supporting kdb+ Processes (QR, QP). The App servers can be
+started as follows:
+
+KX Control node
+
+    
+    
+    $ cd ~/kxinstall/delta-bin/bin/
+    $ ./startAppServer.sh
+    running command: .wf.runWF'[`DS_launch_APPSERVER_A`DS_launch_APPSERVER_B]
+    
+
+#### Process workflows
+
+The KX Delta Platform comes with a set of pre-configured workflows which are
+used to start kdb+ and Java processes which are part of the Platform. The list
+of pre-configured workflows can be found in the [Default
+Workflows](../env_info/#platform-workflows) section.
+
+Workflows are launched via a script which should be run on the leader _KX
+Control_ node. The script reads a file (`delta-
+bin/config/startup_workflows.txt`) and starts each workflow listed. The script
+should run as follows:
+
+KX Control Node
+
+    
+    
+    $ cd ~/kxinstall/delta-bin/bin/
+    $ ./startWorkflows.sh
+    
+
+### Shutdown
+
+As with starting a multi-node deploy, the order in which each node is brought
+down is important. The _KX Control_ Layer should always be brought down last.
+
+#### App server and process workflows
+
+The AppServer and kdb+/Java processes (Including the Daemon) should be brought
+down before the _KX Control_ cluster. _KX Control_ is responsible for stopping
+these processes so it need to be up in order to do so.
+
+The following script should be run in turn on the _KX Control_ leader node:
+
+    
+    
+    $ cd ~/kxinstall/delta-bin/bin/
+    $ ./stopAppServer.sh
+    $ ./stopWorkflows.sh
+    $ ./stopAllProcesses.sh
+    
+
+#### KX Control layer
+
+The process for shutting down the _KX Control_ instances depends on the type
+of Deploy i.e. clustered or standalone.
+
+##### Clustered deployment
+
+When stopping the _KX Control_ instances you should take care to ensure that
+the follower nodes are shutdown before the leader. Before bringing down any
+node check the `DeltaControlData/cluster/status` file or DeltaControl.log to
+confirm its state (Leader or a Follower) i.e. don't assume the Preferred
+Leader is always the current Leader in the cluster. On each node run:
+
+    
+    
+    $ . ../delta.profile
+    $ cat $DELTACONTROL_DATA_HOME/cluster/status
+    
+
+Value of 1 = Leader, 0 = Follower.
+
+**Note** : if the file does not exist use the DeltaControl.log
+
+    
+    
+    $ cd ~/kxinstall/delta-bin/
+    $ . delta.profile
+    $ grep "This process is" $FD_LOGDIR/$DELTACONTROL_LOGFILE | tail -1
+    <->2019.11.14D14:11:16.793 ### control-a. ### normal ### (731): This process is now the leader ###
+    $ grep "This process is" $FD_LOGDIR/$DELTACONTROL_LOGFILE | tail -1
+    <->2019.11.14D14:11:16.793 ### control-b. ### normal ### (731): This process is a follower, leader is control-a.firstderivatives.com:2001
+    
+
+Once you have confirmed which nodes are follower the _KX Control_ instance on
+these node should be brought down by running:
+
+    
+    
+    $ cd ~/kxinstall/delta-bin/bin
+    $ ./stopDeltaControl.sh
+    Sourcing [../delta.profile]
+    Sourcing [../delta_user.profile]
+    KDB+ license valid
+    Shutting down Control [PID:17927]
+    Control [PID:17927] shutdown
+    
+
+Lastly the Leader _KX Control_ instance should be brought down by running:
+
+    
+    
+    $ cd ~/kxinstall/delta-bin/bin
+    $ ./stopDeltaControl.sh
+    Sourcing [../delta.profile]
+    Sourcing [../delta_user.profile]
+    KDB+ license valid
+    Shutting down Control [PID:17927]
+    Control [PID:17927] shutdown
+    
+
+##### KX Control single server
+
+When bringing a non-clustered deploy the _KX Control_ process can be stopped
+by running the same stop script as above:
+
+    
+    
+    $ cd ~/kxinstall/delta-bin/bin
+    $ ./stopDeltaControl.sh
+    Sourcing [../delta.profile]
+    Sourcing [../delta_user.profile]
+    KDB+ license valid
+    Shutting down Control [PID:17927]
+    Control [PID:17927] shutdown
+    
+
+### Enable Tomcat logging
+
+As of _KX Delta Platform_ 4.5.0, a utility script has been delivered with the
+AppServer package that allows you to toggle the Log Category and Log Levels of
+the Tomcat application. This can be found in the
+`$DELTAAPPSERVER_HOME/scripts` directory called `enableLogging.sh`.
+
+Usage
+
+    
+    
+    enableLogging.sh  -l [Log Level]
+                      -c [Log Category]
+                      -p -Print available Log Categories
+                      -h -Print usage
+    
+
+Example
+
+Enable DEBUG logging for all components (root logger)
+
+    
+    
+    ./enableLogging.sh -l DEBUG -c root
+    Changing Log type [INFO] -> [DEBUG] for [root]
+    
+
+This will update the logback.xml file, setting the root logger log level to
+DEBUG.
+
+    
+    
+        <root>
+            <level value="DEBUG" />
+    <!--        <appender-ref ref="CONSOLE" /> -->
+            <appender-ref ref="FILE" />
+            <appender-ref ref="ERRORFILE" />
+        </root>
+    
+
+To turn DEBUG off, the script can be run again with log level INFO
+
+    
+    
+    ./enableLogging.sh -l INFO -c root
+    Changing Log type [DEBUG] -> [INFO] for [root]
+    
+
+If enabling debug on the root logger provides too much information, you can
+specific loggers. To retrieve a list of available loggers, you can run the
+script with the `-p` option.
+
+    
+    
+    ./enableLogging.sh -p
+    root
+    clientLogging
+    com.fd.business.querymanager
+    com.fd.remote.service.handlers
+    com.fd.business.query
+    com.fd.service.connection
+    com.fd.business.asynch
+    com.fd.service.datasynchronization
+    com.fd.service.security
+    com.fd.delta.q.impl.DeltaC
+    com.fd.service.delta
+    ...
+    
+    
+    
+    ./enableLogging.sh -l DEBUG -c clientLogging
+    Changing Log type [INFO] -> [DEBUG] for [clientLogging]
+    
+
+If there is a Log Category that does not already exist in the logback.xml, you
+will be prompt with the option to add it.
+
+    
+    
+    ./enableLogging.sh -l DEBUG -c com.fd.remote.service.handlers.servlets.RegisterClientServlet
+     Warn: Did not find a logger matching ["com.fd.remote.service.handlers.servlets.RegisterClientServlet"] in [/home/kxplatform/kxinstall/delta-bin/software/Tomcat_9_0_19/latest/webapps/ROOT/WEB-INF/classes/logback.xml]
+     Logger does not exist for [com.fd.remote.service.handlers.servlets.RegisterClientServlet], would you like to add one?
+    yes
+    
+
+Available Log Levels
+
+  * TRACE
+  * DEBUG
+  * INFO
+  * WARN
+  * ERROR
+

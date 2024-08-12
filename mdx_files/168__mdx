@@ -1,0 +1,231 @@
+https://code.kx.com/developer/search/
+
+# Search area - KX Developer
+
+Original URL: https://code.kx.com/developer/search/
+
+# Workspaces
+
+In Developer, you use workspaces to manage your artifacts. A workspace
+contains work-in-progress versions of artifacts in a remote Git repository
+(e.g. modules/sheets, functions, files, etc). Artifacts can be loaded from and
+saved to the repository. Modules are used to package a set of functions, small
+files, and initialization scripts.
+
+When creating a process from the Developer launch screen, you can choose from
+the existing workspaces, or create a new one. There will also be a workspace
+created when attaching to a process using "workspace" mode. All of the
+entities in the user workspace are version-controlled in a remote Git
+repository.
+
+Within your workspace you can perform a variety of operations:
+
+  * Upload files from your computer to the workspace using the upload facility
+  * Add, edit, rename and delete entities in your workspace
+  * Revert to, or compare, previous versions
+  * Publish entities to the repository in order to share them with colleagues
+  * Pull updates from a Git repository to obtain updates from your colleagues
+
+## Exploring
+
+The diagram below identifies the various regions of the Explorer.
+
+![](../img/explorer/mainPage.png)
+
+The Workspace view, shown here, is one of the two views shown by the search
+area. Process shows variables defined in the current process.
+
+## Search area
+
+The Search area is on the left side of the display. It can be closed or opened
+by clicking _Window > Toggle Sidebar_.
+
+Its contents vary with the view chosen: Workspace or Process. In Lite Mode,
+the sidebar will show only the Process view.
+
+## Workspace view
+
+The user workspace is shown in the Workspace view. It contains a list of
+artifacts that are stored and managed locally, organized by module and
+repository. Here you can create, edit, test, and manage artifacts.
+
+### Basic search
+
+Any modules whose name matches the search term entered in the Search Bar (e.g.
+`.q`) will be returned in their entirety, along with any matching child
+artifacts. By default, a case-insensitive search is performed. Case sensitive
+queries and regex queries can be enabled with the buttons below the search
+bar.
+
+![qSearch.png](../img/search/qSearch.png)
+
+A blue outline will appear around the artifact list when some artifacts are
+hidden by the search term or filters.
+
+### Advanced search
+
+Advanced searches can are written as keyword and value pairs where:
+
+  * The keyword and value are separated by a colon
+  * Pairs are separated by spaces
+
+An example query could be `name: math type: fn content: haversine`, which
+would search for all occurrences of the term `haversine` in any functions
+containing `math` in their name, or the name of their parent. To include
+commas, spaces or colons in a search term, wrap the search term in quotes,
+such as `content: "parse list"`. To execute a search, press Enter with the
+cursor in the search bar.
+
+keyword | description  
+---|---  
+name or n | Searches the whole name of the artifact  
+type or t | Matches the following types and shorthand names: function, fn, data, file, spreadsheet, mod, and module  
+content or c | Searching on contents returns both the matching artifacts, and the lines that match. The matching term is shown in bold, and the line number is shown to the left  
+uses | Accepts a complete qualified or unqualified variable name as a value, and searches for all functions, data initializers and test files that reference that name as a non-local variable  
+  
+![contents.png](../img/search/contents.png)
+
+### Search history
+
+Click the arrow at the right end of the query bar to show the search history.
+A separate search history is kept for the workspace and process views.
+
+![history.png](../img/search/history.png)
+
+### Fuzzy search
+
+The fuzzy search dialog can be opened on the main page with Ctrl+P on
+Windows/Linux or ⌘P on a macOS. It lets you type in a ‘fuzzy’ query, and shows
+any artifacts whose name contains the characters in the query, in the correct
+order, though not necessarily consecutively. It allows you to omit characters,
+so `mlibdeg` would match `.mathLib.degToRad` and `.mathLib.radToDeg`.
+
+![fuzzySearch.png](../img/search/fuzzySearch.png)
+
+### Filtering by state
+
+The icons below allow you to see all artifacts or only changed artifacts:
+
+states | description  
+---|---  
+![published.png](../img/search/published.png) | View all published artifacts  
+![notPublished.png](../img/search/notPublished.png) | View only changed artifacts  
+  
+### Search display area
+
+The search display area shows results of the search. Artifacts are grouped by
+repository. The artifacts have the following appearance.
+
+icon | artifact | description  
+---|---|---  
+![](../img/search/typeFolder.png) | Folder | A folder can contain files and other folders.  
+![](../img/search/typeModule.png) | Module | A module is used to package a set of q functions. It defines a set of functions, how to initialize them in memory via data and on disk via files. It can contain functions, data, files, transformations, and visuals.  
+![](../img/search/typeFn.png) | Function | A function artifact contains a single q function. Functions provide a means to name, parameterize and reuse scripts.  
+![](../img/search/typeData.png) | Data | A data artifact contains a q expression that is executed when a module is loaded and is typically used to initialize variables or datasets.  
+![](../img/search/typeFile.png) | File | A file artifact can be created or uploaded to the workspace (e.g. Excel files, Word files, text files). File content is version controlled, however the file is also saved to the server file system.  
+![](../img/search/typeSheet.png) | Spreadsheet | A spreadsheet artifact allows users to organize lines of q script using a familiar spreadsheet interface.  
+![](../img/search/typeVisual.png) | Visual Inspector Data | A Visual Inspector artifact is a saved visual inspection.  
+![](../img/search/typeTransform.png) | Transformer Data | (_KX Analyst only_) A transformer artifact is a saved transformation.  
+  
+### Collapse/expand tree items
+
+Repositories, folders, and modules can be collapsed or expanded by double-
+clicking them, or by clicking the arrow to the left of their name. Further
+options are given by the blue up- and down-arrows above the display area.
+
+states | description  
+---|---  
+![collapseAll.png](../img/search/collapseAll.png) | Click once to collapse everything but repositories, or twice to collapse all repositories  
+![expandAll.png](../img/search/expandAll.png) | Expands all descendants of the selected items  
+  
+The context menu is a convenient means to access some common commands. See the
+[_File_](../menu-bar/#file-menu) and [_Edit_](../menu-bar/#edit-menu) menu
+commands for explanations of commands not described here. The commands not
+found in the File and Edit menus are:
+
+Git menu command | description  
+---|---  
+Push | Commit and push the current changes.  
+Pull | Opens a dialog listing all branches. Pick the current branch to pull the latest changes, or pick another branch to switch branches.  
+Branch | Create a new branch of the repository.  
+Tag | Create a new tag of the repository.  
+Merge | Select a branch to merge into the current branch.  
+Resolve | Enabled when there are merge conflicts. This opens the resolution tool for the selected artifact, letting you pick changes from the incoming, current and ancestor versions.  
+Clone | Clone an existing repository into the workspace.  
+Shared Repositories | Open the dialog for loading shared repositories.  
+Stash | Stash the current changes.  
+Apply Stash | View the list of stashed changes that can be applied.  
+History | View the history for the repository, with the option to compare against other branches.  
+Reset | Reset the repository to the last commit.  
+Settings | Change repository properties such as origin, username, git author and email, and SSH key.  
+Code menu commands | Description  
+---|---  
+Inspect | Opens the artifact in the Visual Inspector  
+Run | For artifacts such as q scripts, saved inspections, import configurations and transformations, this runs the artifact without opening the editor  
+Uses | Searches for artifacts in the workspace which reference the selected artifact  
+Lint > Lint | Runs the linter on the selected artifacts  
+Lint > Config | Creates a configuration of which linter rules and priorities are used  
+Run Tests | Runs the selected tests, or tests associated with the selected functions. Tests are associated if they follow the naming convention where .myModule.test/myFunc.quke contains the tests for .myModule.myFunc  
+Open Tests | Opens the test files associated with the selected functions. Tests are associated if they follow the naming convention where .myModule.test/myFunc.quke contains the tests for .myModule.myFunc  
+Generate Doc | Generates Markdown documentation from the QDoc of the artifacts in the selected module or repository  
+Render Markdown | Displays a Markdown file as rendered HTML  
+Dependency List | Opens dialog allowing you to specify the dependencies of a module, which will affect the order modules are loaded in  
+Export | Export the selected artifact as a q script  
+  
+Which commands are visible at any given time depends on the currently selected
+artifact or artifacts.
+
+## Shared Repositories
+
+Repositories created using the _New > Repository…_ command show up here. It
+can be opened with the _Git > Shared Repositories_ option in the sidebar
+context menu.
+
+![](../img/search/sharedRepos.png)
+
+Repositories can be searched for using the Name or Branch fields. A repo will
+match the branch query if any of its branch names contain the query.
+
+## Process view
+
+The Process view shows all items loaded into the memory of the current kdb+
+process. The view is broken down by namespace and organized by item type. You
+can find any dictionary, function, namespace, variable, table, table column,
+or view loaded into memory here.
+
+Items that are not part of a namespace are part of the global context. These
+items can be found under the `. (Global)` node, at the very top of the tree.
+The Process view can be refreshed by clicking the refresh (↻) button.
+
+![pview.png](../img/search/pview.png)
+
+Items can be searched for using the Search Bar at the top of the Process view.
+Searches can be made case-sensitive by toggling the Case Sensitive button
+below the Search Bar. Searches will search the full name of all items in the
+tree. For example, searching for `purchase` will return all items with
+`purchase` in their names, as well as all items under the `.purchase`
+namespace.
+
+![](../img/search/pviewSearch.png)
+
+Items in the Process view can be inspected, displayed, or opened from the
+context menu if they are not locked functions.
+
+command | description  
+---|---  
+Open | Open the artifact in an editor. (Available only for unlocked code.)  
+Display | Display the artifact in the console.  
+Inspect | Open the artifact in the Visual Inspector.  
+  
+The icons shown in the Process view represent q datatypes.
+
+icon | item  
+---|---  
+![](../img/search/typeModule.png) | Namespace  
+![](../img/search/datatypeDict.png) | Dictionary  
+![](../img/search/datatypeFunc.png) | Function  
+![](../img/search/datatypeTable.png) | Table  
+![](../img/search/datatypeCol.png) | Table Column  
+![](../img/search/datatypeVariable.png) | Variable  
+![](../img/search/datatypeView.png) | View
+

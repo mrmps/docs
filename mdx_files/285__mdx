@@ -1,0 +1,496 @@
+https://code.kx.com/dashboards/releasenotes/
+
+# Release notes - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/releasenotes/
+
+# KX Dashboards release notes
+
+## v2.2.1
+
+**Release Date 5th July 2024**
+
+### Features
+
+  * **New Text-to-Speech Component:** A **Text To Speech** component has been added to KX Dashboards. This component enhances accessibility for users with visual impairments or reading difficulties, ensuring that all users can access and understand the information presented.
+  * **Enhancements to Dashboard Maps:** The following enhancements have been made to the **Map** component; a data-driven line gradient, 2 way binding for annotation filtering, a global palette for consistent styling, and adjustable line thickness to provide more detailed and visually appealing map visualizations.
+  * **Chart Enhancements:** The following enhancements have been made to the **Chart** component; the ability to rotate labels for better readability, improved tooltips for stacked bars and the introduction of wildcard actions for more flexible and dynamic data interactions. Additionally included is the ability to rotate labels in the Chart Axes.
+  * **Dashboard View State Editor Improvements:** The **View State** editor has been enhanced so that it can efficiently handle large datasets, ensuring smooth performance and usability even with substantial amounts of data.
+  * **Data Grid Filter Column Viewstates:** KX Dashboards now includes a feature that enables View States to be set based on column filter values, allowing for more dynamic and personalized data visualization experiences.
+
+### Bug Fixes
+
+  * Dataform: Decimal Increment doesn't allow changes to negative values
+  * DataFilter: List items expanded outside field parameter cell
+  * Accordion: Unload tab if it contents ChartGL component after exiting
+  * Advanced Settings dialog - add Cancel button
+  * DataFilter - add actions (events)
+  * Fix Vulnerability for Cross-Site WebSocket Hijacking
+  * Datasource dialog : not updating properties when switching between different datasources
+  * Viewstate editor: hanging on dashboards with huge datasets
+  * Config Manager: Dix for complications when editing boolean values 
+  * Datagrid - Area selection mode copy paste bug
+  * Dataform: update forms with hidden columns causing a refresh
+
+## v2.2.0.1
+
+**Release Date 30th May 2024**
+
+### Bug Fixes
+
+  * Action Tracker: Fix for Case Management Display
+  * ChartGL: Tooltip shows all layers
+
+## v2.2.0
+
+**Release Date 17th May 2024**
+
+### Features
+
+  * **Integrating Python with PyKX:** Leveraged the power of Python by integrating it into KXDashboards using PyKX, enabling users to seamlessly combine Python's extensive libraries and functionalities with the high-performance capabilities of KX for data analysis, visualization, and interactive dashboard creation.
+  * **Frozen Columns in Datagrid Component:** Enhanced user experience and data accessibility by adding frozen columns to the Datagrid component, allowing certain columns to remain fixed and visible while users scroll through the rest of the dataset, ensuring important information is always in view.
+  * **Colorblind-Friendly Color Palette:** Introduced a colorblind-friendly color palette to the global palettes, ensuring that visualizations and dashboards are accessible to users with color vision deficiencies, thereby promoting inclusivity and enhancing readability for all users.
+  * **Multi-Layer Map Component:** Developed a versatile multi-layer Map component that functions seamlessly in both online and offline modes, featuring annotations, heatmaps, custom styling, and data-driven layers to provide comprehensive and customizable mapping solutions for a wide range of applications.
+  * **Rolling Dates Business/Work Days:** KX Dashboards now support rolling dates for business/work days, allowing users to effortlessly incorporate business-specific date calculations into their dashboards for more accurate and relevant data analysis.
+
+### Bug Fixes
+
+  * Decimal Increment doesn't allow changes to negative values
+  * Pivot queries missing from data dialog
+  * Playback: reverse button has incorrect tooltip
+  * Editor: Wrong position for component placeholder when dragging 
+
+## v2.1.10
+
+**Release Date 13th May 2024**
+
+### Features
+
+  * **Datagrid Freeze Columns:** It is now possible to freeze columns in the Datagrid component. This provides an enhanced experience for users by allowing them to lock certain columns in place while scrolling through large datasets.
+  * **Dataform Autoscrolling:** We have integrated autoscrolling to the selected value in dropdown menus. This ensures smooth navigation and improved usability for users when selecting options from extensive lists.
+  * **Offline maps - Hexagon Heatmap Overlap:** A hexagon heatmap overlay feature has been added to the map component. This provides users with visual insights through aggregated data representation in a geospatial context. Users can now customize the hexagon heatmap to allow for adjustable parameters such as color gradient, opacity, and hexagon size, ensuring flexibility in visualizing different datasets on the map.
+  * **Managed Queries Paging:** Paging has been added for Managed queries.
+
+### Bug Fixes
+
+  * Decimal increment didn't allow changes to negative values.
+  * Pivot queries were missing from the data dialog.
+  * The Playback reverse button had incorrect tooltip.
+  * Editor had the wrong position for component placeholder when dragging. 
+
+## v2.1.9
+
+**Release Date 16th April 2024**
+
+### Features
+
+  * **Python Queries:** [Python queries](../datasources/#python) are now supported in Data Sources. This enhances KX Dashboards capabilities by leveraging the functionality of the PyKX library for interacting with kdb+/q databases. Users of KX Dashboards can now write queries using kdb+/q, SQL and **Python**.
+
+  * **Accessibility Improvements:** It is now possible to specify a colorblind palette with global palettes. Users can now choose to use a colorblind friendly color palette for each of our components (including all our charts).
+
+  * **Offline Map Icon Image Transparency:** Offline maps now support the option to toggle whether to apply image transparency to icons used in the component.
+
+  * **Date Range Component:** The new [Date Range Picker](../daterangepicker/) component allows users to define a date range by specifying the start date and the end date for a range of dates.
+
+  * **Disable Zooming in Chart GL:** It is now possible to disable zooming in our ChartGL component.
+
+  * **Performance optimization:** The data source dialog has a new setting used to show a Preview result set or Full results set (Max Rows).
+
+### Bug Fixes
+
+  * **Canvas Charts** \- Fix applied for the exporting a chart as a .png image.
+  * **Chart GL** \- Fix for displaying bubbles in Streaming dashboards
+  * **Forms** \- For a number input, fixed issue that did not allow the form to update when clicking on the input spinner buttons when the input value was zero.
+  * **Gauge Chart** \- Added fix for Gauge chart to work with virtual queries.
+  * **Offline Map** \- Always display map elements (Lines, Circles, Points, Heatmaps) on top layer of the map. 
+
+  * **Config Manager** \- Fix applied for preview screen not working with data with commas. 
+
+### Documentation Updates
+
+## v2.1.0
+
+**Improved view state and data source editors**
+
+We have implemented a number of features designed to improve the user
+experience for data sources and view states making it easier to manage your
+data, visualize how different viewstates and components interact and access
+your data faster.
+
+  * Quick access toolbar
+  * Clean up button to remove used view states / data sources
+  * Component naming - assign a name to each component that you create with in dashboard
+  * View state graph - illustrates any and all references being made to a selected view state including: Data source, Component and Queries Mappers
+
+**Map Component (new)**
+
+Our new map component is built with performance in mind. Utilizing WebGL
+technology , it leverages hardware acceleration to render maps quickly and
+smoothly. With the addition of an offline mode, this map does not require
+external APIs.
+
+Map your data to dynamically add the following map elements:
+
+  * Points
+  * Lines
+  * Circles
+  * Heatmaps
+  * Bounds
+  * Animated circles
+  * Night/Day layers
+  * Video layers
+  * GeoJSON layers
+
+Customize the following:
+
+  * Map latitude/longitude to custom visuals
+  * Cluster or display all data
+  * Customize colors, sizes, fonts
+  * Define custom actions
+  * Add custom tooltips
+  * Add data labels
+  * Add rotation and custom images
+  * Annotate lines and polygons
+  * Filter actions
+
+**Charts**
+
+  * New line style options
+  * Improve range selection for choose x-axis min and max values
+
+**Data forms**
+
+  * New range type 
+  * Icons options for dropdown types
+  * Bug fixes to improve performance and loading
+
+**Gauge/bullet chart (new)**
+
+  * Define both Gauge and Bullet charts these are ideally suited for use in dashboards visualizing KPI.
+
+**Sankey**
+
+  * Include pivot functionality using a Sankey component. The Sankey is a great visualization to show the flow from one category to another.
+
+**Upload Component (new)**
+
+  * Upload and download files using our new upload component
+
+## v2.0
+
+**Data grid**
+
+**Data table**
+
+  * Client side pivot sort 
+  * Column breakdown add/re-order/edit/remove
+
+**Data export**
+
+  * Raw data export option
+  * Event tracking
+
+**ChartGL**
+
+  * Cartesian heatmap categories and labels
+  * Line width 
+  * Performance tracking
+  * Line monotone interpolation
+
+**Data Form**
+
+  * Read only date pickers
+  * Drop down selected ordered
+  * Number input increment definition 
+
+**Breadcrumbs**
+
+**Maps**
+
+**General**
+
+  * Test connection button
+  * System viewstates
+
+## v1.9
+
+**Data Grids**
+
+  * Data grid footer templates
+
+**Pivot Grids**
+
+  * Pivot caching config
+  * Exporting raw data
+
+**Chart GL**
+
+  * Cartesian heatmap
+  * Trigger break
+  * Range defaults
+  * Base line layer 
+  * Data labels updates
+  * ChartGL performance
+
+**Accordian**
+
+**Security and Modernisation**
+
+  * Panels to typescript
+  * Flex panel to typescript
+  * jQuery updated
+  * jQueryUI updated
+  * jsZip updated
+  * Session APIs updated
+  * Moment.js updated
+
+**Pie Chart**
+
+**Data form**
+
+## v1.8
+
+**Data Grid**
+
+  * Header grouping view states
+  * Checkbox only selection
+  * Cell selection
+  * Templated footers
+
+**Chart GL**
+
+  * Range selector 
+  * Horizontal bars
+  * Category y-axis
+  * Stacked bars
+  * Streaming zoom
+
+**Pivot Grid**
+
+**Maps**
+
+  * Point labels
+  * Line grouping
+  * Show lines in view
+
+**Luna**
+
+  * New high-performance temporal geospatial visualization component
+
+## v1.7
+
+**Chart GL**
+
+  * Nano second zoom
+  * Data labels
+  * Bound labels
+  * Waterfall layers
+  * Category x-axis
+  * Excel and cvs export
+
+**Data Grid**
+
+  * Header grouping
+  * Right click actions
+  * Full pdf print option
+
+**Pivot Grid**
+
+  * Expanded Summary
+  * Cell selection
+  * Row highlights
+  * Cache columns
+
+**PDF Export**
+
+  * Hidden Tabs
+  * Time zone displays
+  * Tab loading
+
+## v1.6
+
+**Chart GL**
+
+  * Legends can be grouped and positioned
+  * Support for CSV and Excel export
+  * Mouse-based zoom
+  * Bar grouping
+
+**Trade**
+
+**Vega Chart**
+
+**Editable List**
+
+  * Includes validation analytic
+
+**Pivot Grid**
+
+  * Inherit column width properties for user-added columns
+
+## v1.5
+
+**Data Grid**
+
+  * Keyboard shortcuts for Area select
+
+**Pivot Grid**
+
+**Pop up**
+
+## v1.4
+
+**Document Graph**
+
+  * Display components: Search & Filter
+  * Auto-clean: remove unused entities
+
+**Data Source Dialog**
+
+  * SQL editor (requires s.k)
+  * Auto-execute option
+
+**Canvas Charts**
+
+  * Multi-format x-axis
+  * Offset (time and linear) axis
+  * Label rotation and optional display
+  * Show major labels for time series x-axis
+
+**Data Grid**
+
+  * Summary row: sum, avg, count and wavg
+  * Composite sparklines
+  * "Instant Edit"; single click checkbox submit
+
+**Trading Panel**
+
+**Form Builder**
+
+**Treeview**
+
+## v1.3
+
+**Dynamic forms for developers**
+
+  * Render any q schema
+  * React to changes for adaptive forms; e.g. Market / Limit Orders
+  * Validation, required fields and server side checks
+
+**ChartGL**
+
+  * Fills, areas & fades
+  * Crosshairs and global tooltips, even on HF streams
+  * Candlestick layer type
+
+**Trade Panel Component**
+
+  * High Frequncy Updates
+  * Low-Zero CPU background
+
+**Query Builder**
+
+  * Aggregate buckets with round / xbar
+
+**Graph View**
+
+  * Live elastic physical layout, edge selection
+
+**Usability focus**
+
+  * Floatable Layout now enabled by default
+  * Shortcut Key properties
+  * Update query parameters
+
+## v1.2
+
+**Usability focus**
+
+  * Click to populate in Editor
+  * Editor performance
+  * Global tooltip
+
+**ChartGL**
+
+  * Zoom animation
+  * Pan drag axis
+  * Bars
+  * Multiple axes support
+  * Extended highlight rules
+  * Hover states and tooltip groups
+
+**Published and Draft dashboards**
+
+**Financial Chart**
+
+**Shortcut Key component**
+
+**Searchable Treemenu**
+
+**DataFilter**
+
+  * Field to field comparison
+
+## v1.1
+
+**Easy to use Template Editor**
+
+  * No code, click to add from data
+  * Bind view states
+  * Formatting, validation and helper toolbar
+
+**Property Panel**
+
+**Query Builder**
+
+  * HDB support
+  * Direct Streaming
+
+**ChartGL**
+
+  * Legend, Crosshairs and Gridlines
+  * Crosshairs and custom tooltips
+
+**Flex Accordion**
+
+**Canvas Charts**
+
+  * Violin charts
+  * OHLC charts
+
+## v1.0
+
+**New components**
+
+  * Treeview
+  * Sunburst
+  * Contour
+
+**Visual Decision Tree**
+
+**ChartGL Beta**
+
+**Integrated Query Builder**
+
+  * Build query graphs and link view states
+
+**Document Graph**
+
+  * Identify active data sources and their subscribers
+
+**Layout**
+
+  * Defined default component size
+
+**Updated 3D Chart**
+
+**Wildcard support for dropdown search**
+
+**Data Grid**
+
+  * Gradient Highlight Rule
+  * Expanded Regex Support
+  * Auto-sum calculation on select
+  * List capture on select
+  * Short-hand numeric notation support
+

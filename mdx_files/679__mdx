@@ -1,0 +1,260 @@
+https://code.kx.com/analyst/getting-started/
+
+# Getting started - KX Analyst
+
+Original URL: https://code.kx.com/analyst/getting-started/
+
+# Getting started
+
+The Analyst package contains both the Analyst environment, as well as the
+[AxLibraries](../libraries/) libraries and utilities which can be used by q
+developers and build systems outside of Analyst.
+
+For more information on installing and using the libraries _outside_ of
+Analyst, see [the libraries installation
+instructions](../libraries/#installation). The following information details
+how to install and run KX Analyst.
+
+##  Prerequisites
+
+To install and use Analyst, you must have installed 64-bit kdb+ V3.4+ and set
+the required q environment variables (`QHOME`, `QLIC`, append q to `PATH`),
+and should be running one of the following supported operating systems:
+
+  * RHEL 6.5/7/8
+  * Windows 10
+  * Windows Server 2012/2016
+  * Ubuntu 16.04/18.04/20.04
+  * macOS 10.10+
+
+The following dependencies are also required.
+
+OpenSSL version
+
+Analyst is built against the default OpenSSL version for a given operating
+system. As a result, Analyst expects to find OpenSSL 1.0.X on RHEL 6, RHEL 7,
+and Ubuntu 16, and expects to find OpenSSL 1.1.X on RHEL 8 and Ubuntu 18/20.
+For compatibility reasons, Analyst on macOS can work with either version of
+OpenSSL.
+
+OpenSSL q symlink
+
+In some distributions, OpenSSL isn't linked as `libssl.so`, and is instead
+provided as `libssl.so.1.0.0` or equivalent, for example. q looks for
+`libssl.so` when loading with TLS enabled, so a symlink may be required.
+
+#### Linux
+
+  * (rhel6/7, ubuntu 16) OpenSSL 1.0.0 or newer
+  * (rhel8, ubuntu 18/20) OpenSSL 1.1.0 or newer
+  * fontconfig 2.8.0 or newer
+  * (rhel6) freetype 2.3.11 or newer
+  * (rhel6, ubuntu) libpng 1.2.49 or newer
+  * (rhel7/8) libpng 1.5.13 or newer
+  * glibc 2.12 or newer
+  * libgcc 4.4.7 or newer
+  * libstdc++ 4.4.7 or newer
+
+#### macOS
+
+MacOS dependencies can be installed via Homebrew.
+
+  * OpenSSL 1.0.1+ _or_ OpenSSL 1.1.0+
+
+Note: Analyst on macOS expects to find the OpenSSL libraries
+`libcrypto.1.0.0.dylib` and `libssl.1.0.0.dylib` in
+`/usr/local/opt/openssl/lib`, which is where they are commonly installed. If
+OpenSSL was installed to a different location, you may see errors similar to:
+
+    
+    
+    Error loading q_git k_libgit2_tag_delete:dlopen(/Users/<username>/analyst/ws/lib/q_git.so, 2):
+      Library not loaded: /usr/local/opt/openssl/lib/libssl.1.0.0.dylib
+      Referenced from: /Users/<username>/analyst/ws/lib/libssh2.1.dylib
+      Reason: image not found
+    
+
+To fix this, the files will need to be symlinked to the expected location. For
+example, if OpenSSL was installed using Anaconda, you may need to run commands
+similar to the following. Note that the Anaconda paths used in this example
+may be different for your install of Anaconda:
+
+    
+    
+    mkdir -p /usr/local/opt/openssl/lib && cd /usr/local/opt/openssl/lib
+    ln -s ~/anaconda2/lib/libcrypto.1.0.0.dylib libcrypto.1.0.0.dylib
+    ln -s ~/anaconda2/lib/libssl.1.0.0.dylib libssl.1.0.0.dylib
+    
+
+#### Windows
+
+  * Visual C++ Redistributable 2015
+
+If using authentication with Analyst , or using q with TLS enabled:
+
+  * OpenSSL 0.9.8 or newer (see Knowledge Base: [SSL](https://code.kx.com/q/kb/ssl/) for more information)
+
+##  Install
+
+After extracting the Analyst directory from the compressed archive, the bash
+script `install.sh` can be used to install Analyst on any supported *nix
+platform with bash installed, or the batch script `install.bat` can be used to
+install Analyst to any supported version of Windows.
+
+The install script will display instructions when run with the `-h` or
+`--help` flag. By default, the installer will pose a series of questions which
+will be used to construct a configuration file, then use that configuration to
+install Analyst.
+
+TLS certificate paths will be requested during installation
+
+If not using TLS, ignore these prompts. If using kdb+ <3.6, the SSL
+environment variables `SSL_CERT_FILE` and `SSL_KEY_FILE` should be used and
+should be set up outside of the Analyst config by the user. The Analyst config
+sets the `KX_SSL_*` environment variables used in kdb+ 3.6+. See knowledge
+base: [SSL](https://code.kx.com/q/kb/ssl) for more information.
+
+When the installation completes, a config file will be written to
+`<install>/config/config.profile` on *nix or `<install>/config/config.bat` on
+Windows.
+
+##  Starting Analyst
+
+### Linux  and macOS
+
+If you added the alias output by the installer to your shell config file (eg.
+`.bashrc` or `.bash_profile`), simply open a terminal and type `analyst` to
+start Analyst.
+
+To start it manually, open a terminal and source the config file, then launch
+q and load the `launcher.q_` file:
+
+    
+    
+    source /path-to-install-dir/config/config.profile
+    q /path-to-install-dir/launcher.q_
+    
+
+Replace `/path-to-install-dir/` with the path to where Analyst was installed.
+Note that for TLS-enabled installs, you must pass q the `-E 2` flag:
+
+    
+    
+    q /path-to-install-dir/launcher.q_ -E 2
+    
+
+### Windows
+
+To start Analyst on Windows, you must run the `config.bat` file and then load
+the `launcher.q_` script into q. To do so, open a Command Prompt and run the
+following:
+
+    
+    
+    C:\path-to-install-dir\config\config.bat
+    q C:\path-to-install-dir\launcher.q_
+    
+
+Replace `C:\path-to-install-dir\` with the path to where Analyst was
+installed. As per the instructions for _*nix_ systems, you will need to pass
+the `-E 2` flag to q if the install is TLS-enabled. Note that on Windows
+systems with authentication enabled, the password entered in the Command
+Prompt is not hidden.
+
+##  Connecting to Analyst
+
+To connect to Analyst, open a modern web browser and navigate to the URL
+output to the q console when you start Analyst.
+
+If you have enabled authentication for your install, you will be prompted by
+your browser to enter credentials when you navigate to the Analyst URL. Enter
+the credentials you set when starting Analyst at the command line to login.
+
+![](../img/getting-started/basic-auth.png)
+
+If you disabled authentication, you will not be prompted for credentials and
+will instead be taken directly to the Workspace Browser.
+
+### Workspace Browser
+
+After you have connected to Analyst, the _Workspace Browser_ will be
+displayed. Here you can create a new workspace or choose an existing workspace
+workspace to load.
+
+![](../img/getting-started/standaloneWSList.png)
+
+### Creating a workspace
+
+  1. Click _Create_.
+  2. Enter a valid workspace name in the dialog.
+  3. Click _OK_.
+
+The workspace will appear in the workspace list.
+
+### Opening a workspace
+
+  1. Select a workspace from the workspace list.
+  2. Click _Open_ , or double-click the workspace.
+
+That workspace will be opened in the _Explorer_.
+
+![emptyWorkspace.png](../img/getting-started/emptyWorkspace.png)
+
+### Deleting a workspace
+
+  1. Select a workspace from the workspace list.
+  2. Click _Delete_
+  3. Read the warning, and click _OK_ if you would still like to delete the workspace.
+
+## Pop-ups
+
+The first time you log into Analyst you may need to unblock pop-ups. If using
+the Chrome web browser, click on the window icon as shown below and select
+_Always allow pop-ups_. The process will be slightly different in other web
+browsers.
+
+![unblockPopup.png](../img/getting-started/unblockPopup.png)
+
+Alternatively you can set your pop-up control manually to prevent this message
+from occurring when you log in to a workspace. If this is desired you will
+need to set your Chrome options to allow pop-ups from the Analyst server URL.
+Select the icon in the top right corner of your Chrome browser and select
+_Settings_ from the menu. The menu structure may vary slightly depending on
+your browser version and computer platform.
+
+![settings.png](../img/getting-started/settings.png)
+
+Click the _Advanced_ link at the bottom of the page.
+
+![advancedSettings.png](../img/getting-started/advancedSettings.png)
+
+Click the _Content settings_ button in the _Privacy and security_ section.
+
+![contentSettings.png](../img/getting-started/contentSettings.png)
+
+Click _Pop-ups and redirects_.
+
+![popups.png](../img/getting-started/popups.png)
+
+In the _Allow_ section click _Add_.
+
+![allowPopups.png](../img/getting-started/allowPopups.png)
+
+Enter your Analyst URL in the dialog. Then click _Add_. The Analyst URL now
+allows pop-ups and should function properly.
+
+![addSite.png](../img/getting-started/addSite.png)
+
+##  Logging out of Analyst
+
+You are able to logout of Analyst if Authentication is enabled. To do so,
+
+  1. Under the _Account Options_ menu click _Logout_.
+  2. You will be logged out and prompted for credentials again
+  3. Close the browser window.
+
+Merely closing the browser window will not log you out of your session. When
+you re-open Analyst, it will take you back to your previous session.
+
+For sessions without authentication enabled there is no logout feature.
+

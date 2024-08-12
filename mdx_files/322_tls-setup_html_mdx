@@ -1,0 +1,194 @@
+https://code.kx.com/insights/enterprise/ingest/examples/kafka/tls-setup.html
+
+# Setup Kafka TLS - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/ingest/examples/kafka/tls-setup.html
+
+# Kafka with TLS
+
+_Tutorial for creating TLS certificates to secure data using Kafka_
+
+Kafka supports encrypting data in transit using transport layer security (TLS)
+encryption. To configure TLS encryption, the Kafka broker must be configured
+with TLS settings enabled. See the [Confluent guide on
+authentication](https://docs.confluent.io/platform/current/kafka/authentication_ssl.html)
+for a guide on configuring the broker with a key and certificate to enable TLS
+encryption.
+
+TLS is the successor SSL
+
+TLS is the newer version of what was previously referred to as secure socket
+layer (SSL) encryption. The guide above refers to SSL authentication which can
+be used interchangeably with TLS.
+
+## Creating self-signed certificates
+
+This section walks through creating self-signed certificates to use with the
+broker and consumers. It is recommended that in production an official
+certificate authority is used to issue these certificates.
+
+Tips for configuring certificates
+
+When creating certificates, most will require a password. It is recommended
+that a strong password is used and the same password is used for the key and
+certificate. When configuring the common name (CN) for the certificate, use
+the external hostname of the target Kafka broker instance when configuring
+this value.
+
+Typically brokers are configured with a `keystore.jks` and `truststore.jks`
+file. The Java Keystore (JKS) format is a proprietary Java format that is not
+compatible with the Kafka reader. These certificates can be converted into
+Rivest-Shamir-Adleman (RSA) encoded Privacy Enhanced Mail (PEM) files. This
+section walks through converting a keystore and truststore into a certificate
+authority (CA) root file, a key and a certificate encoded as `.pem` files.
+
+#### 1\. Generate the keystore
+
+    
+    
+    # keytool is bundled with the JDK and is used to generate the keystore for this example.
+    #
+    # -keystore <filename>   - output file
+    # -alias <hostname>      - alias name from the entry process
+    # -validity <days>       - valid duration of this keystore in days
+    keytool -genkey -keyalg RSA -keystore keystore.jks -alias localhost -validity 365
+    
+
+#### 2\. Generate the certificate authority
+
+The CA file is simply a public-private key pair certificate that will be used
+to sign other certificates. The CA file needs to be installed in the server
+key and client certificate to validate the authenticity.
+
+    
+    
+    openssl req -new -x509 -keyout ca-key.pem -out ca-cert.pem -days 365
+    
+
+#### 3\. Create the truststore from the certificate authority
+
+Generate the truststore for the server using the certificate authority.
+
+    
+    
+    keytool -import -keystore truststore.jks -alias CARoot -file ca-cert.pem -trustcacerts
+    
+
+#### 4\. Sign the certificates with the certificate authority
+
+Export the certificate from the keystore.
+
+    
+    
+    keytool -certreq -keystore keystore.jks -alias localhost -file unsigned.pem -trustcacerts
+    
+
+Sign the certificate with the CA file.
+
+    
+    
+    openssl x509 -req -CA ca-cert.pem -CAkey ca-key.pem -in unsigned.pem -out signed.pem -days 365 -CAcreateserial
+    
+
+Import the signed certificate into the server keystore for each alias.
+
+    
+    
+    keytool -import -keystore keystore.jks -alias CARoot -file ca-cert.pem -trustcacerts
+    
+    
+    
+    keytool -import -keystore keystore.jks -alias localhost -file signed.pem -trustcacerts
+    
+
+#### 5\. Export the client PEM files
+
+Export the client certificate from the keystore.
+
+    
+    
+    keytool -exportcert -alias localhost -keystore keystore.jks -rfc -file cert.pem
+    
+
+Export the key to a Public Key Cryptography Standards 12 (PKCS12) format. This
+is used as an intermediary format which will be converted to a PEM file.
+
+    
+    
+    keytool -importkeystore \
+        -srckeystore keystore.jks \
+        -destkeystore keystore.p12 \
+        -deststoretype PKCS12 \
+        -srcalias localhost
+    
+
+Extract the key from the PKCS12 file into a PEM file.
+
+    
+    
+    openssl pkcs12 -in keystore.p12 -nocerts -nodes -out key.pem
+    
+
+A number of the files generated were intermediate files and can now be removed
+
+    
+    
+    rm ca-key.pem unsigned.pem signed.pem keystore.p12
+    
+
+#### Summary
+
+At this point we have created the following files.
+
+file | description  
+---|---  
+keystore.jks | Kafka broker keystore  
+truststore.jks | Kafka broker truststore  
+ca-cert.pem | CA certificate  
+cert.pem | Client certificate  
+key.pem | Client key  
+  
+These files will be used in later steps to configure the Kafka client to read
+from the Kafka broker.
+
+## TLS Kafka reader in the Stream Processor
+
+TLS configuration can be set on a Kafka reader or writer by explicitly setting
+the configuration values in a program file or with environment variables. The
+following table outlines the available variables that can be used for
+configuration. For more information on these configuration properties, refer
+to the [librdkafka
+documentation](https://docs.confluent.io/5.5.1/clients/librdkafka/md_CONFIGURATION.html)
+
+environment variable | property | description | example  
+---|---|---|---  
+`KXI_SP_KAFKA_SECURITY_PROTOCOL` | `security.protocol` | Security communication protocol | `"SSL"`  
+`KXI_SP_KAFKA_SSL_CA_LOCATION` | `ssl.ca.location` | CA PEM file location | `"ca.pem"`  
+`KXI_SP_KAFKA_SSL_CERTIFICATE_LOCATION` | `ssl.certificate.location` | Client certificate location | `"cert.pem"`  
+`KXI_SP_KAFKA_SSL_KEY_LOCATION` | `ssl.key.location` | Client key location | `"key.pem"`  
+`KXI_SP_KAFKA_SSL_KEY_PASSWORD` | `ssl.key.password` | Client key password | `"iamseure"`  
+`KXI_SP_KAFKA_SSL_VERIFY_CERTIFICATES` | `enable.ssl.certificate.verification` | Set to `"false"` to disable server certificate verification. This needs to be set to "false" for self-signed certificates | `"false"`  
+  
+Example program called `spec.q`:
+
+    
+    
+    .qsp.run
+        .qsp.read.fromKafka[.qsp.use (!) . flip (
+            (`brokers                  ; "kafka:9092");
+            (`topic                    ; "trades");
+            (`options; (!) . flip (
+                (`security.protocol        ; "SSL");
+                (`ssl.ca.location          ; "/certs/ca-cert.pem");
+                (`ssl.certificate.location ; "/certs/cert.pem");
+                (`ssl.key.location         ; "/certs/key.pem");
+                (`ssl.key.password         ; "iamsecure"))))]
+        .qsp.decode.json[]
+        .qsp.map[{ flip `time`sym`bid`ask!"PSff"$'flip x }]
+        .qsp.window.timer[00:00:10]
+        .qsp.write.toProcess[.qsp.use `handle`mode`target!(`:localhost:4000; `function; `publish)]
+    
+
+To see an example Stream Processor deployment using TLS, refer to either the
+[deployment example](tls-ingest.html).
+

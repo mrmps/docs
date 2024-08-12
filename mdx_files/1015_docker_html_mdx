@@ -1,0 +1,181 @@
+https://code.kx.com/insights/microservices/machine-learning/quickstart/docker.html
+
+# Docker - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/machine-learning/quickstart/docker.html
+
+# Quickstart (Docker)
+
+_End-to-end workflow examples using the kdb Insights Machine Learning
+functionality within a Docker deployment_
+
+This quickstart introduces the use of this component as part of real-world
+applications. It is not fully descriptive: explore the API documentation
+[here](../../../api/machine-learning/index.html) which outlines all
+functionality provided to a user by this docker image.
+
+The following docker based workflows are supported for the `kxi-ml`
+functionality:
+
+  1. Use the `kxi-ml` docker image as a development environment for machine learning.
+  2. Deploy an `kxi-ml` docker image as a Worker in a Stream Processor workflow.
+
+**Image description**
+
+The docker image `kxi-ml` operates with the following base installed items.
+
+    
+    
+    - Base Image: rockylinux/rockylinux:8
+    - Python 3.9.6
+    - Python modules:
+            - numpy
+            - scipy
+            - scikit-learn
+            - statsmodels
+            - matplotlib
+            - pandas
+    
+
+## Development Environment
+
+  1. Pull the `kxi-ml` image required to run the kdb Insights ML functionality
+
+     * Login to the docker registry 
+        
+                docker login registry.dl.kx.com -u <insert> -p <insert>
+        
+
+     * Pull the `kxi-ml` image 
+        
+                docker pull registry.dl.kx.com/kxi-ml
+        
+
+  2. Base encode your kdb+ license and store as an environment variable 
+    
+        $ export KDB_LICENSE_B64=$(base64 path-to/kc.lic)
+    
+
+  3. Start the docker image 
+    
+        $ docker run -it -p 5000:5000 \
+      -e "KDB_LICENSE_B64=$KDB_LICENSE_B64" \
+      registry.dl.kx.com/kxi-ml
+    
+
+Extensibility
+
+The startup outlined in step 3 above can be modified in a number of ways to
+allow additional flexibility. For example users following the instructions
+outlined [here](../../../api/machine-learning/q/registry/cloud-
+integration.html) can use this image to deploy models to an ML Registry within
+cloud storage as follows for AWS:
+
+    
+    
+    $ docker run -it -p 5000:5000 \
+        -e "KDB_LICENSE_B64=$KDB_LICENSE_B64" \
+        -e "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID" \
+        -e "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" \
+        -e "AWS_REGION=$AWS_REGION" \
+        registry.dl.kx.com/kxi-ml \
+        -aws s3://my-aws-storage -p 5000
+    q).ml.registry.set.model[::;::;{x};"mymodel";"q";::]
+    
+
+## Deploying ML models to the Stream Processor
+
+To ensure that this workflow is clear for the Machine Learning use-case the
+following instructions are provided, this follows closely the Stream Processor
+quickstart described [here](../../stream-processor/quickstart/docker.html)
+with a focus on the deployment of a specification requiring access to Machine
+Learning Operators defined [here](../../../api/stream-processor/q/ml.html)
+explicitly.
+
+In each of the examples below we will make use of the `kxi-ml` docker image
+available on the `registry.dl.kx.com` docker registry. Additionally we will
+need access to the `kxi-sp-controller`, download of each can be achieved as
+follows:
+
+  * Login to the docker registry 
+    
+        docker login registry.dl.kx.com -u <insert> -p <insert>
+    
+
+  * Pull the `kxi-ml` image 
+    
+        docker pull registry.dl.kx.com/kxi-ml
+    
+
+  * Pull the `kxi-sp-controller` image 
+    
+        docker pull registry.dl.kx.com/kxi-sp-controller
+    
+
+### Pipelines
+
+**q Pipeline:**
+
+**Python Pipeline:**
+
+    
+    
+    ```py
+    // spec.py
+    
+    import kxi.sp as sp
+    import pykx as kx
+    
+    sp.run(sp.read.from_callback('publish')
+        | sp.transform.replace_infinity()
+        | sp.ml.registry.fit(['x', 'x1', 'x2'],
+                             'y',
+                             kx.ml.online.sgd.linearRegression,
+                             'q',
+                             'yhat')
+        | sp.write.to_console())
+    ```
+    
+
+### Docker Compose
+
+Create an appropriate Docker Compose file:
+
+Note
+
+In defining the below `docker-compose.yaml` to use the `q` or `py`
+specifications change the `KXI_SP_SPEC` environment variable in the `worker`
+section of the yaml.
+
+    
+    
+    # docker-compose.yaml
+    
+    version: "3.3"
+    services:
+      controller:
+        image: registry.dl.kx.com/kxi-sp-controller
+        ports:
+          - 6000:6000
+        environment:
+          - KDB_LICENSE_B64                        # Which kdb+ license to use, see note below
+        command: ["-p", "6000"]
+    
+      worker:
+        image: registry.dl.kx.com/kxi-ml
+        ports:
+          - 5000
+        volumes:
+          - .:/app                                 # Bind in the spec.q file
+        environment:
+          - KXI_SP_SPEC=/app/spec.q                # Point to the bound spec.[q|py] file
+          - KXI_SP_PARENT_HOST=controller:6000     # Point to the parent Controller
+          - KDB_LICENSE_B64
+          - AWS_ACCESS_KEY_ID                      # Use AWS_ACCESS_KEY_ID defined in process
+          - AWS_SECRET_ACCESS_KEY                  # Use AWS_SECRET_ACCESS_KEY defined in process
+          - AWS_REGION                             # Use AWS_REGION defined in process
+        command: ["-p", "5000", "-aws", "s3://path-to-bucket"]
+    
+
+  1. Start the containers:
+

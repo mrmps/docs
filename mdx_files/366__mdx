@@ -1,0 +1,153 @@
+https://code.kx.com/platform/deployment/env_info/
+
+# Environment information - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/deployment/env_info/
+
+# Environment information
+
+## KX Delta Platform ports
+
+The various software components are preconfigured to use a set of default
+ports. The ports below are required to be free on the box for each
+installation.
+
+Port | Process | Description | Access  
+---|---|---|---  
+2001 | KX Control | Port for control server process | _Desktop_ to port 2001 on platform deploy server  
+2002 | LogStreamer | Port for Log Streamer process which allows communication and synchronization between Control instances | _Server_ to _Server_ in Control cluster  
+8080 | Tomcat | HTTP Port | _Desktop_ to port 8080 on platform deploy server  
+8443 | Tomcat | HTTPS Port | _Desktop_ to port 8443 on platform deploy server (where Apache Tomcat is deployed with SSL/HTTPS)  
+  
+## Platform config
+
+### delta.profile
+
+The configuration for the _KX Delta Platform_ is stored in the delta.profile
+(Linux) delta.profile.bat (Windows) which can be found here ~/kxinstall/delta-
+bin/.
+
+It contains a number of Environment variables which are used to configured,
+ports, paths and options for the _KX Delta Platform_.
+
+The delta.profile also contains a path to the current version of each deployed
+package, this is used when Control is importing the package contents into its
+internal tables at deploy time.
+
+    
+    
+    ############ Package ENV ###############
+    export DELTACONTROL_CHKPTDIR=${DELTA_HOME}/checkpoint
+    export DELTA_PACKAGE_HOME=${DELTA_HOME}/packages
+    export DELTA_DEV_PACKAGE_HOME=${DELTA_HOME}/dev_packages
+    export DELTASTREAM_VERSION=4_4_0P6
+    export DELTASTREAM_HOME=${DELTA_PACKAGE_HOME}/DeltaStream_${DELTASTREAM_VERSION}
+    export DELTA_PACKAGES_DIR=${DELTA_PACKAGE_HOME}:${DELTA_DEV_PACKAGE_HOME}:${DELTASTREAM_HOME}
+    export DELTA_PACKAGES_PATH=${DELTA_PACKAGE_HOME}:${DELTA_DEV_PACKAGE_HOME}
+    export DELTA_AUTO_IMPORT=NO
+    export DELTA_IMPORT_PACKAGES=${DELTASTREAM_HOME}
+    export DELTA_STARTUP_PACKAGES=DeltaStream
+    export DELTA_STARTUP_ROLLBACK_ON_WARNING=NO
+    export DELTA_STARTUP_OVERWRITE=YES
+    
+
+_KX Control_ sources this file on start-up and then has access to to the
+variables.
+
+### delta.instance.profile
+
+The host/port/taskset configuration for the individual processes started via
+_KX Control_ is stored in the `delta.instance.profile` (Linux)
+`delta.instance.profile.bat` (windows) which can be found here
+`~/kxinstall/delta-bin/`.
+
+It contains a number of environment variables for each configured process.
+
+    
+    
+    ############ Deltacontrol INSTANCES ###############
+    export ds_appServer_a_HOST="contol-a.fd.com"
+    export ds_appServer_a_PORT="3001"
+    export ds_appServer_a_TASKSET="1-9"
+    export ds_appServer_b_HOST="NO_HOST_SET"
+    export ds_appServer_b_PORT="3001"
+    export ds_appServer_b_TASKSET="1-9"
+    export ds_jemail_a_HOST="contol-a.fd.com"
+    export ds_jemail_a_PORT="3002"
+    export ds_jemail_a_TASKSET="1-9"
+    export ds_jemail_b_HOST="NO_HOST_SET"
+    export ds_jemail_b_PORT="3002"
+    export ds_jemail_b_TASKSET="1-9"
+    
+
+KX Control sources this file on start-up and then has access to the variables
+to allow it to determine how to run each process.
+
+## Deployment layout
+
+The root directory of a deploy contains the following directory structure:
+
+Directory | Contents  
+---|---  
+checkpoint | Control checkpoints which are point in time snapshots of a Control installation in the form of a set of XML files.. These provide rollback functionality.  
+delta-bin | Start scripts, base Packages (kdb+, KX Control) and 3rd party packages (Tomcat)  
+delta-data | Process log files and the data associated with the installation including _KX Control_ internal tables, Ticker Plant logs files, Historical Databases etc  
+packages | Solution and Custom Environment packages whose content is imported into _KX Control_  
+  
+### Log files
+
+_KX Control_ (DeltaControl.log) and process log files can be found at the
+following location:
+
+    
+    
+    ~/kxinstall/delta-data/DeltaControlData/logdir/
+    
+
+Tomcat and Application server log files can be found at the following
+location:
+
+    
+    
+    ~/kxinstall/delta-bin/software/Tomcat_X_Y_z/latest/logs
+    
+
+### KX Delta Platform data
+
+The `delta-data` folder contains all the data associated with KX Delta
+Platform along with the process log files. By default the delta-data directory
+lives at the same level as the delta-bin directory inside the deploy.
+
+If you wish to specify a different location for the delta-data dir (i.e. in
+order to put it on a different disk/partition) then you will need to uncomment
+the following inside the bundle install config (scripts/install.config) or add
+the following to a custom install config (passed in via -p).
+
+    
+    
+    # Custom location for delta-data dir
+    delta-data-dir=/path/to/delta-data
+    
+
+The delta-data directory location will now be created at the path specified by
+`delta-data-dir` in the install configuration. See [Install
+Config](../install_config/) for more details.
+
+## Default workflows
+
+The _KX Delta Platform_ comes with a set of preconfigured workflows which can
+be started once the platform has been deployed. A file called
+`startup_workflows.txt` is copied into `~/kxinstall/delta-bin/config` and this
+lists the workflows which will be started when the `startWorkflows.sh` script
+is called.
+
+The preconfigured workflows are listed below:
+
+Workflow | Description  
+---|---  
+DS_launch_MS_A | Messaging Service: Process instance which aids discovery for publishers and subscribers within the system  
+DS_launch_ALERT_A | Alerts Eco-System: Process instances required to configure and generate alerts  
+DS_launch_OPS_A | Operations Eco-System. Process instances to store and provide access to monitoring statistics  
+DS_launch_REPORT_A | Reporting Eco-System: Process instances required to configure and generate reports  
+DS_launch_AT_A | Action Tracker Eco-System: Process instances required to create, transition and store action tracker items
+

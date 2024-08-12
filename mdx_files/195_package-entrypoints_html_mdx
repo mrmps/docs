@@ -1,0 +1,146 @@
+https://code.kx.com/insights/enterprise/packaging/package-entrypoints.html
+
+# Entrypoints - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/packaging/package-entrypoints.html
+
+# Package Entrypoints
+
+Entrypoints define the q/Python files which are used as the initialization
+script for a package. When loading a package using q or Python, entrypoints
+provide a method by which you can specify the sub-sections of your package
+code to be loaded.
+
+The default entrypoint used when loading a package is `default` and is defined
+as `init.q`. This file is used when a package is loaded with no specific
+entrypoint defined.
+
+You can update this entrypoint to be any file relative to the package root as
+shown below:
+
+    
+    
+    entrypoints:
+        default: src/init.q
+    
+
+You can also specify additional entrypoints for a package, allowing you to
+define entrypoints to be loaded independently by different components of the
+deployment.
+
+component | entrypoint `name` | usage  
+---|---|---  
+Aggregator | `aggregator` |   
+Data Access Process | `data-access` |   
+Resource Coordinator | `resource-coordinator` |   
+Storage Manager | `storage-manager` |   
+  
+The value of the entrypoint `name` is important.
+
+This name needs to be used as the value of `--name` when calling the `package
+add entrypoint` command
+
+Though you can include arbitrarily named entrypoints (e.g. `myentry`), only
+the above will be used by default by the _kdb Insights Enterprise_ platform.
+Any component that does not have its own entrypoint in the manifest file will
+load the `default` entrypoint.
+
+The entrypoints named `data-access` and `aggregator` are used when defining
+[Custom APIs](../../api/database/custom/index.html) in _kdb Insights
+Enterprise_. These entrypoints determine the code that is loaded by the Data
+Access and Aggregator processes respectively. To add entrypoints for the Data
+Access and Aggregator processes you can run the following:
+
+    
+    
+    kxi package add --to mypkg entrypoint --name aggregator --path src/agg.q
+    kxi package add --to mypkg entrypoint --name data-access --path src/da.q
+    
+
+Running the `kxi package add` commands above will update the entrypoints
+section of the manifest as follows:
+
+    
+    
+    entrypoints:
+        default: init.q
+        data-access: src/da.q
+        aggregator: src/agg.q
+    
+
+Currently only q code is supported for entrypoints that are loaded by the Data
+Access and Aggregator processes
+
+Within the [Python](../../api/packaging/python/packages.html) and
+[q](../../api/packaging/q/packages.html) package APIs it is possible to load
+these entrypoints separately.
+
+### Associating entrypoints with a database
+
+To apply a Custom API to a database you need to add environment flags to the
+Data Access Process and Aggregator specification. This ensures the entrypoints
+in the manifest file are loaded. A simple way to do this is to add a
+`deployment-config` which will set these env vars across all processes.
+
+To apply a Custom API with a database, follow these steps:
+
+  1. Add a database to the package:
+    
+        export PKG=mypackage
+    kxi package init $PKG --force
+    kxi package add --to $PKG database --name mydb
+    
+    
+        Creating package at location: mypackage
+    Writing mypackage/manifest.yaml
+    Writing mypackage/manifest.yaml
+    
+
+  2. Add an entrypoint for the `data-access` process:
+    
+        kxi package add --to $PKG entrypoint --name data-access --path src/da.q
+    
+    
+        Writing mypackage/manifest.yaml
+    
+
+  3. Add a Deployment Configuration to a package:
+    
+        kxi package add --to $PKG deployment-config
+    
+    
+        Writing mypackage/manifest.yaml
+    
+
+  4. Update the `deployment_config.yaml` file to include the environment flag variable:
+    
+        echo "env: [{name: KXI_PACKAGES, value: ${PKG}:0.0.1}]" >> $PKG/deployment_config/deployment_config.yaml
+    kxi package info $PKG
+    
+    
+        ==PATH==
+    /builds/kxdev/documentation/insights/mypackage
+    
+    ==OBJECT==
+    Package
+    
+    ==Manifest==
+    uuid: 5ea67718-4b33-4605-8921-e13a2caaeab5
+    name: mypackage
+    version: 0.0.1
+    metadata:
+      description: ''
+      authors:
+      - {}
+    entrypoints:
+      default: init.q
+      data-access: src/da.q
+    databases:
+      mydb:
+        dir: databases/mydb
+        shards:
+        - mydb-shard
+        tables: []
+    deployment_config: deployment_config/deployment_config.yaml
+    
+

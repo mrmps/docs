@@ -1,0 +1,86 @@
+https://code.kx.com/insights/enterprise/monitoring/index.html
+
+# Overview - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/monitoring/index.html
+
+# Observability
+
+Observability is a critical feature of any application. It allows system
+operators visibility on how the application is performing and provides the
+ability to investigate and resolve issues. _kdb Insights Enterprise_ provides
+observability through metrics and logging.
+
+## Logging
+
+Logging is an important tool to understand what's occurring in an application
+by keeping track of those events with log messages. _kdb Insights Enterprise_
+follows best practice when it comes to logging. It emits structured log
+messages to _STDOUT_ to be consumed by standard logging stacks. This allows
+you to deploy your own logging stack, centralize the application logs, and
+easily troubleshoot issues.
+
+It does not ship with a built-in logging stack but there are many available
+solutions. You can choose to deploy your preferred one or if running in the
+cloud, there may be an out of the box one integrated with the Kubernetes
+stack.
+
+[Logging](logging.html)
+
+## Metrics
+
+Metrics are a key component of observability. They allow you to capture
+information about how your application is performing. In comparison to
+logging, they provide a more aggregated, numerical view of the system state.
+
+_kdb Insights Enterprise_ generates metrics to allow you to quickly identify
+the system performance and potential issues. This allows you to monitor data
+flows, component errors, and a variety of other metrics. The application is
+designed to work with the _Prometheus_ stack. In order to use metrics, please
+deploy _Prometheus_.
+
+## Encryption in transit metrics
+
+_kdb Insights Enterprise_ can be deployed with [encryption of all data in
+transit](../security/encryption-in-transit.html). [Istio](https://istio.io/),
+an open-source service mesh, is deployed alongside _kdb Insights Enterprise_.
+See [here](https://istio.io/latest/docs/concepts/security/) for details on how
+Istio secures data in transit.
+
+The Istio metrics captured are the default Istio service level metrics which
+are listed [here](https://istio.io/latest/docs/reference/config/metrics/).
+These metrics provide a way of monitoring and understanding the behavior for
+all service communications within a mesh and the behavior of the mesh itself.
+
+Additional metrics storage
+
+Collecting the Standard Istio metrics increases the total number of records
+stored in Prometheus by up to 25%, mainly due to the frequency of capture
+recommended for the Istio metrics.
+
+Please see the [Istio
+Observability](https://istio.io/latest/docs/concepts/observability)
+documentation for details on modifying which metrics are captured.
+
+You can view the metrics using one of the following:
+
+[Metrics](metrics.html)
+
+## Alerts
+
+_kdb Insights Enterprise_ provides a set of pre-defined alerts, which are sent
+to the
+[Alertmanager](https://prometheus.io/docs/alerting/latest/alertmanager/). The
+Alertmanager then manages the alerts, including silencing, inhibition,
+aggregation and sending out notifications via methods such as email, on-call
+notification systems, and chat platforms.
+
+[Alerts reference](alerts-reference.html)
+
+## Dashboards
+
+_kdb Insights Enterprise_ provides a set of pre-defined dashboards, which are
+added to [Grafana](https://grafana.com/).
+
+[Dashboards reference](alerts-reference.html)
+

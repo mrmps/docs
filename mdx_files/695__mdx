@@ -1,0 +1,63 @@
+https://code.kx.com/platform/stream/create-run-reports/
+
+# Create and run reports - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/stream/create-run-reports/
+
+# Create and run reports
+
+## Create the report template
+
+Use the Report Management dashboard component to set up the report template:
+
+  1. Generate a new report template. Click on the _Template Editor_ tab, then the _Create_ button, and name the template.
+  2. Select the report analytic that provides the basis of the report.
+  3. Select the target engine. 
+  4. Select the report action analytic(s). This determines how the report data are presented.
+
+## Create the report instance
+
+After saving the template, use the `Instance Editor` tab of the Report
+Management dashboard component to create a report instance and set the
+scheduling and action parameters.
+
+  1. Select the _Create_ button at the top of the screen and name the report instance. Associate it with the report template created previously.
+  2. Edit and save the report instance details. 
+  3. Schedule the report: `once`, `daily`, `weekly`, `monthly`, or at a specified time.
+
+[![Screenshot](../img/reporting/reportschedulingh5.png)](../img/reporting/reportschedulingh5.png
+"Click to expand")
+
+  4. Set the permission for users and user groups.
+
+  5. In the _Advanced Details_ tab set an override target engine – if you want the report instance to query a different process. Select additional report actions or set parameters for existing report actions. For example, the mailing list and file location are set here.
+
+## Run the report
+
+Use the _Run_ button (in the Report Management dashboard component’s
+_Instances_ tab) to run a report manually. With the scheduling parameters set,
+the report can either be run directly from the _Instances_ tab, or set to run
+as scheduled, e.g. at end of day.
+
+[![Screenshot](../img/reporting/reportrunmgmtinstances.png)](../img/reporting/reportrunmgmtinstances.png
+"Click to expand")
+
+The _Run Info_ tab shows information about past reports. This can be searched
+by report name and start and end times.
+
+[![Screenshot](../img/reporting/reportrunmgmtruninfo.png)](../img/reporting/reportrunmgmtruninfo.png
+"Click to expand")
+
+## Displaying report management in UTC
+
+To have the run information of past reports displayed in UTC time instead of
+server time a configuration parameter should be created called
+DS_REPORT_UTC:DEFAULT
+
+[![Screenshot](../img/reporting/reportutcconfig.png)](../img/reporting/reportutcconfig.png
+"Click to expand")
+
+This should have an attribute called UTC of boolean type. Set this to true and
+restart the environment to display run info in UTC time, i.e. **restart
+Control and the report workflow**.
+

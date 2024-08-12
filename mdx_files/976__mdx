@@ -1,0 +1,174 @@
+https://code.kx.com/platform/monitoring/log-scraping/
+
+# Log scraping - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/monitoring/log-scraping/
+
+# Log scraping
+
+_Log Scraping_ is a SysMon collector which tails log files looking for
+specific messages.
+
+Configuration
+
+Log scraping is configured on the _Monitor_Config_ dashboard, in the _File
+Size/Growth Configuration_ tab, the `DM_LOG_SCRAPING` parameter. Specify Host,
+Directory, File and Scrape Pattern.
+
+![Screenshot](../img/monitoring/logscraperconfigurationhtml.png) _Log Scraper
+configuration_
+
+To add a new configuration you simply click the add row button.
+
+![Screenshot](../img/monitoring/logscraperconfiguration.png) _Log Scraper
+configuration using the HTML5 Monitoring_Config dashboard_
+
+Specify the Log Scraper Entry details as described in the following table:
+
+[![Screenshot](../img/monitoring/logscraperentry.png)](../img/monitoring/logscraperentry.png
+"Click to expand")  
+_Log Scraper Entry_
+
+control | effect | wildcard  
+---|---|---  
+ID | ID of the log scraper entry | None  
+Host | Host the logfile is located on (wildcards allowed) | `*` can be used in place of host name  
+Directory | Directory the log files are located in: when files are added to this directory a new listener is started and the new file will be scraped if a pattern match is detected | Can use Absolute path or an enviromental filepath e.g. `"ENV=TOMCATLOGDIR="`  
+File Name | Log file name | Direct file name or glob pattern to find multiple files e.g. `*.log`  
+Scrape Pattern | Pattern to search for | None  
+isRegex | Literal Expression or Regular Expression | None  
+Level | `ERROR`, `INFO` or `WARN` | None  
+Active | Boolean value if scraper active or not | None  
+Alert Options | Fields to be filled in for context specific alerts | None  
+  
+## Scrape patterns
+
+A scrape pattern can be either a literal expression or a regular expression.
+
+### Literal expression
+
+A literal expression is a string of characters to be matched. E.g when input
+is "unable" and the isRegex field is set to `false` it will search for that
+exact word.
+
+![Screenshot](../img/monitoring/logscraperliteralpattern.png)
+
+This will translate to these results in the _Monitoring Dashboard_ , each log
+return has the exact word "unable" to be valid in this configuration.
+
+![Screenshot](../img/monitoring/logscraperliteralpatternexample.png)
+
+### Regular expression
+
+A [regular expression](https://en.wikipedia.org/wiki/Regular_expression)
+(regex) allows more complicated text patterns to be matched, and can allow one
+search to do the work of many. For example, search for the word `separate` and
+its common misspellings with regex `s[ae]p[ae]r[ae]te`. The Scrape Pattern
+Editor rejects invalid regexes.  [Regex 101](https://regex101.com/),
+[Regexpal](https://www.regexpal.com/)
+
+The log scraper will check for each string specified. To use regex instead of
+literal expression simply set the isRegex value to `true`.
+
+![Screenshot](../img/monitoring/logscraperregex.png)
+
+## Alert options
+
+Configure context-specific alerts and negative alerts.
+
+### Context-specific alerts
+
+Firstly define a comma seperated email list. Then Specify _Content Analytic_
+and _Content Config Parameter_.
+
+![Screenshot](../img/monitoring/contextspecificalert.png)
+
+parameter | effect  
+---|---  
+email | Comma separated string which specifies the emails and/or distribution list  
+contextAnalytic | Analytic to look up the context of the Alert  
+contextConfig | Associated Context Config Parameter  
+  
+![Screenshot](../img/monitoring/contextspecificalertdetails.png) _Setting a
+context-specific alert_
+
+Example above:
+
+  * `DS_LOG_RECOVERY_ERROR_EMAILLIST` is the distribution list
+  * `dxGCContextCheck` context alert analytic used to check alert data for specific garbage collection use case
+  * within the `DM_Log_Context:DM_GC_Context` contextConfig parameter the `colValue` set to 95, a `DM_GC_Context` of the garbage collector value of memory in use as a percentage of total memory size, an analytic that means _exceeds_ , and a `colValue` of 95, an alert is written to the log if the observed value exceeds 95%. ![Screenshot](../img/monitoring/contextconfigparameter.png)
+
+Example in _KX Control_ :
+
+  * the configuration parameter `DM_SYSMON_CONFIG_DEFAULT` attribute `maxScrapersPerHost` is used to specify the maximum number of log scrapers per host. An error message will be written to the log file and a warning displayed on the Log Scraper dashboard if the number of scrapers defined for the host exceeds this maximum.
+
+### Negative alerts
+
+[![Screenshot](../img/monitoring/negativealertsettings.png)](../img/monitoring/negativealertsettings.png
+"Click to expand")  
+_Negative alerting settings_
+
+Negative alerts are triggered by an _absence_ in the log. Signify this by
+checking _Negative Alert_ in the Alert Options Editor.
+
+parameter | effect  
+---|---  
+executionTime | time of day to make the check  
+TTL (mins) | Time To Live: the period (in mins before the _Execution Time_) in which the scrape pattern is sought in the logs  
+negativeID | identifier: group alerts together by giving them the same ID  
+schedule | frequency of the check: `ONCE`, `HIGHFREQ`, `DAILY`, `WEEKLY`, `MONTHLY`. The schedule option chosen determines further details: e.g. `DAILY` requires a start date and an option to exclude weekends.  
+monWeekends | boolean to check if log scraper should check for item on weekends  
+weekDay | schedule:WEEKLY, this column contains 3 letter representation of the days of the week to indicate that the event should occur every e.g. mon, tues  
+dayOfMonth | schedule:MONTHLY, this column contains an integer representing a day of the month.  
+date | schedule:ONCE, this is an exact date for the check  
+freq | schedule:HIGHFREQ to run HighFreq , this column contains a timespan representing every how many minutes the event should occur.  
+earlyNotifications | raise the alert if the scraped value appears _before_ the _TTL_ period  
+  
+#### Schedule options
+
+executionTime | TTL | negativeID | schedule | monWeekends | weekDay | dayOfMonth | date | freq | earlyNotifications  
+---|---|---|---|---|---|---|---|---|---  
+01:00:00.000 | 15 | 1 | DAILY | false |  |  |  |  |   
+01:00:00.000 | 15 | 2 | ONCE | false |  |  | 2020.04.23 |  |   
+01:00:00.000 | 15 | 3 | WEEKLY | false | wed |  |  |  |   
+01:00:00.000 | 15 | 4 | MONTHLY | false |  | 10 |  |  |   
+01:00:00.000 | 15 | 5 | HIGHFREQ | false |  |  |  | 30 |   
+  
+Example Daily:
+[![Screenshot](../img/monitoring/negativealertdaily.png)](../img/monitoring/negativealertdaily.png
+"Click to expand") _schedule:DAILY; Check occurs once a day at 01:00:00_
+
+Example Once:
+[![Screenshot](../img/monitoring/negativealertonce.png)](../img/monitoring/negativealertonce.png
+"Click to expand") _schedule:ONCE, date:2020:04:23; The exact date that the
+negative alert will run._
+
+Example Weekly:
+[![Screenshot](../img/monitoring/negativealertweekly.png)](../img/monitoring/negativealertweekly.png
+"Click to expand") _schedule:WEEKLY, weekDay:mon; The negative alert will be
+ran weekly on Monday._
+
+Example Monthly:
+[![Screenshot](../img/monitoring/negativealertmonthly.png)](../img/monitoring/negativealertmonthly.png
+"Click to expand") _schedule:MONTHLY, dayOfMonth:10; The negative alert will
+be ran on the 10th of each month._
+
+Example HighFreq:
+[![Screenshot](../img/monitoring/negativealerthighfreq.png)](../img/monitoring/negativealerthighfreq.png
+"Click to expand") _schedule:HIGHFREQ, freq:30; The negative alert will be ran
+every 30 minutes._
+
+## Log scraper dashboard
+
+![Screenshot](../img/monitoring/logscraperdashboard.png)
+
+The _KX Monitoring_ \- Log Scraper tab provides a view of all scraped logging
+information.
+
+Filter the display based on _Start Date_ , _End Date_ , _Host_ , _File_ ,
+_Level_ (`INFO`, `WARN`, `ERROR`, `ALL`) and _Time Bucket_. On _Submit_ , the
+_Filtered Logs_ table is updated.
+
+Double-click on an item in the _Filtered Logs_ table to populate the _Filtered
+Log Details_ table.
+

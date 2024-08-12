@@ -1,0 +1,48 @@
+https://code.kx.com/platform/dc_housekeeping/
+
+# DC_HOUSEKEEPING - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/dc_housekeeping/
+
+# DC_HOUSEKEEPING
+
+Dummy process to allow the times Delta Control runs various housekeeping jobs
+to be changed. Also allows the jobs to be run manually (by right-click “run
+process instance” or “run task”).
+
+## dc_housekeeping_dc_checkpoint
+
+Saves all the entities as an xml export package called checkpoint_ to
+$DELTACONTROL_CHKPTDIR. By default runs at midnight every Monday.
+
+## dc_housekeeping_qsrc_archive
+
+Backs up the current $DELTACONTROL_QSRC folder (contains the q processfiles)
+to ${DELTADATA_HOME}/DeltaControlData/qsrcarchive. By default runs once every
+12 hours.
+
+## dc_housekeeping_tdir_archive
+
+Backs up the current $DELTACONTROL_TDIR folder (contains the Delta Control
+tables) to ${DELTADATA_HOME}/DeltaControlData/tdirarchive. By default runs
+once every 12 hours.
+
+## dc_housekeeping_tdir_checkpoint
+
+Saves the latest in-memory tables in Delta Control to the $DELTACONTROL_TDIR
+folder. By default runs once every hour.
+
+## dc_housekeeping_tdir_historise
+
+Deletes old data from the in-memory tables in DeltaControl and saves to
+${DELTADATA_HOME}/DeltaControlData/tdirhist into a HDB directory structure.
+The tables to delete from and the number of days to keep are taken from the
+housekeeping config parameter in the active profile. By default runs at
+midnight every day.
+
+## dc_housekeeping_auto_export
+
+Exports autoExportPackages listed in DC_EXPORT config parameter.
+
+**See Also:** [Housekeeping](../housekeeping/)
+

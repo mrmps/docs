@@ -1,0 +1,70 @@
+https://code.kx.com/insights/enterprise/azure-marketplace/licensing.html
+
+# Licensing on Azure Marketplace - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/azure-marketplace/licensing.html
+
+# Licensing of kdb Insights Enterprise on Azure
+
+This page will discuss the two key elements of the license workflow:
+
+  * Initial deployment
+  * License renewals
+
+Network connectivity is required for the workflow to communicate with the KX
+licensing server. If network connectivity will be restricted post-deployment,
+please refer to this section.
+
+## Initial deployment
+
+As part of the initial deployment of the application, KX will automatically
+provision a license for the cluster.
+
+This license will be persisted in the cluster as a Kubernetes
+[secret](https://kubernetes.io/docs/concepts/configuration/secret/) called
+`kxi-license`. There is no action required by you - the application will be
+configured to use this secret.
+
+License registration
+
+This process will register the KX license against the email address you
+entered when creating the deployment. The email address provided at install
+time will be the contact point for KX representatives and any license
+administration that is required at a later point.
+
+## License renewals
+
+Licenses provisioned as part of the initial deployment are short-lived and are
+only valid for 10 days.
+
+A Kubernetes
+[CronJob](https://kubernetes.io/docs/concepts/workloads/controllers/cron-
+jobs/) is used to automatically renew this license.
+
+This CronJob is scheduled to run every twelve hours and checks whether the
+license is close to expiration. When the license is within three days of its
+expiration date, it will attempt to renew the license. This process involves:
+
+  * Downloading the existing license expiry
+  * Checking the remaining days before the expiry date
+  * Making REST requests to the KX license server to fetch a renewed license
+  * Patching the license secret with the updated license
+
+Internet connectivity required
+
+This process communicates with the KX license server hosted in the public
+cloud at `ll.kx.com`. It is recommended to allow connectivity to this host to
+prevent the license expiring and service outages.
+
+If unblocking this host is not possible, see the firewalled deployments
+section.
+
+## Firewalled deployments
+
+As described in the previous sections, the license renewal is an online
+process. They require network access to `ll.kx.com`. If this is not possible
+in your deployment, contact your KX Sales representative within the 10 day
+period, and you will be issued with a license that is configured to work in a
+firewalled environment without the requirement for network access to
+`ll.kx.com`.
+

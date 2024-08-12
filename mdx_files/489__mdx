@@ -1,0 +1,307 @@
+https://code.kx.com/dashboards/dataform/
+
+# Data Form - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/dataform/
+
+# Data Form
+
+![Screenshot](../img/dataform/dataforminput.jpg)
+
+The Data Form component quickly converts [View State
+Parameter](../viewstateparameters/) inputs from a _Data Source_ query into
+user-configurable inputs for the dashboard. All that is required for the Data
+Form component is the _Data Source_.
+
+![Screenshot](../img/dataform/dataformparameters.jpg)
+
+## Set up
+
+  1. Ensure your data source is a parameterized function
+
+  2. Use either text inputs or dropdown menus for each parameter in your data form, defined by _Parameter Type_. 
+
+  3. If using a data source to build the contents of the dropdown, use _data source mapping_ to assign value and text elements. Otherwise, use _Items_ to add a selection option. 
+
+  4. Additional styling for the data form can be found in the style menu.
+
+## Basics
+
+![Screenshot](../img/dataform/dataformbasics.png)
+
+_Name_
+
+    A name for the component provided by the user. 
+_Data Source_
+
+    See [Data sources](../datasources/)
+_Validation Analytic_
+
+    Links to a query, analytic or virtual data source which determines valid input values. Data source should accept a dictionary of the inputted values and return a dictionary of error messages, if applicable.
+    
+
+Returning an empty dictionary indicates that the values are valid and can be
+set in the view states.
+
+![Screenshot](../img/dataform/dataformvalidate.jpg)
+
+_Sample Query_ ![Screenshot](../img/dataform/validationquery.jpg)
+
+    
+    
+        {[data]
+            data2:()!();
+            if[data[`price]>100;data2[`price]:`$"Price must be less than 100"];
+            if[data[`instrument]<>`abc;data2[`instrument]:`$"Invalid Instument";];
+            :.mo.data2:data2      
+        }
+    
+
+_Submit Button Text_
+
+    Text description for Button 
+_Expand Dict Parameters_
+
+    
+
+![Screenshot](../img/dataform/expandeddictionary.jpg)
+
+When checked, a _Data Source_ using dictionary-type View State Parameter/s,
+will expand out the dictionary inputs.
+
+_Force Execute on Submit_
+
+    
+
+When checked, will always execute the _Data Source_ query, even if the input
+parameters are unchanged.
+
+Tip
+
+It can be used as a simple button control to run a query on the dashboard,
+e.g. by hiding all the input parameters associated with the data source query
+so only the button appears in the UI.
+
+_Show Reset_
+
+_Float Reset_
+
+    
+
+The _Reset_ button returns [View State Parameter](../viewstateparameters/) to
+the default values. _Float Reset_ positions the Reset button inline with the
+input variables.
+
+![Screenshot](../img/dataform/resetbuttonhtmllight.jpg)
+
+_Show Submit_
+
+_Float Submit_
+
+    
+
+Includes a Submit button which allows a range of View State Parameters to be
+updated before applying the values to the connected _Data Source_. _Float
+Submit_ position the Submit button independent of the input variables.
+
+No Submit button?
+
+If there is no Submit button, each change of a View State Parameter will be
+applied to the connected _Data Source_. Use a Submit button if multiple inputs
+are required before sourcing from the database. Submit buttons should be used
+if connecting to very large data sets.
+
+## Viewstate Parameters
+
+![Screenshot](../img/dataform/viewstateparameters.jpg)
+
+_Display Name_
+
+    Descriptive term for the input
+_Hide Parameter_
+
+    When checked, hides the input: prevents user updates
+_Tooltip_
+
+    Include a short text description for the Data Form input
+_Parameter Type_
+
+    Type of the input for the _Data Source_ View State Parameters: a user-input box, dropdown, password field or date picker
+
+### Dropdown
+
+![Screenshot](../img/dataform/datadropdown.jpg)
+
+![Screenshot](../img/dataform/datasourcedropdown.png)
+
+_Data Source_
+
+    
+
+Define dropdown list using a data query
+
+Example: `([]sym:asc exec distinct sym from database)`
+
+_Accept Empty Values_
+
+    Determines whether empty values are shown in the dropdown
+_Force Selected Value_
+
+    If no Submit button is shown then enabling this will set the dashboard view state to match the initial dropdown value on load, before any user input takes place
+_Use Data Source_
+
+    Check box to use aforementioned Data Source to populate the dropdown
+_Multi Select_
+
+    _Multi Select_ supports multiple item select in dropdown; the total number of selected items is given in _Show Row Count_
+_Show Search_
+
+    Allow for search of dropdown items
+_Field Summary Threshold_
+
+    
+
+Number of multi-select items permitted before a numeric summary is presented
+
+![Screenshot](../img/dataform/dropdownthreshold.jpg)
+
+_Tooltip Summary_
+
+    Number of multi-select items listed in tooltip before numeric summary of remainder is applied. 
+_'Select All' Value_
+
+    
+
+The _'Select All' Value_ is the value passed to the dropdown view state
+parameter when all items are selected in a multi-select; for example, set to
+`All`.
+
+Note
+
+Ensure the backend is configured to expect the `All` value rather than the
+full list. The default view state parameter can also be set to `All` to ensure
+all items are selected on load.
+
+_Sort List by Selected_
+
+    When checked and the dropdown is expanded to show the items available for selection, the selected values will be displayed at the top of the list.
+_Use Custom_
+
+    When checked and the icons and icon colours can be defined as part of the dropdown options
+
+#### Data Source Mapping
+
+_Value_
+
+    When a data source is used to populate a dropdown, _Value_ will automatically be assigned. 
+_Text_
+
+    When a data source is used to populate a dropdown, _Text_ will automatically be assigned. 
+_Items_
+
+    If a Data Source is not used, assign Value and Text entries for dropdown; add rows as required.
+
+#### Custom
+
+_Icon_
+
+    When a data source is used to populate a dropdown, _Icon_ can be set in the dropdown options. e.g if the value is "fa fa-book" then the font awesome book icon will be set in each of the dropdown options alongside the text value.
+_Icon Color_
+
+    When a data source is used to populate a dropdown, _Icon Color_ can be set in the dropdown options
+
+### Datepicker
+
+![Screenshot](../img/dataform/datasourcedatepicker.jpg)
+
+_Data Source_
+
+    
+
+Defines a list of dates that are selectable from the datepicker. When set, the
+list of dates in the data source identifies the range of dates presented by
+the datepicker.
+
+Example: `([] select distinct dates from database)`
+
+    
+
+[Date Picker Validation](../datepicker/#validation)
+
+### Slider
+
+![Screenshot](../img/dataform/dataslider.jpg)
+
+_Data Source_
+
+    
+
+Define slider values using a data query
+
+Example: `([]sym:asc exec distinct sym from database)`
+
+_Range_
+
+    _Range_ supports a min and max selection or single selection
+_Ticks_
+
+    Toggles the display of the slider ticks
+_Tooltip_
+
+    Toggles the display of the tooltip. The tooltip appears when hovering over the slider selectors
+_Tooltip Format_
+
+    
+
+_Tooltip Format_ supports customizing the tooltip labels using handlebars
+
+Tip
+
+{{value}} can be used to get the current value in the Tooltip Format property.
+For example to {{toFixed Value 2}} will format the value to 2 decimal places.
+
+## Action
+
+[Actions](../action/)
+
+## Style, Margins, Format
+
+![Screenshot](../img/dataform/dataformstyle.jpg)
+
+![Screenshot](../img/dataform/alignedstyling.jpg)
+
+_Advanced CSS_
+
+     [Advanced CSS](../style/#advanced-css)
+_Display_
+
+    Determines whether fields are displayed in rows or columns.
+_Field Width_
+
+_Field Padding_
+
+_Form Margin_
+
+    Define style parameters for inputs. Values can be defined in pixels or percentages, e.g. width "20%" or margin "10px"
+    ![Screenshot](../img/dataform/inlineblock.jpg)
+_Label Alignment_
+
+_Label Padding_
+
+_Label Positions_
+
+_Label Widths_
+
+    Parameters of input box labels. Padding defined in pixels; e.g. "0px 10px 0px 0px". Label Width in pixels ("10px") when _Label Alignment_ is set to _Left_ , and percentage ("10%") when _Label Alignment_ is set to _Top_
+_Reset Margin_
+
+    Styling and position of _Reset_ button. Margin defined in pixels; e.g. "0px 10px 0px 0px"
+_Submit Margin_
+
+    Styling and position of _Submit_ button. Margin defined in pixels; e.g. "0px 10px 0px 0px"
+_Vertical Spacing_
+
+    Vertical spacing of Data Form controls when stacked. Vertical spacing defined in pixels; e.g. "20px"
+
+[Style](../style/#component-style) for common settings
+

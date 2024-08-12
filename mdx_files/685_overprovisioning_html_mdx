@@ -1,0 +1,208 @@
+https://code.kx.com/insights/enterprise/configuration/advanced/overprovisioning.html
+
+# Overprovisioning - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/configuration/advanced/overprovisioning.html
+
+# Overprovisioning
+
+Scaling nodes in Kubernetes clusters can be slow due to the time taken for new
+nodes to be provisioned. This time taken can include waiting on rook-ceph to
+become available along with mounting volumes. A cluster may need to scale if
+all nodes in the cluster are running at their full capacity, or if there is
+some burst processing, or HA required.
+
+To reduce the time needed to wait for another node to be provisioned, you can
+overprovision the cluster by scheduling low priority pods with resource
+requests that cause the cluster to scale. For example, sizing the resource
+request of the overprovisioning pod to match size of a node, will scale an
+extra node.
+
+The kdb Insights Overprovisioning chart is responsible for initializing lower-
+priority pods which should request the majority resources of a node on a
+cluster. The pods are used for the reservation of resources.
+
+Since the overprovisioning pods are marked with a lower priority, when the
+cluster reaches resource capacity, these would be evicted to free up space for
+any pending pods. If cluster autoscaling is enabled, this would cause the
+cluster to scale and the pod to be rescheduled for a new node.
+
+KX Nexus
+
+The KX Nexus repository will be sunsetted in the future. Nexus links on this
+page are provided as a temporary alternative to the KX Downloads Portal for
+existing users. The KX Downloads Portal is the preferred repository for all
+use cases and KX Nexus links will be removed once the KX Nexus repository is
+decommissioned.
+
+## Pod Priority
+
+[Pod Priority](https://kubernetes.io/docs/concepts/scheduling-eviction/pod-
+priority-preemption/) is a _Kubernetes_ feature that allow you to assign
+priorities to pods. Priority indicates the importance of a pod relative to
+other pods. When a cluster is low on memory/cpu resources, lower-priority pods
+are removed/evicted by the scheduler. This is done in order to make space for
+higher-priority pods waiting to be scheduled.
+
+Priority class value
+
+The priority class value used by the chart should be set to a low value. The
+default is deliberately set to a large negative number to ensure it will be
+evicted by other pods. Ensure that this value is lower than the other pods in
+your application.
+
+    
+    
+    # Specifiy details of the priority class create
+    priorityclass:
+      name: "kxi-low-priority"
+      value: -200000
+    
+
+## ReplicaCount and Resources
+
+To use the chart, you must provide the following `resource` values. These
+should align with the maximum resources of a node within their cluster.
+
+variable | type | default | description  
+---|---|---|---  
+`replicaCount` | `int` | `1` | Number of nodes to provision via overprovisioning pod replicas  
+`resources.requests.cpu` | `string` |  | Requested CPU for each overprovisioning pod  
+`resources.requests.memory` | `string` |  | Requested memory for each overprovisioning pod  
+  
+The example yaml below defines how a user would overprovision 2 additional
+nodes. The overprovisioning pods are requesting 8 CPUs and 64GB of memory.
+This is assuming that resources defined on each of the nodes are slightly
+larger, therefore the overprovisioning pods are requesting the majority
+resources.
+
+    
+    
+    replicaCount: 2
+    resources:
+      requests:
+        cpu: 8
+        memory: 64Gi
+    
+
+## Prerequisites
+
+In order to run the chart you need access to the KX Downloads Portal
+repository, or the KX Nexus repository, and an associated image pull secret
+for your cluster. If you've already installed kdb Insights Enterprise, you can
+re-use the same secret.
+
+Confirm the repo has been added
+
+The below command uses the KX Downloads Portal repository and is the preferred
+default:
+
+    
+    
+    NAME                    URL
+    kx-insights             https://portal.dl.kx.com/assets/helm/
+    
+
+Existing users can use the KX Nexus repository with the below command, until
+Nexus is removed in the future:
+
+    
+    
+    NAME                    URL
+    kx-insights             https://nexus.dl.kx.com/repository/kx-insights-charts/
+    
+
+Confirm the image pull secret exists:
+
+    
+    
+    NAME                                            TYPE                                  DATA   AGE
+    kxi-image-pull-secret                           kubernetes.io/dockerconfigjson        1      7d20h
+    
+
+Otherwise, the easiest way to setup the prerequisites is to use the [kdb
+Insights CLI](../../cli/index.html). The below command will setup the
+necessary secrets needed to install the chart.
+
+If you are using the CLI, and have not already added the repo and secrets,
+they can be manually installed as follows:
+
+### Add the KX Helm repo
+
+The preferred default is to use the KX Downloads Portal with the following
+command:
+
+    
+    
+    helm repo add --username <username> --password <password> kx-insights https://portal.dl.kx.com/assets/helm/
+    
+
+Existing users can use the KX Nexus repository with the below command, until
+Nexus is removed in the future:
+
+    
+    
+    helm repo add --username <username> --password <password> kx-insights https://nexus.dl.kx.com/repository/kx-insights-charts
+    
+
+### Setup the image pull secret
+
+An image pull secret is required in order to pull images from a private Docker
+registry. Using your credentials for the KX Downloads Portal or the KX Nexus,
+repository, you can create a secret for pulling these images.
+
+    
+    
+    kubectl create secret docker-registry kxi-image-pull-secret \
+        --docker-username=<username> \
+        --docker-password=<password> \
+        --docker-server=portal.dl.kx.com
+    
+
+Existing users can use the KX Nexus repository with the below command, until
+Nexus is removed in the future:
+
+    
+    
+    kubectl create secret docker-registry kxi-image-pull-secret \
+        --docker-username=<username> \
+        --docker-password=<password> \
+        --docker-server=registry.dl.kx.com
+    
+
+## Create values file
+
+    
+    
+    global:
+      imagePullSecrets:
+        - name: kxi-image-pull-secret
+    
+    replicaCount: 1
+    resources:
+      requests:
+        cpu: 8
+        memory: 64Gi
+    
+
+Existing users can use the KX Nexus repository by replacing the `name`
+parameter in the above command with `kxi-nexus-pull-secret`, until Nexus is
+removed in the future.
+
+## Installing the chart
+
+Using _Helm_ , you can lookup the latest chart version:
+
+    
+    
+    helm search repo kx-insights/kxi-overprovisioning --versions
+    
+
+You can then install the chart with the command below, using the `values.yaml`
+from above:
+
+    
+    
+    helm install kxi-overprovisioning kx-insights/kxi-overprovisioning  --version=<version> -f values.yaml
+    
+

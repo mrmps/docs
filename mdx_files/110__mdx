@@ -1,0 +1,299 @@
+https://code.kx.com/platform/deployment/win_multi_node_deploy/
+
+# Windows - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/deployment/win_multi_node_deploy/
+
+# Multi-node deploy - Windows
+
+## KX Delta Platform cluster with separate KX Control and web application
+nodes
+
+This section deals with deploying the _KX Delta Platform_ with 2 Clustered _KX
+Control_ and Web Application Nodes.
+
+The table below details each of the nodes in the deploy:
+
+Host | Details  
+---|---  
+control-a.fd.com | Leader Control, Daemon, Stream kdb+ Processes, Tomcat Web Application (Including Dashboards)  
+control-b.fd.com | Follower Control, Daemon, Stream kdb+ Processes, Tomcat Web Application (Including Dashboards)  
+  
+The diagram below shows what this deploy would look like and the following
+section describes how this deploy type can be achieved using the bundle
+installer.
+
+![Screenshot](../img/2-control-and-web-linux.png)
+
+Before proceeding with the deploy you will need to copy the packages to each
+node, unpack and copy the license files. Please see the [Prepare
+Deploy](../prepare_deploy/#prepare-windows-deploy) section for further
+details.
+
+To deploy the _KX Control_ Cluster run the configurePlatformDeploy.bat script
+from inside the bundle contents on each Cluster node as follows:
+
+    
+    
+    > cd C:\kxinstall\KxPlatformWinDeploy_4_4_1_1910111311\delta-bin\bin
+    > configurePlatformDeploy.bat
+    
+
+When prompted for deployment type enter 2 see below:
+
+    
+    
+    +-----------------------------------------------------------+
+                     Configuring Platform Deploy
+    +-----------------------------------------------------------+
+    [1] Single Host Deploy
+    
+    [2] Multi-Host Deploy
+    
+    Select Node Type [1-2] : 2
+    
+
+For the next bit of configuration we will use the details from the table
+above. The script will prompt for hostnames (in FQDN format) and CPU core
+settings.
+
+### Leader node
+
+    
+    
+    +-----------------------------------------------------------+
+    Enter leader hostname :contol-a.fd.com
+    +-----------------------------------------------------------+
+    
+
+### Follower node
+
+    
+    
+    +-----------------------------------------------------------+
+    Enter follower hostname :contol-b.fd.com
+    +-----------------------------------------------------------+
+    
+
+#### KX Control port
+
+You will now be prompted for the port KX Control will be available on on each
+KX Control node. **Note** : The default port (2001) or a custom port can be
+used but the same port should be used on each node
+
+    
+    
+    +-----------------------------------------------------------+
+    Enter DeltaControl Port [2001] :2001
+    +-----------------------------------------------------------+
+    
+
+#### CPU affinity
+
+The script allows you to configure how many CPU cores you wish the system to
+run on, when prompted, the command line will display the max amount of cores
+the system can run on in brackets. The number of cores selected should be the
+maximum number allowed under you kdb+ license.
+
+If no value is entered to the command line then the maximum number of
+processors available will be used by default.
+
+    
+    
+    +-----------------------------------------------------------+
+    Enter number of CPU Cores to be used: [Max: 8] :8
+    +-----------------------------------------------------------+
+    
+
+**Note** : Please note that the KDB_CPU_AFFINITY and DCD_CPU_AFFINITY
+variables in the delta.profile.bat will be updated to a hexadecimal affinity
+value, e.g. if 6 was entered to the command line in this example the variable
+would be set to 3F.
+
+    
+    
+    set KDB_CPU_AFFINITY=3F
+    set DCD_CPU_AFFINITY=3F
+    
+
+#### TLS configuration
+
+TLS configuration is detailed [here](../tls_overview/), for the purposed of
+this section we will be deploying without TLS.
+
+When prompted to deploy with TLS enter N.
+
+    
+    
+    +-----------------------------------------------------------+
+    Deploy with TLS/SSL Encryption? [Y/N]: N
+    +-----------------------------------------------------------+
+    
+
+#### Licenses
+
+The configure script now prompts for the location of the kdb+ (k4.lic) and KX
+Delta Platform (.delta.lic) license files. Enter the path to the directory in
+which they are stored:
+
+    
+    
+    +-----------------------------------------------------------+
+    Please enter location of kx license files (k4.lic/.delta.lic) [dir] :C:\licenses
+    +-----------------------------------------------------------+
+                     Configuration Successful
+    +-----------------------------------------------------------+
+    
+
+The script will check the directory provided to the command prompt for the
+license files. If any of the licenses are not present in the directory they
+will be prompted for again by the script. In the example below the license
+file directory has been provided but the .delta.lic file is not present so the
+script prompts for the location of this file:
+
+    
+    
+    Please enter location of kx license files (k4.lic/.delta.lic) [dir] :C:\licenses
+    ERROR: Failed to find .delta.lic in C:\licenses
+    Location of .delta.lic [dir] :
+    
+
+#### Post deploy checks
+
+After the successful configuration of the deploy, the three files can be
+checked to see the changes that have been made. In the delta.profile.bat the
+DELTA_HOME variable will point to the install directory that was entered to
+the command prompt.
+
+    
+    
+    REM ############ INSTALL ENV ###############
+    set "DELTA_HOME=C:\kxinstall\KxPlatformWinDeploy_4_4_1_1910111311"
+    
+
+The delta.profile.bat should have been update with DELTACONTROL_PORT,
+DELTACONTROL_HOST, DELTACONTROL_REMOTEHOST and DELTACONTROL_REMOTEPORT being
+updated see below:
+
+##### Leader
+
+    
+    
+    > type delta.profile.bat
+    set DELTACONTROL_HOST=control-a.fd.com
+    set DELTACONTROL_TDIR=%DELTADATA_HOME%\DeltaControlData\tdir
+    set DELTACONTROL_QSRC=%DELTADATA_HOME%\DeltaControlData\qsrc
+    set DELTACONTROL_ZIP=%DELTADATA_HOME%\DeltaControlData\zip
+    set DELTACONTROL_FAILOVER=%DELTA_CONFIG%\failover.csv
+    set DELTACONTROL_LOGFILE=DeltaControl.log
+    set DELTACONTROL_REMOTEHOST=control-a.fd.com
+    set DELTACONTROL_REMOTEPORT=2001
+    
+
+##### Follower
+
+    
+    
+    > type delta.profile.bat
+    set DELTACONTROL_HOST=control-b.fd.com
+    set DELTACONTROL_TDIR=%DELTADATA_HOME%\DeltaControlData\tdir
+    set DELTACONTROL_QSRC=%DELTADATA_HOME%\DeltaControlData\qsrc
+    set DELTACONTROL_ZIP=%DELTADATA_HOME%\DeltaControlData\zip
+    set DELTACONTROL_FAILOVER=%DELTA_CONFIG%\failover.csv
+    set DELTACONTROL_LOGFILE=DeltaControl.log
+    set DELTACONTROL_REMOTEHOST=control-a.fd.com
+    set DELTACONTROL_REMOTEPORT=2001
+    
+
+The delta.instance.profile now have the leader hostname instead of localhost
+for all _a process instances:
+
+The delta.instance.profile.bat will now have leader hostname for all _a
+instances and the follower hostname for all _b instances:
+
+    
+    
+    > type delta.instance.profile.bat
+    set ds_appServer_a_HOST=contol-a.fd.com
+    set ds_appServer_a_PORT=3000
+    set ds_appServer_a_TASKSET=
+    set ds_appServer_b_HOST=control-b.fd.com
+    set ds_appServer_b_PORT=3000
+    set ds_appServer_b_TASKSET=
+    set ds_jemail_a_HOST=contol-a.fd.com
+    set ds_jemail_a_PORT=3001
+    set ds_jemail_a_TASKSET=
+    set ds_jemail_b_HOST=control-b.fd.com
+    set ds_jemail_b_PORT=3001
+    set ds_jemail_b_TASKSET=
+    
+
+The final file updated by the configurePlatformDeploy.bat script is the
+failover.csv; again the localhost and KX Control port were changed to what was
+entered to the command prompt.
+
+    
+    
+    > type config\failover.csv
+    control-a.fd.com,2001
+    control-b.fd.com,2001
+    
+
+#### Java home
+
+On order for the Deploy to run the JAVA_HOME environment variable must be
+configured to point to your Java installation. If the command echo %JAVA_HOME%
+doesn’t return a path in the command prompt like in the screenshot below:
+
+    
+    
+    > echo %JAVA_HOME%
+    C:\Program Files\Java\jdk1.8.0_131
+    
+
+Then the environment variable JAVA_HOME has not been configured. If your
+JAVA_HOME variable returns the correct path this section can be ignored.
+
+To set up this variable in Windows 7 go to Control Panel -> System and
+Security -> System and click on Advanced System settings on the left side of
+the panel.
+
+![Screenshot](../img/set-java-home-windows7.png)
+
+Click the Environment Variables tab, and then in the **System Variables**
+session, fill in JAVA_HOME and the path of your Java folder into the variable
+name and value boxes.
+
+**Note** : this path (variable value) will be unique to your own machine and
+where java is stored.
+
+![Screenshot](../img/env-variables-windows.png)
+
+![Screenshot](../img/new-env-variable-windows.png)
+
+Open a new command prompt, and enter the command echo %JAVA_HOME%. This time
+the file path should be returned such as in the example below:
+
+    
+    
+    > echo %JAVA_HOME%
+    C:\Program Files\Java\jdk1.8.0_131
+    
+
+An additional check to ensure this Java Version is correct is to run the
+command **java –version** and see if the following versions match.
+
+    
+    
+    > echo %JAVA_HOME%
+    C:\Program Files\Java\jdk1.8.0_131
+    
+    > java -version
+    java version "1.8.0_191"
+    Java(TM) SE Runtime Environment (build 1.8.0_191-b12)
+    Java HotSpot(TM) 64-Bit Server VM (build 25.191-b12, mixed mode)
+    
+
+You should now be ready to bring up the deploy see
+[here](../win_administration/)
+

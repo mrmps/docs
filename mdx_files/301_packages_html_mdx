@@ -1,0 +1,203 @@
+https://code.kx.com/insights/api/packaging/q/packages.html
+
+# Packages - kdb products
+
+Original URL: https://code.kx.com/insights/api/packaging/q/packages.html
+
+# Packages
+
+A package, as used here, is defined as a storage location for code, metadata
+and any other information necessary for describing an application. To access
+the contents of a package, you must define a `KX_PACKAGE_PATH` environment
+variable which is a relative or absolute path to the location where all
+packages are stored. Below are the details of the API used to load, list, and
+search for packages.
+
+## `.kxi.packages.load`
+
+_Load the contents of a package_
+
+    
+    
+    .kxi.packages.load[package]
+    .kxi.packages.load[package;version]
+    .kxi.packages.load[package;version;.var.kwargs (!) . flip (
+        (`version ; version);
+        (`entry   ; entry);
+        (`path    ; path);
+        (`force   ; force))]
+    
+
+**Parameters:**
+
+name | type | description | default  
+---|---|---|---  
+`package` | `string` | Name of the package to be loaded. | Required  
+  
+_options:_
+
+name | type | description | default  
+---|---|---|---  
+`version` | `string` | Version of the package to be loaded. If undefined the latest semver `x.y.z` version will be loaded for the defined package. | `::`  
+`entry` | `string` | Name of the entrypoint used when loading the package. This is defined within the `manifest.json` under the entry `entrypoints.<entry>`. | `"default"`  
+`path` | `string or ::` | Path to the package to be loaded. If set to `::`, the path is set to the current working directory. | `::`  
+`force` | `boolean` | Whether to load the package regardless of whether a package with the same name and entry point has previously been loaded. | `0b`  
+  
+** Return:**
+
+Loads the entire content of a package based on a package entry point defined
+by the optional parameter `entry`.
+
+Load a package called "ml" with version "2.0.0"
+
+    
+    
+    q).kxi.packages.list.all[]
+    name   versions
+    -----------------------
+    "ml"   "1.0.0"
+    "ml"   "2.0.0"
+    "ml"   "2.0.0_F32C80D9"
+    "test" "1.1.0"
+    "test" "1.2.0"
+    q).kxi.packages.load["ml";"2.0.0"]
+    
+
+Load the package "ml" with version "1.0.0" multiple times
+
+    
+    
+    q).kxi.packages.load["ml";"1.0.0";.var.kw[`force;1b]]
+    q).kxi.packages.load["ml";"1.0.0";.var.kw[`force;1b]]
+    
+
+## `.kxi.packages.file.load`
+
+_Load a file within the current package relative to the package root._
+
+    
+    
+    .kxi.packages.file.load[path]
+    
+
+**Parameters:**
+
+name | type | description  
+---|---|---  
+`path` | `string` | Path to the file being loaded relative to package root.  
+  
+** Return:**
+
+Loads a file within a package relative to the root of the package.
+
+    
+    
+    q).kxi.packages.file.load["src/test.q"]
+    
+
+## `.kxi.packages.list.all`
+
+_List all packages stored at`KX_PACKAGE_PATH`_
+
+**Parameters:**
+
+name | type | description  
+---|---|---  
+`x` | `UNUSED` |   
+  
+**Returns:**
+
+type | description  
+---|---  
+`table` | Table outlining the name and version of all packages stored in `KX_PACKAGE_PATH`.  
+  
+This function will return a table providing information about all packages
+store at a path specified by the user within the environmental variable
+`KX_PACKAGE_PATH`. It is assumed that the packages are formatted in a
+structure `$KX_PACKAGE_PATH/package/version` where `package` and `version` are
+specified during installation.
+
+List all the packages stored at `KX_PACKAGE_PATH`
+
+    
+    
+    q)setenv[`KX_PACKAGE_PATH;"test/test-packages"]
+    q).kxi.packages.list.all[]
+    name   versions
+    -----------------------
+    "ml"   "1.0.0"
+    "ml"   "2.0.0"
+    "ml"   "2.0.0_F32C80D9"
+    "test" "1.1.0"
+    "test" "1.2.0"
+    
+
+## `.kxi.packages.list.search`
+
+_List all packages stored at`KX_PACKAGE_PATH` which meet a presented search
+criteria_
+
+    
+    
+    .kxi.packages.list.search[package;version]
+    
+
+**Parameters:**
+
+name | type | description  
+---|---|---  
+`package` | `string or null` | Regex filter string used to search for specific package name patterns. Can also be `::` to include all package names.  
+`version` | `string or null` | Regex filter string used to search for specific package version patterns. Can also be `::` to include all package versions.  
+  
+**Returns:**
+
+type | description  
+---|---  
+`table` | Table outlining the package name and version of all packages stored in `KX_PACKAGE_PATH` which meet the presented search criteria.  
+  
+This function will return a table providing information about all packages
+store at a path specified by the user within the environmental variable
+`KX_PACKAGE_PATH` which meet the filter criteria provided. It is assumed that
+the packages are formatted in a structure `$KX_PACKAGE_PATH/package/version`
+where `package` and `version` are specified during installation.
+
+List the packages stored at `KX_PACKAGE_PATH` under different search
+conditions
+
+    
+    
+    q)setenv[`KX_PACKAGE_PATH;"test/test-packages"]
+    // List all packages that are stored at the KX_PACKAGE_PATH
+    q).kxi.packages.list.all[]
+    name   versions
+    -----------------------
+    "ml"   "1.0.0"
+    "ml"   "2.0.0"
+    "ml"   "2.0.0_F32C80D9"
+    "test" "1.1.0"
+    "test" "1.2.0"
+    q)
+    // List all "ml" related packages
+    q).kxi.packages.list.search["*ml*";::]
+    name   versions
+    -----------------------
+    "ml"   "1.0.0"
+    "ml"   "2.0.0"
+    "ml"   "2.0.0_F32C80D9"
+    q)
+    // List all packages that are version 1.x
+    q).kxi.packages.list.search[::;"1.*"]
+    name   versions
+    ---------------
+    "ml"   "1.0.0"
+    "test" "1.1.0"
+    "test" "1.2.0"
+    
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+package |  |   
+version |  | 
+

@@ -1,0 +1,154 @@
+https://code.kx.com/platform/deployment/install_config/
+
+# Install config file - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/deployment/install_config/
+
+# Install config file
+
+Custom install configuration files can be passed to the install scripts at
+execution time using the `-p` argument.
+
+Using the core installer `installKxPlatform.sh`
+
+    
+    
+    $ ./installKxPlatform.sh -p install.config.example
+    
+
+Using the bundle installer `install.sh`:
+
+    
+    
+    $ ./install.sh -p install.config.example
+    
+
+**Note** : When running the `install.sh` script with an install config file,
+KX Delta Platform will not start automatically.
+
+The `install.config` file can contain many types of options that will be used
+by the install scripts to configure the deployment of the _KX Delta Platform_
+, all supported options can be found [here](../install_config_options/).
+
+With the _KX Delta Platform_ bundles, a default `install.config` file is
+provided that contains many examples of options that can be set and parsed by
+the installation scripts. e.g.
+
+    
+    
+    #============================================================
+    # Installation Options
+    #============================================================
+    
+    # Install location for deploy
+    delta-install-dir=$KX_INSTALL_DIR
+    
+    # Custom location for delta-data dir
+    # delta-data-dir=/path/to/delta-data
+    
+    # Package location
+    delta-package-dir=../packages
+    
+    # List of packages to exclude from deploy
+    delta-exclude-packages=
+    
+    # Web node. If set only deploy web packages
+    web-node=0
+    
+    # KDB+ node. Deploy everything except web packages
+    kdb-node=0
+    
+    # No prompt
+    no-prompt=1
+    
+    # Accept installation default values
+    accept-defaults=1
+    
+    # Always upgrade installed packages
+    always-upgrade=1
+    
+    # Do not overwrite a package where the version is already installed
+    always-overwrite=0
+    
+    # Automatically import delta packages
+    delta-package-auto-import=1
+    
+    # Ignore OS specific package validation (bundle should contain tgzs for target OS)
+    ignore-os-package-validation=1
+    
+    # Write tmp files inside the bundle directory (we cannot assume the size of /tmp)
+    tmp-dir=../tmp
+    
+    
+
+### Install package lists
+
+If you would like to have control over the packages which the installation
+script will install, you can use the property `install-package-list` in the
+install.config file. Here you can add a comma separated list of packages which
+you would like to be installed. e.g.
+
+    
+    
+    install-package-list=KDBPlus,KxPlatformAPI,DeltaControl,DeltaStream,Analyst
+    
+
+If there are other packages available in the `delta-package-dir` that are not
+in the `install-package-list`, they will be ignored.
+
+If you would like to explicitly exclude packages you can use the `delta-
+exclude-packages` option which is a comma separated list of packages.
+
+    
+    
+    delta-exclude-packages=TestPackage1,TestPackage2,TestPackage3
+    
+
+#### Install nodes
+
+If you are performing an installation where you wish to deploy the _KX Delta
+Platform_ with 2 nodes including 1 KX Control Node and 1 Web Application Node,
+you can use the following options to define which packages are installed on
+the nodes.
+
+For the _KX Control_ node, set `kdb-node=1` in your install.config file. This
+will ensure that only core kdb+/Control components are installed on the
+server.
+
+For the Web Application node, set `web-node=1`, this will ensure that only the
+Web packages are installed, including Tomcat and the AppServer.
+
+### Installing custom packages
+
+The installation script contains a predefined set of known packages that
+include the core _KX Delta Platform_ and other Solutions. If you create a new
+custom package and wish to install it, you can use the following options.
+
+For a custom KX Control package you can add it to `custom-solution-package-
+list`. Multiple packages can be defined in a comma separated list.
+
+    
+    
+    custom-solution-package-list=SolutionPackage1,SolutionPackage2,SolutionPackage3
+    
+
+For a custom web package ( e.g. Themes ) you can add the package to the
+`custom-web-package-list` option. This can only be used if `web-node=1`.
+
+    
+    
+    custom-web-package-list=CustomClientXTheme
+    
+
+If you have a package that contains environment specific configuration and/or
+overwrites, you can add the package to the option `custom-environment-package-
+list`.
+
+    
+    
+    custom-environment-package-list=SolutionPackage1UAT
+    
+
+**Note** : environments packages will be installed last to overwrite default
+configuration within the solution packages.
+

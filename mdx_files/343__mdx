@@ -1,0 +1,180 @@
+https://code.kx.com/dashboards/publish/
+
+# Publishing - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/publish/
+
+# Publish and Export
+
+Once a dashboard is saved and published, anyone with the appropriate
+permission can view or edit it.
+
+A screenshot of a dashboard can be taken using the PDF button:
+![Screenshot](../img/publish/pdf.jpg). See PDF server for more details.
+
+## Publish Dashboards
+
+New dashboards are published by checking the box to the right of the Name; to
+convert a dashboard into draft form, uncheck this selection.
+
+![Screenshot](../img/publish/draftpublish.jpg)
+
+Draft dashboards are prefixed 'Draft' in the [Document
+List](../workspace/#document-list). Draft dashboards are not visible in the
+_Viewer_.
+
+Draft dashboards will show in the Manage dialog with no selection check; click
+the check to publish the dashboard. The Manage dialog is accessible at the end
+of the Document List.
+
+![Screenshot](../img/publish/managepublish.jpg)
+
+![Screenshot](../img/publish/managepublishdash.jpg)
+
+To view a dashboard, select a dashboard and click
+![Screenshot](../img/publish/viewonwebutton.jpg). This will open the dashboard
+_Viewer_ in a new tab.
+
+## Social Share Link
+
+Enable "Share Dashboard" in the Dashboard menu
+
+![Screenshot](../img/publish/enablesharedashboard.jpg)
+
+### Share dashboard state
+
+Dashboards can be shared to include active states, allowing users to reproduce
+a view using specific user selections and inputs. This information is stored
+as part of the shared link.
+
+![Screenshot](../img/publish/sharelinkdash.jpg)
+
+### Shorten link
+
+The share dashboard option also includes a link shortener.
+
+![Screenshot](../img/publish/sharelink.jpg)
+
+## File export
+
+Export data from component as an CSV or XLS file; screenshot option available
+in charts.
+
+![Screenshot](../img/publish/linechartexport.jpg)
+
+selection | export  
+---|---  
+Show Export CSV Button | Export display values as CSV file  
+Show Export Excel Button | Export display values as an XLS file  
+Show Screenshot Button | Take an image snapshot (.png) of your chart  
+Show Full Export Button | Export data set, including display and hidden columns, as zipped Excel file.  
+  
+Full export will create a zip file of breakdown and aggregate columns
+(inclusive) with complete drill down details.
+
+ChartGL: Use Chart Formatting
+
+If checked, then the same formatting used by the chart axes will be applied to
+the exported data.
+
+_Filename_
+
+    
+
+Includes variable as part of file save name
+
+![Screenshot](../img/publish/filename.jpg)
+
+![Screenshot](../img/publish/fileexportname.jpg)
+
+_Filename Part_
+
+    
+
+A filename for the exported file, or a View State Parameter which can be
+linked to a [Text Input](../textinput/) for user defined file names.
+
+_Actions_
+
+    
+
+Outputs details of the file export.
+
+Property | Details  
+---|---  
+fileType | The type of file exported e.g xlsx, csv, png  
+fileName | The exported name of the file  
+dashboardName | Name of the dashboard  
+dashboardId | The id used in the dashboard  
+timestamp | The time of the export  
+isSuccess | Where the export was successful or failed  
+username | Username used by the person who exported data  
+component | The component data being exported  
+meta* | The meta used by the datasource of the exported data  
+fileRowLength* | The row length of the datasource used by the exported data  
+  
+  * not applicable to all components
+
+## PDF server
+
+### Configuration & Installation
+
+#### Ensure all prerequisites are installed
+
+  * Node.js v16.20.0+ (use LTS)
+
+#### Install Puppeteer
+
+  * Run `npm install` in the `/pdf` folder.
+  * If installation fails, see the troubleshooting section in `/pdf/README.md`.
+
+#### Start the PDF Server
+
+Start the PDF server by running `q pdf.q` in the `/pdf` folder
+
+#### Enable PDF Button
+
+Update the `/www/config.json` file, add `"PdfUrl": "http://localhost:5011/"`:
+
+    
+    
+    {
+        "NewPdf": true,
+        "pushStateBase": "",
+        "PdfUrl": "http://localhost:5011/"
+    }
+    
+
+The enabled PDF Server will add the PDF icon in the Toolbar menu of Dashboards
+
+![Screenshot](../img/publish/pdfservermenu_id.jpg)
+
+#### Aditional Information
+
+##### Dashboard Printable Area
+
+The PDF prints the viewable area. If the Dashboard scrolls off-screen, click
+_Fill Height_ in _Dashboard Properties_ to make the dashboard view a single
+page.
+
+![Screenshot](../img/publish/pdfserverpagefill_id.jpg)
+
+##### Expand Tab Component Contenet While Publishing
+
+To enable Tab Control component to expand while ceating pdf make sure to click
+_Expand When Creating Pdf_ in _Tab Control Properties_.
+
+![Screenshot](../img/publish/pdfexpandtab_id.jpg)
+
+![Screenshot](../img/publish/createpdf_id.jpg)
+
+_File Name_
+
+    Exported PDF file
+_Print Filters_
+
+    When enabled, the PDF will include details of shared view states from the URL.
+_PDF Width_
+
+    Select between `standard` or snapshot `current preview (1920px)`
+

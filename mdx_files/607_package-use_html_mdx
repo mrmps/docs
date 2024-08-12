@@ -1,0 +1,122 @@
+https://code.kx.com/insights/enterprise/packaging/package-use.html
+
+# Using a package - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/packaging/package-use.html
+
+# Using a package within _kdb Insights Enterprise_
+
+Once a package that includes [Custom APIs](package-entrypoints.html) and
+[UDFs](package-udfs.html) has been [uploaded](package-upload.html) to _kdb
+Insights Enterprise_ , there are three components that can utilize them:
+
+The UI does not currently support the creation or modification of Custom APIs
+and UDFsin a package, these need to be added using the CLI.
+
+### Scratchpads
+
+As discussed within the [analyzing your data](../analysis/index.html) section
+of the documentation, packages and UDFs can be used within the scratchpad
+panel of the Query window.
+
+The following examples show you how you can interact with a package `test_pkg`
+generated using the [Python](../../api/packaging/python/index.html) or
+[q](../../api/packaging/q/index.html) APIs:
+
+### Stream Processor
+
+Within the Stream Processor you can utilize your UDFs in the
+[Function](../ingest/pipeline/operators/functions.html) node definitions using
+Python or q.
+
+For more information on retrieval and wrapping of these functions for use with
+the Stream Processor, refer to [Operators](../../api/stream-
+processor/python/operators.html#kxi.sp.op.udf) for Python and
+[UDFs](../../api/stream-processor/q/udfs.html) for q. In both cases, the
+Stream Processor pipeline being deployed is as follows:
+
+![SP package example nodes](images/sp_packages_basic.png)
+
+The following steps show the usage of the UDF `custom_map` stored a `test_pkg`
+package.
+
+  1. Define an Expression node as follows:
+
+  2. Define a [**Map**](../ingest/pipeline/operators/functions.html#map) node to call the `custom_map` stored a `test_pkg` package as follows:
+
+  3. Define a [**Console**](../ingest/pipeline/operators/writers.html#console) node to display the results.
+
+  4. Connect the nodes together.
+
+#### Using UDFs in an assembly yaml files
+
+The use of assembly yaml files has been deprecated and may be removed from
+future releases.
+
+You can deploy Stream Processor pipelines to _kdb Insights Enterprise_ through
+definition within [assembly configuration](../assemblies/building-
+assemblies.html) and deployment using the kdb Insights CLI as outlined
+[here](../assemblies/deploying-assemblies.html).
+
+The definition of Stream Processor entries to these files is described fully
+in the [Stream Processor](../configuration/stream-processor.html)
+documentation. The examples below show how to define both q and Python
+pipelines. Each example includes any additional important configuration in
+addition to the pipeline specification as necessary.
+
+A spec must contain the `.qsp.run`, `.qsp.read` and `.qsp.write` commands.
+
+If you were to define a spec that just contains the loading of a file, even if
+that file itself contains a valid spec, it is invalid.
+
+For example, the spec below is invalid:
+
+    
+    
+    base: q-ml
+    spec: |-
+        .kxi.packages.load["test_pkg";"1.0.0","mycustomspec.q"]
+    
+
+The spec must explicitly include the `.qsp.run`, `.qsp.read` and `.qsp.write`
+commands as below:
+
+    
+    
+    base: q-ml
+    spec: |-
+        .kxi.packages.load["test_pkg";"1.0.0","mycustomspec.q"]
+        .qsp.run .qsp.read.fromExpr["([]100?1f;100?1f)"] .qsp.write.toConsole[]
+    
+
+### Custom APIs in the Database, Aggregator and Resource Coordinator
+
+[Custom APIs](package-entrypoints.html) can be loaded by the Data Access
+Processes and Aggregator to allow users to call the Custom APIs from outside
+_kdb Insights Enterprise_.
+
+Adding a Custom API to enable custom RESTful queries of your package database
+involves the below steps, which are detailed thoroughly in the
+[quickstart](quickstart.html):
+
+  1. Adding the `database` (and optionally `agg` & `rc`) component(s) to the package
+  2. Adding the Custom API entrypoint file(s) to the package with the appropriate name (`data-access`, `aggregator`, `resource-coordinator`)
+  3. Registering the function in the entrypoint file as a Custom API
+  4. Pushing & deploying the package to _kdb Insights Enterprise_
+
+Once added and registered, it is possible to call the new [Custom
+APIs](../../api/database/custom/index.html) using RESTful calls.
+
+For more information on the definition of custom query APIs and the addition
+of custom code to the various database components, refer to [Custom
+APIs](../../api/database/custom/index.html).
+
+Deploying Custom APIs to Aggregator & Resource Coordinator without including
+them in the package
+
+This is not recommended, but is possible if you can't add an `agg` and `rc` to
+the package. This can be done by editing the global `agg` and `rc` processes
+within kubernetes, setting the environment variable `KXI_PACKAGES` to the
+`package:version` of the package containing the desired custom code in each
+`stateful set`.
+

@@ -1,0 +1,158 @@
+https://code.kx.com/insights/microservices/database/configuration/advanced/custom-auth-http.html
+
+# Custom HTTP Authorization - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/database/configuration/advanced/custom-auth-http.html
+
+# Custom HTTP Authorization
+
+Custom HTTP Authorization may be configured to allow you to integrate your own
+authorization provider. This can be used to link out to other authentication
+providers or to write your own. The custom authentication scheme allows the
+authorizer to limit user actions using role based access control.
+
+The authorization server will be requested on each HTTP request that comes
+into the Service Gateway, and on each connection opened by IPC clients. You
+must set the environment variable `KXI_SG_AUTH_HTTP_ENDPOINT` on the Service
+Gateway to configure the endpoint. The endpoint is responsible for returning a
+list of roles on success, or an error reason.
+
+## Environment Variables
+
+The following environmental variables are used to configure the Service
+Gateway.
+
+name | description | default  
+---|---|---  
+`KXI_SG_AUTH_HTTP_ENDPOINT` | The required environment variable that controls if Custom HTTP Authorization will be used. Set this to the URI of your sidecar | N/A  
+`KXI_SG_AUTH_HTTP_HEADERS` | An allow list of headers to copy from Service Gateway HTTP requests to the authorization server. Defaults to empty string. Authorization and Accepted are _implied_ and ignored if set here | `""`  
+  
+`localhost`
+
+We recommend configuring the authorizer as a process or container side by side
+with the Service Gateway. This will allow for the fastest transport.
+
+## Authorize endpoint
+
+The authorize endpoint is set with `KXI_SG_AUTH_HTTP_ENDPOINT`.
+
+An object with the following JSON keys is provided to the endpoint over
+`POST`:
+
+key | description | type  
+---|---|---  
+`user` | The basic username that was supplied in the open connection request. | string  
+`pass` | The basic password that was supplied in the open connection request. | string  
+`uri` | The URI for the Service Gateway request, if over HTTP. | string  
+`method` | The HTTP request method for the Service Gateway request. | string  
+`body` | Optional body for the HTTP request. | string  
+  
+The response may contain the following output keys as JSON:
+
+key | description | type  
+---|---|---  
+roles | list of authorized roles | string[]  
+error | Error message reason | string  
+  
+On success, the authorize endpoint is expected to return a response of roles
+that the request or connection is entitled to and set the HTTP code to `200`:
+
+    
+    
+    HTTP/1.1 200
+    Content-Type: application/json
+    Content-Length: 54
+    
+    {"roles":["insights.query.sql","insights.query.data"]}
+    
+
+The Service Gateway will then handle denying the request if the path requested
+is not permitted by those roles.
+
+On denial, the authorize endpoints expected to return an error reason as JSON,
+and set the HTTP code to an unsuccessful (not 200) response code.
+
+    
+    
+    HTTP/1.1 403
+    Content-Type: application/json
+    Content-Length: 21
+    
+    {"error":"Forbidden"}
+    
+
+If some I/O error occurs, the request will be responded to with _500 Internal
+Server Error_ and the reason set to the Service Gateway's underlying OS
+reason.
+
+## IPC client authorization flow
+
+For an IPC connection, the authorization endpoint is requested _once_ upon
+establishing the client connection, and the roles are checked for each API
+call made.
+
+The Service Gateway remembers the roles on per connection basis, and will not
+re-fetch them for the lifetime of that connection.
+
+  * Client connects to the service gateway with ``:host:port:user:pass`
+  * The authorization endpoint will be called given:
+    * The Authorization header set to `Basic` with the base 64 encoded username and password, joined by `":"`.
+    * A JSON body with keys set to the user and pass.
+  * The returned roles are cached or the connection is denied
+
+Now for the lifetime of the persistent connection:
+
+  * Client makes a request for some API
+    * For example, `getData`: `h (`.kxi.getData;`startTS`endTS`table!(-0wp;0pw;`trade);()!())`
+  * Roles are checked
+    * In this example, `.kxi.getData` which maps to `insights.query.data`
+  * The request is now permitted or denied
+  * Repeat for the next request
+
+## HTTP client authorization flow
+
+For an HTTP Request, the authorization function will be triggered on each
+request.
+
+  * Client makes a POST request for some path 
+  * The authorization endpoint will be called given:
+    * Authorization header copied from the request
+    * Any other `KXI_SG_AUTH_HTTP_HEADERS` copied from the request
+    * A JSON body of keys: `uri`, `method`, `body`
+  * Roles are checked
+    * For `/data` which maps to `insights.query.data`
+  * The request is now permitted or denied
+
+## Sample Kubernetes Deployment
+
+The following sample configuration shows salient configuration for a custom
+HTTP provider as a container beside the Service Gateway in a deployment.
+Information such as image pull secrets, and other Service Gateway required
+environmental variables have been omitted for brevity.
+
+Assuming the name of your custom image is `custom-http-image` and the tag is
+`0.0.0`:
+
+    
+    
+    ---
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata: {}
+    spec:
+      template:
+        spec:
+         containers:
+            - name: sg-gateway
+              image: registry/kxi-sg-gw:0.0.0
+              env:
+                - name: KXI_SG_AUTH_HTTP_ENDPOINT
+                  value: "http://localhost5000"
+           - name: auth-provider
+             image: registry/custom-http-image:0.0.0
+             args: ["-p", "5000"]
+             ports:
+               - name: http-port
+                 containerPort: 5000
+    
+

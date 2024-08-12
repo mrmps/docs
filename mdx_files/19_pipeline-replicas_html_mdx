@@ -1,0 +1,104 @@
+https://code.kx.com/insights/microservices/stream-processor/examples/pipeline-replicas.html
+
+# Pipeline Replicas - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/stream-processor/examples/pipeline-replicas.html
+
+# Pipeline Replicas
+
+_Start a pipeline with multiple replica pipelines for increased resiliency_
+
+The pipeline replicas will have soft affinities to different nodes/zones
+depending on settings.
+
+Note
+
+Pipeline replicas are only used within Kubernetes.
+
+## Pipeline Example
+
+The following `print.q` file will simply write data to the console.
+
+    
+    
+        .qsp.run
+            .qsp.read.fromCallback[`pub]
+            .qsp.write.toConsole[]
+    
+
+We will use the above example as our pipeline to be replicated.
+
+# Deployment
+
+To run a pipeline in Kubernetes, first follow the [setup for
+Kubernetes](../configuration.html#kubernetes) guide. The pipeline can be
+deployed using a port-forwarded Coordinator process. To add replicas, simply
+include the `replicas` setting with the desired number of pipeline replicas.
+Each pipeline replica has its own controller.
+
+Replicas = Instances
+
+A replicas value of n means there will be n total pipeline instances.
+
+Start 3 pipeline replicas with our simple print to console pipeline above:
+
+    
+    
+    curl -X POST http://localhost:5000/pipeline/create -d \
+        "$(jq -n --arg spec "$(cat print.q)" \
+        '{
+            name       : "print-replica",
+            type       : "spec",
+            config     : { content: $spec },
+            settings   : { replicas: 3 }
+        }' | jq -asR .)"
+    
+
+Running the above will return something like:
+
+    
+    
+    [
+        {"id":"insights-print-replica-r0","group":"g-732718846987","error":""},
+        {"id":"insights-print-replica-r1","group":"g-732718846987","error":""},
+        {"id":"insights-print-replica-r2","group":"g-732718846987","error":""}
+    ]
+    
+
+Each pipeline replica has its own pipeline ID which can be used to teardown a
+single replica in the normal way. Additionally, pipeline replicas share a
+group ID which can be used to teardown the entire replica group using the
+`teardownGroup` API.
+
+    
+    
+    curl -X POST http://localhost:5000/pipeline/teardownGroup/g-732718846987
+    
+
+# Affinity Rules
+
+When using replicas the worker has a hard affinity to the same topology domain
+as its controller. The controller has a soft anti-affinity against its own
+group ID. Also if there are any worker PVCs existing on startup the controller
+has a hard affinity to them.
+
+## Replica Affinity Topology Key
+
+The user can toggle what topology key the above affinity rules are applied. By
+default the [topology key](https://kubernetes.io/docs/concepts/scheduling-
+eviction/assign-pod-node/#inter-pod-affinity-and-anti-affinity) is `zone` but
+the user can change this to `hostname` by applying the
+`replicaAffinityTopologyKey` setting:
+
+    
+    
+    curl -X POST http://localhost:5000/pipeline/create -d \
+        "$(jq -n --arg spec "$(cat print.q)" \
+        '{
+            name       : "print-replica",
+            type       : "spec",
+            config     : { content: $spec },
+            settings   : { replicas: 3, replicaAffinityTopologyKey: "hostname" }
+        }' | jq -asR .)"
+    
+

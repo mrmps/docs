@@ -1,0 +1,331 @@
+https://code.kx.com/insights/enterprise/database/configuration/ui/schema.html
+
+# Schema Settings - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/database/configuration/ui/schema.html
+
+# Schema configuration
+
+_This section describes the configuration options available under the**Schema
+Settings** tab in the kdb Insights Enterprise UI._
+
+A schema is a description of a collection of tables. Schemas are used to
+describe all of the tables within a kdb Insights Database. Schemas can also be
+used in [pipelines](../../../ingest/pipeline/index.html) to transform
+datatypes to match a particular table.
+
+A schema is comprised of one or more tables and metadata properties. Each
+table defines a set of fields (sometimes referred to as columns) and metadata
+information. Each field within a table must have a name and a type associated
+with it.
+
+Partitioned tables
+
+The kdb+ database structure requires each database schema to have at least one
+**partitioned** table.
+
+![Schema overview](images/ui/schema/schema-overview.png)
+
+Tables can be added or removed from a schema, but schemas can only be changed
+when the associated [database](database.html) is [torn
+down](../../deploy/index.html#tearing-down-a-database).
+
+Configuration in YAML
+
+Schemas can also be configured using [YAML configuration
+file](../assembly/schema.html). YAML configured schemas can be added to
+databases.
+
+## Create a schema
+
+Schemas are created in the **Schema Settings** tab of the
+[database](database.html) screen.
+
+A schema has a set of tables corresponding to the data stored in the database.
+
+Every data table in a schema must have a **Timestamp** data type column, set
+in the column properties. This table must be set as the partition for storage
+on a kdb+ database. The **Timestamp** column represents the time
+characteristic in the data used for [data tier migration](database.html#tier-
+settings).
+
+Configuring the schema involves:
+
+Additional schemas are saved as part of the parent database.
+
+### Code view
+
+Code view defines schemas using JSON. Schemas built using the code editor use
+table properties defined for the [YAML schema
+configuration](../assembly/schema.html), encoded as JSON.
+
+![Schema code editor](images/ui/schema/code-view.png)
+
+A validation check prevents submission of invalid code. Error details appear
+on hover-over of the underlined problem. In addition, when editing a property,
+supported attributes are displayed:
+
+![Schema editor validation](images/ui/schema/code-view-validation.png)
+
+### Table Properties
+
+A table is a definition of a set of data columns (fields) correlated by a
+common feature set. The definition of a table describes the types and purpose
+of each column within that table, as well as some usage metadata properties.
+
+![Table properties](images/ui/schema/table-properties.png)
+
+name | description  
+---|---  
+**Name** | The table name. A new schema comes with a default table, **table1** , this can be changed or deleted.  
+**Primary Keys** | Primary keys are used for indicating unique data within a table. This field displays the names of the columns that have been enabled as **Primary Key** columns in the column properties. Primary Keys can be removed by deleting them here. When new Primary Keys are enabled in column properties they appear here.  
+**Description** | Enter a textual description for the table. This can be used to provide an overview of the data collected in the current table.  
+**Type** | The type of the table describes how the table is managed on disk.   
+**Partitioned** \- Use this for time-based tables. At least one of your tables
+must be Partitioned.  
+**Splayed** \- Use this for supplementary data.  
+**Partition Data Column** | The name of the column within the table to use to partition the content. The column it points to must be of Type **timestamp**. This value is required when the table Type is **Partitioned**.  
+**Block Size** | This value indicates when data should be written to disk. After this many records are received, data is written to disk. Writing more frequently increases disk IO but uses less memory. If omitted, the default value is 12 million records.  
+**Sort Settings** |   
+**Real-time Sort** | A list of columns to use for sorting data in a memory tier. This typically corresponds to the data sort of the RDB tier.  
+**Interval Sort** | A list of columns to use for sorting data in an ordinal partitioned tier. This typically corresponds to the data sort of the IDB tier.  
+**Historical Sort** | A list of columns to use for sorting data in a normal disk tier. This typically corresponds to the data sort of the HDB tier.  
+  
+Keyed tables and object storage
+
+Keyed tables update values for records that have matching keys, except for
+data that has been migrated to an object storage tier. Once data has migrated
+to an object storage tier, it is immutable.
+
+### Column Properties
+
+Columns describe the distinct features within a table with a unique name and
+datatype. Each row of data in the system for a given table must have a value
+for each column within a table.
+
+![Column properties](images/ui/schema/column-properties.png)
+
+Data columns are added with **Add Data Column**. Selected (checked) columns
+can be cloned, removed, positioned to the top or bottom, or have additional
+fields added above or below the selected row. See data column actions for
+details.
+
+name | description   
+---|---  
+**Name** |  The name of the column in the table. The name must be unique within a single table and should be a single word that represents the purpose of the data within the column. This name must conform to kdb+ naming restrictions and should not use any reserved kdb+ primitives. See [The .Q Namespace](https://code.kx.com/q/ref/dotq/#qid-sanitize) for details.  
+**Data Type**|  The type of the column. See Types below for more details.  
+**Compound** | Checking this field changes the type to a compound type for the chosen cells Data Column. For example checking this converts **int** to **ints**. The **Can be compounded** column in the Types table indicates the types that can be compounded.  
+**Primary Key**|  Checking this field keys the table on this data column
+ensuring that each of the values for this data column are unique. When
+checked:  
+
+  * this data column name is added to the set of **Primary Keys** keys in the Table Properties for this table.  
+![Primary Keys](images/ui/schema/primary-keys.png)  
+
+  * the table is keyed by these columns and any updates that have matching keys update records with matching keys. 
+  * this table/column can be selected as the **Foreign Key** for another table. Read more about **Foreign Key** further down this table. 
+
+  
+**RDB Attribute**|  Attributes to apply when the table is in memory. This
+typically only applies to the RDB tier. See Attributes details below for more
+information.  
+**IDB Attribute (Ordinal Partitioning)**|  Attributes to apply when the table
+is ordinal partitioned. This typically only applies to the IDB tier. See
+Attributes details below for more information.  
+**HDB Attribute (Temporal Partitioning)**|  Attributes to apply when the table
+is partitioned on disk. This typically only applies to the HDB tier. See
+Attributes details below for more information.  
+**Description**|  A textual description of the column for documentation
+purposes.  
+**Foreign Key**|  A foreign key refers to the **Primary Key** data column in a
+different table in the database. This allows for the appendage of the other
+tables data for queries.  
+Double-click on this field to display a list of **Primary Keys** that can be
+selected.  
+  
+These are listed in the format **table.column** , where the table is another
+table in the same schema and column is a data column in that table.  
+  
+In the following example there are 2 tables.**table2** has a data column
+**col2** which is enabled as a primary key.  
+  
+![Foreign Keys](images/ui/schema/foreign-key-eg1.png)  
+  
+**table1** has a **Foreign Key** for the **time** column set to
+**table2.col2**.  
+  
+![Foreign Keys](images/ui/schema/foreign-key-eg2.png)  
+  
+If the **Data Type** of the selected **Foreign Key** is different to that of
+selected data column it is updated to match the type of the selected **Primary
+Key**. A message is displayed, at the bottom of the screen.  
+  
+![Foreign Keys](images/ui/schema/foreign-key-msg2.png)  
+  
+If the type is changed, after it has been assigned, the type of the data
+column referencing the **Foreign Key** is updated, and a message is displayed.  
+  
+![Foreign Keys](images/ui/schema/foreign-key-msg1.png)  
+  
+If the selected **Foreign Key** is deleted or its **Primary Key** check is
+disabled the value in **Foreign Key** field is the removed.  
+  
+### Types
+
+Column types support all of the base
+[datatypes](https://code.kx.com/q/ref/#datatypes) supported in kdb+. For
+columns containing only atom values, use the singular form of the data type.
+To indicate that a column is intended to support vectors of a given type, use
+the plural of the type name.
+
+Partition tables need a timestamp column
+
+Partition tables require a timestamp column to order data and to propagate it
+through [database tiers](database.html#tier-settings). The **Partition
+Column** column in the table must be set to the temporal field that will be
+used for ordering data.
+
+Type example
+
+For a column of long numbers, use the type **Long**.
+
+For a column of vectors of long integers, use **Longs**.
+
+name | type | description | can be compounded  
+---|---|---|---  
+**Any** | `0h` | Allows for mixed types within a single column. Mixed types are useful for having mixed data or lists of strings but do have a performance trade-off and should be used sparingly. | no  
+**Boolean** | `1h` | True or false values. | yes  
+**Guid** | `2h` | Unique identifiers in the form of `00000000-0000-0000-0000-000000000000`. | yes  
+**Byte** | `4h` | Individual byte values on the range of `0x00` to `0xFF`. | yes  
+**Short** | `5h` | A 2 byte short integer value in the range of `-32767h` to `32767h`. | yes  
+**Int** | `6h` | A 4 byte integer value in the range of `-2147483647` to `2147483647` | yes  
+**Long** | `7h` | An 8-byte integer value with the maximum unsigned integer byte range. | yes  
+**Real** | `8h` | A 4-byte floating point value. | yes  
+**Float** | `9h` | An 8-byte floating point value. | yes  
+**Char** | `10h` | A byte value representing a character value. | yes  
+**Symbol** | `11h` | A symbol is a string of characters that is stored as an enumeration on disk. Reserve this datatype for repeated character values. Using this for unique character data incurs significant query performance overhead. | yes  
+**Timestamp** | `12h` | Stores a date and time as the number of nanoseconds since 2000.01.01. All partitioned tables must have at least one field that is a timestamp for partitioning its data on. | yes  
+**Month** | `13h` | Represents a month and year value without a day. | yes  
+**Date** | `14h` | Represents a month, year and day value as a date. | yes  
+**Datetime** | `15h` | A deprecated format for storing temporal values that uses a float as its underlying data structure. When using this datatype, it is possible to have two datetimes point to the same day but not be equivalent due to float precision. Use a timestamp over datetime whenever possible. | yes  
+**Timespan** | `16h` | Stores a time duration as a number of nanoseconds. | yes  
+**Minute** | `17h` | Stores hours and minutes of a timestamp. | yes  
+**Second** | `18h` | Stores hours, minutes and seconds of a timestamp. | yes  
+**Time** | `19h` | Stores hours, minutes, seconds and sub-seconds to nanosecond precision. | yes  
+**String** | `inbound` | Stores a text as a sequence of characters. | no  
+  
+The **Can be compounded** column in the table above indicates which types can
+be compounded by ticking the **Compound** checkbox for the data column, in
+**Schema Settings**.
+
+#### Attributes
+
+RDB/IDB/HDB Attributes, defined in column properties are a key performance
+tuning point for modifying the performance of queries in a kdb+ Insights
+database. Attributes can be set differently depending on the different tiers
+of your database and can be tuned to optimize performance at each tier. The
+following column attributes are available:
+
+  * **None** \- requires a linear scan for filters against the field
+  * [**Sorted**](https://code.kx.com/q/ref/set-attribute/#sorted) \- ascending values - allows binary search for filters against the field. 
+  * [**Parted**](https://code.kx.com/q/ref/set-attribute/#grouped-and-parted) \- (_requires sorted_) - maintains an index allowing constant time access to the start of a group of identical values.   
+It is recommended that the **Parted** attribute is used on any field that will
+be used for filtering most frequently. You can have multiple fields with a
+parted attribute if there are multiple fields frequently used for filtering.
+Note that setting the parted attribute does require a significant amount of
+memory when constructing the field query index at write down. Ensure that
+enough memory is allocated to the Storage Manager for a full day's worth of
+data for the largest field that has this attribute set.
+
+  * [**Grouped**](https://code.kx.com/q/ref/set-attribute/#grouped-and-parted) \- (_does not require sorted_) maintains a separate index for the field, identifying the positions of each distinct value. _note_ \- this index can take up significant storage space.
+  * [**Unique**](https://code.kx.com/q/ref/set-attribute/#unique) \- (_requires all values be distinct_) allows a constant-time lookup - typically used for primary keys
+
+More information about attributes, their use, and trade-offs is available in
+the [kdb+ documentation](https://code.kx.com/q/wp/data-management/#attributes-
+on-splayed-partitioned-tables).
+
+Within the table configuration, an attribute property can be set on particular
+columns within the table. There are three levels of attributes that can be
+set:
+
+  1. **attrMem** \- The memory level attribute applies when data is in memory which is used for any real-time tiers (RDB) in your database configuration.
+  2. **attrOrd** \- The ordinal level attribute is used for data that is stored intermittently throughout the day. This applies to the IDB tier of a database.
+  3. **attrDisk** \- The disk attribute applies to all disk tiers including the HDB and subsequent tiers such as object storage.
+
+### Data Column Actions
+
+You can open the column actions menu by either clicking on **Data Column
+Actions** or right-clicking on a column.
+
+![Clone Field\(s\)](images/ui/schema/field-menu.png)
+
+This provides you with the following options for updating the data columns in
+your schema:
+
+  * **Add Data Column Above** or **Add Data Column Below** to add new columns.
+  * **Move to Top** or **Move to Bottom** \- to move columns.
+  * **Clone Data Column(s)** \- to clone data column(s) and their properties.
+  * **Remove Columns** \- to delete data column(s).
+
+![Remove field](images/ui/schema/field-menu.png)
+
+## Modifying a schema
+
+You can modify a schema, changing table properties, data column properties or
+adding/removing columns.
+
+Before you attempt to modify a schema the schema must not be in use. Therefore
+if you have a [deployed](../../deploy/index.html) schema it must be [torn
+down](../../deploy/index.html#tearing-down-a-database) before modifying the
+schema.
+
+The database is unavailable, for either write down or query, for the duration
+of the schema conversion
+
+Backup before converting a database
+
+We recommend that you always backup your database before applying schema
+changes. See [backup](../../../cli/backup-and-restore.html) for details.
+
+Stop Publishing
+
+The Storage Manager no longer accepts any new data while a schema conversion
+is taking place. When performing a schema upgrade on a large database, this
+process can take some time to finish. This is especially true when an object
+storage tier is used. During a schema conversion, it is recommended that all
+data publishers are stopped until the schema conversion is complete. This
+avoids accumulating back pressure on any streams in the system. Once the
+schema conversion is complete, Storage Manager processes any messages that
+were buffered in the stream while the conversion was taking place.
+
+After you have made any required updates to the schema, and you **Save** and
+**Deploy** the updated database a schema conversion progress indicator may be
+displayed.
+
+### Schema Conversion Progress Indicator
+
+When you modify a schema and [deploy the database](../../deploy/index.html),
+if the changes take longer than 10 seconds to implement, a **Schema Conversion
+Progress Indicator** is displayed. This is a useful tool for monitoring the
+progress of schema conversions, especially for large data sets which require a
+significant amount of time.
+
+  * The indicator is visible above the settings on the Database screen and displays a notification bar stating **Applying schema change**. 
+  * A status bar increments showing the number of updates completed. 
+
+![Schema Status Indicator](images/ui/schema/schema-status-indicator.png)
+
+The status of the conversion is also visible when you hover over the database
+name on the left-hand side, showing the status of components being deployed.
+
+![Storage Status Indicator](images/ui/schema/storage-status-indicator.png)
+
+You can also access information on the conversion by examining logs through
+[Diagnostics](../../../troubleshooting/diagnostics.html). The following
+screenshot shows an example of schema conversion logs. Filtering the search
+using **Running Step** or **Processing Partition** gives the best results.
+
+![Schema conversion logs](images/ui/schema/status-logs.png)
+
+## Further Reading
+

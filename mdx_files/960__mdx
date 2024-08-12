@@ -1,0 +1,303 @@
+https://code.kx.com/platform/ldap/
+
+# LDAP - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/ldap/
+
+# LDAP
+
+_KX Control_ can be configured to integrate with
+[LDAP](https://en.wikipedia.org/wiki/Lightweight_Directory_Access_Protocol) to
+perform basic authentication and user group management. The functionality is
+especially useful in large systems where maintaining in _KX Control_ a new set
+of credentials for each user becomes onerous.
+
+Instead system administrators can configure _KX Control_ to interface with
+their existing LDAP server and users can log in with those credentials. When a
+user logs into the system, they will be authenticated against the server
+instead of within _KX Control_. The functionality can also be configured to
+maintain user group membership on the system to mirror their LDAP roles.
+
+## Setup
+
+To enable this functionality, the user can set the `DELTACONTROL_LDAP`
+environment variable during installation. The variable should point to a
+configuration text file, usually stored in `delta-bin/config`. If the system
+has already been installed, it can be added to the `delta.profile`, and
+restarted to pick up the change.
+
+    
+    
+    DELTACONTROL_LDAP=${DELTA_CONFIG}/ldap.txt
+    
+
+Prerequisite
+
+The functionality leverages _OpenLDAP_ to communicate with the server, so
+these libraries must be installed on the server.
+
+## Configuration parameters
+
+The configuration file contains key-value pairs and typical values are shown
+in the table below.
+
+parameter | example | required | description  
+---|---|---|---  
+uri | ldap://10.18.1.11:389,ldap:10.18.1.12:389 | Y | Comma-separated list of servers to communicate with. Use ldaps for encryption  
+timeout | 3 | N | Timeout (in seconds) for connection and search attempts. Default value is 3  
+bind | sAMAccountName | Y | Determines the authentication format to the server  
+domain | KX | N | Required if using AD and multi-domain mode is disabled  
+multidomain | no | N | Set to yes when using Active Directory and users split across multiple domains  
+globdn | dc=Kx,dc=com | Y | Base node of the LDAP tree to search for users  
+groupdn | ou=Groups,dc=Kx,dc=com | N | Base node to search for groups. Will default to globdn if not specified  
+groups | cn=Support,ou=Groups,dc=Kx,dc=com;cn=Dev.. | N | List of group locations to check membership for.  
+checkgroups | no | N | Reject logins if user is not a member of any configured groups.  
+groupClass | group | N | Object type to look for when checking groups. Usually set to group for Active Directory and groupOfNames otherwise  
+memberClass | member | N | Field used to identify members within groups. Default is member  
+groupsFromUser | no | N | Check group membership by querying user when set to yes. Otherwise query each group  
+groupFieldInUser | memberOf | N | When group checking by user, the field to get groups from  
+userFilter | (objectCategory=person) | N | Filter to apply when searching for a users user groups  
+  
+### Sample file
+
+A sample file is included below. Assumes the system is connecting to an
+_Active Directory_ server, using a single-domain setup.
+
+    
+    
+    uri=ldap://10.18.1.11:389,ldap:10.18.1.12:389
+    bind=sAMAccountName
+    domain=Kx
+    multidomain=no
+    globdn=dc=Kx,dc=com
+    groupdn=ou=Groups,dc=Kx,dc=com
+    groups=cn=Support,ou=Groups,dc=Kx,dc=com; cn=Dev Team,ou=Groups,dc=Kx,dc=com
+    checkgroups=yes
+    groupsFromUser=yes
+    
+
+### Multiple forests
+
+From 4.6.0 LDAP can be configured to use multiple forests. This can be
+configured with minor changes to the LDAP configuration parameters.
+
+By appending a distinct suffix to the field `uri` and `globdn` a grouping can
+be created to distinguish between forests. Additionally `domain` and `bind`
+can be treated in the same way.
+
+    
+    
+    uri_A=ldap://10.18.1.11:389,ldap:10.18.1.12:389  
+    globdn_A=dc=Kx,dc=com
+    bind_A=sAMAccountName
+    domain_A=Kx
+    uri_B=ldap://ds.example.com:389
+    globdn_B=dc=example,dc=com
+    bind_B=CN
+    domain_B=Kx
+    multidomain=no
+    groupdn=ou=Groups,dc=Kx,dc=com
+    groups=cn=Support,ou=Groups,dc=Kx,dc=com; cn=Dev Team,ou=Groups,dc=Kx,dc=com
+    checkgroups=yes
+    groupsFromUser=yes
+    
+
+## Server details
+
+The `uri` key specifies the _LDAP_ server details. A comma-separated list is
+allowed to specify multiple. If one is unavailable, the login will attempt the
+other servers in order.
+
+TLS
+
+The connection can be encrypted by using `ldaps://`. However this requires
+appropriate certs to be setup outside the application in order to communicate
+secure the connection.
+
+The `timeout` parameter tells the application how long to wait before aborting
+a connection attempt or query.
+
+## Authentication
+
+The configuration is slightly different depending on the _LDAP_ server type.
+
+### Active directory
+
+_Active Directory_ supports logins using a user's account name and domain,
+i.e. `Kx\jbloggs`. The application can be configured to support single- or
+multi-domain setups. Assuming all users are placed in the tree under a single
+location, the `globdn` should be set to encompass all of them.
+
+    
+    
+    - dc=example,dc=com
+      - ou=people
+        - dn=jbloggs
+        - dn=jdoe
+        - ou=placements
+          - dn=msmith
+      ..
+    
+
+**Single domain**
+
+The user should login to the application using just their account name, e.g.
+`jbloggs`. The application will append the domain automatically.
+
+    
+    
+    bind=sAMAccountName
+    domain=Kx
+    globdn=dc=example,dc=com
+    
+
+**Multi-domains**
+
+The user should login with their domain and account, i.e. `Kx/jbloggs`.
+
+    
+    
+    bind=sAMAccountName
+    multidomain=yes
+    globdn=dc=example,dc=com
+    
+
+Global Catalog
+
+When using multi-domain mode, there is a _Global Catalog_ that contains
+information across all domains in the _LDAP forest_. This should be used for
+the connection details so all users can be authenticated from the same server.
+The port of this server is usually 3268 so the `uri` should be updated. The
+`globdn` and `groupdn` may need to be updated to blank in order to search
+correctly.
+
+### Standard servers
+
+With non-Active Directory servers, the users are generally stored in a flat
+structure in the tree.
+
+    
+    
+    - dc=example,dc=com
+      - ou=people
+        - uid=jbloggs
+        - uid=jdoe
+      ..
+    
+
+For this setup, use the parameters below in the configuration file. The
+`globdn` needs to be set to the location containing all the users. There is no
+need to set values for `domain` or `multidomain`.
+
+    
+    
+    bind=uid
+    globdn=dc=example,dc=com
+    
+
+## Group membership
+
+If the application is configured with LDAP groups, it can be used to mirror
+group membership on the _LDAP server_ and setup local copies of these. This
+helps distinguish users in the application and establish role-based
+permissions. On startup _Control_ will create local copies of each of the
+groups and when a user logs in, their local membership will mirror the
+upstream memberships. The membership check on the server, downloads the user's
+groups and adds them to the groups they're a member of and removes them from
+the others.
+
+Once the local groups are created, the system administrators can setup the
+role permissions. The application will **not download** any role permissions
+from the server.
+
+Check mode
+
+There are two modes of membership check with different configurations. The
+recommended approach looks up the user object and pulls the group membership
+from there. This approach should be more performant with less chance of
+permissions problems. The other approach searches for groups and checks the
+members of each against the login user.
+
+The configuration would look like below. The application would look up the
+user, extract all the groups and match those against the `groups` parameter.
+
+    
+    
+    groups=cn=Support,ou=Groups,dc=Kx,dc=com;cn=Dev Team,ou=Groups,dc=Kx,dc=com
+    groupsFromUser=yes
+    groupFieldInUser=memberOf
+    
+
+The recommended approach uses the `groupFieldInUser` to specify what field
+stores the group names. For example, if `jbloggs` was a member of `Support`
+and `Dev Team`, the user object would contain.
+
+    
+    
+    memberOf=cn=Support,ou=Groups,dc=Kx,dc=com
+    memberOf=cn=Dev Team,ou=Groups,dc=Kx,dc=com
+    
+
+The **second approach** extracts the user from each of the groups. The search
+works in a couple of steps;
+
+  * Searches for objects matching each of the specified `groups` parameter and where the object class matches `groupClass`
+  * Search performed under the `groupdn` field. Uses `globdn` if not specified
+  * Extracts the members from each group using the `memberClass` field
+  * Compare the user list against the login user.
+
+    
+    
+    groups=cn=Support,ou=Groups,dc=Kx,dc=com;cn=Dev Team,ou=Groups,dc=Kx,dc=com
+    groupsFromUser=no
+    groupClass=group
+    memberClass=member
+    groupdn=ou=Groups,dc=Kx,dc=com
+    
+
+## Search APIs
+
+From version 4.0.2 of _KX Control_ , generic APIs are provided to search the
+server to extract object attributes. The functions will search from a base
+location for specific objects and extract attributes. An example use case
+would be for extracting the username of all user objects under one tree node.
+
+parameter | value  
+---|---  
+base | `dc=example,dc=com`  
+filter | `&(objectClass=user)(objectCategory=person)`  
+attributes | `sAMAccountName`  
+  
+To get the username of all users that are members of groups `wiki-admin` and
+`wiki-users`, the `memberOf` attribute can be used to filter via the API.
+
+parameter | value  
+---|---  
+base | `dc=example,dc=com`  
+filter | `(&(objectClass=user)(objectCategory=person)(|(memberOf=cn=wiki-admin,ou=groups,dc=example,dc=com)(memberOf=cn=wiki-users,ou=groups,dc=example,dc=com)))`  
+attributes | `sAMAccountName`  
+  
+The underlying OpenLDAP call from _KX Control_ uses
+[`ldapsearch`](https://linux.die.net/man/1/ldapsearch).
+
+### Notes
+
+  * _KX Control_ must be configured to use LDAP
+  * The server connection must be initialized (by an initialization call using user credentials)
+  * The OpenLDAP libs have a maximum result size (external to _KX Control_ configuration)
+  * Specific fields and paths will vary across installations and may change depending on what LDAP implementation is being used.
+
+For details of the API signatures, please see the LDAP section of the
+_Template API_ documentation.
+
+## LDAP users
+
+For LDAP users authentication is offloaded to a LDAP server. In _KX Control_
+therefore the _Authentication & Access Control_ tab will be unavailable for
+these users.
+
+![Screenshot](../img/control/idp-controlled-user-ui.png)
+
+An email address can now be saved for LDAP users. This will be persisted in
+_KX Control_ as well as on export and import of LDAP users.
+

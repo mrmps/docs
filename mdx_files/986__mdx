@@ -1,0 +1,36 @@
+https://code.kx.com/platform/qr_polling/
+
+# Polling - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/qr_polling/
+
+# Polling
+
+Polling requests are supported for clients that require periodic updates for a
+request. Instead of the client re-submitting the same request on a timer, the
+request can be registered with the _QR_ to poll. The client registers the
+request once and receives results asynchronously each time the request
+executes. The benefits of this are;
+
+  * Reduced load on the client: single request to register and then only needs to process results
+  * Multiple end-clients can share the same request: reduced number of queries hitting the databases
+  * Supports all one-shot request features: including routing and paging
+  * New poll requests are only scheduled after the previous poll completes. Meaning slow-running requests aren't queued against an already busy database.
+
+## Managed requests
+
+Polling requests by default are uniquely defined by the query, target,
+frequency and user. This differs from the _managed query_ functionality in the
+_DS_QM_ process where different users would share the same request. The _QR_
+can be configured to support this mode and share requests across users by
+excluding the user from the uniqueness check.
+
+To enable this mode, `.qr.poll.byUser` should be set to `false` in the
+`INSTANCE_CONFIG` config parameter override/DEFAULT set for the QR.
+
+[![Screenshot](../img/qr/qrinstanceconfig.png)](../img/qr/qrinstanceconfig.png
+"Click to expand")
+
+[![Screenshot](../img/qr/instanceparam.png)](../img/qr/instanceparam.png
+"Click to expand")
+

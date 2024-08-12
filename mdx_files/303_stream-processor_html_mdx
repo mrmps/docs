@@ -1,0 +1,42 @@
+https://code.kx.com/insights/enterprise/configuration/stream-processor.html
+
+# Stream Processor - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/configuration/stream-processor.html
+
+`image.repository` | `portal.dl.kx.com` | The URL of the image repository for the coordinator image.  
+`image.component` | `kxi-sp-coordinator` | The name of the coordinator image.  
+`image.pullPolicy` | `IfNotPresent` | The [Kubernetes image pull policy](https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy) for this image.  
+`ctlImage.repository` | `portal.dl.kx.com` | The URL of the image repository for the default controller image.  
+`ctlImage.component` | `kxi-sp-controller` | The name of the controller image.  
+`ctlImage.pullPolicy` | `IfNotPresent` | The [Kubernetes image pull policy](https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy) for this image.  
+`workImage.repository` | `portal.dl.kx.com` | The URL of the image repository for the default worker image.  
+`workImage.component` | `kxi-sp-worker` | The name of the worker image.  
+`workImage.pullPolicy` | `IfNotPresent` | The [Kubernetes image pull policy](https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy) for this image.  
+`mlImage.repository` | `portal.dl.kx.com` | The URL of the image repository for the default machine learning worker image.  
+`mlImage.component` | `kxi-ml` | The name of the machine learning worker image.  
+`mlImage.pullPolicy` | `IfNotPresent` | The [Kubernetes image pull policy](https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy) for this image.  
+`pyImage.repository` | `portal.dl.kx.com` | The URL of the image repository for the default Python worker image.  
+`pyImage.component` | `kxi-sp-python` | The name of the Python worker image.  
+`pyImage.pullPolicy` | `IfNotPresent` | The [Kubernetes image pull policy](https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy) for this image.  
+`imagePullSecrets` | `[]` | Arrays of name of secrets with image pull permissions.  
+`env` | `{}` | Additional environment variables to add to the coordinator.  
+`debug` | `false` | Enables interactivity for the coordinator.  
+`port` | `5000` | The port that the coordinator will bind to and serve its REST interface from.  
+`instanceParam` | `{ "g": 1, "t": 1000 }` | Command line parameters to pass to the coordinator. See [command line parameters](https://code.kx.com/q/basics/cmdline/) for details.  
+`defaultWorkerThreads` | `0` | Default secondary threads for new pipeline submissions.  
+`betaFeatures` | `false` | Enables optional beta features in a preview mode. Beta features are not intended to be used in production and are subject to change.  
+`auth.enabled` | `true` | Indicates if authentication should be enabled for the coordinator's REST interface.  
+`persistence.enabled` | `true` | Whether persistent volumes are enabled on pipelines. **Note** : checkpointing for recovery requires this be enabled  
+`persistence.storageClassName` | `null` | Pre-configured storage class name to be used for persistent volumes (if not specified will use the Kubernetes cluster's default storage class)  
+`persistence.controllerCheckpointFreq` | `5000` | Frequency of Controller checkpoints  
+`persistence.workerCheckpointFreq` | `5000` | Frequency of Worker checkpoints  
+`persistence.storage` | `20Gi` | Persistent volume storage size  
+`autoscaling.enabled` | `false` | Indicates if the coordinator should automatically scale based on load.  
+`autoscaling.minReplicas` | `1` | The minimum number of coordinator replicas that should be running.  
+`autoscaling.maxReplicas` | `1` | The maximum number of coordinator replicas that should be running.  
+`autoscaling.targetCPUUtilizationPercentage` | `80` | The maximum amount of CPU a replica should consume before triggering a scale up event.  
+`autoscaling.targetMemoryUtilizationPercentage` |  | The maximum amount of memory a replica should consume before triggering a scale up event.  
+`replicaCount` | `1` | If autoscaling is enabled, this is the baseline number of replicas that should be deployed.  
+`affinity` | `hard` | One of `hard`, `soft`, `hard-az` or `soft-az`. Hard affinity requires all replicas to be on different nodes. Soft prefers different nodes but does not require it. The `az` suffix indicates the node allocation must be across different availability zones.
+

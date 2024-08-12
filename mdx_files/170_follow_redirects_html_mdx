@@ -1,0 +1,27 @@
+https://code.kx.com/insights/core/kurl/appendix/follow_redirects.html
+
+# Follow redirects | Examples | REST client | kdb Insights Core - kdb products
+
+Original URL: https://code.kx.com/insights/core/kurl/appendix/follow_redirects.html
+
+# Follow redirects
+
+Make a call to get the code.kx.com main webpage without following redirects.
+This will return a 301 Moved Permanently: the new location is
+`https://code.kx.com/q/`.
+
+    
+    
+    resp:.kurl.sync ("https://code.kx.com/"; `GET; ``response_headers!(::;1b))
+    show resp 0
+    show "\r\n" vs resp 2
+    
+
+With redirection following enabled, this returns the main page.
+
+    
+    
+    resp2:.kurl.sync ("https://code.kx.com/"; `GET; ``follow_redirects!(::;1b))
+    show resp2
+    
+

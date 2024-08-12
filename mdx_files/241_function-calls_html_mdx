@@ -1,0 +1,121 @@
+https://code.kx.com/insights/api/machine-learning/q/analytics/api/variadic/function-calls.html
+
+# Function Calls - kdb products
+
+Original URL: https://code.kx.com/insights/api/machine-learning/q/analytics/api/variadic/function-calls.html
+
+# Function Calls
+
+## Function calls
+
+A sub selection of the ML functionality is now supported as a set of variadic
+functions and can be called in a similar manner to python functions when
+imported to q using embedPy (more information
+[here](https://code.kx.com/q/ml/embedpy/userguide/#Function-calls)). These
+functions have been defined with a maximum of 8 input parameters, where any
+number of these can be optional, depending on the nature of the function
+itself. In addition to the varying number of arguments, users can also pass in
+a mixture of positional and keyword arguments.
+
+Similarly to embedPy, the key things to note are:
+
+  * Default arguments will be applied where no explicit arguments are given
+  * Positional arguments can be used based on the initial function definition
+  * Individual keyword arguments are specified using the (infix) `.var.kw` operator (like embedPy `pykw`)
+  * A dictionary of keyword arguments can be passed using `.var.kwargs` (like embedPy `pykwargs` or python `**kwargs`)
+  * **Keyword arguments last** \- We can combine positional arguments, lists of positional arguments, keyword arguments and a dictionary of keyword arguments. However, all keyword arguments **must** always follow any positional arguments. The dictionary of keyword arguments (if given) must be specified last.
+
+### Example function calls
+
+Examples demonstrating different variadic combinations of arguments are shown
+below.
+
+  * Variadic function with single required argument
+
+    
+    
+    $ cat example1.q
+    \l init.q
+    
+    // Define an appropriate specification ensuring that `X` is defined as
+    // a required input to the function
+    spec:(!) . flip (
+      (`description;"test specification");
+      (`config     ; `name`required`default!/:(
+        (`X    ;1b; ::);
+        (`y    ;0b; 10);
+        (`func ;0b;max);
+        (`multi;0b;  4)
+          )
+        )
+      )
+    
+    // Define the function to be made variadic
+    function:{[X;y;func;multi]
+      multi*func y*X
+      }
+    
+    // Compose the variadic function
+    qfunc:.var.compose .var.generate[spec;function]
+    
+    // Load example script with variadic function qfunc which requires data
+    $ q example1.q
+    
+    // Using required arguments only
+    q)qfunc 100?1f
+    
+    // Using required and positional arguments
+    q)qfunc[100?1f;5;med]
+    
+    // Using required and named arguments
+    q)qfunc[100?1f;9;.var.kw[`multi;9]]
+    
+    // Using required and dictionary arguments
+    q)qfunc[100?1f;.var.kwargs`func`multi!(med;15)]
+    
+
+  * Variadic function with multiple required arguments
+
+    
+    
+    $ cat example2.q
+    \l init.q
+    
+    // Define an appropriate specification ensuring that `X` is defined as
+    // a required input to the function
+    spec:(!) . flip (
+      (`description;"test specification");
+      (`config     ; `name`required`default!/:(
+        (`X    ;1b; ::);
+        (`y    ;1b; ::);
+        (`func ;0b;max);
+        (`multi;0b;  4)
+          )
+        )
+      )
+    
+    // Define the function to be made variadic
+    function:{[X;y;func;multi]
+      multi*func y*X
+      }
+    
+    // Compose the variadic function
+    qfunc:.var.compose .var.generate[spec;function]
+    
+    // Load example script with variadic function qfunc which requires
+    // 2 arguments, which are both lists of data
+    $ q example2.q
+    
+    // Using required arguments only
+    q)qfunc[100?1f;5]
+    
+    // Using required and positional arguments
+    q)qfunc[100?1f;9;med]
+    
+    // Using required and named arguments
+    q)qfunc[100?1f;15;.var.kw[`multi;9]]
+    
+    // Using required and dictionary arguments
+    q)qfunc[100?1f;2;.var.kwargs`func`multi!(med;15)]
+    
+

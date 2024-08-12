@@ -1,0 +1,53 @@
+https://code.kx.com/insights/accelerators/fsi/getStatsCustomize.html
+
+# Customize getStats - kdb products
+
+Original URL: https://code.kx.com/insights/accelerators/fsi/getStatsCustomize.html
+
+# Customize getStats
+
+### Customising getStats
+
+Some complex named analytics are also available;
+
+    
+    
+    select from .tbls.cfg.analytics where tableName=`Trade, analytic in `VWAP`TWAP`turnover
+    tableName analytic clause
+    -------------------------------------------------------------------------------------------------------
+    Trade     VWAP     (wavg;`volume;`price)
+    Trade     turnover (sum;(*;`price;`volume))
+    Trade     TWAP     (%;(sum;(enlist;(*:;`price);(max;(max;`price));(min;(min;`price));(last;`price)));4)
+    
+
+Additional custom named aggregations can be added by including them with any
+custom configuration you are applying
+
+#### Including analytics with custom configuration
+
+Custom named aggregations can be added to getStats with configuration in q
+table format. The API is looking for a table named .fsi.custom.analytics on
+initialisation, if present it will validate and add to configured
+aggregations. Validation will print any errors at initialisation time and
+error out before adding the configuration. The format is;
+
+column | type | Description  
+---|---|---  
+tableName | symbol | Name of the table that the analytic operates on  
+analytic | symbol | Name of the aggregation  
+clause | mixed | q functional clause  
+  
+For example,
+
+    
+    
+        .fsi.custom.analytics:flip `tableName`analytic`clause! flip (                
+            (`Trade;`custom;(wavg;`accVol;`tickCount));
+            (`Quote;`custom;(sum;(*;`askSize;`bidSize)))
+            );
+    
+
+This table can be included with any custom configuration. Steps to add custom
+configuration can be found here: [Adding Custom Configuration or
+Code](customize.html#adding-custom-configuration-or-code).
+

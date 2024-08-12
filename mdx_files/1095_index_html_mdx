@@ -1,0 +1,49 @@
+https://code.kx.com/insights/api/packaging/python/index.html
+
+# Overview - kdb products
+
+Original URL: https://code.kx.com/insights/api/packaging/python/index.html
+
+# Python API
+
+The Python API for package interactions provides you with the ability to list
+and load the contents of a package. Two interfaces are provided under the
+`.kxi` namespace, [`packages`](packages.html) and [`udfs`](udfs.html), which
+allow you to interact with these entities independently.
+
+## Examples
+
+In the following examples kdb Insights Enterprise has `qpackage` installed.
+
+  1. List all packages available
+    
+        >>> pakx.packages.list()
+           name versions
+    0  qpackage    1.0.0
+    
+
+  2. List all UDFs associated with the installed packages
+    
+        >>> pakx.udfs.search(package_name="qpackage")
+         name      function language  ...   package  version
+    0  sp_map  .test.sp.map        q  ...  qpackage    1.0.0
+    
+
+  3. Load the package contents
+    
+        >>> pakx.packages.load('qpackage', '1.0.0')
+    >>> kx.q.test
+    <pykx.ctx.QContext of .test with [variable, sp]>
+    
+
+  4. Retrieve the UDF as a named function
+    
+        >>> test_udf = pakx.udfs.load('sp_map', 'qpackage', '1.0.0')
+    >>> test_udf
+    pykx.Lambda(pykx.q('
+     {[table;params]
+      select from table where x<10
+      }
+    '))
+    
+

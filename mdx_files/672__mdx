@@ -1,0 +1,50 @@
+https://code.kx.com/platform/stream/release_410/
+
+# 4.1.0 - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/stream/release_410/
+
+# Changes in 4.1.0
+
+## Messaging
+
+### Multi-publish
+
+Ability to publish multiple tables in a single message
+
+### Reconnects
+
+Components will attempt to re-establish subscriptions after losing a
+connection
+
+### Clustering
+
+Messaging servers can be configured in a cluster so only the leader accepts
+registrations. In previous versions without clustering, during failover
+scenarios two components can register with different servers and no matching
+occurs.
+
+Clustering is disabled by default but can be enabled via the `serverCluster`
+instance parameter of the messaging server instances. The override selected
+should match that of any messaging components connecting.
+
+### Event callbacks
+
+There are callbacks for a range of messaging events on sources and consumers.
+By default they are set to do nothing.
+
+Kdb+ processes can act as a client of the report generator, and run reports
+programmatically. Communication with the report generator is by way of the
+Query Router.
+
+## Miscellaneous
+
+### Action tracker
+
+Permissions governed from entity group. Easier setup with LDAP groups;
+eliminates manual permissioning step
+
+## Java email
+
+Supports ENV-based configuration: `Host`, `port`, `fromAddress`
+

@@ -1,0 +1,25 @@
+https://code.kx.com/insights/microservices/stream-processor/examples/static-file.html
+
+# Static file - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/stream-processor/examples/static-file.html
+
+# Static file
+
+_Read a static file, parse the data, perform a filter and a reduction on the
+data, then write the average to a function`numberAvg` on another kdb+ process_
+
+The same pipeline API is used for both static/batch and stream processing
+within the Stream Processor.
+
+Replacing the [`.qsp.read.fromFile`](../../../api/stream-
+processor/q/readers.html#qspreadfromfile) with
+[`.qsp.read.fromCallback`](../../../api/stream-
+processor/q/readers.html#qspreadfromcallback) would result in the same logic
+being applied to data sent to a stream callback.
+
+## Pipeline spec
+
+Run the pipeline to read and process the file. Both specs create a sample file
+containing numbers to process.
+

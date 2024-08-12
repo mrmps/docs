@@ -1,0 +1,45 @@
+https://code.kx.com/insights/core/kurl/appendix/timeouts.html
+
+# Timeouts | Examples | REST client | kdb Insights Core - kdb products
+
+Original URL: https://code.kx.com/insights/core/kurl/appendix/timeouts.html
+
+# Timeouts
+
+Startup q server on localhost 8081. This snippet will spawn the server for
+you.
+
+    
+    
+    port:"8081";
+    server:hsym `$":localhost:",port;
+    system "q -p ",port;
+    system "sleep 2"; // Wait for q to be ready
+    server (set;`.z.pp; { system "sleep 45";});
+    server (set;`.z.ts; {[start;x] if[x > start + 00:00:45; exit 0]; }[.z.p;]);
+    server (system;"t 1000");
+    
+
+Make a sync and async request that times out after 5 seconds.
+
+    
+    
+    request_headers:enlist["Content-Type"]!enlist "application/json"
+    body:.j.j `hello`world!1 2
+    opts: `timeout`headers`body!(5000;request_headers;body)
+    \ts resp:.kurl.sync ("http://localhost:8081";`POST;opts)
+    
+    // List the number of ongoing transfers
+    show "Number of ongoing transfers after sync timeout: ",
+      string count .kurl.i.ongoingRequests[]
+    
+    .kurl.async (
+      "http://localhost:8081/foo/bar/baz";
+      `POST;
+      opts,enlist[`callback]!enlist {
+        if [-1 = first x; show "async call got error: ",last x];
+        } )
+    
+    show enlist ("Pending async calls"; .kurl.i.ongoingRequests[])
+    
+

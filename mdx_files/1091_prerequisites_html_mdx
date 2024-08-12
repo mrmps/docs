@@ -1,0 +1,84 @@
+https://code.kx.com/insights/enterprise/infrastructure/docs/prerequisites.html
+
+# Prerequisites - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/infrastructure/docs/prerequisites.html
+
+# Infrastructure prerequisites
+
+This section details the infrastructure prerequisites required to deploy kdb
+Insights Enterprise on the Kubernetes container orchestration system.
+
+## Managed Kubernetes cluster
+
+_kdb Insights Enterprise_ currently supports the managed Kubernetes offerings
+below.
+
+## Cluster Node Pools
+
+The number of node pools required for the cluster depends on the [rook-
+ceph](https://rook.io/) configuration used.
+
+  * Host Storage Cluster
+
+For [rook-ceph](https://rook.io/) with **Host Storage Cluster** configuration
+two separate node pools are required. See [Host Storage
+Cluster](../../database/configuration/assembly/database.html#rook-ceph) for
+more details.
+
+  * PVC Cluster
+
+For [rook-ceph](https://rook.io/) with **PVC Cluster** configuration a single
+node pool is sufficient. See [PVC
+Cluster](../../database/configuration/assembly/database.html#rook-ceph) for
+more details.
+
+## Ingress Controller
+
+An ingress controller such as [ingress-
+nginx](https://kubernetes.github.io/ingress-nginx/) is required to access the
+_kdb Insights Enterprise_ dashboards and APIs from outside the cluster.
+
+In order to use the NGINX Ingress Controller a valid SSL certificate is
+required for the ingress endpoint. For details on how certificates are used in
+kdb Insights Enterprise see [here](../../configuration/base.html).
+
+## Certificate Manager
+
+The [cert-manager](https://cert-manager.io/) installation is required to add
+certificates and certificate issuers as resource types in the Kubernetes
+cluster.
+
+Each deploy of _kdb Insights Enterprise_ will create a namespaced certificate
+issuer to provide mTLS between microservices.
+
+A ClusterIssuer such as [letsencrypt](https://cert-manager.io/docs/) can be
+used with the NGINX Ingress Controller above to provide a certificate for the
+API endpoints.
+
+_NB_ air-gapped deploys: cert-manager requires outbound access to the internet
+as well as unrestricted inbound HTTP access to the cluster and so cannot be
+used in an air-gapped environment. Instead the NGINX Ingress Controller should
+reference a Kubernetes secret which contains a certificate for the API
+endpoints.
+
+## Distributed storage system
+
+The data tier in _kdb Insights Enterprise_ requires a shared filesystem such
+as [Rook Ceph](https://rook.io/) which can be mounted with read/write
+permission from multiple pods. Choose from one of the [supported file
+systems](../../database/configuration/assembly/database.html#supported-file-
+systems) based on your performance and availability requirements.
+
+Network file systems
+
+_kdb Insights Enterprise_ requires a [storage
+class](https://kubernetes.io/docs/concepts/storage/storage-classes/) named
+`sharedfiles` to provision shared file storage instances.
+
+## DNS record which points to your Kubernetes Ingress
+
+In order to access your cluster, a DNS record should be created which resolves
+to the external IP address of the cluster’s NGINX Ingress Controller. For more
+information see [DNS Setup](../../installation/dns-setup.html).
+

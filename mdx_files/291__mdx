@@ -1,0 +1,77 @@
+https://code.kx.com/developer/customization/
+
+# Customization - KX Developer
+
+Original URL: https://code.kx.com/developer/customization/
+
+# Customization
+
+## Environment variables
+
+Outside of the environment variables defined in the config.profile/config.bat,
+the following environment variables can be optionally set to customize
+Developer behaviour.
+
+Env var | Default | Description  
+---|---|---  
+`DEVELOPER_UPLOAD_WARNING_MSG` | "" | A confirmation message to display to users when uploading files  
+`DEVELOPER_DEFAULT_REF` | main | Default Git ref set when creating new repositories  
+`DEVELOPER_EDITOR_DISPLAY_ON_EXECUTE` | no | If set, display results on Ctrl+E  
+`DEVELOPER_REMOTE_MAX_RECORDS` | 100000 | Max records returned when executing statements in remote-attached editors  
+`DEVELOPER_LOCALREPO_PORT` | 0w | Port used by the local repository child process  
+`AXFS_ALLOW_LIST` | unset | Comma-separated list of explicit directories to allow access to within the File Browser  
+`AXFS_DENY_LIST` | unset | Comma-separated list of explicit directories to deny access to within the File Browser  
+  
+## Plugins
+
+### Startup message
+
+The startup message can be changed by adding a directory to
+`<install>/plugins/`.
+
+In the directory, include a plugin manifest file named `plugin.json`:
+
+    
+    
+    {
+        "id"      : "startup-message",
+        "version" : "1.0.0",
+        "q"       : { "file": "startup.q" }
+    }
+    
+
+And a file to run (`startup.q`) after loading Developer:
+
+    
+    
+    .ax.sa.plugin.loadMessage: {[opts]
+        -1 "Welcome to KX Developer";
+        }
+    
+
+The options provided to the function include the webserver docroot and the
+product banner:
+
+    
+    
+    docroot| "/ax"
+    banner | "[analyst] "
+    
+
+## Key bindings
+
+Key bindings can be remapped by opening the Keyboard Reference dialog from the
+Help menu. Any keyboard shortcuts recognized by the components open on the
+current page will be shown. Those that can be modified will appear as text
+fields. To change a hotkey, click a text field, and press the new key
+combination.
+
+To restore a single hotkey to its default value, click the "x" beside it. To
+restore all hotkeys currently shown in the dialog, press "Restore Defaults".
+
+Any changes will not apply to pages already open. These must be refreshed to
+use the new keybindings.
+
+A key binding can be cleared by pressing backspace (Windows or Linux) or
+delete (Mac).
+

@@ -1,0 +1,36 @@
+https://code.kx.com/pykx/api/serialize.html
+
+# Serialization - PyKX
+
+Original URL: https://code.kx.com/pykx/api/serialize.html
+
+Helper method to deserialize `K` objects from bytes.
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`obj` |  | The object to deserialize. |  _required_  
+  
+**Examples:**
+
+Deserialize a serialized `K` object.
+
+    
+    
+    >>> k_obj = kx.q('til 10')
+    >>> ser = kx.serialize(k_obj)
+    >>> kx.deserialize(ser)
+    pykx.LongVector(pykx.q('0 1 2 3 4 5 6 7 8 9'))
+
+You can also directly deserialize a bytes object.
+
+    
+    
+    >>> k_obj = kx.q('til 10')
+    >>> ser = kx.serialize(k_obj).copy()
+    >>> ser
+    b'\x01\x00\x00\x00^\x00\x00\x00\x07\x00\n\x00\x00...'
+    >>> kx.deserialize(ser)
+    pykx.LongVector(pykx.q('0 1 2 3 4 5 6 7 8 9'))
+

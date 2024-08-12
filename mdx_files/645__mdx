@@ -1,0 +1,78 @@
+https://code.kx.com/platform/sc_overview/
+
+# Overview - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/sc_overview/
+
+# Service classes
+
+Service classes are essentially a scalable version of existing _Control_
+instances. To support modern, cloud-style architectures, the number of
+processes is usually not pre-determined. The system needs to behave
+elastically to meet demand, scaling up when load increases and back down when
+it eases.
+
+Whereas an instance runs a single process on a single server, a service class
+can run many processes across many servers. The pre-configured nature of
+instances also requires a change to its definition in _Control_ in order to
+change the runtime behavior. Service classes also allow runtime overrides of
+parameters.
+
+Service classes are configured exactly like instances; they are associated
+with a template, have a set of parameters, and can be packaged, permissioned
+and versioned. The running process is called a service and only exists while
+it's running.
+
+## Example lifecycle
+
+It might be helpful to describe a sample lifecycle of a service class from
+development to production. Assuming a user is creating an FX solution and
+initially wants to create a scalable data loader service.
+
+In **development** the user will create a data loader service class from the
+named `fx_dl` from the `DS_FILEWATCHER` template. The class parameters are
+set, e.g. 3 secondary threads, analytics, schemas, initial state function,
+polling interval, file config etc. After the configuration of the class is
+complete, the user runs the service a few times to test the behavior. Once
+this is complete, the class is packaged and released.
+
+After completing QA and any other interim steps, the class is deployed to
+**production**. A data loader service is started by a user or by the system
+itself. As before, this creates a service from the `fx_dl` class, inheriting
+the parameters. The target server and port are chosen by the user or
+automatically assigned at runtime. At this point, the DL service performs its
+job, writing data from files to a HDB location on-disk.
+
+![Screenshot](../img/control/sc_example_1.png)
+
+At some later point, a batch of new DL files needs to be handled. The workload
+is too large for a single DL so they should be handled by a second `fx_dl`
+service. All of the parameters of the new service will be identical except for
+the file config as it needs to handle different files. At runtime, the `fx_dl`
+service is instantiated again but with an override for the file config
+parameter. When the service runs, it targets a different set of directories
+for a different set of files but still uses the same schema, analytics, 3
+secondaries etc.
+
+![Screenshot](../img/control/sc_example_2.png)
+
+## Client entry points
+
+Service classes will be exposed to clients as _dynamic connection groups_
+through the query components; _QR_ and _QM_. The main difference with standard
+_connection groups_ is that the component processes are not pre-configured.
+When a new service starts, it will be added to the group in the those
+frameworks. Clients will target the service class name and the frameworks will
+target the underlying processes according to the cluster mode. This cluster
+mode is similar to the _connection group_ type and is defined with the service
+class definition. It dictates which processes are selected when a request is
+received.
+
+## Service runtime
+
+The main interface for users managing process is the _Control UI_. Services
+can be launched from here or directly on the server using the `startService`
+scripts.
+
+[Service runtime](../sc_runtime/)
+

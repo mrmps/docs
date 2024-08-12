@@ -1,0 +1,33 @@
+https://code.kx.com/insights/microservices/database/downgrading.html
+
+# Downgrading - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/database/downgrading.html
+
+# Downgrading
+
+When upgrading the kdb Insights Database, sometimes internal database files
+and directories are updated to a newer format. If it then becomes necessary to
+roll back the upgrade, these internal files must also be downgraded as the
+older version is not aware of the changes in the newer version.
+
+To aid with this process, the `kxi-db-rollback` image can be used. This image
+needs write access to the HDB and IDB storage directories. The version of the
+image should be at least the version to downgrade **from**.
+
+## Environment variables
+
+  * `KXI_ROLLBACK_HDB_PATH`: The path to the HDB directory in the container. If not specified, it is assumed to be `/data/db/hdb`.
+  * `KXI_ROLLBACK_IDB_PATH`: The path to the IDB directory in the container. If not specified, it is assumed to be `/data/db/idb`.
+  * `KXI_ROLLBACK_TARGET_VERSION`: The version to downgrade to. Example: `1.4.0`.
+  * `KXI_ROLLBACK_CURRENT_VERSION`: The version to downgrade from. Example: `1.6.0`. If not specified, it defaults to one minor version higher than `KXI_ROLLBACK_TARGET_VERSION`, for example downgrading to `1.4.0` would imply downgrading from `1.5.0`.
+
+## Execution
+
+When running the `kxi-db-rollback`, make sure to pay attention to its output.
+At the start it prints `Found current version` followed by the version it is
+downgrading from - make sure this matches the actual upgraded version. The
+process should not run into any errors and print `Rollback complete` at the
+end. Without confirming this output, it is not safe to launch the kdb Insights
+Database either with the upgraded or the downgraded version.
+

@@ -1,0 +1,111 @@
+https://code.kx.com/platform/release_481/
+
+# 4.8.1 - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/release_481/
+
+# Changes in 4.8.1
+
+## Key changes
+
+## kdb Insights
+
+From version 4.8.0, KX Delta Platform has incorporated a number of features
+from [kdb Insights](https://code.kx.com/insights/1.9/core/index.html).
+
+KX Delta Platform 4.8.1 extends the kdb Insights feature list to include:
+
+  * REST API
+  * Object Storage
+  * SQL
+  * PyKX (new to 4.8.1).
+
+Access to these kdb Insights features is enabled using feature flags in your
+kdb+ license file (k4.lic/kc.lic). Refer to
+[Licenses](../deployment/licenses/#Licenses) for more details.
+
+If you do _not_ intend to use kdb Insights features and are upgrading from a
+version earlier than 4.8, you can continue using your existing licence file.
+
+All KX Delta Platform customers, regardless of the status of the kdb Insights
+feature flags in their license files, continue to receive updates to kdb+ as
+part of the KX Delta Platform releases.
+
+### Kdb+ 4.1
+
+KX Delta Platform 4.8.1 uses the latest [q/kdb+ version
+4.1](https://code.kx.com/q/releases/ChangesIn4.1/)
+
+This includes many new and innovative features to the core offering such as:
+
+  * Peach/Parallel Processing Enhancements 
+  * Unlimited IPC/Websocket Connections
+  * HTTP Persistent Connections
+  * Multithreaded Data Loading
+  * Socket Performance
+  * Enhanced TLS Support and Updated OpenSSL
+  * More Algorithms for At-rest Compression
+
+### REST API
+
+  * The REST Client provides sync and async methods callable from q. It also provides ease-of-use cloud integration by registering cloud platform authentication information.
+
+[REST API Client](https://code.kx.com/insights/1.9/core/kurl/kurl.html)
+
+  * The REST Server, exposes a RESTful interface to a kdb+ based system.  [REST API Server](https://code.kx.com/insights/1.9/core/rest-server/index.html)
+
+### Object Storage
+
+Kdb Insights running beneath the KX Delta Platform allows authentication with
+cloud credentials via Kurl to get native access to cloud object storage.
+
+[Object storage](https://code.kx.com/insights/1.9/core/objstor/main.html)
+
+### SQL
+
+Support for ANSI SQL is built into kdb Insights. KX SQL means a user does not
+need knowledge of the q language to access KX Delta Platform data.
+
+[SQL](https://code.kx.com/insights/1.9/core/sql.html)
+
+### PyKX
+
+Support for PyKX is built into kdb Insights. PyKX is an interface between q,
+kdb+, underlying data types, and Python. Use PyKX to interact with kdb+ and
+apply analytics against vast amounts of data in-memory or on-disk.
+
+[PyKX](https://code.kx.com/pykx/2.4/).
+
+### New Platform Assets​
+
+Full integration with the KX Machine Learning Toolkit through a Platform asset
+package.
+
+[ML](https://code.kx.com/platform/ml/).
+
+Direct integration with MQTT through a Platform asset package.
+[MQTT](https://code.kx.com/platform/mqtt/).
+
+Established new vulnerability patching SLA. Closed out approximately 160 CVEs
+in 2024.
+
+### Compatibility and license information
+
+KX Delta Platform on Windows
+
+Kdb Insights features are not supported on Windows. KX Delta Platform uses
+kdb+ on Windows from version 4.8.0. onwards.
+
+Using kc.lic
+
+To use a kc.lic instead of the default k4.lic, set the `use-kc-lic` option at
+install. Refer to [install
+options](../deployment/install_config_options/#General-options) for more
+information.
+
+Supported operating systems
+
+Kdb Insights does not support some of the older operating systems that the KX
+Delta Platform supports. Refer to [supported operating
+systems](../deployment/prerequisites/#Kdb-insights) for more details.
+

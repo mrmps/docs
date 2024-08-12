@@ -1,0 +1,664 @@
+https://code.kx.com/insights/accelerators/fsi/getStats.html
+
+# Overview - kdb products
+
+Original URL: https://code.kx.com/insights/accelerators/fsi/getStats.html
+
+# getStats
+
+The `getStats` API is used for data aggregation and preprocessing. It is
+intended to run on a Data Access Process and aggregate records from a
+configured database table using a specified dictionary of arguments.
+
+The `gw` variable below is defined as an IPC connection to the Service
+Gateway. For example `:insights-qe-gateway:5050 would connect to the query
+environment gateway within an insights namespace.
+
+qREST
+
+Gateway URL
+
+The `gw` variable below is defined as an IPC connection to the Service
+Gateway. For example `:insights-qe-gateway:5050 would connect to the query
+environment gateway within an insights namespace.
+
+    
+    
+    // API arguments dictionary.
+    
+    args: (!) . flip (
+        (`table;            `Trade);
+        (`startTS;          2023.07.21D00:00:00);
+        (`endTS;            2023.07.22D00:00:00);
+        (`analytics;        `firstPrice`lastPrice`avgPrice`sumPrice)
+        )
+    
+    opts:()!()
+    last gw(`getStats;args;`callback;opts);
+    instrumentID firstPrice lastPrice avgPrice sumPrice
+    ---------------------------------------------------
+    AMD          113.66     110.47    115.0438 68105.9 
+    
+
+Gateway URL
+
+The `$INSIGHTS_URL`, `$INSIGHTS_CLIENT_ID`, `$INSIGHTS_CLIENT_SECRET`
+variables should point at your kdb Insights install.
+
+    
+    
+    INSIGHTS_TOKEN=`curl -s --header "Content-Type: application/x-www-form-urlencoded" \
+        -d "grant_type=client_credentials&client_id=$INSIGHTS_CLIENT_ID&client_secret=$INSIGHTS_CLIENT_SECRET" \
+        "${INSIGHTS_URL}/auth/realms/insights/protocol/openid-connect/token" | jq -cr ".access_token"`
+    
+    DATA=`curl -s -X POST "${INSIGHTS_URL}/servicegateway/fsi/getStats" \
+        -H "Content-Type: application/json" \
+        -H "Accept: application/json" \
+        -H "Authorization: Bearer $INSIGHTS_TOKEN" \
+        -d "$(jq -n \
+            '{
+                table       : "Trade",
+                startTS     : "2023.07.21D00:00:00",
+                endTS       : "2023.07.22D00:00:00",
+                analytics   : ["firstPrice","lastPrice","avgPrice","sumPrice"]
+            }' | jq -cr .)"`
+    
+    echo $DATA | jq -cr '.payload'
+    [{"instrumentID":"AMD","firstPrice":113.66,"lastPrice":110.47,"avgPrice":115.0438,"sumPrice":68105.9}]
+    
+
+When issuing an IPC request, synchronous requests return a tuple where the
+first element is the response payload and the second is the response data. See
+the [asynchronous
+requests](https://code.kx.com/insights/1.4/api/database/query/get-
+data.html#asynchronous-requests) section for how to use the callback argument
+to get an asynchronous response. See the [extended
+options](https://code.kx.com/insights/1.4/api/database/query/get-
+data.html#extended-options) section for how to use the options like timeouts
+for your IPC call.
+
+## Arguments
+
+`getStats` inherits all arguments from `getTicks` except applyCanCor and
+columns, then has the following additional arguments.
+
+name | required | type | default | example | description  
+---|---|---|---|---|---  
+analytics | no | symbol[] | () | `avgPrice | A list of symbols for analytics to apply. See the analytics section for more detail  
+agg | no | list | () | ((`avg`price);(`first`price)) | Specifies the aggregations to perform. See agg section for supported formats  
+groupBy | no | symbol[] | identifier column | `exch | List of columns to group aggregation result by  
+granularity | no | symbol | 1 | 30 | Size of the time bucket for the aggregation. Used in conjunction with granularityUnit  
+granularityUnit | no | symbol | N/A | `minute | Unit of the time bucket for the aggregation. Used in conjunction with granularity. Options are `second`minute`hour`day  
+movingWindowSize | no | symbol | N/A | 60 | Optional modifier on granularity and granularityUnit. Makes the bucket size a lookback of this size backwards from each granularity bucket  
+applyHolidayCalendar | no | boolean/symbol | 0b | `NYSE | Apply an exchange holiday calendar to racked/filled data to remove buckets on holidays  
+  
+## analytics
+
+There are number of named analytics available. These are built dynamically for
+all tables in the database. Generic operations (`first;`last) are applied to
+all columns, and numerical operations (`min;`max;`avg;`sum;`med) are applied
+where applicable. The naming convention is the aggregate keyword and the
+column to which it is applied. For example, the first, last, average and sum
+price;
+
+qREST
+
+    
+    
+    args: (!) . flip (
+        (`table;            `Trade);
+        (`startTS;          2023.07.21D00:00:00);
+        (`endTS;            2023.07.22D00:00:00);
+        (`analytics;        `firstPrice`lastPrice`avgPrice`sumPrice)
+        )
+    
+    last gw(`getStats;args;`callback;()!());
+    instrumentID firstPrice lastPrice avgPrice sumPrice
+    ---------------------------------------------------
+    AMD          113.66     110.47    115.0438 68105.9 
+    
+    
+    
+    INSIGHTS_TOKEN=`curl -s --header "Content-Type: application/x-www-form-urlencoded" \
+        -d "grant_type=client_credentials&client_id=$INSIGHTS_CLIENT_ID&client_secret=$INSIGHTS_CLIENT_SECRET" \
+        "${INSIGHTS_URL}/auth/realms/insights/protocol/openid-connect/token" | jq -cr ".access_token"`
+    
+    DATA=`curl -s -X POST "${INSIGHTS_URL}/servicegateway/fsi/getStats" \
+        -H "Content-Type: application/json" \
+        -H "Accept: application/json" \
+        -H "Authorization: Bearer $INSIGHTS_TOKEN" \
+        -d "$(jq -n \
+            '{
+                table       : "Trade",
+                startTS     : "2023.07.21D00:00:00",
+                endTS       : "2023.07.22D00:00:00",
+                analytics   : ["firstPrice","lastPrice","avgPrice","sumPrice"]
+            }' | jq -cr .)"`
+    
+    echo $DATA | jq -cr '.payload'
+    [{"instrumentID":"AMD","firstPrice":113.66,"lastPrice":110.47,"avgPrice":115.0438,"sumPrice":68105.9}]
+    
+
+All the analytics that use `avg and `first for the Trade table are shown in
+the table below.
+
+tableName | analytic | clause  
+---|---|---  
+Trade | firstEventTimestamp | *: `eventTimestamp  
+Trade | firstInstrumentID | *: `instrumentID  
+Trade | firstExchTime | *: `exchTime  
+Trade | firstPrice | *: `price  
+Trade | firstVolume | *: `volume  
+Trade | firstConditions | *: `conditions  
+Trade | firstNormalisedCondition | *: `normalisedCondition  
+Trade | firstTickDirection | *: `tickDirection  
+Trade | firstTradedExchange | *: `tradedExchange  
+Trade | firstSequenceNumber | *: `sequenceNumber  
+Trade | firstAccVol | *: `accVol  
+Trade | firstTickCount | *: `tickCount  
+Trade | firstExecutionID | *: `executionID  
+Trade | firstSrcSys | *: `srcSys  
+Trade | avgEventTimestamp | avg `eventTimestamp  
+Trade | avgExchTime | avg `exchTime  
+Trade | avgPrice | avg `price  
+Trade | avgVolume | avg `volume  
+Trade | avgSequenceNumber | avg `sequenceNumber  
+Trade | avgAccVol | avg `accVol  
+Trade | avgTickCount | avg `tickCount  
+  
+Complex and custom analytics can be added to _getStats_ , see [Customize
+getStats](getStatsCustomize.html) for more information.
+
+## agg
+
+Free form aggregations or parse trees can be specified using the agg argument.
+The following formats are supported;
+
+#### 1\. Dictionary in classic kdb column clause format
+
+Aggregations can be specified as symbols, strings or a combination of both.
+REST calls must be specified as strings.
+
+    
+    
+    args: (!) . flip (
+        (`table;            `Trade);
+        (`startTS;          2023.07.21D00:00:00);
+        (`endTS;            2023.07.22D00:00:00);
+        (`agg;              `avgPrice`firstPrice!(("avg";`price);(`first;`price)))
+        )
+    
+    last  gw(`getStats;args;`callback;()!())
+    instrumentID avgPrice firstPrice
+    --------------------------------
+    AMD          115.0438 113.66   
+    
+
+Nested aggregations can also be performed.
+
+qREST
+
+    
+    
+    args: (!) . flip (
+        (`table;            `Trade);
+        (`startTS;          2023.07.21D00:00:00);
+        (`endTS;            2023.07.22D00:00:00);
+        (`agg;              `avgPrice`somePriceCalc!((`avg;`price);(`abs;(`wavg;`price;(`abs;`volume)))))
+        )
+    
+    last  gw(`getStats;args;`callback;()!())
+    instrumentID avgPrice somePriceCalc
+    -----------------------------------
+    AMD          115.0438 49918.54     
+    
+    
+    
+    INSIGHTS_TOKEN=`curl -s --header "Content-Type: application/x-www-form-urlencoded" \
+        -d "grant_type=client_credentials&client_id=$INSIGHTS_CLIENT_ID&client_secret=$INSIGHTS_CLIENT_SECRET" \
+        "${INSIGHTS_URL}/auth/realms/insights/protocol/openid-connect/token" | jq -cr ".access_token"`
+    
+    DATA=`curl -s -X POST "${INSIGHTS_URL}/servicegateway/fsi/getStats" \
+        -H "Content-Type: application/json" \
+        -H "Accept: application/json" \
+        -H "Authorization: Bearer $INSIGHTS_TOKEN" \
+        -d "$(jq -n \
+            '{
+                table       : "Trade",
+                startTS     : "2023.07.21D00:00:00",
+                endTS       : "2023.07.22D00:00:00",
+                agg         : { "avgPrice":["avg","price"], "somePriceCalc":["abs",["wavg","price",["abs","volume"]]] }
+            }' | jq -cr .)"`
+    
+    echo $DATA | jq -cr '.payload'
+    [{"instrumentID":"AMD","avgPrice":115.0438,"somePriceCalc":49918.54}]
+    
+
+#### 2\. Single parse tree format that auto names columns as aggregation
+
+#### 3\. Triplet symlist (outputColumnName;operator;column)
+
+qREST
+
+    
+    
+    args: (!) . flip (
+        (`table;            `Trade);
+        (`startTS;          2023.07.21D00:00:00);
+        (`endTS;            2023.07.22D00:00:00);
+        (`agg;              ((`c1`avg`price);(`c2`first`price)))
+        )
+    
+    last  gw(`getStats;args;`callback;()!())
+    instrumentID c1       c2    
+    ----------------------------
+    AMD          115.0438 113.66
+    
+    
+    
+    INSIGHTS_TOKEN=`curl -s --header "Content-Type: application/x-www-form-urlencoded" \
+        -d "grant_type=client_credentials&client_id=$INSIGHTS_CLIENT_ID&client_secret=$INSIGHTS_CLIENT_SECRET" \
+        "${INSIGHTS_URL}/auth/realms/insights/protocol/openid-connect/token" | jq -cr ".access_token"`
+    
+    DATA=`curl -s -X POST "${INSIGHTS_URL}/servicegateway/fsi/getStats" \
+        -H "Content-Type: application/json" \
+        -H "Accept: application/json" \
+        -H "Authorization: Bearer $INSIGHTS_TOKEN" \
+        -d "$(jq -n \
+            '{
+                table       : "Trade",
+                startTS     : "2023.07.21D00:00:00",
+                endTS       : "2023.07.22D00:00:00",
+                agg         : [["c1","avg","price"], ["c2","first","price"]]
+            }' | jq -cr .)"`
+    
+    echo $DATA | jq -cr '.payload'
+    [{"instrumentID":"AMD","c1":115.0438,"c2":113.66}]
+    
+
+## groupBy
+
+Defaults to the identifier column, which is defined as the left-most sum
+column in the table schema (`instrumentID`). For example, group by the traded
+exchange;
+
+qREST
+
+    
+    
+    args: (!) . flip (
+        (`table;            `Trade);
+        (`startTS;          2023.07.21D00:00:00);
+        (`endTS;            2023.07.22D00:00:00);
+        (`agg;              ((`c1`avg`price);(`c2`first`price)));
+        (`groupBy;          `tradedExchange)
+        )
+    
+    last  gw(`getStats;args;`callback;()!())
+    tradedExchange c1       c2    
+    ------------------------------
+                115.0438 113.66
+    
+    
+    
+    INSIGHTS_TOKEN=`curl -s --header "Content-Type: application/x-www-form-urlencoded" \
+        -d "grant_type=client_credentials&client_id=$INSIGHTS_CLIENT_ID&client_secret=$INSIGHTS_CLIENT_SECRET" \
+        "${INSIGHTS_URL}/auth/realms/insights/protocol/openid-connect/token" | jq -cr ".access_token"`
+    
+    DATA=`curl -s -X POST "${INSIGHTS_URL}/servicegateway/fsi/getStats" \
+        -H "Content-Type: application/json" \
+        -H "Accept: application/json" \
+        -H "Authorization: Bearer $INSIGHTS_TOKEN" \
+        -d "$(jq -n \
+            '{
+                table       : "Trade",
+                startTS     : "2023.07.21D00:00:00",
+                endTS       : "2023.07.22D00:00:00",
+                agg         : [["c1","avg","price"], ["c2","first","price"]],
+                groupBy     : "tradedExchange"
+            }' | jq -cr .)"`
+    
+    echo $DATA | jq -cr '.payload'   
+    [{"tradedExchange":"","c1":115.0438,"c2":113.66}]
+    
+
+## granularity/granularityUnit
+
+These arguments allow the user to aggregate over specified time buckets, the
+default is to aggregate across the entire data set. The start time of the
+first bucket is `startTS`. For example, hourly buckets;
+
+qREST
+
+    
+    
+    args: (!) . flip (
+        (`table;            `Trade);
+        (`startTS;          2023.07.21D00:00:00);
+        (`endTS;            2023.07.22D00:00:00);
+        (`agg;              `avgPrice`firstPrice!((`avg;`price);(`first;`price)));
+        (`granularity;      1);
+        (`granularityUnit;  `hour)
+        )
+    
+    last  gw(`getStats;args;`callback;()!())
+    eventTimestamp                instrumentID avgPrice firstPrice
+    --------------------------------------------------------------
+    2023.07.21D00:00:00.000000000 AMD          115.3425 113.66    
+    2023.07.21D01:00:00.000000000 AMD          116.6158 118.89    
+    2023.07.21D02:00:00.000000000 AMD          115.7733 114.94    
+    2023.07.21D03:00:00.000000000 AMD          114.365  118.3     
+    2023.07.21D04:00:00.000000000 AMD          114.915  115.22       
+    
+    
+    
+    INSIGHTS_TOKEN=`curl -s --header "Content-Type: application/x-www-form-urlencoded" \
+        -d "grant_type=client_credentials&client_id=$INSIGHTS_CLIENT_ID&client_secret=$INSIGHTS_CLIENT_SECRET" \
+        "${INSIGHTS_URL}/auth/realms/insights/protocol/openid-connect/token" | jq -cr ".access_token"`
+    
+    DATA=`curl -s -X POST "${INSIGHTS_URL}/servicegateway/fsi/getStats" \
+        -H "Content-Type: application/json" \
+        -H "Accept: application/json" \
+        -H "Authorization: Bearer $INSIGHTS_TOKEN" \
+        -d "$(jq -n \
+            '{
+                table           : "Trade",
+                startTS         : "2023.07.21D00:00:00",
+                endTS           : "2023.07.22D00:00:00",
+                agg             : { "avgPrice":["avg","price"], "firstPrice":["first","price"] },
+                granularity     : "1",
+                granularityUnit : "hour"
+            }' | jq -cr .)"`
+    
+    echo $DATA | jq -cr '.payload'
+    [{"eventTimestamp":"2023-07-21T00:00:00.000000000","instrumentID":"AMD","avgPrice":115.3425,"firstPrice":113.66},{"eventTimestamp":"2023-07-21T01:00:00.000000000","instrumentID":"AMD","avgPrice":116.6158,"firstPrice":118.89},...
+    
+
+## movingWindowSize
+
+The `movingWindowSize` argument is a modifier on
+`granularity/granularityUnit`, that makes the bucket size a lookback of the
+value specfied backwards from each bucket. Example trade data is used below to
+illustrate this feature;
+
+A `getStats` call for the day with 4 hour buckets, shows that the bucket
+timestamps are the start of the buckets.
+
+qREST
+
+    
+    
+    args: (!) . flip (
+        (`table;            `trade);
+        (`startTS;          2023.07.23D00:00:00.000000000);
+        (`endTS;            2023.07.24D00:00:00.000000000);
+        (`analytics;        `firstPrice`lastPrice`avgPrice);
+        (`granularity;      4);
+        (`granularityUnit;  `hour)
+        );
+    
+    last gw(`getStats;args;`callback;()!());
+    idcolumn timecolumn                    firstPrice lastPrice avgPrice
+    --------------------------------------------------------------------
+    A        2023.07.27D00:00:00.000000000 0          4         2       
+    A        2023.07.27D04:00:00.000000000 5          9         7       
+    A        2023.07.27D08:00:00.000000000 10         14        12      
+    A        2023.07.27D12:00:00.000000000 15         19        17      
+    A        2023.07.27D16:00:00.000000000 20         24        22      
+    A        2023.07.27D20:00:00.000000000 25         29        27     
+    
+    
+    
+    INSIGHTS_TOKEN=`curl -s --header "Content-Type: application/x-www-form-urlencoded" \
+        -d "grant_type=client_credentials&client_id=$INSIGHTS_CLIENT_ID&client_secret=$INSIGHTS_CLIENT_SECRET" \
+        "${INSIGHTS_URL}/auth/realms/insights/protocol/openid-connect/token" | jq -cr ".access_token"`
+    
+    DATA=`curl -s -X POST "${INSIGHTS_URL}/servicegateway/fsi/getStats" \
+        -H "Content-Type: application/json" \
+        -H "Accept: application/json" \
+        -H "Authorization: Bearer $INSIGHTS_TOKEN" \
+        -d "$(jq -n \
+            '{
+                table           : "trade",
+                startTS         : "2023.07.27D00:00:00",
+                endTS           : "2023.07.28D00:00:00",
+                analytics       : ["firstPrice","lastPrice","avgPrice"],
+                granularity     : "4",
+                granularityUnit : "hour"
+            }' | jq -cr .)"`
+    
+    echo $DATA | jq -cr '.payload'
+    [{"idcolumn":"A","timecolumn":"2023-07-27T00:00:00.000000000","firstPrice":0,"lastPrice":4,"avgPrice":2},{"idcolumn":"A","timecolumn":"2023-07-27T04:00:00.000000000","firstPrice":5,"lastPrice":9,"avgPrice":7},...
+    
+
+A `movingWindowSize` that is the same as the granularity results in the same
+behavior as if `movingWindowSize` was not provided, with the exception that
+the timestamps are the bucket ends.
+
+qREST
+
+    
+    
+    args: (!) . flip (
+        (`table;            `trade);
+        (`startTS;          2023.07.27D00:00:00.000000000);
+        (`endTS;            2023.07.28D00:00:00.000000000);
+        (`analytics;        `firstPrice`lastPrice`avgPrice);
+        (`granularity;      4);
+        (`granularityUnit;  `hour);
+        (`movingWindowSize;  4)
+        );
+    
+    last gw(`getStats;args;`callback;()!());
+    timecolumn                    idcolumn firstPrice lastPrice avgPrice
+    --------------------------------------------------------------------
+    2023.07.27D04:00:00.000000000 A        0          4         2       
+    2023.07.27D08:00:00.000000000 A        5          9         7       
+    2023.07.27D12:00:00.000000000 A        10         14        12      
+    2023.07.27D16:00:00.000000000 A        15         19        17      
+    2023.07.27D20:00:00.000000000 A        20         24        22      
+    2023.07.28D00:00:00.000000000 A        25         29        27   
+    
+    
+    
+    INSIGHTS_TOKEN=`curl -s --header "Content-Type: application/x-www-form-urlencoded" \
+        -d "grant_type=client_credentials&client_id=$INSIGHTS_CLIENT_ID&client_secret=$INSIGHTS_CLIENT_SECRET" \
+        "${INSIGHTS_URL}/auth/realms/insights/protocol/openid-connect/token" | jq -cr ".access_token"`
+    
+    DATA=`curl -s -X POST "${INSIGHTS_URL}/servicegateway/fsi/getStats" \
+        -H "Content-Type: application/json" \
+        -H "Accept: application/json" \
+        -H "Authorization: Bearer $INSIGHTS_TOKEN" \
+        -d "$(jq -n \
+            '{
+                table           : "trade",
+                startTS         : "2023.07.27D00:00:00",
+                endTS           : "2023.07.28D00:00:00",
+                analytics       : ["firstPrice","lastPrice","avgPrice"],
+                granularity     : "4",
+                granularityUnit : "hour",
+                movingWindowSize:  "4"
+            }' | jq -cr .)"`
+    
+    echo $DATA | jq -cr '.payload'
+    [{"timecolumn":"2023-07-27T04:00:00.000000000","idcolumn":"A","firstPrice":0,"lastPrice":4,"avgPrice":2},{"timecolumn":"2023-07-27T08:00:00.000000000","idcolumn":"A","firstPrice":5,"lastPrice":9,"avgPrice":7},...
+    
+
+A `movingWindowSize` that is the not the same as the granularity returns the
+same buckets, but the aggregations are now performed over the lookback period.
+For example, the below getStats call performs a lookback 8 hours every 4
+hours.
+
+qREST
+
+    
+    
+    args: (!) . flip (
+        (`table;            `trade);
+        (`startTS;          2023.07.27D00:00:00.000000000);
+        (`endTS;            2023.07.28D00:00:00.000000000);
+        (`analytics;        `firstPrice`lastPrice`avgPrice);
+        (`granularity;      4);
+        (`granularityUnit;  `hour);
+        (`movingWindowSize;  8)
+        );
+    
+    last gw(`getStats;args;`callback;()!());
+    timecolumn                    idcolumn firstPrice lastPrice avgPrice
+    --------------------------------------------------------------------
+    2023.07.27D04:00:00.000000000 A        0          4         2       
+    2023.07.27D08:00:00.000000000 A        0          9         4.5     
+    2023.07.27D12:00:00.000000000 A        5          14        9.5     
+    2023.07.27D16:00:00.000000000 A        10         19        14.5    
+    2023.07.27D20:00:00.000000000 A        15         24        19.5    
+    2023.07.28D00:00:00.000000000 A        20         29        24.5   
+    
+    
+    
+    INSIGHTS_TOKEN=`curl -s --header "Content-Type: application/x-www-form-urlencoded" \
+        -d "grant_type=client_credentials&client_id=$INSIGHTS_CLIENT_ID&client_secret=$INSIGHTS_CLIENT_SECRET" \
+        "${INSIGHTS_URL}/auth/realms/insights/protocol/openid-connect/token" | jq -cr ".access_token"`
+    
+    DATA=`curl -s -X POST "${INSIGHTS_URL}/servicegateway/fsi/getStats" \
+        -H "Content-Type: application/json" \
+        -H "Accept: application/json" \
+        -H "Authorization: Bearer $INSIGHTS_TOKEN" \
+        -d "$(jq -n \
+            '{
+                table           : "trade",
+                startTS         : "2023.07.27D00:00:00",
+                endTS           : "2023.07.28D00:00:00",
+                analytics       : ["firstPrice","lastPrice","avgPrice"],
+                granularity     : "4",
+                granularityUnit : "hour",
+                movingWindowSize:  "8"
+            }' | jq -cr .)"`
+    
+    echo $DATA | jq -cr '.payload'
+    [{"timecolumn":"2023-07-27T04:00:00.000000000","idcolumn":"A","firstPrice":0,"lastPrice":4,"avgPrice":2},{"timecolumn":"2023-07-27T08:00:00.000000000","idcolumn":"A","firstPrice":0,"lastPrice":9,"avgPrice":4.5},...
+    
+
+Your bucket end times are always the same regardless of what your
+`movingWindowSize` is. For example, asking to lookback 3 hours every 4 hours,
+the bucket times would still be 4 hourly.
+
+qREST
+
+    
+    
+    args: (!) . flip (
+        (`table;            `trade);
+        (`startTS;          2023.07.27D00:00:00.000000000);
+        (`endTS;            2023.07.28D00:00:00.000000000);
+        (`analytics;        `firstPrice`lastPrice`avgPrice);
+        (`granularity;      4);
+        (`granularityUnit;  `hour);
+        (`movingWindowSize;  3)
+        );
+    
+    last gw(`getStats;args;`callback;()!());
+    timecolumn                    idcolumn firstPrice lastPrice avgPrice
+    --------------------------------------------------------------------
+    2023.07.27D04:00:00.000000000 A        2          4         3       
+    2023.07.27D08:00:00.000000000 A        7          9         8       
+    2023.07.27D12:00:00.000000000 A        12         14        13      
+    2023.07.27D16:00:00.000000000 A        17         19        18      
+    2023.07.27D20:00:00.000000000 A        22         24        23      
+    2023.07.28D00:00:00.000000000 A        27         29        28      
+    
+    
+    
+    INSIGHTS_TOKEN=`curl -s --header "Content-Type: application/x-www-form-urlencoded" \
+        -d "grant_type=client_credentials&client_id=$INSIGHTS_CLIENT_ID&client_secret=$INSIGHTS_CLIENT_SECRET" \
+        "${INSIGHTS_URL}/auth/realms/insights/protocol/openid-connect/token" | jq -cr ".access_token"`
+    
+    DATA=`curl -s -X POST "${INSIGHTS_URL}/servicegateway/fsi/getStats" \
+        -H "Content-Type: application/json" \
+        -H "Accept: application/json" \
+        -H "Authorization: Bearer $INSIGHTS_TOKEN" \
+        -d "$(jq -n \
+            '{
+                table           : "trade",
+                startTS         : "2023.07.27D00:00:00",
+                endTS           : "2023.07.28D00:00:00",
+                analytics       : ["firstPrice","lastPrice","avgPrice"],
+                granularity     : "4",
+                granularityUnit : "hour",
+                movingWindowSize:  "3"
+            }' | jq -cr .)"`
+    
+    echo $DATA | jq -cr '.payload'
+    [{"timecolumn":"2023-07-27T04:00:00.000000000","idcolumn":"A","firstPrice":2,"lastPrice":4,"avgPrice":3},{"timecolumn":"2023-07-27T08:00:00.000000000","idcolumn":"A","firstPrice":7,"lastPrice":9,"avgPrice":8},...
+    
+
+A common use case is a movingWindowSize of 7, a granularity of 1, and a
+granularityUnit of day that would produce a 7 day moving average each day.
+
+Note
+
+Only data within the bounds of startTS/endTS is included in the aggregation.
+
+## applyHolidayCalendar
+
+Argument to be used in conjunction with fill and granularityUnit. Its purpose
+is to remove daily buckets of holidays when racking and filling, such that
+linear interpolation ignores weekends/holidays. Requires `ExchangeHolidayCal`
+reference data to work.
+
+### Options
+
+  * 0b - does nothing.
+  * 1b - Will lookup and match tradedExchange in the target data to the exchangeID in the holiday calendar, and apply on a per exchange basis.
+  * Name of exchange as a symbol. This applies the holidays of exchangeID in the holiday calendar to all data, regardless of listed tradedExchange. This can be useful if the target data has not got an exchange listed. Also this usage enables a null symbol ` to be provided, if there is no exchangeID in the holiday calendar, this applies everything in the calendar.
+
+qREST
+
+    
+    
+    args: (!) . flip (
+        (`table;                `Trade);
+        (`startTS;              2023.07.21D00:00:00);
+        (`endTS;                2023.07.22D00:00:00);
+        (`analytics;            `avgPrice`maxPrice);
+        (`granularity;          1);
+        (`granularityUnit;      `hour);
+        (`fill;                 `linear);
+        (`applyHolidayCalendar; 1b)
+        )
+    
+    last  gw(`getStats;args;`callback;()!())
+    eventTimestamp                instrumentID maxPrice avgPrice
+    ------------------------------------------------------------
+    2023.07.21D00:00:00.000000000 AMD          118.99   115.3425
+    2023.07.21D01:00:00.000000000 AMD          119.6    116.6158
+    2023.07.21D02:00:00.000000000 AMD          119.19   115.7733
+    2023.07.21D03:00:00.000000000 AMD          119.16   114.365 
+    2023.07.21D04:00:00.000000000 AMD          118.85   114.915 
+    ..
+    
+    
+    
+    INSIGHTS_TOKEN=`curl -s --header "Content-Type: application/x-www-form-urlencoded" \
+        -d "grant_type=client_credentials&client_id=$INSIGHTS_CLIENT_ID&client_secret=$INSIGHTS_CLIENT_SECRET" \
+        "${INSIGHTS_URL}/auth/realms/insights/protocol/openid-connect/token" | jq -cr ".access_token"`
+    
+    DATA=`curl -s -X POST "${INSIGHTS_URL}/servicegateway/fsi/getStats" \
+        -H "Content-Type: application/json" \
+        -H "Accept: application/json" \
+        -H "Authorization: Bearer $INSIGHTS_TOKEN" \
+        -d "$(jq -n \
+            '{
+                table                : "Trade",
+                startTS              : "2023.07.21D00:00:00",
+                endTS                : "2023.07.22D00:00:00",
+                analytics            : ["avgPrice","maxPrice"],
+                granularity          : "1",
+                granularityUnit      : "hour",
+                fill                 : "linear",
+                applyHolidayCalendar : "1b"
+            }' | jq -cr .)"`
+    
+    echo $DATA | jq -cr '.payload'
+    [{"eventTimestamp":"2023-07-21T00:00:00.000000000","instrumentID":"AMD","maxPrice":118.99,"avgPrice":115.3425},{"eventTimestamp":"2023-07-21T01:00:00.000000000","instrumentID":"AMD","maxPrice":119.6,"avgPrice":116.6158},...
+    
+

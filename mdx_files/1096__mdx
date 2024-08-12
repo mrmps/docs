@@ -1,0 +1,89 @@
+https://code.kx.com/platform/pykx_integration/
+
+# PyKX integration - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/pykx_integration/
+
+# PyKX integration
+
+KX Delta Platform 4.8.1 and later is integrated with PyKX. It offers the full
+functionality of using Python in a q session as documented in
+[code.kx.com](https://code.kx.com/pykx/2.3/pykx-under-q/intro.html)
+
+Currently all Linux flavours supported by the KX Delta Platform support PyKX
+integration. As part of the KX Delta Platform installation, the necessary
+files for PyKX will be installed into the QHOME directory.
+
+## KX Delta Platform PyKX dependencies
+
+The dependencies for PyKX are listed in
+[code.kx.com](https://code.kx.com/pykx/2.3/getting-
+started/installing.html#supported-environments). During installation the KX
+Delta Platform installer will attempt to detect your python version and pip
+version to install the package. If either of these are not installed, the
+installation will be skipped.
+
+Users will require a `k4.lic` or `kc.lic` with the required feature flags
+enabled to use PyKX features within KX Delta Platform. Attempting to use an
+unlicensed version of PyKX will be blocked. For more information see
+[prerequisites](https://code.kx.com/pykx/2.3/pykx-
+under-q/intro.html#prerequisites).
+
+## KX Delta Platform PyKX installation
+
+PyKX will automatically be installed into KX Delta Platform upon upgrade to KX
+Delta Platform 4.8.1 if all dependencies are met.
+
+If the server is running multiple versions of python or pip, it will be
+necessary to specify the alias used for the installation. This can be done by
+adding the following to the [install config
+profile](https://code.kx.com/platform/deployment/install_config/).
+
+    
+    
+    python_executable=python3
+    pip_executable=pip3.11
+    
+
+The installer will then check for these executables in the PATH.
+
+The PyKX libraries will not be automatically loaded into q sessions on start
+up. These can be initialized by running the command
+
+    
+    
+    \l pykx.q
+    
+
+or by executing a python statement within a q session using the `p)` notation.
+
+For any issues with installing or inititializing PyKX, please refer to our
+[troubleshooter](link%20to%20troubleshooter)
+
+## Upgrading from KX EmbedPy
+
+The KX Delta Platform installer will detect if there is an existing
+installation of KX EmbedPy. As there are significant syntax differences
+between PyKX and EmbedPy, the installer will not automatically overwrite
+EmbedPy with PyKX. Prior to upgrade it is important to understand the
+differences listed in [Upgrading from
+EmbedPy](https://code.kx.com/pykx/2.3/pykx-under-q/upgrade.html). Upgrading to
+PyKX from EmbedPy is done by adding the following to the [install config
+profile](https://code.kx.com/platform/deployment/install_config/).
+
+    
+    
+    overwrite_embedpy=1
+    
+
+It is also possible to manually install from CLI by following the instructions
+in [installation](https://code.kx.com/pykx/2.3/pykx-
+under-q/intro.html#installation)
+
+## PyKX KX Analyst integration
+
+PyKX is fully integrated with the KX Analyst component of the KX Delta
+Platform. This ensures you will be able to recognise python files and migrate
+variables through the Analyst interface. Further information can be found in
+[KX Analyst](https://code.kx.com/analyst/python/).
+

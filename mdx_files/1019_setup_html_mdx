@@ -1,0 +1,75 @@
+https://code.kx.com/insights/accelerators/fsi/setup.html
+
+# Setup - kdb products
+
+Original URL: https://code.kx.com/insights/accelerators/fsi/setup.html
+
+# Deployment and Content Configuration
+
+Generally FSI accelerators are set up and deployed in the same way. Each
+quickstart will give specific steps relevant to the specific accelerator. This
+section guides you generally through the deployment of an FSI Accelerator
+package and provide some examples of how you can configure them to cater to
+your specific use-cases.
+
+## Pre-requisites
+
+Before deploying an FSI accelerator package, ensure the following pre-
+requisites are in place:
+
+In addition, if you're unfamiliar with how
+[packaging](../../enterprise/packaging/index.html) works in kdb Insights
+Enterprise, it's recommended to read up on it before continuing, as this
+provides the foundation for how an FSI accelerator package is configured,
+packaged and deployed.
+
+Note
+
+When installing kdb Insights Enterprise, ensure the following environmental
+variable is added under **every** aggregator and resource coordinator in the
+values.yaml. Do this **before** running the `kxi install` command._
+
+    
+    
+      aggregator:
+        env:
+          KXI_PACKAGES: fsi-lib:1.0.0
+    
+    
+    
+      resource-coordinator:
+        env:
+          KXI_PACKAGES: fsi-lib:1.0.0
+    
+
+If any custom configuration or code is required it should be included in a
+package and the package name should also be added to KXI_PACKAGES  [Adding
+Custom Configuration or Code](customize.html#adding-custom-configuration-or-
+code).
+
+## How to get an FSI Accelerator Package
+
+To get started with an FSI accelerator, you need to download the corresponding
+packages.
+
+This will be an `fsi-lib` package and your accelerator package.
+
+Refer to the corresponding quickstart for step by step instructions.
+
+## About the FSI Accelerator Packages
+
+The FSI accelerators are comprised of 2 packages, `fsi-lib` and the specific
+accelerator itself.
+
+### fsi-lib
+
+The `fsi-lib` package is where the code for the core FSI accelerator APIs such
+as [getTicks](getTicks.html) lives. This package is not customizable. All FSI
+accelerators use this common set of functionality
+
+### fsi- packages
+
+The package contains the definitions for the FSI accelerator database,
+[pipelines](dataIngestion.html) and schemas. This package is intended to be
+customized and changed, as is discussed further here.
+

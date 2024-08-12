@@ -1,0 +1,187 @@
+https://code.kx.com/insights/accelerators/fsi/ice-fi-manual-bargeneration.html
+
+# Manual Bar Generation configuration - kdb products
+
+Original URL: https://code.kx.com/insights/accelerators/fsi/ice-fi-manual-bargeneration.html
+
+# Setting up Manual Bar Generation
+
+You must have downloaded and installed the IceFixedIncome package before
+setting up bargeneration. The general bar generation documentation is
+[here](generateGetBarsData.html).
+
+## 1\. Create bar generation package
+
+Create a new package that has the same name as the Ice Fixed Income package
+but with 'z' prepended eg `z-ice-fixed-income`. The below commands will set
+this up:
+
+    
+    
+    ## Creates a new package called z-ice-fixed-income with a manifest and init.q file.
+    kxi package init z-ice-fixed-income   
+    
+    ## Creates a new bargeneration pipeline and src file in directories pipelines and src. Adds pipeline code to manifest file also.
+    kxi package add --to z-ice-fixed-income pipeline --name bargeneration 
+    
+
+## 2\. Edit bargeneration.q
+
+(Note, you may have already configured the `bargeneration.q` if you have
+previously set up the daily bargeneration cronjob. In this case, simply copy
+the edited `bargeneration.q` to your `z-ice-fixed-income` package ).
+
+Copy the `bargeneration.q` file from ice-fixed-income to your working
+directory
+
+    
+    
+    scp IceFixedIncome/pipeline-spec/bargeneration.q .
+    
+
+Edit the `assemblyName` variable on line 6 of `bargeneration.q` file to be the
+name of your already running fsi-app-ice-fi assembly.
+
+    
+    
+    // TODO Update the name of your assembly below within the quotetation marks instead of the placeholder `$"ENTER_YOUR_ASSEMBLY_NAME_HERE"
+    assemblyName:`$"ENTER_YOUR_ASSEMBLY_NAME_HERE"
+    
+
+Then copy your `bargeneration.q` file to your `z-ice-fixed-income` package.
+
+    
+    
+    scp IceFixedIncome/pipeline-spec/bargeneration.q z-ice-fixed-income/src/
+    
+
+## 2\. Edit bargeneration.yaml
+
+Add the following code to the bottom of your `bargeneration.yaml` pipeline
+file. This defines the config map which allows us to pickup schemas between
+packages. You may need to change `fsi-app-ice-fi` within `fsi-app-ice-fi-
+assembly-configmap` to match the name of your original ice fixed income
+assembly.
+
+    
+    
+    sed -i -e '$a\configMaps:' -e '$a\- fsi-app-ice-fi-assembly-configmap' z-ice-fixed-income/pipelines/bargeneration.yaml
+    
+
+## 3\. Create the packaging script to deploy the manual bargeneration package
+
+Create the packaging bash script. This should be created outside the `z-ice-
+fixed-income` package.
+
+You can add the below code to your bash script.
+
+    
+    
+    # Usage:
+    # Flags which take a user input:
+    #   --date | -d                       : Select which date to run bargeneration for. Must be in YYYY.MM.DD format. Example `./bargenPackage.sh   --d 2024.05.30   `
+    #   --package-name | -p               : Optional argument to set a custom name for your package. If not specified default package name is z-ice-fixed-income
+    
+    ASM_NAME="z-ice-fixed-income"
+    DATE="yesterday"
+    
+    # Grab flags
+    while [[ $# -gt 0 ]]; do
+      case $1 in
+        -date|--date|-d)
+          DATE=${2}
+          shift # past argument
+          shift # past value
+          ;;
+        -package-name|--package-name|-p)
+          ASM_NAME=("$2")
+          shift # past argument
+          shift # past value
+          ;;          
+        -*|--*)
+          echo "Unknown option $1"
+          exit 1
+          ;;
+      esac
+    done
+    
+    if [[ ${DATE} != "yesterday" ]] ; then
+        sed 's/.z.d-1/'"$DATE"'/' ${ASM_NAME}/src/bargeneration.q > changed.q && mv changed.q ${ASM_NAME}/src/bargeneration.q
+    fi
+    
+    sleep 5
+    
+    echo Running Bargeneration pipeline within package ${ASM_NAME} for the date: ${DATE}
+    
+    kxi assembly teardown --force --name ${ASM_NAME}
+    
+    kxi package remote-remove ${ASM_NAME}/0.0.1
+    
+    # Make directory where all packaging actions is to be performed
+    FSI_PKG_DIR=/tmp/fsiPackage/
+    mkdir -p ${FSI_PKG_DIR}
+    mkdir -p /tmp/packages
+    mkdir -p /tmp/artifacts
+    export KX_PACKAGE_PATH=/tmp/packages
+    export KX_ARTIFACT_PATH=/tmp/artifacts
+    export KX_PACKAGE_FORMAT=.yaml
+    
+    cp -r ${ASM_NAME} ${FSI_PKG_DIR}
+    
+    kxi package packit ${FSI_PKG_DIR}/${ASM_NAME} --tag --package-name ${ASM_NAME}
+    
+    # Clean up the package dir
+    echo "Cleaning up FSI packaging directory "${FSI_PKG_DIR}
+    rm -rf ${FSI_PKG_DIR}/${ASM_NAME}
+    
+    kxi package push --force ${ASM_NAME}/0.0.1
+    
+    kxi package deploy ${ASM_NAME}/0.0.1
+    
+    if [[ ${DATE} != "yesterday" ]] ; then
+        sed 's/'"$DATE"'/.z.d-1/' ${ASM_NAME}/src/bargeneration.q > changed.q && mv changed.q ${ASM_NAME}/src/bargeneration.q
+    fi
+    
+
+## 4\. Review the layout
+
+After setting all of the above up, the layout of your work should look
+something similar to the below:
+
+    
+    
+    .
+    ├── bargenPackage.sh
+    └── z-ice-fixed-income
+        ├── init.q
+        ├── manifest.yaml
+        ├── pipelines
+        │   └── bargeneration.yaml
+        └── src
+            └── bargeneration.q
+    
+
+## 5\. Running the bargenPackage.sh script
+
+The `bargenPackage.sh` script will allow you to run the bar generation
+pipeline manually. It takes 2 flags: \- -package/ -p -- This is the name of
+the package. The default is z-ice-fixed-income. It is recommened to use the
+same name which you named your directory which contains your ice fixed income
+package \- -date/-d -- This is the date which you want to run the
+bargeneration for. By default, it will look at yesterdays date. The date must
+be written in YYYY.MM.DD format. There must be Quote table data for the date
+you want to run the bargeneration for in order for it to work.
+
+Example use
+
+    
+    
+    ./bargenPackage.sh -p z-ice-fixed-income -d 2024.06.01
+    
+
+The script will teardown any bargeneration packages that are currently
+running.
+
+The pipeline will be prefixed with `z-ice-fixed-income` eg. `z-ice-fixed-
+income-bargeneration`
+

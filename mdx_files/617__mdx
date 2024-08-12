@@ -1,0 +1,1076 @@
+https://code.kx.com/dashboards/datagrid/
+
+# Data Grid - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/datagrid/
+
+# Data Grid
+
+![A Data Grid](../img/datagrid/sampleformats.jpg)  
+_A Data Grid_
+
+The key element is the data source, where the query or analytic is defined.
+
+The Data Grid also has settings for search, filtering, editing cells, insert
+and delete rows, sorting, grouping and custom column display.
+
+## Set up
+
+  1. Assign a _data source_.
+
+  2. Select _filtering_ option to use.
+
+  3. Format your column data; use the Multi-Column Editor to make shared changes across columns. 
+
+## Basics
+
+![Screenshot](../img/datagrid/datagridbasics.png)
+
+_Name_
+
+    A name for the component provided by the user. 
+_Data Source_
+
+     [Data sources](../datasources/)
+_Filtering_
+
+    
+
+Three options:
+
+option | effect  
+---|---  
+Quick Search | Global search of all data columns; e.g. for selected text, number, date or time ![Screenshot](../img/datagrid/gridquicksearch.jpg)  
+Column Filters | Search on selected column. Additional filter options available with custom filters. ![Screenshot](../img/datagrid/columnfilters.jpg)  
+Advanced Column Filters | Search on selected column, support for boolean operators `AND`, `OR`, `-` (`NOT`), and `*` (wildcard all). ![Screenshot](../img/datagrid/advancedcolumnfilters.jpg). Required for using server-side filtering.  
+Disabled | No filters  
+    
+
+_Advanced Column Filters_
+
+option | effect  
+---|---  
+* | Wild card, returns everything  
+AND | Searching for `J AND M` would return a Jim but not a John or Mary  
+OR | Search for `J OR M` would return a Jim, John and Mary  
+- | Acts as a NOT. Search for `* -Jim -John` would return all bar Jim and Mary  
+    
+
+_Advanced Column Filtering_ is not available for columns using custom filters.
+
+    
+
+_Advanced Column Filtering_ must be selected if server side filtering is
+employed.
+
+_Show Paging Control_
+
+    
+
+When checked, displays pagination controls: used for large data sets
+
+![Screenshot](../img/datagrid/pagingcontrol.jpg)
+
+_Enable Grouping_
+
+    When checked, users can group data together: subtotals can be applied with _Summary Row For Groupings_
+_Auto Collapse Grouping_
+
+    When checked, the dashboard is loaded with Data Grid groupings in collapsed form. Grid groupings are configured in _Grouping Columns_
+_Keep NonExistent Columns_
+
+    
+
+Non-existent columns are employed when working with a large number of queries.
+If a _Data Source_ is changed, the prior column configurations from the
+original will be kept if this control is checked.
+
+Dynamic queries
+
+Dynamic queries which don’t have fixed column definitions can set _Keep
+NonExistent Columns_ to retain configuration options; e.g. column formatting.
+In this scenario, the `*` wildcard would be used in the _Data Field Name_.
+Hybrid wildcard usage is also supported; for example 'Data*' will return all
+columns with 'Data'.
+
+_Custom Layout_
+
+    
+
+When checked, the Data Grid will have a button to summon the Configuration
+dialog.
+
+![Screenshot](../img/datagrid/configuration.jpg)
+
+The Configuration dialog lets users change the display of columns in the Data
+Grid.
+
+![Screenshot](../img/datagrid/userconfiguration.jpg)  
+_Configuration dialog_
+
+All columns are available to users
+
+Hidden columns will be visible in the _Available Columns_ list. This may not
+be desirable if a hidden column stores a calculation or highlight rule
+operator. In such instanced it may be necessary to disable _Custom Layout_.
+
+User configuration is saved on exiting the dashboard and will be available on
+next login.
+
+_Retain Relative Column Widths on Reload_
+
+    Check control to continue with relative width on display columns (relative widths are applied only when columns fit allocated horizontal space - when horizontal scrollbar is not visible)
+_Edit Mode_
+
+    
+
+One of _enabled_ , _disabled_ , or _instant_. When _enabled_ , a user can edit
+data by clicking the _Edit_ button in the top-right corner, making each cell
+editable. When _instant_ , boolean values in the table will be rendered as
+checkboxes that the user can toggle to instantly edit.
+
+![Screenshot](../img/datagrid/editcell.jpg) _Editing data with Edit Mode =
+enabled_
+
+![Screenshot](../img/datagrid/instantEdit.png)
+
+_Editing data with Edit Mode = instant_
+
+In both cases, an [update query](../datasources/#update-query) must be used.
+
+_Enable Insert/Delete_
+
+    Only used with an [update query](../datasources/#update-query).
+_Sort Column_
+
+_Sort Order_
+
+    Define which column, and direction, to sort data on dashboard load
+_KDB Filter String_
+
+    Used in server side filtering.
+_Filter on Enter_
+
+    When checked, user will have to press ENTER to return a filter result. Default behavior is to smart filter on typing. 
+_Scroll Row_
+
+    Stores a scroll value required for PDF Creation 
+_Experimental Mode_
+
+    Improved data handling efficiency and performance with high volume data
+_Virtual Scroll_
+
+    Default is `disabled`; all data is loaded to the dashboard from the _Data Source_. When enabled, viewed data is loaded as required; for streaming or frequently changing data and update queries, `uncached` is recommended, `cached` enables backend data management. 
+_Expand When Creating Pdf_
+
+    
+
+When checked, datagrid will be printed on multiple pages
+
+Limitations
+
+Datagrid has to be placed inside [Tab Control](../datasources/). If header is
+present, it will be printed on each page. Grouping is not supported.
+
+_Footer Data Source_
+
+    
+
+This [data source](../datasources/) property can be used to provide customized
+values in the footer section of the Data Grid.
+
+  * Each column name returned by this data source becomes an additional option to choose from in the dropdown list of available footers. 
+  * Only the first row of values resulting from this data source will be presented in the footer section of the Data Grid.
+
+## Columns
+
+Besides [individual column settings](./#column), settings for all columns can
+be defined in the Multi Column Editor:
+
+![Screenshot](../img/datagrid/globalconfigure.jpg)
+
+Select columns on the left using Ctrl-click on columns.
+
+Next select properties (settings) on the right to be applied across the
+selected columns.
+
+![Screenshot](../img/datagrid/multicolumn.jpg)
+
+Columns can be removed from a Data Grid by clicking the trashcan icon
+
+![Screenshot](../img/datagrid/deletecolumn.jpg)
+
+## Column
+
+Each column has a section defining how its data is formatted.
+
+![Screenshot](../img/datagrid/datagridcolumn.png)
+
+_User Defined_
+
+    
+
+When checked, the selected column will remain in the Data Grid if the selected
+column variable is removed from the query. A User Defined query is effectively
+a 'lock' on the column
+
+_User Defined_ checked for missing _Data Source_ variable
+
+The _User Defined_ column will show as an empty column in the Data Grid if the
+_User Defined_ column variable is missing in the query.
+
+_Data Field Name_
+
+    
+
+A column or [dynamic column](../datasources/#dynamic-columns) from the _Data
+Source_
+
+Dynamic column syntax
+
+use * or regex (e.g. CPUCore*, FXpair*EUR, /symbol|sym/i )
+
+_Display Name_
+
+    
+
+![Screenshot](../img/datagrid/displayname.jpg)  
+_Columns with Display Names: Symbol, Counter Party, %, and Start Date_
+
+Wildcard '*' usage
+
+_Display Name_ is set to wildcard when _Data Field Name_ uses the wildcard.
+Hybrid names using a mix of name label and wildcard are also supported; for
+example, _Data Field Name_ set to 'Data*' with _Display Name_ of 'Result *'
+will return columns including 'Data' with 'Result ' in the _Display Name_.
+
+_Header Tooltip_
+
+    Provides a rollover text description for the column; useful if existing column title is clipped on browser resize. 
+_Width (relative)_
+
+    
+
+Column width relative to other columns, e.g. columns with a relative width of
+20, 10, 5, 1 will scale to column widths of 55% (i.e. 20/(20+10+5+1)), 28%,
+14% and 3%
+
+Columns will resize with the browser window.
+
+_Min Width (px)_
+
+    
+
+Pixels: the minimum width for a column
+
+Using _Width (relative)_ and _Min Width (px)_ together
+
+_Width (relative)_ uses a default value based on the data Type in the column;
+in the case of a _Data Grid_ the default _Width (relative)_ and _Min
+Width(px)_ are the same. There are two priority rules for _Width (relative)_
+and _Min Width (px)_ :
+
+  1. If the screen is resized so that a scroll bar appears, _Width (relative)_ will be disabled and only _Min Width (px)_ used. If a further resize removes the scrollbar, _Width (relative)_ will again be applied. 
+  2. If the _Width (relative)_ is set to zero, only _Min Width (px)_ will be applied. 
+
+If _Width (relative)_ (irrespective of scrollbar) narrows Data Grid column
+widths to less than _Min Width (px)_ , then _Min Width (px)_ will be used.
+
+Group apply Width changes
+
+When using _Width (relative)_ or _Min Width (px)_ it may be helpful to use the
+bulk parameter adjuster; click ![Screenshot](../img/datagrid/bulkadjust.jpg)
+
+Ctrl+select the columns to change, then adjust the required parameter(s) to
+have the value applied to all selected columns
+
+![Screenshot](../img/datagrid/multiselectgroup.jpg)
+
+_Text Align_
+
+    Horizontal alignment of values in their cells
+_Sortable_
+
+    
+
+![Screenshot](../img/datagrid/columnsort.jpg)
+
+When checked, clicking on column header will toggle between ascending and
+descending sorts
+
+_Format_
+
+    for the data in the column, e.g. `DateTime`, `Percentage`, `Sparkline`
+_Precision_
+
+    The number of decimal places show for numeric data
+_Hide Trailing Zeroes_
+
+    When checked, suppresses trailing zeroes for numeric data
+_Currency Symbol_
+
+    ![Screenshot](../img/datagrid/currencysymbol.jpg)  
+_Columns with prefixed currency symbols_
+
+_Date Format_
+
+_Time Format_
+
+    Where _Format_ is Date, Time, or DateTime the data is formatted with these two settings
+    ![Screenshot](../img/datagrid/comboformat.jpg) ![Screenshot](../img/datagrid/timecolumn.jpg)  
+_Date Format, Time Format, and a formatted DateTime column_
+
+_Negative Color_
+
+    Set color for negative values in column
+Highlight Change
+
+    When _Highlight Changes_ is enabled, higher than previous value changes will be highlighted in green and lower values in red. The length of time for the highlight is set by _Highlight Change Duration_
+     [Highlight Rules](../highlightrules/)
+Highlighting highs, lows and ranges
+
+    
+
+Checkboxes _Highlight Min Value_ , _Highlight Max Value_ , and _Range
+Highlight_ apply colors to highlight values:
+
+![Screenshot](../img/datagrid/minvaluecolor.jpg)
+![Screenshot](../img/datagrid/maxvaluecolor.jpg)
+![Screenshot](../img/datagrid/rangecolor.jpg)  
+_Columns with Min Value Color, Max Value Color, and Range Color applied_
+
+_Invert Range Color_
+
+    Flip range color usage; dark shade for high values, light shade for low values
+_Percentage Color_
+
+    
+
+A color, used for mini-bars when _Format_ is Percentage
+
+![Screenshot](../img/datagrid/percentagehighlight.jpg)
+
+Colors can be View State Parameters
+
+_Min Value Color_ , _Max Value Color_ , _Range Color_ , and _Percentage Color_
+can be [View State Parameters](../viewstateparameters/).
+
+_Read Only_
+
+    When checked, the column cannot be edited
+_Selectable_
+
+    Checked by default; column cells cannot be selected when unchecked
+_Template_
+
+    Apply HTML customizations with Handlebar helpers; for example:
+    
+    
+    <font color="blue">{{column name}}</font>
+    
+
+    
+
+where `{{column name}}` is the reference name for the column from the data
+source.
+
+    
+
+[Templates](../template/)
+
+_Sparkline Options_
+
+    Configuration for Sparklines
+_Hidden_
+
+    Data column is hidden. 
+     **When Hidden columns are no longer hidden**  
+If _Full Excel Export_ is enabled, all _Hidden_ columns will be downloaded as
+part of the export. _Hidden_ columns are also available under _Custom Layout_.
+
+_Footer_
+
+    
+
+This property allows the user to specify what values are displayed in the
+footer section of the Data Grid. Available options include `None`, `Average`,
+`Count`, `Sum`, and `Weighted Average`.
+
+![Screenshot](../img/datagrid/footerdropdown_default.png)
+
+    
+
+If at least one column has a _Footer_ property set to a value other than
+`None`, the footer section appears as the last row at the bottom of the grid
+display. Footer values inherit the format options of their column.
+
+![Screenshot](../img/datagrid/datagridsum.png)
+
+    
+
+When a _Footer Data Source_ is defined, the columns returned by this data
+source will be appended as additional options to the _Footer_ dropdown list.
+
+![Screenshot](../img/datagrid/footerdropdown_columns.png)
+
+    
+
+To create labels in the footer section, text can be used as a footer value
+even if the Column format is different.
+
+Note
+
+The Footer property will be set to _None_ if a custom footer is selected and
+the _Footer Data Source_ changes to exclude the selected column.
+
+_Footer Weight_
+
+    Applies a weighting to current column by selected data source variable. For this to be enabled, _Footer_ must be set to `Weighted Average`.
+_Header_
+
+    
+
+Applies a column grouped header.
+
+![Screenshot](../img/datagrid/headergrouping.jpg)
+
+Note
+
+Auto size applied on grouped header when user resize columns. Column reorder
+restricted within its group.
+
+## Selection & Routing
+
+![Screenshot](../img/datagrid/selectionrouting.jpg)
+
+_Selection Mode_
+
+    Select from `Area`, `Single Row`, `Multi Row` or `Cell`
+_Row ID Column_
+
+    Define from the [data source](../datasources/)
+_Selected Row_
+
+_Selected Column_
+
+_Selected Cell Value_
+
+    Assign [view state parameters](../viewstateparameters/) to each attribute when `Cell` is selected.
+_Follow Selected Value_
+
+    When checked, row selection highlight will retain view on screen during scroll event
+_Default Fallback on Deselect_
+
+    When checked, default View State Parameter values will be used (if set) in the absence of a row select
+_Checkbox Alignment_
+
+    Position of data row selection check boxes; select from `none`, `left` or `right`
+_Select on checkbox only_
+
+    Toggle whether the whole row can be selected or just the checkbox
+
+### Keyboard Shortcuts
+
+A set of keyboard shortcuts for _Selection Mode_ `Area`; allows for bulk
+selection of cells and rows.
+
+shortcut | description  
+---|---  
+Shift + End | Select to end of column from cell  
+Shift + Home | Select to top of column from cell  
+Shift + Page Up | Select from cell to each page up instance  
+Shift + Page Down | Select from cell to each page down instance  
+Shift + Click | Select from cell to click-select-cell  
+Drag-select-rows | Select multiple rows  
+  
+### Action
+
+[Actions](../action/)
+
+## File export
+
+[Export](../publish/#file-export)
+
+_Position_
+
+    Select from `none`, `right`, `left`, `cursor`
+_Template_
+
+     [Templates](../template/#data-grid)
+_Use Formatted Cell Value_
+
+    When the "Use Formatted Cell Value" property is checked then tooltip uses the formatted value from column template otherwise if unchecked uses the raw cell value.
+
+## Grouping columns
+
+![Screenshot](../img/datagrid/groupingcolumns.jpg)
+
+A _Grouping Column_ groups Data Grid rows by their values in that column.
+Specifying further grouping columns repeats this within each group.
+
+![Screenshot](../img/datagrid/autocollapse.jpg)  
+_Grouping by sym and counterParty_
+
+Dashboard users can also create groupings on the fly by dragging a column
+header into the space directly above the column headers:
+
+![Screenshot](../img/datagrid/enablegroup.jpg)  
+_Dragging a column header to set a grouping column_
+
+## Summary Row for Groupings
+
+_Grouping Columns_ reorganises the Data Grid layout. _Summary Row for
+Groupings_ adds simple mathematical calculations to the groups.
+
+![Screenshot](../img/datagrid/summaryrowgrouping.jpg)  
+_‘Leverage’ calculated for each group_
+
+![Screenshot](../img/datagrid/datagridsummaryrowforgroupings.png)
+
+_Aggregate Function_
+
+    The mathematical function to apply: `average`, `sum`, `min`, `max` or `weighted average` (extra column will appear)
+_Column_
+
+    The column on which the calculations will be made
+_Label_
+
+    The text label to use for the calculation
+_Color_
+
+    The font color for the grouping
+
+## Highlight rules
+
+Mark changes in data grid values with color; select between `Gradient` or
+monotone `Discrete` colors.
+
+![Screenshot](../img/datagrid/samplehighlightrules.jpg)  
+_Highlight Rules in operation_
+
+![Screenshot](../img/datagrid/highlightrule.jpg)
+
+_Name_
+
+    The name of the rule
+_Target_
+
+    The column on which the rule will act. Can be any column in the Data Grid: does not have to be the column using the operator.
+_Condition Source_
+
+_Condition Operator_
+
+_Condition Value_
+
+    Discrete highlight rule  [Highlight Rules](../highlightrules/)
+_Rule Min_
+
+_Rule Max_
+
+_Rule Limit_
+
+    Gradient highlight rule. _Rule Limit_ restricts highlights to values between _Rule Min_ and _Rule Max_ only; values outside of this range have no highlights applied. Use `Color Palette` to define gradient color highlights. 
+_Color_
+
+    The text color when rule is true
+_Background Color_
+
+    Background cell color when rule is true
+_Border Color_
+
+    Cell border color when rule is true
+_Icon_
+
+    Icon to appear when rule is true
+_Icon Color_
+
+    Color for the icon (if used) when rule is true
+_Apply Palette To_
+
+    Gradient highlight colors applied to `background`, `text`, `border` or `icon`
+
+### Color Palette
+
+Define colors used by `Gradient` highlight; low to high values, top to bottom.
+
+## Custom filters
+
+Introduce client-side advanced filters for columns covering text, numeric and
+datetime formats.
+
+Custom Filters are available only when _Filtering_ is set to _Column Filters_
+or _Advanced Column Filters_.
+
+Filtering is only applied to viewable data; paging will limit results to
+current page.
+
+![Screenshot](../img/datagrid/advancedcolumnfilters.jpg)  
+_Custom Filters_
+
+Select a custom filter for each columns
+
+![Screenshot](../img/datagrid/extralinefilter.jpg)
+
+filter | description  
+---|---  
+Selection | Filter dropdown; check available data options to display.  
+Server Selection |  Server Selection Filtering  
+Number | Support for filter options: `<`, `>`, `>=`, `<=`, `=`, `==`, `!=` (exclude)  
+Date Time | Select for Date or Time using standard operators: `<`, `>`, `>=`, `<=`, `=`  
+Disabled | No filtering  
+  
+Examples:
+
+Symbol starts with `EUR` or `USD`:
+
+    ![Screenshot](../img/datagrid/ik_ssf1.jpg)
+Symbol starts with `EUR`, without `EURAUD`:
+
+    ![Screenshot](../img/datagrid/ik_ssf2.jpg)
+Symbol starts with `EUR`, without `EURAUD` and `EURCAD`:
+
+    ![Screenshot](../img/datagrid/ik_ssf3.jpg)
+Symbol ends with `CAD`:
+
+    ![Screenshot](../img/datagrid/ik_ssf4.jpg)
+Selected numbers:
+
+    ![Screenshot](../img/datagrid/ik_ssf5.jpg)
+Range between 10000 and 20000000:
+
+    ![Screenshot](../img/datagrid/ik_ssf6.jpg)
+Ignore null values:
+
+    ![Screenshot](../img/datagrid/ik_ssf7.jpg)
+Selecting Four symbols
+
+    ![Screenshot](../img/datagrid/columnselection.jpg)
+Range between 25 and 75
+
+    ![Screenshot](../img/datagrid/between25and75.jpg)
+Range outside 25 and 50
+
+    ![Screenshot](../img/datagrid/outside25and50.jpg)
+Return 25 and 50 only
+
+    ![Screenshot](../img/datagrid/return25and50.jpg)
+
+Filtering variables with `!=`
+
+When the exclusion function `!=` is used, all values – including column cells
+with null data – will be returned with the exception of the value defined by
+`!=`
+
+### Server selection filtering
+
+Server selection should be used when data is not fully loaded to the client;
+for example, when using [server-side paging](../datasources/#creating-a-data-
+source) or Server-side Filtering via the _KDB Filter String_.
+
+Server selection uses a [data source](../datasources/) to return all member
+items of the filtered column.
+
+![Screenshot](../img/datagrid/distinctvariables.jpg)
+
+![Screenshot](../img/datagrid/distinctquery.jpg)
+
+![Screenshot](../img/datagrid/distinctvariabledatagrid.jpg)
+
+## Server-side filtering
+
+Server-side filtering is not used in KX Insights Platform Views
+
+  1. Set _Filtering_ to _Advanced Column Filters_.
+
+  2. Create three view state parameters for _Sort Column_ , _Sort Order_ and _KDB Filter String_ ; these can be grouped in the view state parameter menu. View states for _Sort Column_ and _Sort Order_ are of _string_ or _symbol_. The _KDB Filter String_ **must** be of type _string_. 
+
+![Screenshot](../img/datagrid/serversidefilter.jpg)
+
+  3. Define a [data source](../datasources/) to be filtered. The following code snippet uses `dfxQuote` as the target data set; replace as appropriate: 
+
+    
+    
+       {[sortCol;sortOrder;filterString]
+        res:.dfilt.apply[dfxQuote; filterString];
+         if[all not null (sortOrder; sortCol);
+         sortOp:(`descending`ascending!(xdesc; xasc))sortOrder;
+         res:sortOp[sortCol;res]
+         ];
+         :res;  
+       }
+    
+
+    
+
+![Screenshot](../img/datagrid/serversidefiltersetup.jpg)
+
+A _Header Group_ defines a potential groupped header that can be applied to a
+column
+
+    
+
+![Screenshot](../img/datagrid/headergroup.jpg)
+
+## Custom Configuration Layout
+
+_Ignore Custom Layout Viewstate_
+
+    When checked, if there is a viewstate defined in the column properties then it ignores this value when applying user defined custom layouts.
+_Include Hidden Columns_
+
+    When checked, includes any hidden columns in the list of columns that can be added when applying user defined custom layouts.
+
+## Style
+
+[Style](../style/#component-style) for common settings
+
+![Screenshot](../img/datagrid/datagridstylemenu.jpg)
+
+_Header Row Height_
+
+_Row Height_
+
+    ![Screenshot](../img/datagrid/rowheight.jpg)
+_Even Row Background_ & _Odd Row Background_
+
+    Background colors of the even and odd rows
+_Selected Row Background_
+
+    When _Enable Row Selection_ is checked, the background color of the selected row 
+_Header Text Transformation_
+
+    Text transformation for column headers
+_Header Font Weight_
+
+    Font weight for column header
+_Font Family_
+
+    Font family for column headers and rows
+_Font size_
+
+    Font size for rows (css format), e.g. `18px`, `0.8em`, `80%`, `larger`
+
+### Advanced CSS
+
+[Advanced CSS](../style/#advanced-css)
+
+## Sparklines
+
+![Screenshot](../img/datagrid/sparklines.jpg)
+
+To display Sparklines, set Column Format to `Sparkline` and modify `Sparkline
+Options` using JSON editor
+
+![Screenshot](../img/datagrid/jsoneditorsparklines.jpg)
+
+Query example for Line chart `([] ix:til 100; list:{(60?30)}each 1_til 101)`
+
+These chart types are supported: line, bar, pie, tristate, discrete, bullet,
+box
+
+### Composite sparklines
+
+![Screenshot](../img/datagrid/compositesparklines.png)
+
+    
+    
+    ([] twoDatasets: {((20?10);(20?10))}each 1_til 101)
+    
+    
+    
+    [{
+        "type": "bar",
+        "height": 50,
+        "barWidth": 23
+    },
+    {
+        "type": "line",
+        "composite": true,
+        "fillColor": "rgba(0,255,0, 0.2)",
+        "lineColor": "#00ff00"
+    }]
+    
+
+### Common options
+
+These options can be set for most of the supported chart types.
+
+option | semantics  
+---|---  
+type | One of `line` (default), `bar`, `tristate`, `discrete`, `bullet`, `pie` or `box`.  
+width | Width of the chart: defaults to `auto`. May be any valid CSS width: 1.5em, 20px, etc. (Using a number without a unit specifier won’t do what you want.) This option does nothing for bar and tristate chars (see `barWidth`).  
+height | Height of the chart. Defaults to `auto`: line height of the containing tag.  
+lineColor | Used by Line and Discrete charts to specify the color of the line drawn as a CSS values string.  
+fillColor | Specify the color used to fill the area under the graph as a CSS value. Set to `false` to disable fill.  
+chartRangeMin | Specify the minimum value to use for the range of Y values of the chart. Defaults to the minimum value supplied.  
+chartRangeMax | Specify the maximum value to use for the range of Y values of the chart. Defaults to the maximum value supplied.  
+composite | If `true` then don’t erase any existing chart attached to the tag, but draw another chart over the top. Width and height are ignored if an existing chart is detected. NB: You’ll usually want to lock the axis on both charts using `chartRangeMin` and `chartRangeMax` if you want the same value on each chart to occupy the same point.  
+enableTagOptions | If `true` then options can be specified as attributes on each tag to be transformed into a sparkline, as well as passed to the `sparkline()` function. See also `tagOptionPrefix`.  
+tagOptionPrefix | String that each option passed as an attribute on a tag must begin with. Defaults to `spark`.  
+tagValuesAttribute | The name of the tag attribute to fetch values from, if present: defaults to `values`.  
+disableHiddenCheck | Set to `true` to disable checking for hidden sparklines. This can be beneficial if you know you’ll never attempt to draw a sparkline into a hidden parent element, as it avoids a browser reflow for the test, increasing rendering performance. Defaults to `false`.  
+  
+#### Range maps
+
+Several parameters, such as `colorMap` and `tooltipLookupValues`, accept a
+range map as a parameter. As the name suggest, it maps ranges of numbers to
+values. For example:
+
+    
+    
+    {
+        1: "red",
+        "2:9": "yellow",
+        "10:": "red"
+    }
+    
+
+This would map 1 to red, values of 2 through 9 (inclusive) to yellow and
+values of 10 and higher to "red"
+
+### Line charts
+
+Line charts are the default chart type, but to specify the type explicitly set
+an option called `type` to `line`.
+
+option | semantics  
+---|---  
+defaultPixelsPerValue | Defaults to 3 pixels of width for each value in the chart.  
+spotColor | The CSS color of the final value marker. Set to `false` or an empty string to hide it.  
+minSpotColor | The CSS color of the marker displayed for the mimum value. Set to `false` or an empty string to hide it.  
+maxSpotColor | The CSS color of the marker displayed for the maximum value. Set to `false` or an empty string to hide it.  
+spotRadius | Radius of all spot markers, in pixels (default: 1.5).  
+valueSpots | Specifies which points to draw spots on, and with which color. Accepts a range. For example, to render green spots on all values less than 50 and red on values higher use `{":49": "green", "50:": "red"}`  
+highlightSpotColor | Specifies a color for the spot that appears on a value when moused over. Set to null to disable. Defaults to `#f5f`.  
+highlightLineColor | Specifies a color for the vertical line that appears through a value when moused over. Set to null to disable. Defaults to `#f22`.  
+lineWidth | In pixels (default: 1) – Integer  
+normalRangeMin, normalRangeMax | Specify threshold values between which to draw a bar to denote the ‘normal’ or expected range of values. For example the green bar might denote a normal operating temperature range  
+drawNormalOnTop | By default the normal range is drawn behind the fill area of the chart. Setting this option to `true` causes it to be drawn over the top of the fill area  
+xvalues | See below  
+chartRangeClip | If `true` then the Y values supplied to plot will be clipped to fall between `chartRangeMin` and `chartRangeMax`. By default `chartRangeMin/Max` just ensure that the chart spans at least that range of values, but does not constrain it.  
+chartRangeMinX | Specifies the minimum X value of the chart  
+chartRangeMaxX | Specifies the maximum X value of the chart  
+  
+See also all of the common options above, that can also be used with line
+charts
+
+By default the values supplied to line charts are presumed to be y values
+mapping on to sequential (integer) X values. If you need to specify both the X
+and Y values for your chart, use an array of arrays: `((1; 3); (2; 4); (5;
+3))`
+
+You can also specify a value of `null` to omit values from the chart
+completely.
+
+### Bar charts
+
+Set the `type` option to `bar` to generate bar charts. Values can be omitted
+by using the `null` value instead of a number.
+
+option | semantics  
+---|---  
+barColor | CSS color used for positive values.  
+negBarColor | CSS color used for negative values.  
+zeroColor | CSS color used for values equal to zero.  
+nullColor | CSS color used for values equal to null. By default, null values are omitted entirely, but setting this adds a thin marker for the entry. This can be useful if your chart is pretty sparse: perhaps try setting it to a light gray or something equally unobtrusive.  
+barWidth | Width of each bar, in pixels (integer).  
+barSpacing | Space between each bar, in pixels (integer).  
+zeroAxis | Centers the Y-axis at zero if true (default).  
+colorMap | A range map to map specific values to selected colors. For example if you want all values of -2 to appear yellow, use `colorMap: { "-2": "#ff0" }`. You may also pass an array of values here instead of a mapping to specify a color for each individual bar. For example if your chart has three values 1, 3, 1 you can set `colorMap=["red", "green", "blue"]`  
+stackedBarColor | An array of colors to use for stacked bar charts. The first series will use the first value in the array, the second series will use the second, etc.  
+  
+See also all of the common options above, that can also be used with bar
+charts
+
+Version 2.0 adds support for stacked bar charts. Values for each data series
+in the chart can be separated by colons if passed by HTML, or as an array of
+arrays.
+
+For example, to draw series one with values of 1,2,3,4 and series 2 with
+values of 4,3,2,1: `((1; 4); (2; 3); (3; 2); (4; 1))`
+
+### Tristate charts
+
+`(1; 1; 0; 1; -1; -1; 1; -1; 0; 0; 1; 1)`
+
+Tri-state charts are useful to show win-lose-draw information, such as the SF
+Giants recent game results above. You can also use the `colorMap` option to
+use different colors for different values, or for arbitrary positions in the
+chart.
+
+Set the `type` option to `tristate` to generate Tristate charts.
+
+option | semantics  
+---|---  
+posBarColor | CSS color for positive (win) values.  
+negBarColor | CSS color for negative (lose) values.  
+zeroBarColor | CSS color for zero (draw) values.  
+barWidth | Width of each bar, in pixels (integer).  
+barSpacing | Space between each bar, in pixels (integer).  
+colorMap | A range map to map specific values to selected colors. For example if you want all values of -2 to appear yellow, use `colorMap: { "-2": "#ff0" }`.  
+  
+As of version 1.5 you may also pass an array of values here instead of a
+mapping to specifiy a color for each individual bar. For example if your chart
+has three values 1, 3, 1 you can set `colorMap=["red", "green", "blue"]`.  
+  
+See also all of the common options above, that can also be used with Tristate
+charts
+
+### Discrete charts
+
+`(4; 6; 7; 7; 4; 3; 2; 1; 4; 4; 5; 6; 7; 6; 6; 2; 4; 5)`
+
+Discrete charts provide a separated thin vertical line for each value.
+
+Set the `type` option to `discrete` to generate Discrete charts.
+
+option | semantics  
+---|---  
+lineHeight | Height of each line in pixels. Defaults to 30% of the graph height.  
+thresholdValue | Values less than this value will be drawn using `thresholdColor` instead of `lineColor`  
+thresholdColor | Color to use in combination with thresholdvalue`.  
+  
+See also all of the common options above, that can also be used with discrete
+charts
+
+### Bullet graphs
+
+[Bullet Graph](https://en.wikipedia.org/wiki/Bullet_graph "Wikipedia")
+
+Supplied values must be in this order: target, performance, range 1, range 2,
+range 3, …
+
+Set the `type` option to `bullet` to generate Bullet graphs.
+
+option | semantics  
+---|---  
+targetColor | The CSS color of the vertical target marker.  
+targetWidth | The width of the target marker in pixels (integer).  
+performanceColor | The CSS color of the performance measure horizontal bar  
+rangeColors | Colors to use for each qualitative range background color. This must be a JavaScript array, e.g. `["red","green", "#22f"]`.  
+  
+See also all of the common options above, that can also be used with bullet
+charts
+
+### Pie charts
+
+Set the `type` option to `pie` to generate Pie charts.
+
+These little pie charts tend only to be useful only with 2 or 3 values at
+most.
+
+option | semantics  
+---|---  
+sliceColors | An array of CSS colors to use for pie slices.  
+offset | Angle in degrees to offset the first slice. Try -90 or +90.  
+borderWidth | Width of the border to draw around the whole chart, in pixels. Defaults to 0 (no border).  
+borderColor | CSS color to use to draw the pie border. Defaults to #000.  
+  
+See also all of the common options above, that can also be used with Pie
+charts
+
+### Box plots
+
+`(4; 27; 34; 52; 54; 59; 61; 68; 78; 82; 85; 87; 91; 93; 100)`
+
+[Box Plots](https://en.wikipedia.org/wiki/Box_plot "Wikipedia")
+
+Set the `type` option to `box` to generate Box plots.
+
+option | semantics  
+---|---  
+raw | If set to `false` (default) then the values supplied are used to calculate the box data points for you. If `true` then you must pre-calculate the points (see below).  
+showOutliers | If `true` (default) then outliers (values > 1.5 × the IQR) are marked with circles and the whiskers are placed at Q1 and Q3 instead of the least and greatest value.  
+outlierIQR | Set the inter-quartile range multipler used to calculate values that qualify as an outlier. Defaults to 1.5.  
+boxLineColor | CSS line color used to outline the box.  
+boxFillColor | CSS fill color used for the box.  
+whiskerColor | CSS color used to draw the whiskers.  
+outlierLineColor | CSS color used to draw the outlier circles.  
+outlierFillColor | CSS color used to fill the outlier circles.  
+spotRadius | Radius in pixels to draw the outlier circles.  
+medianColor | CSS color used to draw the median line.  
+target | If set to a value, then a small crosshair is drawn at that point to represent a target value.  
+targetColor | CSS color used to draw the target crosshair, if set.  
+minValue | If `minvalue` and `maxvalue` are set then the scale of the plot is fixed. By default `minValue` and `maxValue` are deduced from the values supplied.  
+maxValue | See `minValue`.  
+  
+See also all of the common options above, that can also be used with Box plot
+charts
+
+As noted in the options above, by default `raw` is set to `false`. This means
+that you can just pass an arbitrarily long list of values to the sparkline
+function and the corresponding box plot will be calculated from those values.
+This is probably the behavior you want most of the time.
+
+If, on the other hand, you have thousands of values to deal with you may want
+to pre-compute the points needed for the Box plot. In that case, set
+`raw=true` and pass in the computed values. If showing outliers, supplied
+values of:  
+`low_outlier`, `low_whisker`, `q1`, `median`, `q3`, `high_whisker`,
+`high_outlier`. Omit the outliers and set `showOutliers` to `false` to omit
+outlier display.
+
+### Interactive sparklines
+
+Version 2.0 of the plugin introduces support for interactive sparklines in the
+form of tooltips, mouseover highlighting and click interaction for all
+supported types of sparkline.
+
+If you’re happy with the default look and feel of the tooltips, you can skip
+this entire section.
+
+Options to control sparkline interactions:
+
+option | semantics  
+---|---  
+disableInteraction | Set to `true` to disable all sparkline interactivity, making the plugin behave in much the same way as it did in 1.x Defaults to `false`.  
+disableTooltips | Set to `true` to disable mouseover tooltips. Defaults to `false`.  
+disableHighlight | Set to `true` to disable the highlighting of individual values when mousing over a sparkline. Defaults to `false`.  
+highlightLighten | Controls the amount to lighten or darken a value when moused over. A value of 1.5 will lighten by 50%, 0.5 will darken by 50%. Defaults to 1.4.  
+highlightColor | If specified, then values that are moused over will be changed to this color instead of being lightened.  
+tooltipClassname | Specifies a CSS class name to apply to tooltips to override the default built-in style.  
+tooltipOffsetX | Specifies how many pixels away from the mouse pointer to render the tooltip on the X axis.  
+tooltipOffsetY | Specifies how many pixels away from the mouse pointer to render the tooltip on the Y axis.  
+tooltipChartTitle | If specified then the tooltip uses the string specified by this setting as a title.  
+tooltipFormat | A format string or spformat object (or an array thereof for multiple entries) to control the format of the tooltip.  
+tooltipPrefix | A string to prepend to each field displayed in a tooltip.  
+tooltipSuffix | A string to append to each field displayed in a tooltip.  
+tooltipSkipNull | If `true` then null values will not have a tooltip displayed Defaults to `true`.  
+tooltipValueLookups | An object or range map to map field values to tooltip strings. For example you may want to map -1, 0 and 1 to the strings `Lost`, `Draw`, `Won`.  
+tooltipFormatFieldlist | An array of values specifying which fields to display in a tooltip and in what order. Currently only useful for Box plots. See below for more details.  
+tooltipFormatFieldlistKey | Specifies which key holds the field name to reference above. For Box plots this should be `field`.  
+numberFormatter | Pass a JavaScript function to control how numbers are formatted in tooltips. The callback will be passed a number to format and must return a string. Default behavior is to format numbers to Western conventions.  
+numberDigitGroupSep | Character to use for group separator in numbers `1,234` for [L10n](https://en.wikipedia.org/wiki/Internationalization_and_localization "Wikipedia") purposes. Defaults to the comma `,`.  
+numberDecimalMark | Character to use for the decimal point in numbers for L10n purposes. Defaults to the period `.`.  
+numberDigitGroupCount | Number of digits between the group seperator in numbers for L10n purposes. Defaults to 3.  
+  
+The `tooltipFormat` and `tooltipValueLookups` options provide the main methods
+of formatting the text displayed for each value in a toolip.
+
+The `tooltipFormat` is applied whenever the mouse is moved over a value.
+Various fields enclosed between double curly braces in the format string are
+substituted depending on the type of sparkline in use. For example, the
+default format string for line charts is:
+
+    
+    
+    {{prefix}}{{y}}{{suffix}}
+    
+
+`color` is derived from the color of the line being drawn.  
+`prefix` and `suffix` and set by setting the `tooltipPrefix` and
+`tooltipSuffix` items.  
+`y` represents the Y value of the point under the mouse. `x` can also be used
+if useful.
+
+The supported fields for the different types of sparklines include:
+
+  * **All types:** `prefix`, `suffix` as set by `tooltipPrefix` and `tooltipSuffix` options
+  * **Line:** `color`, `fillColor`, `x`, `y`, `isNull` (true if a null value)
+  * **Bar:** `value` (the value under the pointer), `color`, `isNull`
+  * **Tristate:** `value` (the value under the pointer), `color`, `isNull`
+  * **Discrete:** `value`, `isNull`
+  * **Pie:** `value`, `percent` (number between 0 and 100), `color` (of the moused-over slice)`
+  * **Bullet:** `value`, `fieldkey`, `isNull`
+  * **Box:** `field` and `value`. Field may be one of `lq` (lower quartile), `med` (median), `uq` (upper quartile), `lo` (left outlier), `ro` (right outlier), `lw` (left whisker) `rw` (right whisker)
+

@@ -1,0 +1,129 @@
+https://code.kx.com/platform/housekeeping/
+
+# Housekeeping - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/housekeeping/
+
+# Housekeeping
+
+## Instance tables
+
+A framework is provided to perform housekeeping on in-memory tables to prevent
+them from growing unbounded and bloating the process memory.
+
+Tables can be specified for clean-up by adding parameters to the enhanced
+instance parameter override. The supported values are in the table below.
+
+parameter | type | default | description  
+---|---|---|---  
+`.px.cln.startTime` | time | 00:00:00.0 | Time to run instance table clean-up (UTC)  
+`.px.cln.frequency` | int | 24 | Interval between clean-up runs (hours)  
+`.px.cln.table` | string |  | Specifies the tables, number of hours to keep and min number of rows before cleanup (format is table,hours,rows)  
+  
+The `.px.cln.table` format specifies the table name, number of hours to keep
+and the row threshold for housekeeping (optional). If the number of rows is
+below the threshold, houskeeping will not run.
+
+Warning
+
+The target table must have a `time` column of type _timestamp_ or _datettime_
+
+  * Cleanup the `.pm.accesslog` table if it exceeds 10,000 rows and keep the last 24 hours - `.pm.accesslog,24,10000`
+  * Cleanup the `.pm.querylog` table and only keep the last 24 hours (no row limit) - `.pm.accesslog,24,`
+
+The `.px.cln.table` field can be repeating to perform housekeeping for
+multiple tables.
+
+![Screenshot](../img/control/housekeeping_config.png)
+
+[Instance parameters](../enhanced_instance_configuration/)
+
+## Control housekeeping
+
+There are several housekeeping tasks that run on Control, performing various
+actions:
+
+  * dc_housekeeping_auto_export.1 - exports any packages listed as autoExportPackage in `DC_EXPORT:DEFAULT` config parameter
+  * dc_housekeeping_dc_checkpoint.1 - runs a Control checkpoint
+  * dc_housekeeping_garbage_collection.1 - runs garbage collection on Control process to free-up memory
+  * dc_housekeeping_qsrc_archive.1 - makes a backup of the `qsrc` folder to the `qsrcarchive` directory
+  * dc_housekeeping_tdir_archive.1 - makes a backup of the `tdir` folder to the `tdirarchive` directory
+  * dc_housekeeping_tdir_checkpoint.1 - runs a `tdir` checkpoint and clears the transaction log
+  * dc_housekeeping_tdir_historise.1 - archives old data for audit tables to disk. Controlled by the `housekeeping:<DEFAULT>` configuration
+
+These tasks run on default schedules. This can be changed by editing the tasks
+in _KX Control_. The tasks can also be run manually from _KX Control_. The
+default schedules are shown below
+
+housekeeping tasks | default schedule  
+---|---  
+dc_housekeeping_auto_export.1 | not scheduled  
+dc_housekeeping_dc_checkpoint.1 | every Monday at 0000  
+dc_housekeeping_garbage_collection.1 | not scheduled  
+dc_housekeeping_qsrc_archive.1 | every 12 hours  
+dc_housekeeping_tdir_archive.1 | every 12 hours  
+dc_housekeeping_tdir_checkpoint.1 | every hour  
+dc_housekeeping_tdir_historise.1 | every day at 0000  
+  
+The `${DELTADATA_HOME}/DeltaControlData` directory contains persisted Control
+data, files and backups:
+
+![Screenshot](../img/control/deltacontroldatadir.png)
+
+  * `tdir` \- persistence of in-memory Control data
+  * `tdirarchive` \- contains archives of previous versions of `tdir`
+  * `qsrc` \- contains process template files
+  * `qsrcarchive` \- contains archives of previous versions of `qsrc`
+  * `localRepo` \- contains Control workspace data used for _KX Control_
+  * `tdirhist` \- location of historised data
+
+See  [Persistence](../control_persistence/) for more information.
+
+### tdir_historise task
+
+The `dc_housekeeping_tdir_historise.1` task will run every day by default. It
+archives data from Control tables to disk in the directory
+`${DELTADATA_HOME}/DeltaControlData/tdirhist`. The tables to archive and how
+many days data to keep in Control memory is configured using the
+`housekeeping:<DEFAULT>` parameter.
+
+![Screenshot](../img/control/housekeepingparameter.png)
+
+For example, any data older than 5 days will be removed from the
+`.pm.querylog` table in Control and archived to
+`${DELTADATA_HOME}/DeltaControlData/tdirhist` when the
+`dc_housekeeping_tdir_historise.1` task runs.
+
+### AXSTATE and revision housekeeping
+
+`dc_housekeeping_tdir_historise.1` can also be used to clean out entity
+revisions older than a certain number of days from
+`${DELTADATA_HOME}/DeltaControlData/localRepo/AXSTATE`. To enable this, add
+`AXSTATE` to the `housekeeping:<DEFAULT>` param.
+
+When `dc_housekeeping_tdir_historise.1` runs on schedule, entity revisions
+older than the configured number of days will be dropped, excluding the active
+revision, which will be kept regardless of age.
+
+### AXSTATE compression
+
+Setting the environment variable `AXSTATE_COMPRESSION` to 'yes' will compress
+_new_ AXSTATE tables.
+
+By default, compression will use the settings 17 2 6, which are the blockSize,
+algorithm (gzip), and zip levels respectively.
+
+Optionally setting `AXSTATE_COMPRESSION_SETTINGS` to a list of 3 integers will
+set the compression options as supported by _set_
+
+    
+    
+    export AXSTATE_COMPRESSION=yes
+    export AXSTATE_COMPRESSION_SETTINGS="17 2 6"
+    
+
+To compress an existing table, use the internal function -19! to backup and
+write down each column as compressed.
+
+**See Also:** [Archiving files](../archive_files/)
+

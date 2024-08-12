@@ -1,0 +1,146 @@
+https://code.kx.com/insights/enterprise/ingest/pipeline/operators/transform.html
+
+# Transform - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/ingest/pipeline/operators/transform.html
+
+# Transform
+
+_Change the shape of data with no code transformations_
+
+Transforms enable data type and shape conversions without the need to write
+the transformation as code.
+
+See APIs for more details
+
+A q interface can be used to build pipelines programatically. See [the q
+API](../../../../api/stream-processor/q/transform.html) for API details.
+
+A Python interface is included along side the q interface and can be used if
+PyKX is enabled. See [the Python API](../../../../api/stream-
+processor/python/transform.html) for API details.
+
+The pipeline builder uses a drag-and-drop interface to link together
+operations within a pipeline. For details on how to wire together a
+transformation, see the [building a pipeline guide](../index.html#building-a-
+pipeline).
+
+## Apply Schema
+
+_Apply a table schema to data passing through the operator_
+
+![Apply Schema properties](images/ui/transform/apply-schema-config.png)
+
+**Required Parameters:**
+
+name | description | default  
+---|---|---  
+Data Format | Indicates the format of the data within the stream if it is known. Selecting either `Arrays` or `Table` will allow the schema operator to optimize its data conversions. Leave this value as `Any` if the data format is unknown. | `Any`  
+Schema | Enter a `column name` and `column type` for each column in the data. Missing columns will be dropped, and non-existent columns will be created with null values. |   
+  
+_Schema Parameters:_
+
+name | description  
+---|---  
+Column Name | Give the assigned column a name.  
+Column Type | Define the kdb+ type for the assigned column.  
+Parse Strings | Indicates if parsing of data type is required. Parsing of input data should be done for all time, timestamp, and string fields unless your input is IPC or RT. Defaults to `Auto`, but can be configured as `On` or `Off`.  
+  
+Schemas require a timestamp partition column
+
+Schemas require a timestamp data column. In addition, the table should be
+partitioned and sorted (interval, historic and/or real-time) by this timestamp
+column. This can be configured as part of the essential properties of a
+schema.
+
+Expected type formats
+
+The `parse` option allows for string representations to be converted to typed
+values. For numeric values to be parsed correctly, they must be provided in
+the expected format. String values in unexpected formats may be processed
+incorrectly.
+
+  * Strings representing bytes are expected as exactly two base 16 digits, e.g. `"ff"`
+  * Strings representing integers are expected to be decimal, e.g. `"255"`
+  * Strings representing boolean values have a number of supported options, e.g. `"t"`, `"1"`
+    * More information on the available [formats](https://code.kx.com/q/ref/tok/#truthy-characters).
+
+### Load Schema
+
+To load an existing schema, click the add schema button.
+
+![Add schema button](images/ui/transform/apply-schema-add-button.png)
+
+This open the _Load Schema_ dialog which allows you to select a schema from a
+list of schemas already entered in the system. Selecting a schema will copy
+all of the column and type definitions into the pipeline.
+
+![Load schema dialog](images/ui/transform/apply-schema-load.png)
+
+## Rename Columns
+
+_Rename one or more columns in your data_
+
+![Rename Columns properties](images/ui/transform/renameColumns-config.png)
+
+**Required Parameters:**
+
+name | description | default  
+---|---|---  
+Renaming Scheme | A dictionary mapping current column names to what they should be renamed to. |   
+  
+## Replace Infinity
+
+_Replaces infinities in your data_
+
+![Replace Infinity properties](images/ui/transform/replaceInfinity-config.png)
+
+**Required Parameters:**
+
+name | description | default  
+---|---|---  
+Source Columns | A list of column names to act upon. |   
+  
+_Optional Parameters:_
+
+name | description | default  
+---|---|---  
+Indicate Replaced Entries | Whether to create additional columns indicating which entries were replaced. | No  
+  
+## Replace Null
+
+_Replaces nulls in your data_
+
+![Replace Null properties](images/ui/transform/replaceNull-config.png)
+
+**Required Parameters:**
+
+name | description | default  
+---|---|---  
+Source Columns | A list of column names to act upon. |   
+  
+_Optional Parameters:_
+
+name | description | default  
+---|---|---  
+Buffer Size | Number of data points that must amass before calculating the median. | 0  
+Indicate Replaced Entries | Whether to create additional columns indicating which entries were replaced. | No  
+  
+## Time Split
+
+_Decomposes time data into subdivisions of hours, minutes, seconds, etc._
+
+![Time Split properties](images/ui/transform/timeSplit-config.png)
+
+**Required Parameters:**
+
+name | description | default  
+---|---|---  
+Source Columns | A list of column names to act upon. |   
+  
+_Optional Parameters:_
+
+name | description | default  
+---|---|---  
+Delete Original Columns | Whether to delete the original source column(s). | No
+

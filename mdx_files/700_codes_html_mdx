@@ -1,0 +1,143 @@
+https://code.kx.com/insights/api/database/api/codes.html
+
+# Codes - kdb products
+
+Original URL: https://code.kx.com/insights/api/database/api/codes.html
+
+# Response codes
+
+## Return code
+
+A Return Code (RC) is a `short` integer accompanying an API response from the
+Service Gateway and Data Access microservices.
+
+Each such response includes a single RC in the `rc` field of its out-of-band
+metadata (header). The provided RC specifies the success or failure of the
+completed request from the perspective of the given microservice. Successful
+responses are indicated by `0h`. Responses with non-zero RCs indicate the
+request has failed.
+
+When an RC from the group that begins with the prefix `APP_` is returned, it
+indicates that the request has failed as a result of an error experienced at
+the application layer (API execution or aggregation). In this case, the
+application code (AC) entry of the response header will be populated in the
+`ac` field, providing further indication of the nature of the failure. All
+other non-zero RCs indicate framework or environmental failures (e.g. timeout
+or connectivity failures).
+
+In addition to indicating request failure, non-zero RCs also provide a high-
+level indication of the nature of the failure. They can be used to provide
+more informative messages to end users, administrators, or logging systems. In
+addition, they are used by the Service Gateway to influence its handling of
+failures. For example, RCs that indicate that the failure is transient in
+nature or might succeed on an alternate target may be automatically retried by
+the Service Gateway when appropriate.
+
+The list of return codes, and their meanings, are as follows:
+
+name | value | description  
+---|---|---  
+`INCOMPLETE` | `-1h` | Operation not yet completed (never final RC).  
+`OK` | `0h` | Operation completed successfully.  
+`APP` | `5h` | Application error encountered (more details available).  
+`APP_DB` | `6h` | Application level DB error.  
+`APP_RETRY2` | `7h` | Application level recoverable condition (2nd-stage retry).  
+`ERR` | `10h` | General error (typically indicates a bug).  
+`QUEUE` | `11h` | Error enqueuing message.  
+`NOT_SUPPORTED` | `12h` | Service class or API not supported.  
+`VERSION` | `13h` | Service version not compatible.  
+`SERIALIZE` | `14h` | Serialization error.  
+`DB` | `20h` | General database error.  
+`DB_QUEUE` | `21h` | Error enqueuing to DB process.  
+`DB_NO_RETRY` | `22h` | General database error (do not retry).  
+`REDIR` | `23h` | Error encountered redirecting request.  
+`REDIR_TTL` | `24h` | Redirect TTL hops exhausted.  
+`NO_SHARD` | `26h` | Failure determining appropriate shard.  
+`NO_MEM` | `30h` | Out of memory.  
+`PAUSED` | `31h` | System is currently paused.  
+`COMM` | `40h` | General protocol or comm failure (typically indicates a bug).  
+`CONN_FAILED` | `41h` | Unable to connect to server.  
+`DISCONNECT` | `42h` | Server disconnected.  
+`SHUTDOWN` | `43h` | Local application is shutting down.  
+`IO` | `44h` | Communications error sending or receiving data.  
+`TIMEOUT` | `45h` | Operation timeout.  
+`BUSY` | `46h` | Session already busy with a service.  
+`COMM_INIT` | `47h` | Communications initialization failure.  
+`CANCEL` | `48h` | Operation cancelled.  
+`WOULD_BLOCK` | `49h` | Operation would block.  
+`PROTOCOL_VER` | `50h` | Protocol version obsolete.  
+`PENDING_IO` | `51h` | Another operation in progress on this channel.  
+`ASYNC` | `52h` | Asynchronous operation cannot be completed.  
+`CONN` | `53h` | General connection management error.  
+`CHNL_CLOSED` | `54h` | Attempt to perform I/O after channel has been closed.  
+`CONN_EXHST` | `55h` | Connections for destination exhausted.  
+`NO_DEST` | `56h` | No suitable destination could be found.  
+`CHRONO` | `57h` | Session chronology mismatch.  
+`NOT_READY` | `58h` | Connection not ready.  
+  
+## Application code
+
+An Application Code (AC) is a `short` integer used to indicate success or
+failure of application processing stages to the Service Gateway and Data
+Access microservices, and accompanies responses to API requests.
+
+A zero value (`0h`) indicates that application processing was successful. A
+non-zero AC indicate some form of application level failure.
+
+API requests which encounter an application-level failure will indicate an RC
+from the `APP_` group of return codes. In addition, an `ai` entry may also be
+present in the header containing arbitrary application data related to the
+failure that may benefit any callers with sufficient intimacy with the
+application to expect and interpret the provided application information.
+
+The list of application codes, and their meanings, are as follows:
+
+name | value | description  
+---|---|---  
+`OK` | `0h` | Successful completion.  
+`CONTINUE` | `1h` | Asynchronous resume expected (never final AC).  
+`ERR` | `10h` | General error.  
+`TYPE` | `11h` | Type error.  
+`LOCK` | `12h` | Object could not be locked.  
+`NO_LOCK` | `13h` | Object no longer locked.  
+`INPUT` | `14h` | Input error.  
+`DUP_REQUEST` | `15h` | Duplicate request ignored.  
+`MULT_ERRS` | `16h` | Multiple errors encountered (array provided).  
+`NOT_FOUND` | `17h` | Object not found.  
+`NONCE` | `18h` | Not implemented.  
+`MEMORY` | `19h` | Memory exhausted.  
+`NOT_READY` | `20h` | Server not ready.  
+`STATE` | `21h` | Improper operation state.  
+`BIND` | `22h` | Data binding error.  
+`ARG` | `23h` | Illegal argument.  
+`LIMIT` | `24h` | Size or count limit exceeded.  
+`SEQ` | `25h` | Sequence error.  
+`MODE` | `26h` | Improper operational mode.  
+`DOMAIN` | `27h` | Domain error.  
+`RANGE` | `28h` | Range error.  
+`ALIGN` | `29h` | Alignment error.  
+`MISMATCH` | `30h` | Data mismatch.  
+`PERM` | `40h` | Insufficient permission.  
+`XPERM` | `41h` | Insufficient permission (serious).  
+`AUTH` | `42h` | Catastrophic authentication failure.  
+`SESSION` | `43h` | Session state invalid.  
+`EXPIRED` | `44h` | Permission expired.  
+`NO_SPACE` | `50h` | Out of disk space.  
+`FILE_PATH` | `51h` | Bad path or file name.  
+`FILE_NAME` | `52h` | Name in use.  
+`FILE` | `53h` | General file operation failure.  
+`FILE_IO` | `54h` | File I/O error.  
+`FILE_MODE` | `55h` | Unable to acquire requisite share mode.  
+`FILE_DAMAGED` | `56h` | File damaged.  
+`FILE_ACCESS` | `57h` | Access denied.  
+`FILE_NF` | `58h` | File not found.  
+`FILE_RENAME` | `59h` | File rename error.  
+`FILE_MOVE` | `60h` | File move error.  
+`FILE_COPY` | `61h` | File copy error.  
+`DB` | `70h` | General database error.  
+`DUP_KEY` | `71h` | Duplicate key.  
+`REL_OVERLAP` | `72h` | Relationship overlap.  
+`REF` | `73h` | Extant reference.  
+`TABLE` | `74h` | Invalid table name.  
+`COLUMN` | `75h` | Invalid column name
+

@@ -1,0 +1,105 @@
+https://code.kx.com/insights/enterprise/cli/install.html
+
+# kdb Insights Enterprise CLI - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/cli/install.html
+
+# CLI Installation
+
+To use the CLI, you need to install Python and the Python package manager
+[pip](https://packaging.python.org/en/latest/key_projects/#pip) on your
+system.
+
+The supported Python versions are 3.8, 3.9, 3.10, 3.11 and 3.12.
+
+KX Nexus
+
+The KX Nexus repository will be sunsetted in the future. Nexus links on this
+page are provided as a temporary alternative to the KX Downloads Portal for
+existing users. The KX Downloads Portal is the preferred repository for all
+use cases and KX Nexus links will be removed once the KX Nexus repository is
+decommissioned.
+
+## Install
+
+Python and pip command names
+
+`python` and `pip` must be available on your PATH. If alternative commands
+such as `python3` are required, update the commands appropriately.
+
+To install from the KX Downloads Portal, run `pip install` with the
+appropriate credentials.
+
+Existing users can use KX Nexus instead of the KX Downloads Portal until Nexus
+is removed in a future version. To use KX Nexus, replace the
+`https://portal.dl.kx.com/assets/pypi/` URL in the following commands with
+`https://nexus.dl.kx.com/repository/kxi-pypi-public/simple/`.
+
+    
+    
+    pip --no-input install --extra-index-url https://portal.dl.kx.com/assets/pypi/ kxicli
+    
+
+To install a specific version, run:
+
+    
+    
+    KXI_CLI_VERSION=x.y.z # replace with the version you want to install
+    pip --no-input install --extra-index-url https://portal.dl.kx.com/assets/pypi/ kxicli==$KXI_CLI_VERSION
+    
+
+You can see available versions on the [KX Downloads
+Portal](https://portal.dl.kx.com/assets/pypi/).
+
+Once installed, `kxi` is available for you to execute.
+
+If the installation fails, you can run `pip` with the `--verbose` modifier to
+find more information.
+
+    
+    
+    pip --no-input install --verbose --extra-index-url https://portal.dl.kx.com/assets/pypi/ kxicli==$KXI_CLI_VERSION
+    
+
+## Upgrade
+
+To upgrade the CLI, run the `pip install` command with the `--upgrade`
+modifier as in the below example:
+
+    
+    
+    # pass the '--upgrade' flag to pip
+    pip --no-input install --upgrade --extra-index-url https://portal.dl.kx.com/assets/pypi/ kxicli
+    
+
+## Uninstall
+
+To uninstall the CLI, run the following command:
+
+## Air-gapped environments
+
+By default, `pip` installs dependencies from the internet. To install the CLI
+in an air-gapped environment, you must download the dependencies on a machine
+connected to the internet and transfer the dependencies to the air-gapped
+environment.
+
+  1. Download the CLI and dependencies on an internet-enabled machine
+    
+        pip --no-input download -d bundle setuptools wheel --extra-index-url https://portal.dl.kx.com/assets/pypi/ kxicli
+    tar -zcf bundle.tar.gz bundle
+    
+
+  2. Copy `bundle.tar.gz` to your air-gapped environment and run these commands to install it
+    
+        tar -zxf bundle.tar.gz
+    pip install --no-index --find-links bundle kxicli
+    
+
+Target environment
+
+The above commands assume the interpreter and system that the dependencies are
+downloaded on match those of the target environment. If this is not the case,
+use the [`--platform`, `--python-version`, `--implementation`, and
+`--abi`](https://pip.pypa.io/en/stable/cli/pip_download/#overview) options to
+fetch the dependencies matching the target environment.
+

@@ -1,0 +1,430 @@
+https://code.kx.com/platform/release_460/
+
+# 4.6.0 - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/release_460/
+
+# Changes in 4.6.0
+
+## Key changes
+
+## Deployment
+
+Deployment docs are now included with the core _KX Delta Platform_
+documentation.
+
+[Deployment documentation](../deployment/)
+
+The 4.6.0 release bundles will come with several new scripts:
+
+  * installKxPlatform.sh 
+  * updateDeployTerminology.sh
+  * updateInstallConfigTerminology.sh
+
+[4.6.0 Upgrade Process](../deployment/upgrade_process/#460-upgrade-process)
+
+### Bundle changes
+
+As Flash will reach EOL at the end of 2020, the 4.6.0 and any subsequent KX
+Delta Platform bundles will no longer include the `DeltaDashboard` package
+containing Flex Dashboards.
+
+[Flash & the Future of Interactive
+Content](https://blog.adobe.com/en/publish/2017/07/25/adobe-flash-update.html)
+
+### Install config changes
+
+Install config options have been updated to use inclusive terminology, see
+mapping table below:
+
+Pre-4.6.0 | 4.6.0+  
+---|---  
+delta-control-master-hostname | delta-control-leader-hostname  
+delta-control-master-port | delta-control-leader-port  
+delta-control-slave-hostname | delta-control-follower-hostname  
+delta-control-slave-port | delta-control-follower-port  
+always-import-on-slave | always-import-on-follower  
+  
+### Ubuntu 20 support
+
+From 4.6.0, the _KX Delta Platform_ supports running on the Ubuntu 20
+Operating System.
+
+## Inclusive terminology
+
+Changes have been made to use inclusive terminology:
+
+Install config changes
+
+[4.6.0 Upgrade Process](../deployment/upgrade_process/#460-upgrade-process)
+
+DS_MASTERED_PROCESS renamed
+
+### API name change
+
+Area | Pre-4.6.0 | 4.6.0+  
+---|---|---  
+Workflow | `.wf.masterResetWF` | `.wf.resetWF`  
+Replication | `.r.getmaster` | `.r.getLeader`  
+Replication | `.r.alwaysSlave` | `.r.alwaysFollower`  
+Replication | `.r.alwaysSlaveRemote` | `.r.alwaysFollowerRemote`  
+Replication | `.r.ismaster` | `.r.isLeader`  
+Replication | `.r.slaveack` | `.r.followerAck`  
+Replication | `.r.slavesub` | `.r.followerSub`  
+Replication | `.r.cleanupslaves` | `.r.cleanupFollowers`  
+Process | `.rpl.ismaster` | `.rpl.isLeader`  
+Query Manager | `.qm.db.checkMasterGW` | `.qm.db.checkLeaderGW`  
+Permissions | `.pm.ldap_adduseronce` | `.pm.ldap.adduseronce`  
+Permissions | `.pm.ldap_updateGroups` | `.pm.ldap.updateGroups`  
+  
+## KX Control
+
+### LDAP
+
+The library used for Control LDAP integration has been replaced with
+[KxSystems LDAP Interface](https://github.com/KxSystems/ldap)
+
+LDAP Search
+
+LDAP API prior to 4.6.0 have now been deprecated. It is advised that the new
+[Search API](../api/ldap/#pmldaprunsearch) are used as a replacement.
+
+#### Deprecated LDAP functions
+
+`.pm.ldap.filteredSearch` \- Used to find users or groups.
+
+`.pm.ldap.getGroupUsers` \- Download users under a specified group.
+
+These functions have been replaced with
+[`.pm.ldap.runSearch`](../api/ldap/#pmldaprunsearch).
+
+### Parallel hopen
+
+A new parallel hopen, _phopen_ , library is available in the _KX Delta
+Platform_. It supports multi-homed environments and making parallel
+connections. This acts as an alternative to _hopen_ where reconnection time
+and resilience are important.
+
+[Parallel hopen](../control_resilience/#parallel-hopen)
+
+## Control host resolution
+
+In some scenarios host resolution is not desirable as the resolution can
+return internal or non-addressable hosts. This is often the case in cloud,
+Kubernetes and multi-homed environments. This can cause the _Control_ cluster
+to fail on startup as the resolved host does not correspond to an entry in
+`failover.csv`.
+
+The host resolution can now be disabled and the host name passed from the
+remote process is trusted instead.
+
+[Parallel hopen](../troubleshooting/#control-cluster)
+
+## Control connection
+
+This links to the previous point but similar issues have been seen on the
+initial connection a process makes to _Control_. When processes are launched,
+they are provided the host name of the current leader _Control_ process. Often
+this is derived by the process itself and can be un-reachable, causing
+processes to fail on startup.
+
+The default behavior in 4.6.0 doesn't use this value and looks up the
+`failover.csv` file instead. It connects to all _Control_ processes to find
+the leader and uses this for registration. This resolves issues with host
+resolution. The new behavior appends a `-prcluster` parameter to the process
+command-line and can be disabled by setting below in `delta.profile`.
+
+    
+    
+    export DELTACONTROL_CLUSTER_CONNECT=NO
+    
+
+### Instance deletion protection
+
+Users are now prevented from deleting a running Process Instance from Control
+UI.
+
+Checks will ensure that the instance and tasks are not running before allowing
+a deletion.
+
+### Task scheduling
+
+Scheduled task execution will now only be carried out by the leader control
+instance. On scheduling a task the underlying in-memory tables will only be
+updated within the leader. On a failover event, tasks will be rescheduled
+within the new leader.
+
+Housekeeping task executions are now replicated from the leader to follower
+instances, where previously these ran independently on each control instance
+schedule.
+
+### KxUploadServlet enhancement
+
+Partial file uploads will now be suffixed with `_part` until completion.
+
+On successful file upload suffix is removed and file is moved to configured
+destination.
+
+### QR registration
+
+Configuration to allow a process to register as a client or database with the
+QR framework has been moved to the `INSTANCE_CONFIG` settings.
+
+DS_QR_EXCLUDE config
+
+The `DS_QR_EXCLUDE` config has been removed. By default all the same processes
+in the default exclude config won't register with the QR.
+
+### QR routing
+
+The dynamic routing of a routed requests within the QR, can be customized in
+the `routingFunc` field of the `DS_QR_ROUTINGS` parameter.
+
+### Performance
+
+The performance of the API to delete configurations parameters has been
+improved, the call is 48% faster.
+
+### Startup ordering
+
+Startup ordering
+
+Processes no longer need to be started after the Control and MS processes.
+
+Changes have been made to processes to assist with startup ordering issues.
+Previously, processes needed to be started after Control and the MS, and would
+fail if either wasn't running. In 4.6.0, this is no longer the case. If a
+process is started before either of these components, it will retry until it
+gets a connection. The retry will wait for 5 minutes for Control and 1 minute
+for the MS before reporting an error and shutting down.
+
+### Dynamic query manager addition and deletion
+
+JavaStream API and appserver now receive details of active query managers on
+startup and also receive dynamic qm status updates (e.g. when new qm becomes
+available or existing qm is stopped). This allows additional query managers to
+be utilized during runtime and also stops repeated reconnection attempts for a
+query manager that has been permanently removed.
+
+### AXSTATE compression may be enabled
+
+Setting **AXSTATE_COMPRESSION** =yes will compress new local repo tables. See
+[Housekeeping](../housekeeping/)
+
+### Configurable connection timeout/retry intervals
+
+The timeouts for `hopen` connections and connection retry intervals have been
+made configurable for a range of connections:
+
+### Configurable failover actions
+
+If _Control_ fails over to another process in the cluster, unexpected shutdown
+actions could be triggered for the running KX Delta Platform processes if they
+don't connect to the new leader _Control_ process before the timeout is
+passed. The timeout and unexpected shutdown actions taken on failover are
+configurable
+
+[Failover Actions](../control_failoveractions/)
+
+### Faster log rolling
+
+The speed of log file rolling has been improved by a change from using `cp`
+and `cat` to renaming the logfile using `mv` and redirecting `stdout` and
+`stderr` to a new log file.
+
+### Checkpoint on export default behavior
+
+The default behavior when a package is exported on a fresh _KX Delta Platform_
+install has been changed to not take a new checkpoint. If an environment has
+been upgraded the default behavior will not be changed from what it was before
+the upgrade
+
+[Checkpoint on import or export](../release_management/#checkpoint-on-import-
+or-export)
+
+### Behavior when subscribed parameter is deleted
+
+When a parameter/override is deleted, `.uc.republishUpdates` can be used to
+publish the deletion to some or all processes that have subscribed using
+`.uc.getAndSaveActiveParamValue` or `.uc.getAndSaveAllParam`. The specified
+processes will have their subscriptions removed and the process handles will
+be removed from the subscriber list for that config entity on Control.
+
+[Configuration](../api/configuration/#ucrepublishupdates)
+
+### Analytic framework tables
+
+Can now set the override name of `DS_AF_*` config parameters subscribed to for
+analytic framework structures, i.e. `.af.*` tables, using an INSTANCE_CONFIG
+setting, `.af.override`. If this is not present, a process will use the
+override matching the instance name or, if no such override exists, the
+DEFAULT override. The override used can be overwritten using `.af.getAF*` API.
+
+[Enhanced instance configuration](../enhanced_instance_configuration/)
+
+## KX Stream
+
+### Tickerplant end interval
+
+The function `endInterval` is called on all subscribers to a Tickerplant as
+the Tickerplant ends its current log interval. Prior to 4.6.0 there was no
+strict typing of the variable `.ds.tp.EohDetails` which is passed as the final
+(fifth) parameter of the `endInterval` call. As of 4.6.0 this parameter will
+always be passed as type Dictionary. `.ds.tp.EohDetails` dictionary will
+contain at least one key `eod` indicating if this is and End of Day interval
+roll.
+
+Manual triggering of an interval cut with a non-dictionary value will have
+this value added to a dictionary under the key `details`. Any subscribers
+using this parameter within their definition of `endInterval` should make
+changes were required.
+
+### Process permission changes
+
+Permissions on all Report, Alerts and ops processes now default to `Yes` to
+help reduce the risk of attack
+
+### HDB reload API
+
+Additional `utils` api has been provided to request a reload of a remote `HDB`
+instance. _.utils.hdb.reload_ has been deprecated and replaced with
+_.utils.hdb.reload1_.
+
+HDB connection details are passed as before, but now the calling instance is
+no longer required to know/pass the `-u` system call flag of the target
+instance to the api.
+
+### RTE process template tickerplant log replay
+
+When connecting to a Tickerplant instance, instance Heartbeats will be
+disabled before attempting to replay the Tickerplant log file. Heartbeats will
+be enabled upon completion of log replay.
+
+### Configurable connection timeout/retry intervals for messaging
+
+The timeouts for `hopen` connections and connection retry intervals have been
+made configurable for messaging connections:
+
+### DS_MASTERED_PROCESS renamed
+
+`DS_MASTERED_PROCESS:DEFAULT` and its overrides have been removed from KX
+Delta Platform packages and replaced with `DS_LEADERCLUSTER_PROCESS:DEFAULT`
+and overrides. These are the same entities, just renamed.
+
+DS_MASTERED_PROCESS
+
+Any overrides of DS_MASTERED_PROCESS in solution packages should be changed to
+be overrides of DS_LEADERCLUSTER_PROCESS.
+
+They should have the same content, just be renamed.
+
+### Action tracker
+
+Can now require a minimum length of comment when transitioning or closing an
+Action Tracker alert.
+
+[Comment length validation](../stream/actiontracker/#comment-length-
+validation)
+
+#### Schema change, alertkey field
+
+To avoid the sym file growing too large in the action tracker HDB, the
+alertkey field in the dxATItemCurrent table has been changed to be a string
+instead of a symbol.
+
+[Schema change, alertkey field](../stream/actiontracker/#schema-change-
+alertkey-field)
+
+#### Closed item reissues
+
+It is now possible to configure an Action Tracker to keep the same item id if
+there is a reissue for a closed item.
+
+[Closed item reissues](../stream/actiontracker/#closed-item-reissues)
+
+#### Additional filter, "alert"
+
+Can now filter by the alert field of the dxATItemCurrent table on the action
+tracker dashboard.
+
+#### AT end of day
+
+The new default end of day function (`dxATEOD1`) will save closed items to the
+date partition in the AT HDB matching the date the item was opened. The
+pre-450 end of day function is still available if the previous behavior is
+preferred (`dxATEOD`).
+
+[End of day](../stream/actiontracker/#end-of-day)
+
+#### Changes to reopen item functionality
+
+There is now more control over reopening action tracker items:
+
+  * Configure which closed queues can be reopened and which cannot
+  * Specify which queue an item is reopened to
+  * Specify an item is reopened to the queue it was in before it was closed
+
+[Reopen item validation](../stream/actiontracker/#reopen-item-validation)
+
+#### Subscribing to AT cluster
+
+A process can become a client of the action tracker cluster by subscribing to
+some or all of the replicated tables on the action tracker process
+
+[Action Tracker Client](../api/atclient/)
+
+#### Action tracker as service
+
+The action tracker, action tracker gateway and action tracker HDB can be run
+as services.
+
+[Runnning AT as a service](../stream/actiontracker/#runnning-at-as-a-service)
+
+### Data callback changes
+
+The Data Callback APIs `.ds.rte.executeUpdCallBacks` and
+`.ds.rte.addUpdCallBack` used previously have now been replaced by the
+equivalent functions `.dm.addCallback` and `.dm.applyCallbacks` in the
+Messaging Server
+
+[Data Callbacks](../stream/messaging/#table-callbacks)
+
+## KX Stream Java API
+
+New configuration to allow  [parallel QP
+connections](../stream/java_stream_api/#query-service-configuration).
+
+Decoupled QP connectivity from QR shard connectivity. Dynamic update of QR ->
+QP associations.
+
+Extended  [`DeltaStream` interface](../stream/java_stream_api/#initialization-
+errors-and-disconnections) to allow for a configurable timeout period before
+returning to the user thread if connectivity fails on initialization or at a
+later point during runtime.
+
+Added ability to  [close](../stream/java_stream_api/#closing-a-kx-stream-
+instance) and cleanup a `DeltaStream` instance within the user thread.
+
+## Monitoring
+
+### NFS mount monitoring
+
+Additional configuration options have been added to the
+`DM_FileSystemUsageAlert` configuration parameter used as part of the [File
+System Alert](../monitoring/monitoring-configuration/#file-system-alerts). A
+Boolean field `strictMatch` has been added to indicate if the KX Delta
+Platform monitor should attempt a strict match of `sym` field.
+
+With this value set to `true` a strict comparison between `sym` and file
+system mount point is made. `False` will make use of wild cards to attempt a
+match.
+
+Note if `sym` has been previously defined with wild cards, these should be
+amended or have `strictMatch` set as `false`.
+
+## KX Connect
+
+### Connect API
+
+Connect API are now permitted to be defined without requiring parameters.
+

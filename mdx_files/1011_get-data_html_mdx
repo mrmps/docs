@@ -1,0 +1,596 @@
+https://code.kx.com/insights/api/database/query/get-data.html
+
+# Get Data API - kdb products
+
+Original URL: https://code.kx.com/insights/api/database/query/get-data.html
+
+# Get data
+
+The `getData` API is a generic data retrieval API that can be executed against
+an arbitrary database table. It is intended to run on a Data Access Process
+and retrieve records from a configured database table using a specified
+dictionary of parameters.
+
+qREST
+
+Gateway URL
+
+The `GATEWAY` variable below is defined as an IPC connection to the Service
+Gateway. For example ``:insights-qe-gateway:5050` would connect to the query
+environment gateway within an `insights` namespace.
+
+    
+    
+    // API arguments dictionary.
+    args: (!) . flip (
+        (`table;       table);
+        (`startTS;     startTS);
+        (`endTS;       endTS);
+        (`labels;      labels);
+        (`inputTZ;     inputTZ);
+        (`outputTZ;    outputTZ);
+        (`filter;      filter);
+        (`groupBy;     groupBy);
+        (`agg;         agg);
+        (`fill;        fill);
+        (`temporality; temporality);
+        (`slice;       slice);
+        (`sortCols;    sortCols)
+        );
+    
+    // Extra options dictionary.
+    opts: enlist[`timeout]!enlist timeout;
+    
+    // Response callback for asynchronous queries.
+    callback: {[hdr; pl] show (hdr; pl); };
+    
+    GATEWAY (`.kxi.getData; args; `callback; opts)
+    
+
+When issuing an IPC request, synchronous requests will return a tuple where
+the first element is the response payload and the second is the response data.
+See the asynchronous requests section below for how to use the `callback`
+parameter to get an asynchronous response.
+
+Gateway URL
+
+The `$GATEWAY` variable should point at your kdb Insights install. For a
+microservice install, this will be the hostname of the install using port
+8080. For an enterprise install, this is your `$INSIGHTS_HOSTNAME` with
+`/servicegateway` as the URL prefix.
+
+    
+    
+    curl -X POST "$GATEWAY/data" \
+        -H "Content-Type: application/json" \
+        -H "Accept: application/json" \
+        -H "Authorization: Bearer $INSIGHTS_TOKEN" \
+        -d "$(jq -n \
+            '{
+                table       : "",
+                startTS     : "",
+                endTS       : "",
+                labels      : {},
+                inputTZ     : "",
+                outputTZ    : "",
+                filter      : [],
+                groupBy     : [],
+                agg         : [],
+                fill        : "",
+                temporality : "",
+                slice       : [],
+                sortCols    : [],
+                opts        : {}
+            }' | jq -cr .)"
+    
+
+## Parameters
+
+name | required | type | description  
+---|---|---|---  
+`table` | yes | `symbol` | Name of table to retrieve data from.  
+`startTS` | no | `timestamp` | Inclusive start time of period of interest. It is recommended that this field is always used to limit scope of data in the response and to maximize query efficiency.  
+`endTS` | no | `timestamp` | Exclusive end time of period of interest. It is recommended that this field is always used to limit scope of data in the response and to maximize query efficiency.  
+`labels` | no | `object` | Specifies the relevant assemblies (shards) to target the given query with. This object is a map of label names to desired label values. When running an IPC based query, the type of each label must be a symbol or a list of symbols. For a REST request, this can either be a string or an array of strings. It is recommended that this field is used in every request to narrow down the scope of a given query and to target the DAPs. See [database label configuration](../../../microservices/database/configuration/assembly/database.html#labels) for details on configuring labels.  
+`inputTZ` | no | `symbol` | Timezone of `startTS` and `endTS`, UTC if not provided. See [tz database TZ identifiers](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) for supported timezones.  
+`outputTZ` | no | `symbol` | Timezone of output timestamp columns, UTC if not provided. See [tz database TZ identifiers](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) for supported timezones.  
+`filter` | no | `list[]` | List of triadic lists of the form `(function;column name;parameter)`.  
+`groupBy` | no | `symbol[]` | List of columns to group aggregation result by.  
+`agg` | no | `symbol[]` | List of triples of aggregations or columns to select. e.g. Aggregation dict example:`(`c1`avg`price;`c2`sum`size)`, basic select example ``price`size`.  
+`fill` | no | `symbol` | How to handle nulls in the data. Supported values are `zero` and `forward`. The `zero` option fills numeric types with zeroes. The `forward` option fills nulls with previous, non-null entry.  
+`temporality` | no | `symbol` | Sets the range of data in view for each day within the query. Support two types of temporality: `snapshot` which takes a continuous range of the data, and `slice` which returns data within the the `timespan` casted values of `startTS` and `endTS`.  
+`sortCols` | no | `symbol[]` | Columns to ascending sort result data on.  
+  
+Labels
+
+The `labels` parameter allows you to query against DAPs that are part of
+assemblies matching that label. For example if the there are DAPs belonging to
+two assemblies, one with a `region` label of `canada` another with a region
+label of `europe`, then a dictionary with a `region` value of `canada` would
+return only the `canada` data. The assembly label arguments are always
+optional, and will query all assemblies when not specified. If multiple labels
+are provided with multiple values, the cross product of all the label
+combinations is used to select target assemblies.
+
+### Specifying timestamps
+
+For getting the start and end times using `bash`, you may use `date -u` to
+print formatted dates:
+
+    
+    
+    # Get data within the hour
+    startTS=$(date -u '+%Y.%m.%dD%H:00:00')
+    endTS=$(date -u '+%Y.%m.%dD%H:%M%:%S')
+    
+
+Times may be extended to contain a variable number of trailing digits to
+specify milliseconds and nanosecond precision.
+
+Example of valid timestamps are:
+
+example | implication  
+---|---  
+`2022.01.01D` | `2022.01.01D00:00:00.000000000`  
+`2022.01.01D01` | `2022.01.01D01:00:00.000000000`  
+`2022.01.01D01:01` | `2022.01.01D01:01:00.000000000`  
+`2022.01.01D01:01:01` | `2022.01.01D01:01:01.000000000`  
+`2022.01.01D01:01:01.1` | `2022.01.01D01:01:01.100000000`  
+`2022.01.01D01:01:01.11` | `2022.01.01D01:01:01.110000000`  
+`2022.01.01D01:01:01.111` | `2022.01.01D01:01:01.111000000`  
+`2022.01.01D01:01:01.1111` | `2022.01.01D01:01:01.111100000`  
+`2022.01.01D01:01:01.11111` | `2022.01.01D01:01:01.111110000`  
+`2022.01.01D01:01:01.111111` | `2022.01.01D01:01:01.111111000`  
+`2022.01.01D01:01:01.1111111` | `2022.01.01D01:01:01.111111100`  
+`2022.01.01D01:01:01.11111111` | `2022.01.01D01:01:01.111111110`  
+`2022.01.01D01:01:01.111111111` | `2022.01.01D01:01:01.111111111`  
+  
+ISO 8601 times can be used, of the format: `+%Y-%m-%dT%H:%M%:%S`. For example
+`2000-01-01T00:00:00`.
+
+### Filtering
+
+The `filter` parameter is used for applying custom filtering to the query.
+It's specified via a list of triples where each triple has the form (operator;
+column name; values).
+
+The filters are applied in the order they are defined when selecting from the
+table.
+
+**When calling`getData` API via q**
+
+Expected format for triple list:
+
+triple element | description  
+---|---  
+`operator` | Supported filter function as a string.  
+`column name` | Single column name as a symbol.  
+`values` | Values that match the data type of the column name specified. If filtering null values then use the null datatype value for the specified column. When using `in` or `within` this should be a list that matches the data type of column name being referenced. You can also pass strings values if you set `cast=1b` as an extended option.  
+  
+When setting the filter parameter to a single filter constraint, `enlist` must
+precede the triple list.
+
+    
+    
+    enlist("<=";`valFloat;100f)
+    
+
+#### Supported filter functions
+
+function | parameters | example  
+---|---|---  
+`in` | Filters data that is not in the list of possible alternatives. | `["in", "sym", ["AAPL", "MSFT"]]` keeps symbols that are either `AAPL` or `MSFT`.  
+`within` | Keeps numeric data that is within the bounds of a range using inclusive limits. | `["within", "price", [100, 200]]` keeps prices that are greater than or equal to 100 but less than or equal to 200.  
+`<` | Keeps numeric data that is less than a threshold. | `["<", "price", 100]` keeps data that is less than 100.  
+`>` | Keeps numeric data that is greater than a threshold. | `[">", "price", 100]` keeps data that is greater than 100.  
+`<=` | Keeps numeric data that is less than or equal to a threshold. | `["<=", "price", 100]` keeps data that is less than or equal to 100.  
+`>=` | Keeps numeric data that is greater than or equal to a threshold. | `[">=", "price", 100]` keeps data that is greater than or equal to 100.  
+`=` | Keeps numeric data equals another value. | `["=", "sym", "AAPL"]` keeps only `AAPL` data.  
+`<>` | Keeps data that is not equal to a value. | `["<>", "sym", "AAPL"]` keeps all data that is not `AAPL`.  
+`like` | Filters string data that matches a simple expression | `["like", "sym", "A*"]` matches any symbols that start with an `A`.  
+  
+**Example query**
+
+qREST
+
+Gateway URL
+
+The `GATEWAY` variable below is defined as an IPC connection to the Service
+Gateway. For example ``:insights-qe-gateway:5050` would connect to the query
+environment gateway within an `insights` namespace.
+
+    
+    
+    args: (!) . flip (
+        (`table   ; `trace);
+        (`labels  ; enlist[`region]!enlist`$"us-east-1");
+        (`startTS ; .z.p - 0D00:05:00); // Select the last 5 minutes of data
+        (`endTS   ; .z.p);
+        (`filter  ; (("<="; `valFloat; 100); ("within"; "qual"; 0 2)))
+        )
+    
+    GATEWAY (`.kxi.getData; args; `; ()!())
+    
+
+This returns a tuple where the first element is a response header and the
+second is the response data. See the [header
+reference](../api/header.html#response-header) for details on the response
+header returned.
+
+Gateway URL
+
+The `$GATEWAY` variable should point at your kdb Insights install. For a
+microservice install, this will be the hostname of the install using port
+8080. For an enterprise install, this is your `$INSIGHTS_HOSTNAME` with
+`/servicegateway` as the URL prefix.
+
+    
+    
+    curl -X POST "$GATEWAY/data" \
+        -H "Content-Type: application/json" \
+        -H "Accept: application/json" \
+        -H "Authorization: Bearer $INSIGHTS_TOKEN" \
+        -d "$(jq -n \
+            --arg startTS "$(date -u '+%Y.%m.%dD%H:00:00')" \
+            --arg endTS "$(date -u '+%Y.%m.%dD%H:%M%:%S')" \
+            '{
+                table   : "trace",
+                labels  : { region: "us-east-1" },
+                startTS : $startTS,
+                endTS   : $endTS,
+                filter  : [["<=", "valFloat", 100], ["within", "qual", [0, 2]]]
+            }' | jq -cr .)"
+    
+
+#### Supported nested filter functions
+
+Nested filters are specified as a list whereby the first element must be one
+of the below filter functions, followed by one or two valid filter triples
+(either nested or non-nested).
+
+function | parameters | example  
+---|---|---  
+`not` | Excludes data that meets the filter criteria. | `["not", ["=", "size", 100]]` keeps data where `size` is not equal to 100.  
+`and` | Keeps data that meets both sets of filtering values. | `["and", ["=", "size", 100], ["<", "price", 500]]` keeps data where `size` is equal to 100 **and** `price` is less than 500.  
+`or` | Keeps data that meets one or both sets of filtering values. | `["or", ["=", "size", 100], ["<", "price", 500]]` keeps data where `size` is equal to 100 **or** `price` is less than 500.  
+  
+Nested filter formatting
+
+  * q interprets `"not"` as an atomic operator, therefore when using filters the expected input is a list with 2 elements - the first element being the operator itself e.g. `["not", [filter]]`. The filter value within the 2nd element can be a nested filter itself.
+
+  * q interprets `"and"` & `"or"` as dyadic operators, therefore when using filters that contain one of these operators, the expected input is a list with 3 elements - the first element being either `"and"` or `"or"` e.g. `["and", [filter1], [filter2]]`. The filter values within the 2nd & 3rd elements can be nested filters themselves.
+
+Nested filtering between base table and joined tables currently not supported
+
+**Example nested filter query**
+
+qREST
+
+Gateway URL
+
+The `GATEWAY` variable below is defined as an IPC connection to the Service
+Gateway. For example ``:insights-qe-gateway:5050` would connect to the query
+environment gateway within an `insights` namespace.
+
+    
+    
+    args: (!) . flip (
+        (`table   ; `trace);
+        (`startTS ; .z.p - 0D00:05:00); // Select the last 5 minutes of data
+        (`endTS   ; .z.p);
+        (`filter  ; enlist("and";("<="; `valFloat; 100); (">"; "qual"; 2)))
+        )
+    
+     GATEWAY (`.kxi.getData; args; `; ()!())
+    
+
+This returns a tuple where the first element is a response header and the
+second is the response data. See the [header
+reference](../api/header.html#response-header) for details on the response
+header returned.
+
+Gateway URL
+
+The `$GATEWAY` variable should point at your kdb Insights install. For a
+microservice install, this will be the hostname of the install using port
+8080. For an enterprise install, this is your `$INSIGHTS_HOSTNAME` with
+`/servicegateway` as the URL prefix.
+
+    
+    
+    curl -X POST "$GATEWAY/data" \
+        -H "Content-Type: application/json" \
+        -H "Accept: application/json" \
+        -H "Authorization: Bearer $INSIGHTS_TOKEN" \
+        -d "$(jq -n \
+            --arg startTS "$(date -u '+%Y.%m.%dD%H:00:00')" \
+            --arg endTS "$(date -u '+%Y.%m.%dD%H:%M%:%S')" \
+            '{
+                table   : "trace",
+                startTS : $startTS,
+                endTS   : $endTS,
+                filter  : [["and", ["<=", "valFloat", 100], [">", "qual", 2]]]
+            }' | jq -cr .)"
+    
+
+#### Additional filtering considerations
+
+  * Avoid applying a filter on a partition time column. Instead, use the `startTS` and `endTS` parameters. These parameters take advantage of performance optimizations that are not available on user defined filters. For example, the following query: 
+    
+        args: (!) . flip (
+        (`table   ; `trace);
+        (`labels  ; enlist[`region]!enlist`$"us-east-1");
+        (`startTS ; .z.p - 0D00:05:00)
+        )
+    
+
+is preferable to:
+
+    
+        args: (!) . flip (
+        (`table   ; `trace);
+        (`labels  ; enlist[`region]!enlist`$"us-east-1");
+        (`filter  ; enlist(">="; `time; .z.p - 0D00:05:00)) // Where time is the prtnCol
+        )
+    
+
+### Grouping data
+
+Specifies the columns which define the by-clause used in the selection of the
+data. This can be used in conjunction with `agg` parameter to perform
+aggregations across column values.
+
+### Aggregating
+
+The `agg` parameter specifies the columns and/or aggregations to return after
+selecting the data. Argument is specified as a list of symbols, or as a list
+of lists of symbols. Behavior differs depending on whether the parameter is
+specified as a list or list of lists.
+
+If specified as a list of symbols, then those columns are selected and
+returned from the table across DAPs.
+
+Alternatively the selection can be specified to aggregate the column with a
+new name before returning. This is specified as a list of lists where the
+first element is the new column name, the second element is the aggregation
+function to use, and the third is the column to aggregate.
+
+Below does the equivalent aggregation to `select c1:avg valFloat, c2:min qual
+from t`. Where the `c1`, and `c2` are the names of the returned columns are
+the average of `valFloat` and the minimum of `qual` column.
+
+qREST
+
+Gateway URL
+
+The `GATEWAY` variable below is defined as an IPC connection to the Service
+Gateway. For example ``:insights-qe-gateway:5050` would connect to the query
+environment gateway within an `insights` namespace.
+
+    
+    
+    args: (!) . flip (
+        (`table   ; `trace);
+        (`labels  ; enlist[`region]!enlist`$"us-east-1");
+        (`startTS ; .z.p - 0D00:05:00); // Select the last 5 minutes of data
+        (`endTS   ; .z.p);
+        (`agg     ; (`c1`avg`valFloat; `c2`min`qual))
+        )
+    
+    GATEWAY (`.kxi.getData; args; `; ()!())
+    
+
+Gateway URL
+
+The `$GATEWAY` variable should point at your kdb Insights install. For a
+microservice install, this will be the hostname of the install using port
+8080. For an enterprise install, this is your `$INSIGHTS_HOSTNAME` with
+`/servicegateway` as the URL prefix.
+
+    
+    
+    curl -X POST "$GATEWAY/data" \
+        -H "Content-Type: application/json" \
+        -H "Accept: application/json" \
+        -H "Authorization: Bearer $INSIGHTS_TOKEN" \
+        -d "$(jq -n \
+            --arg startTS "$(date -u '+%Y.%m.%dD%H:00:00')" \
+            --arg endTS "$(date -u '+%Y.%m.%dD%H:%M%:%S')" \
+            '{
+                table   : "table",
+                labels  : { region: "us-east-1" },
+                startTS : $startTS,
+                endTS   : $endTS,
+                agg     : [["c1", "avg", "valFloat"], ["c2", "min", "qual"]]
+            }' | jq -cr .)"
+    
+
+Supported aggregation functions are:
+
+#### Supported aggregations
+
+function | description  
+---|---  
+[`all`](https://code.kx.com/q/ref/all-any/#all) | Returns the logical 'and' of all values in a set.  
+[`any`](https://code.kx.com/q/ref/all-any/#any) | Returns the logical 'or' of all values in a set.  
+[`avg`](https://code.kx.com/q/ref/avg/) | Calculates the mean value across the set of matching records.  
+[`count`](https://code.kx.com/q/ref/count/) | Returns the number of records in the current selection.  
+[`dev`](https://code.kx.com/q/ref/dev/) | Calculates the standard deviation of a column.  
+[`distinct`](https://code.kx.com/q/ref/distinct/) | Returns the distinct values from a column.  
+[`first`](https://code.kx.com/q/ref/first/) | Returns the first occurrence of a value. This is useful when performing a group by aggregation. See caveat below around result consistency.  
+[`last`](https://code.kx.com/q/ref/last/) | Returns the last occurrence of a value. This is useful when performing a group by aggregation. See caveat below around result consistency.  
+[`max`](https://code.kx.com/q/ref/max/) | Takes the maximum value of a set of records.  
+[`min`](https://code.kx.com/q/ref/min/) | Takes the minimum value of a set of records.  
+[`prd`](https://code.kx.com/q/ref/prd/) | Calculates the product of matching records.  
+[`sdev`](https://code.kx.com/q/ref/dev/#sdev) | Calculates the sample deviation of matching records.  
+[`cor`](https://code.kx.com/q/ref/cor/) | Calculates the correlation between matching records.  
+[`cov`](https://code.kx.com/q/ref/cov/#cov) | Calculates the covariance between matching records.  
+[`scov`](https://code.kx.com/q/ref/cov/#scov) | Calculates the sample covariance between matching records.  
+[`sum`](https://code.kx.com/q/ref/sum/) | Calculates the sum of matching records.  
+[`svar`](https://code.kx.com/q/ref/var/#svar) | Calculates the sample variance of matching records.  
+[`var`](https://code.kx.com/q/ref/var/) | Calculates the variance of matching records.  
+  
+First and last aggregations
+
+Note that in the case of using the `first` and `last` aggregation may return
+inconsistent results in the case of cross-assembly queries or when late data
+is enabled. With cross-assembly queries the first or last results returned is
+dependant on the how the assembly partial results are returned. In the late
+data case, the result can be dependant on ordering of late data result.
+
+### Filling null values
+
+The `fill` parameter can be used to specify how the to handle null values. It
+takes a single symbol which can be one of `forward` or `zero`.
+
+If `forward` is specified then the query will replace null values with the
+previous non-null value.
+
+If `zero` is specified, null values are replaced with a 0 value of the
+appropriate type.
+
+The `fill` parameter can be used with the `agg` parameter in a `getData`
+request when the `agg` value contains a list of columns to return from the
+request. However it cannot be used in conjunction with an `agg` value that is
+deriving a result using one of the functions listed above.
+
+### Temporality
+
+There are two types of `temporality` currently supported, and each determines
+the way the `startTS` and `endTS` arguments are interpreted.
+
+The default value is `snapshot` and when specified `getData` will return a
+continuous chunk of data between the specified `startTS` and `endTS`
+arguments.
+
+When a `slice` temporality is specified, the API will grab data between the
+`timespan` cast values of the `startTS` and `endTS` parameters, for each date
+within the `startTS` and `endTS` timestamp.
+
+For example, these parameters
+
+    
+    
+    startTS:     2021.01.01D10:00:00
+    endTS:       2021.01.04D13:00:00
+    temporality: `slice
+    
+
+Would return data between the times of `10:00:00` and `13:00:00`, for each day
+between `2021.01.01` and `2021.01.04`.
+
+### Sorting data
+
+Specifies the columns to sort ascending before returning the response.
+
+## Querying reference data
+
+Reference data is specified in the YAML by leveraging the `foreign` and
+`primaryKey` fields of the assembly schema. For example, consider the schema
+snippets below:
+
+    
+    
+      tables:
+        trade:
+          type: partitioned
+          blockSize: 10000
+          prtnCol: time
+          sortColsOrd: [sym]
+          sortColsDisk: [sym]
+          columns:
+            - name: sym
+              description: trade symbol
+              type: symbol
+              attrMem: grouped
+              attrDisk: parted
+              attrOrd: parted
+            - name: code
+              type: symbol
+              foreign: markets.code  # Foreign key relationship
+              description: Code for the market the stock was exchanged on
+            - name: price
+              type: float
+            - name: time
+              description: timestamp
+              type: timestamp
+        markets:
+           description: reference market data
+           type: splayed             # Splayed table, rather than partitioned
+           primaryKeys:
+            - code                   # Primary key column
+           columns:
+            - name: code
+              type: symbol
+              description: Market code
+            - name: opCode
+              type: string
+              description: Market operating (parent) code
+            - name: site
+              type: string
+              description: Market website
+            - name: updateTS
+              description: Timestamp of last mutation
+              type: timestamp
+    
+
+Within this schema, the `trade` partitioned time series table has a foreign
+key relationship to the `markets` splayed reference data.
+
+Splayed and basic reference data is held in RAM
+
+The current value for every key seen for the reference data is held in RAM of
+every DAP to allow for efficient joins.
+
+The reference data table can be queried as usual with the `getData` API by
+omitting the `startTS` and `endTS` arguments.
+
+Additionally, when querying the time series data (here, `trade`) with the
+`getData` API, anywhere a column can be specified, references into the
+reference data can be supplied by specifying the column as
+`<tableName>.<column>`. As an example, to query by the market `opCode`:
+
+Or to include reference data columns in the result set:
+
+Aggregations that return reference columns must include the foreign key as
+well.
+
+kdb+ syntax to use time cast operations e.g. `realTime.second`,
+`realTime.minute` is not supported.
+
+## Asynchronous Requests
+
+For q based requests, a callback parameter is included for use with
+asynchronous requests. To issue an asynchronous request, first open a
+persistent connection using `hopen`, then use a negative handle to make the
+request asynchronous. The example below illustrates an asynchronous request
+where `GATEWAY` is defined as an `hsym` to the hostname of the kdb Insights
+gateway.
+
+    
+    
+    h: hopen GATEWAY
+    cb: {[hdr; pl] show (hdr;pl) }
+    neg[h] (`.kxi.getData; `table`startTS`endTS!(`trace; -0Wp; 0Wp); `cb; ()!())
+    
+
+In this example, `cb` will be called when the query is completed with the
+header information (`hdr)` as well as the response payload (`pl)`.
+
+## Response
+
+See the possible [response codes](../api/codes.html) for success or failure
+information.
+
+The response payload is a list that includes columns to sort on, return
+columns, by-clause to apply in the aggregator, secondary aggregation, and the
+table data.
+
+For issues with the query or responses checkout the [troubleshooting
+guide](../../../microservices/database/query/troubleshooting.html).
+
+## Extended Options
+
+For a full list of options, see the [header
+documentation](../api/header.html#request-header).
+

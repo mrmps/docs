@@ -1,0 +1,187 @@
+https://code.kx.com/insights/core/big-query/tutorial.html
+
+# Quickstart - kdb products
+
+Original URL: https://code.kx.com/insights/core/big-query/tutorial.html
+
+# BigQuery quickstart
+
+## Run using `kdb Insights`
+
+Run `q` and load the BigQuery library with
+
+To access private projects during development, register an access token.
+
+    
+    
+    $ export GOOGLE_TOKEN=$(gcloud auth print-access-token)
+    $ qc
+    q)\l bq.q_
+    q).kurl.register (`oauth2; "*.googleapis.com"; ""; enlist[`access_token]!enlist getenv `GOOGLE_TOKEN)
+    
+
+## Run as a `Docker` application
+
+When you’re running inside a Docker container and want to access private
+BigQuery projects you will need to register your authentication token for
+BigQuery manually.
+
+A simple way to do this is to pass the access token from your local computer
+into the container so that you can use it for registration.
+
+Run the `kdb-insights` container and pass in the access token as an
+environment variable.
+
+    
+    
+    docker run --rm -it -v $QLIC:/tmp/qlic:ro -e GOOGLE_TOKEN=$(gcloud auth print-access-token) kdb-insights:X.Y.Z
+    q)\l bq_
+    
+
+Inside the container register with Kurl manually.
+
+    
+    
+    q).kurl.register (`oauth2; "*.googleapis.com"; ""; enlist[`access_token]!enlist getenv `GOOGLE_TOKEN)
+    
+
+## Explore the workspace
+
+The workspace contains all of the BigQuery resources and their available
+methods.
+
+You can list the available resources
+
+    
+    
+    q).com_kx_bq.disc.listResources[]
+    `rowAccessPolicies`models`tabledata`datasets`tables`projects`routines`jobs
+    
+
+and get a description of the methods that a given resource supports.
+
+    
+    
+    q).com_kx_bq.disc.describeMethodsForResource`datasets
+    method httpMethod parameters           request             response                description   ..
+    -------------------------------------------------------------------------------------------------..
+    update PUT        `projectId`datasetId (,`$ref)!,"Dataset" (,`$ref)!,"Dataset"     "Updates infor..
+    list   GET        ,`projectId          ::                  (,`$ref)!,"DatasetList" "Lists all dat..
+    patch  PATCH      `projectId`datasetId (,`$ref)!,"Dataset" (,`$ref)!,"Dataset"     "Updates infor..
+    delete DELETE     `projectId`datasetId ::                  ::                      "Deletes the d..
+    get    GET        `projectId`datasetId ::                  (,`$ref)!,"Dataset"     "Returns the d..
+    insert POST       ,`projectId          (,`$ref)!,"Dataset" (,`$ref)!,"Dataset"     "Creates a new..
+    
+
+As you can see, each method takes some parameters. You can get some more
+detailed information on these parameters.
+
+    
+    
+    q).com_kx_bq.disc.getParametersForMethod `datasets.list
+    parameter type     location description                     required format
+    ---------------------------------------------------------------------------..
+    projectId "string" "path"   "Project ID of the new dataset" 1        ::    
+    
+
+## Your first request
+
+From this information, you can make a request to list the datasets that you
+have access to, using [`.com_kx_bq.run`](api.html#com_kx_bqrun).
+
+    
+    
+    q).com_kx_bq.run[`datasets.list; enlist[`projectId]!enlist "cloudpak"; ()]
+    kind    | "bigquery#datasetList"
+    etag    | "PiOY7GfDPfxBWU56fwyYbg=="
+    datasets| +`kind`id`datasetReference`location!(("bigquery#dataset";"bigquery#dataset";"bigquery#d..
+    
+
+The first parameter is the method name and the second parameter is a
+dictionary of the method parameters. We’ll get to the third parameter later.
+
+The `response` column that is returned from
+`.com_kx_bq.disc.describeMethodsForResource` tells you what type of object is
+returned. In this case it is a
+[`DatasetList`](https://cloud.google.com/bigquery/docs/reference/rest/v2/datasets#DatasetList).
+
+From the response, pull out the exact list of datasets using the `datasets`
+key.
+
+    
+    
+    q).com_kx_bq.run[`datasets.list; enlist[`projectId]!enlist "cloudpak"; ()]`datasets
+    kind               id                             datasetReference                               ..
+    -------------------------------------------------------------------------------------------------..
+    "bigquery#dataset" "cloudpak:kx_bma_bigquery_ds"  `datasetId`projectId!("kx_bma_bigquery_ds";"clo..
+    "bigquery#dataset" "cloudpak:kx_test_bigquery_ds" `datasetId`projectId!("kx_test_bigquery_ds";"cl..
+    "bigquery#dataset" "cloudpak:test_dataset"        `datasetId`projectId!("test_dataset";"cloudpak"..
+    "bigquery#dataset" "cloudpak:test_dataset2"       `datasetId`projectId!("test_dataset2";"cloudpak..
+    "bigquery#dataset" "cloudpak:weather"             `datasetId`projectId!("weather";"cloudpak")    ..
+    
+
+## Your second request
+
+From the description of the methods, you can see that methods that have a HTTP
+method of POST or PUT take a `request` object.
+
+These `request` objects are the same as the `response` objects that are
+returned from the API.
+
+To use the `insert` method, pass a
+[`Dataset`](https://cloud.google.com/bigquery/docs/reference/rest/v2/datasets#Dataset)
+as the request field.
+
+From the docs, you can see that `datasetReference` is the only required field
+for the `Dataset` object. The value of `datasetReference` is another object
+that contains the fields `datasetId` and `projectId`. Of those fields, only
+`datasetId` is required.
+
+So a minimal `Dataset` object would look like
+
+    
+    
+    {
+        "datasetReference" : { 
+            "datasetId" : "MyDataset"
+        }
+    
+    }
+    
+
+Using this information, you can create a new dataset using `.com_kx_bq.run`
+
+    
+    
+    q)request:enlist[`datasetReference]!enlist enlist[`datasetId]!enlist "MyDataset"
+    
+    q).j.j request
+    "{\"datasetReference\":{\"datasetId\":\"MyDataset\"}}"
+    
+    q).com_kx_bq.run[`datasets.insert; enlist[`projectId]!enlist "cloudpak"; .j.j request]
+    kind            | "bigquery#dataset"
+    etag            | "KQdjOs1o+xP1TfMFdstYog=="
+    id              | "cloudpak:MyDataset"
+    selfLink        | "https://bigquery.googleapis.com/bigquery/v2/projects/cloudpak/datasets/MyDatas..
+    datasetReference| `datasetId`projectId!("MyDataset";"cloudpak")
+    access          | (`role`specialGroup!("WRITER";"projectWriters");`role`specialGroup!("OWNER";"pr..
+    creationTime    | "1612263987441"
+    lastModifiedTime| "1612263987441"
+    location        | "US"
+    
+
+By now you have probably realized the third argument of `.com_kx_bq.run` is a
+JSON string containing the request for the method you are calling.
+
+## Next steps
+
+You now have the tools to run _any_ supported BigQuery method.
+
+Explore some of the [BigQuery public
+datasets](https://cloud.google.com/bigquery/public-data) and build something
+cool.
+
+* * *
+
+[BigQuery API reference](api.html)
+

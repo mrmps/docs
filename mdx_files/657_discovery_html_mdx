@@ -1,0 +1,140 @@
+https://code.kx.com/insights/core/big-query/discovery.html
+
+# Discovery - kdb products
+
+Original URL: https://code.kx.com/insights/core/big-query/discovery.html
+
+# Discovery
+
+## .com_kx_bq.disc.describeMethodsForResource
+
+Get a description about the available methods for a resource
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+resource | symbol | Resource to get information for  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+table | Methods and descriptions  
+  
+**Example:** Describe the methods for the 'tables' resource
+
+    
+    
+     q).com_kx_bq.disc.describeMethodsForResource`datasets
+     method httpMethod parameters           request             response                description   ..
+     -------------------------------------------------------------------------------------------------..
+     update PUT        `projectId`datasetId (,`$ref)!,"Dataset" (,`$ref)!,"Dataset"     "Updates infor..
+     list   GET        ,`projectId          ::                  (,`$ref)!,"DatasetList" "Lists all dat..
+     patch  PATCH      `projectId`datasetId (,`$ref)!,"Dataset" (,`$ref)!,"Dataset"     "Updates infor..
+     delete DELETE     `projectId`datasetId ::                  ::                      "Deletes the d..
+     get    GET        `projectId`datasetId ::                  (,`$ref)!,"Dataset"     "Returns the d..
+     insert POST       ,`projectId          (,`$ref)!,"Dataset" (,`$ref)!,"Dataset"     "Creates a new..
+    
+
+## .com_kx_bq.disc.getMethodsForResource
+
+Get details about the available methods for a resource
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+resource | symbol | Resource to get information for  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | Methods and information  
+  
+**Example:** Get the method for the 'tables' resource
+
+    
+    
+     q).com_kx_bq.disc.getMethodsForResource[`tables]
+     getIamPolicy      | `id`parameters`parameterOrder`request`description`path`sc..
+     list              | `id`response`path`parameterOrder`httpMethod`scopes`parame..
+     testIamPermissions| `httpMethod`scopes`parameterOrder`flatPath`description`pa..
+     insert            | `request`httpMethod`path`id`response`description`scopes`p..
+     get               | `parameters`path`parameterOrder`httpMethod`id`response`sc..
+     patch             | `scopes`parameterOrder`description`httpMethod`path`respon..
+     setIamPolicy      | `response`parameterOrder`path`id`request`parameters`httpM..
+     update            | `scopes`id`description`request`parameters`httpMethod`resp..
+     delete            | `id`parameterOrder`httpMethod`description`path`scopes`par..
+    
+
+## .com_kx_bq.disc.getParametersForMethod
+
+Get details about parameters for method
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+method | symbol | Method to get parameters for, in the format resource.method  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+table | Details of the parameters  
+  
+**Example:**
+
+    
+    
+     q).com_kx_bq.disc.getParametersForMethod`tables.insert
+     parameter type     location description                   required format
+     -------------------------------------------------------------------------
+     datasetId "string" "path"   "Dataset ID of the new table" 1        ::
+     projectId "string" "path"   "Project ID of the new table" 1        ::
+    
+
+## .com_kx_bq.disc.listParametersForMethod
+
+List required parameters for method
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+method | symbol | Method to get parameters for, in the format resource.method  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol[] | List of required parameters  
+  
+**Example:** List parameters for `tables.insert
+
+    
+    
+     q).com_kx_bq.disc.listParametersForMethod `tables.insert
+     `projectId`datasetId
+    
+
+## .com_kx_bq.disc.listResources
+
+List the available resources
+
+**Returns:**
+
+Type | Description  
+---|---  
+symbol[] | List of resources  
+  
+**Example:**
+
+    
+    
+     q).com_kx_bq.disc.listResources[]
+     `rowAccessPolicies`models`tabledata`datasets`tables`projects`routines`jobs
+    
+

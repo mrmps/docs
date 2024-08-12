@@ -1,0 +1,57 @@
+https://code.kx.com/platform/revisions/
+
+# Revisions - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/revisions/
+
+# Revisions
+
+_KX Delta Control_ maintains a version for every change made to an entity.
+These revisions can either be the local revisions or a revision from the Git
+history of that entity.
+
+Each entity when opened in an editor will have a _Revisions_ tab listing the
+changes made to that entity.
+
+## Local revisions not pushed to a Git repository
+
+If an instruction called `new_package_instruction` was created and the
+description modified and saved 3 times, there would be three entries in the
+_Revisions_ tab.
+
+![Screenshot](../img/control/revisions1.png)
+
+### Compare revisions
+
+You can choose any two of the revisions and compare them to see what has
+changed.
+
+![Screenshot](../img/control/revisions2.png)
+
+The resulting viewer will highlight the changes between the newest of the
+selected items on the left, and the oldest of the selected items on the right.
+The changes shown in this example are fairly simple and other entity changes
+might get fairly complex. Some fields like the _revID_ are differences made by
+the underlying KX Delta Platform representation.
+
+![Screenshot](../img/control/revisions3.png)
+
+## Reverting to a previous revision of an entity
+
+If you want to revert to specific revision of one of the changes you can do so
+in the Differences viewer or from the list view shown in the second
+screenshot. (_Revert to this revision_ from the context menu.)
+
+## Revisions indicating commits pushed to Git
+
+Once a package has been pushed to a Git remote repository, or a package has
+been pulled from a repository, the _Revisions_ tab will also contain a
+_Status_ column indicating published revisions. These would match a change
+pushed to the Git repository. So it is common to have a mix of local changes
+and then a published revision when items are pushed.
+
+![Screenshot](../img/control/revisions4.png)
+
+[Release Management](../release_management/) for more on pushing or pulling
+packages with Git
+

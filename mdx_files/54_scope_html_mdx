@@ -1,0 +1,73 @@
+https://code.kx.com/insights/microservices/database/query/scope.html
+
+# Scope - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/database/query/scope.html
+
+# Scope
+
+The `scope` is a distinguished request parameter that is used in routing
+decisions. It is similar to `labels` in that it determines the target Data
+Access Processes (DAPs) that service the request (see
+[routing](routing.html#match-labels) and [labels](purviews.html#labels)), but
+it differs in that it also influences which Resource Coordinator (RC) is
+chosen by the Gateway (GW).
+
+The `scope` parameter is specified in the request arguments as a dictionary.
+The keys in the dictionary determine which RC the GW chooses and which DAPs
+the RC ultimately chooses.
+
+key | type | description  
+---|---|---  
+assembly | `symbol` | Single [assembly](../configuration/assembly/database.html) to target.  
+  
+## Assembly and global resource coordinators
+
+An RC can be labelled as belonging to an assembly using [Kubernetes metadata
+labels](https://kubernetes.io/docs/concepts/overview/working-with-
+objects/labels/) and the GW must be configured to recognize the corresponding
+label.
+
+    
+    
+    # Gateway environment variable. Specifies the label to be used to define assembly.
+    KXI_ASSEMBLY_KEY="<assembly_label_key>" # Default: "insights.kx.com/app"
+    
+    
+    
+    # Resource coordinator statefulset/pod.
+    metadata:
+      labels:
+        # Set assembly key and assembly value (i.e. name of assembly).
+        <assembly_label_key>: "<assembly_label_value>"
+      spect:
+        containers:
+          # Allows RC to self-identify as part of an assembly.
+          -name: KXI_ASSEMBLY_NAME
+           value: "<assembly_label_value>"
+    
+
+RCs configured with an assembly are considered _assembly_ RCs. Conversely, RCs
+without an assembly label, or whose assembly name is empty (`""`) are
+considered _global_ RCs.
+
+## Gateway to Resource Coordinator
+
+The `scope` parameter is specified in the request arguments, e.g.
+
+    
+    
+    gw:hopen`:gateway_host:1234 # Open connection to GW
+    gw(`.kxi.getData;`table`scope!(`myTable;enlist[`assembly]!enlist`myAssembly);`;()!()) # Target "myAssembly"
+    
+
+If specified, the GW attempts to send to an RC in the specified assembly. If
+no RC in the specified assembly is found, then the GW does one of two things
+based on the value of the `KXI_SCOPE_AFFINITY` environment variable.
+
+  * If `KXI_SCOPE_AFFINITY="hard"` (default), then the request fails immediately with a "No resources connected" error.
+  * If `KXI_SCOPE_AFFINITY="soft"`, then the GW sends to a global RC, and that RC is then responsible for routing to DAPs of the correct assembly.
+
+If the scope parameter is not specified in the request arguments, then the GW
+targets one of the global RCs.
+

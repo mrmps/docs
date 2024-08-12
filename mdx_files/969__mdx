@@ -1,0 +1,454 @@
+https://code.kx.com/platform/deployment/cpu_affinity/
+
+# Core affinity - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/deployment/cpu_affinity/
+
+# Core affinity
+
+## Linux CPU afinity configuration
+
+kdb+ is typically licensed to run on a number of CPU cores. By default the q
+binary will be run under taskset on Linux. On some Linux systems there is also
+the option of running kdb+ under numactl (if enabled).
+
+### Affinity command
+
+CPU cores can be identified via an integer on Linux see below:
+
+CPU ID | Value  
+---|---  
+CPU0 | 0  
+CPU1 | 1  
+CPU2 | 2  
+CPU3 | 3  
+CPU4 | 4  
+CPU5 | 5  
+CPU6 | 6  
+CPU7 | 7  
+  
+Typically we use taskset to give a process a range of cores it can run on. For
+example on an 8 core box you can specify a taskset that uses 1/2 the available
+cores using the mask 0-3 or 4-7.
+
+Another aim of task setting is to protect critical processes from being
+swapped out by other processes on the same box, this can be achieved by task
+setting the critical process to a given core and omitting that core in all
+other taskset ranges. Kdb+ is single threaded so when it is taskset to a range
+of cores the OS scheduler will assign it one core from that range. Java
+processes are typically multi threaded and can make use of multiple cores
+inside a taskset range.
+
+### KX Control
+
+KX Control is a kdb+ process which is run under taskset. The taskset value it
+uses is defined by the KDB_CPU_AFFINITY environment variable in the
+delta.profile.
+
+The value of KDB_CPU_AFFINITY can be configured at install time as follows:
+
+The bundle installer will prompt for the number of licensed kdb+ cores, the
+value you give will result in a taskset range for the same number of cores.
+e.g. if you enter 10 below:
+
+    
+    
+    Number of [Licensed KDB+] [CPU cores] [Max: 12]: 10
+    
+
+This will result in KDB_CPU_AFFINITY being set to core 0 and the process
+instance taskset values being set to 1-9. This effectively gives KX Control
+its own core.
+
+The value of KDB_CPU_AFFINITY can be configured in and install.config which
+can be passed to the installKxPlatform.sh script (via -p) as follows:
+
+    
+    
+    kdb-cpu-affinity=0-9
+    
+
+The above setting will set KDB_CPU_AFFINITY to 0-9 in delta.profile
+
+### Daemon
+
+The Daemon is a Java process which is used to start processes on remote boxes,
+i.e. on boxes which are not running KX Control. The taskset value is uses is
+defined by the DCD_CPU_AFFINITY environment variable in the delta.profile.
+
+The value of DCD_CPU_AFFINITY can be configured at install time as follows:
+
+The bundle installer will automatically set the taskset value to 0 meaning the
+Daemon will run on core 0 on the box.
+
+The value of DCD_CPU_AFFINITY can be configured in and install.config which
+can be passed to the installKxPlatform.sh script (via -p) as follows:
+
+    
+    
+    dcd-cpu-affinity=0-9
+    
+
+The above setting will set DCD_CPU_AFFINITY to 0-9 in delta.profile
+
+### Process instance
+
+Platform process instances can be kicked off in a couple of ways in the KX
+Delta Platform.
+
+If the instance is configured to run on the same node as the leader _KX
+Control_ process then it will be started by KX Control.
+
+#### No affinity defined
+
+If no taskset value is configured for the instance it will inherit the value
+of KDB_CPU_AFFINITY see below:
+
+KX Control is configured to run on cores 0-4.
+
+    
+    
+    $ grep KDB_CPU_AFFINITY delta.profile
+    export KDB_CPU_AFFINITY="0-4"
+    
+
+Start Control and check the taskset value using Control's PID as given by the
+start script.
+
+    
+    
+    $ ./startDeltaControl.sh
+    Sourcing [../delta.profile]
+    Sourcing [../delta_user.profile]
+    Sourcing [../delta.instance.profile]
+    KDB+ license valid
+    Setting CPU Affinity using [taskset -c 0-4]
+    Starting Control 4.4.1 on port 2001 using KDB+ 3.6.0
+    Control [PID:68643] started successfully
+    
+    $ taskset -cp 68643
+    pid 68643's current affinity list: 0-4
+    
+
+The Messaging server process (ds_ms_a) has now taskset value configured see
+below:
+
+    
+    
+    $ grep ds_ms_a_TASKSET delta.instance.profile
+    export ds_ms_a_TASKSET=""
+    
+
+If we start the process via KX Control and check its taskset value it should
+match that of KDB_CPU_AFFINITY
+
+    
+    
+    $ ./startProcessInstance.sh -i ds_ms_a
+    $ ps -ef | grep ds_ms_a | grep -v grep | awk '{print $2}'
+    72847
+    $ taskset -cp 72847
+    pid 72847's current affinity list: 0-4
+    
+
+You can see the affinity list matches that of KDB_CPU_AFFINITY
+
+**Note** : if the process was started via the Daemon on a remote box it would
+inherit the value of the DCD_CPU_AFFINITY environment variable.
+
+#### Define process affinity
+
+The affinity for a process instance can be configured through its TASKSET
+value in the delta.instance.profile.
+
+##### Auto configuration
+
+This can be configured automatically at deploy time using a custom config
+which specifies a taskset value to be used for *_all_ instances.
+
+    
+    
+    auto-configure-instance-taskset=1-4
+    
+
+The setting above will mean that every process instance in the
+delta.instance.profile gets the taskset value 1-4 see below
+
+    
+    
+    export ds_ms_a_HOST="control-a.fd.com"
+    export ds_ms_a_PORT="3019"
+    export ds_ms_a_TASKSET=""
+    export ds_ms_b_HOST="NO_HOST_SET"
+    export ds_ms_b_PORT="3019"
+    export ds_ms_b_TASKSET="1-4"
+    export ds_qm_at_a_HOST="control-a.fd.com"
+    export ds_qm_at_a_PORT="3020"
+    export ds_qm_at_a_TASKSET="1-4"
+    export ds_qm_at_b_HOST="NO_HOST_SET"
+    export ds_qm_at_b_PORT="3020"
+    export ds_qm_at_b_TASKSET="1-4"
+    export ds_qm_ops_a_HOST="control-a.fd.com"
+    export ds_qm_ops_a_PORT="3021"
+    export ds_qm_ops_a_TASKSET="1-4"
+    export ds_qm_ops_b_HOST="NO_HOST_SET"
+    export ds_qm_ops_b_PORT="3021"
+    export ds_qm_ops_b_TASKSET="1-4"
+    
+
+##### CSV configuration
+
+If you want to specify taskset values for specific instances this can be done
+using an instance.csv file which is used to configure the host/port/taskset
+values for a given set of process instances.
+
+This file is passed into the `install.sh` or `installKxPlatform.sh` using the
+(-i instance.csv) flag.
+
+Any instances not configured via the instance.csv will be configured using the
+`auto-configure-instance-taskset` above.
+
+For example if we want our Messaging Server ds_ms_a process above to run on
+our KX Control host (control-a.fd.com) on port 5010 and using taskset 7-8 then
+we would have the following in our instance.csv.
+
+    
+    
+    ds_ms_a,control-a.fd.com,5010,7-8
+    
+
+If we then deploy using this file we will see that the ds_ms_a value in
+delta.instance.profile looks like this
+
+    
+    
+    $ grep ds_ms_a_TASKSET delta.instance.profile
+    export ds_ms_a_TASKSET="7-8"
+    
+
+Now if we start the process instance and check the taskset value:
+
+    
+    
+    $ ./startProcessInstance.sh -i ds_ms_a
+    $ ps -ef | grep ds_ms_a | grep -v grep | awk '{print $2}'
+    101456
+    $ taskset -cp 101456
+    pid 101456's current affinity list: 7,8
+    
+
+You can see the process instance taskset is different from the value of
+KDB_CPU_AFFINITY.
+
+### Numactl
+
+If Numactl is available on your host you can use it in place of taskset by
+installing with a custom install.config file. The following options will
+configure the KX Delta Platform to use numactl
+
+    
+    
+    cpu-affinity-cmd=numactl --interleave=all --physcpubind=
+    
+
+The result is that the CPU_AFFINITY_CMD in delta.profile becomes "numactl
+--interleave=all --physcpubind="
+
+The process for setting core affinity for Control, Daemon and instances is the
+same as that for taskset above.
+
+There is one caveat however, when running with numactl any process instances
+kicked off by Control or the Daemon can only use all or a subset of the CPU
+cores defined by KDB_CPU_AFFINITY (KX Control) and DCD_CPU_AFFINITY (Daemon)
+
+If the process instance is configured to use cores outside of this range you
+will see the following in the process instance log file (`delta-
+data/DeltaControlData/logdir/<process.instance.log>`)
+
+    
+    
+    libnuma: Warning: cpu argument X out of range
+    
+
+For this reason it is recommended that the auto-configure-instance-taskset
+values match those of dcd-cpu-affinity=0-9 and kdb-cpu-affinity=0-9 or use a
+subset e.g. auto-configure-instance-taskset=0-3
+
+    
+    
+    cpu-affinity-cmd=numactl --interleave=all --physcpubind=
+    dcd-cpu-affinity=0-9
+    kdb-cpu-affinity=0-9
+    auto-configure-instance-taskset=0-9
+    
+
+With the configuration above KX Control being started using numactl as
+follows:
+
+    
+    
+    numactl --interleave=all --physcpubind=0-9 q q/centralconfig.q_ …
+    
+
+The Daemon will also be run under numactl as follows:
+
+    
+    
+    numactl --interleave=all --physcpubind=0-9 ./run.sh
+    
+
+### Bundle installation taskset
+
+When installing the _KX Delta Platform_ from a bundle (`install.sh`), you will
+be prompt to choose the amount of cores the application should use, this is
+generally the total amount of cores on the server, or the amount of cores you
+are licensed to use.
+
+    
+    
+    Number of [Licensed KDB+] [CPU cores] [Max: 12]: 12
+    
+
+The Bundle installer will automatically assign the Control and Daemon
+processes to core 0. This is to reduce the impact on process instances during
+spikes in Control CPU usage during housekeeping tasks.
+
+    
+    
+    export KDB_CPU_AFFINITY="0"
+    export DCD_CPU_AFFINITY="0"
+    
+
+The remaining Control processes will be spread across the remaining cores.
+
+    
+    
+    export ds_gw_ops_a_TASKSET="1-11"
+    
+
+## Windows CPU affinity configuration
+
+Kdb+ is typically licensed to run on a number of CPU cores. By default the q
+binary will be run under /affinity on Windows.
+
+### Affinity settings
+
+Delta Control, daemons and process instances can all have their own affinity
+settings.
+
+  * KDB_CPU_AFFINITY (configured in delta.profile.bat) assigns the KX Control process to specific cores
+  * DCD_CPU_AFFINITY (configured in delta.profile.bat) assigns daemons to specific cores
+
+On Windows the CPU affinity list is configured using a hexadecimal mask
+detailed in the table below:
+
+CPU ID | Associated Value | Affinity (Hexadecimal Value)  
+---|---|---  
+CPU0 | 1 | 1  
+CPU1 | 2 | 3  
+CPU2 | 4 | 7  
+CPU3 | 8 | F  
+CPU4 | 16 | 1F  
+CPU5 | 32 | 3F  
+CPU6 | 64 | 7F  
+CPU7 | 128 | FF  
+  
+### Available CPU cores
+
+To check the number of available CPU cores on your machine open the Task
+Manager and select Performance and then select Open Resource Monitor at the
+bottom of the Task Manager.
+
+![Screenshot](../img/win-cores-taskmanager.png)
+
+When we open the resource monitor we need to navigate to the CPU by selecting
+the CPU tab. On the right side of the screen we can see how many available
+CPU’s can be used. In this example we can see there are 8 (CPU 0 - CPU 7).
+
+![Screenshot](../img/win-cores-resource-monitor.png)
+
+### Default configuration
+
+By default Windows deploys are configured to use a single core for KX Control
+and the Daemon. If you look at delta.profile.bat you will see:
+
+    
+    
+    set KDB_CPU_AFFINITY=1
+    set DCD_CPU_AFFINITY=1
+    
+
+If we run our deploy again using startup.bat the Java™ SE Binary and q.exe
+processes will be run as normal. If we click on Details at the top of the Task
+Manager and select any of the deploy processes, we can right click on the
+process and select Set Affinity, this will show that the process is running on
+only CPU 0.
+
+![Screenshot](../img/single-core-windows.png)
+
+### Multiple cores
+
+To run on multiple cores we first of all need to shut the deploy see [Windows
+Administration](../win_administration/), we can then edit our
+delta.profile.bat to change the value of our `KDB_CPU_AFFINITY` and
+`DCD_CPU_AFFINITY`.
+
+The table above shows the hexadecimal value that is associated with each CPU
+component e.g. to use 5 CPU’s the value is 1F.
+
+#### Changing the KDB_CPU_AFFINITY
+
+The `KDB_CPU_AFFINITY` assigns Control processes to specific cores using a
+hexadecimal mask; if we edit our delta.profile.bat and navigate to the
+`KDB_CPU_AFFINITY` (use the search function in Notepad to find it quickly) we
+can change the value from 1 to 1F as shown below:
+
+    
+    
+    set KDB_CPU_AFFINITY=1F
+    set DCD_CPU_AFFINITY=1
+    
+
+This means that all Control processes will now run on 5 CPU cores rather than
+just 1 as previous. If we start-up our deploy again we can go to the task
+manager to show this.
+
+Select the `q q/centralconfig.q` process, right click and select set affinity
+we can now see that CPU 0 – CPU 4 are now selected showing that the Control
+processes are now running across 5 different CPU cores.
+
+![Screenshot](../img/5-cores-windows.png)
+
+#### Changing the DCD_CPU_AFFINITY
+
+The `DCD_CPU_AFFINITY` assigns daemons to cores using a hexadecimal mask; if
+we edit our delta.profile.bat and navigate back to our `DCD_CPU_AFFINITY` we
+can change the value from 1 to F. From the table above we can see that a value
+of F should mean that the daemons will be run across 4 cores instead of 1.
+
+    
+    
+    set KDB_CPU_AFFINITY=1
+    set DCD_CPU_AFFINITY=F
+    
+
+Now restart your environment (see [here](../win_administration/) and select
+the `ds_ms_a` process in the task manager, right click and select set affinity
+we can now see that CPU 0 – CPU 3 are now selected showing that the Control
+processes are now running across 4 different CPU cores.
+
+![Screenshot](../img/4-cores-windows.png)
+
+#### Process instances
+
+Process instances (configured in the delta.instance.profile.bat) can be set to
+specific cores using TASKSET environment variables associated with each
+individual process (e.g. ds_qp_a_TASKSET). If a process doesn’t have a
+specific value set, they will inherit the daemons affinity settings
+
+Process instance affinities use the Linux taskset style, for example for core
+1 only "1" would be used, for Cores 1,2,3 and 4 taskset value would be "1-4"
+or "1,2,3,4". For cores 1, 2, 3 and 5 the taskset value would be "1-3, 5".
+These values can be changed manually or configured using the
+`updateProcessInstances.bat` script.
+

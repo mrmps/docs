@@ -1,0 +1,110 @@
+https://code.kx.com/insights/enterprise/database/configuration/ui/stream.html
+
+# Stream Settings - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/database/configuration/ui/stream.html
+
+# Streams
+
+_This section describes the configuration options available under the**Stream
+Settings** tab in the kdb Insights Enterprise UI._
+
+A stream is the _kdb Insights Enterprise_ deployment of a [Reliable Transport
+(or RT)](../../../../microservices/rt/index.html) cluster, and provides highly
+available, high performance messaging. In _kdb Insights Enterprise_ , Streams
+come in two forms, internal streams, which are required to process data
+between kdb Insights components within a deployment, and external streams,
+which connect an external data source to the database.
+
+In _kdb Insights Enterprise_ , all data written to the database goes through
+the primary stream. External streams can be connected to a [Stream
+Processor](../../../ingest/pipeline/index.html) and transformed, or they can
+be directly connected to the database.
+
+## Managing streams
+
+A single internal primary stream is created automatically when creating a new
+database. Simply create a new database via the component tree and navigate to
+the **Stream Settings** tab.
+
+![Stream tab](images/ui/stream/streams-tab.png)
+
+Through the Stream Settings tab you can:
+
+### Process Name
+
+By default, the primary stream is given the same name as the database within
+which it resides.
+
+  * Change the **Process Name** by clicking the edit icon and entering a new name. 
+  * Enter a name that is globally unique across all streams in all databases. 
+  * Use alpha numeric characters and dashes for name based data routing.
+
+![Stream rename](images/ui/stream/stream-name.png)
+
+Once the stream has been configured, click **Save** button to save the
+settings.
+
+## Additional stream
+
+If you require an additional stream to ingest raw data that requires
+transformation (via a pipeline) prior to ingestion into the database you can
+deploy an additional stream with identical resource specifications as the
+primary stream.
+
+For example, a publishing client, such as a feedhandler, might send data in
+CSV or JSON format which needs to be decoded and have a schema applied before
+ingestion into the database.
+
+To deploy an additional stream, enable **Create an additional stream process**
+in the **Additional Stream** section.
+
+![Additional stream](images/ui/stream/additional-stream.png)
+
+When checked there is an additional checkbox in the **External Data Sources**
+section, described below allowing this stream to be used by external sources.
+
+## Managing external streams
+
+You can choose to allow externally-facing ingress to a stream. This may be
+required if you have data to be ingested into one of your streams (primary or
+additional) from outside the kdb Insights cluster using an external publishing
+client such as a feedhandler.
+
+### Primary Stream
+
+To allow ingestion of data from external sources to the primary stream
+process:
+
+  1. Enable **Ingest data from external sources directly to the database** in the **External Data Sources** section. 
+  2. Once checked, an additional configuration section for the stream is displayed where you can specify the **External Reference** for the additional stream process. By default, the external reference is initialized as **database name**. See note on external reference below._*_ *
+
+![External Data Sources](images/ui/stream/external-streams.png)
+
+With this configured data sent from external sources to the primary stream is
+read by the database without any transformations being applied, therefore the
+data must be in a format the database can digest.
+
+### Additional Stream
+
+To allow ingestion of data from external sources to an additional stream
+process:
+
+  1. Enable **Create an additional stream process** in **Additional Stream** settings. 
+  2. Enable **Ingest data from external sources directly to your additional stream** in the **External Data Sources** section. 
+  3. Once checked, an additional configuration section for the stream is displayed where you can specify the **External Reference** for the additional stream process. By default, the external reference is initialized as **database name with a`-e` suffix.**. See note on external reference below.
+
+![External Data Sources](images/ui/stream/external-stream2.png)
+
+With this configured data sent from external sources to the additional stream
+can be transformed (using a pipeline) prior to ingestion into the database.
+
+### External reference
+
+The **External Reference** set here and here is used as the **SDK_CLIENT_UID**
+configuration value by external clients to reference the stream for publishing
+from outside of the kdb Insights cluster.
+
+The external reference may only contain lower case alphanumeric characters,
+"-" or ".", and must start and end with an alphanumeric character.
+

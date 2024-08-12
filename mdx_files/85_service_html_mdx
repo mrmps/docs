@@ -1,0 +1,50 @@
+https://code.kx.com/insights/enterprise/configuration/service.html
+
+# Service configuration - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/configuration/service.html
+
+# Service configuration
+
+Configuration for a chart Service resource is configurable at a chart level.
+
+Each chart's Service object shares the same configurable fields e.g. `type`
+`annotations`.
+
+    
+    
+    service:
+      type: ClusterIP
+      port: 8080
+      annotations:
+        custom: annotation
+        anothercustom: annotation
+    
+
+These fields are used to populate the Service resource at deploy time.
+
+## type
+
+The Service type, `ClusterIP`, `LoadBalancer` or `NodePort`.
+
+Variable | Type | Example  
+---|---|---  
+`type` | `string` | `ClusterIP`  
+  
+## port
+
+The Port to expose via the Service.
+
+Variable | Type | Example  
+---|---|---  
+`port` | `integer` | `8080`  
+  
+## annotations
+
+The `annotations` field allows a user to append key-value annotations to the
+Service resource.
+
+Variable | Type | Example  
+---|---|---  
+`annotations` | `object` | `{ "custom": "annotation" }`
+

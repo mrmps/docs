@@ -1,0 +1,74 @@
+https://code.kx.com/insights/api/machine-learning/python/index.html
+
+# About - kdb products
+
+Original URL: https://code.kx.com/insights/api/machine-learning/python/index.html
+
+# About
+
+This section provides the API documentation for the `kxi.ml` Python library
+provided by KX for use by customers of kdb Insights, both for interactions
+with the Microservices/Enterprise, and independent use.
+
+Presently this library provides users with the ability to interact with the
+`ML Registry` for persistence, retrieval and removal of Machine Learning
+models written in q or Python within the following libraries:
+
+  * q functions generated using [PyKX](https://code.kx.com/pykx).
+  * Scikit-learn
+  * Keras
+  * PyTorch
+
+## Installation
+
+Ensure you have a recent version of pip:
+
+    
+    
+    pip install --upgrade pip
+    
+
+Then to install `kxi.ml` using the KX PyPI server run the following command:
+
+    
+    
+    pip install --extra-index-url=https://$KX_PYPI_USER:$KX_PYPI_PASS@nexus.dl.kx.com/repository/kxi/simple/ kxi.ml
+    
+
+Where the environment variables `KX_PYPI_USER` and `KX_PYPI_PASS` have been
+set as appropriate. Please contact kxpy@kx.com for information on getting
+access to the KX PyPI server.
+
+### Python Dependencies
+
+`kxi.ml` depends on the following Python packages:
+
+  * `kxi==1.0.2`
+  * `scipy==1.7.3`
+  * `scikit-learn==1.0.2`
+  * `statsmodels==0.13.1`
+  * `pandas==1.4.1`
+  * `joblib==1.1.0`
+
+These are installed automatically by `pip` when `kxi.ml` is installed. The
+following are optional dependencies which can be installed by a user to
+provided additional functionality:
+
+Library | Version | Usage  
+---|---|---  
+`keras` | `2.7.0` | Save `Keras` models to the ML Registry  
+`torch` | `1.7.1` | Save `PyTorch` models to the ML Registry  
+  
+## Use cases
+
+There are many ways users can make use of the machine learning functionality
+provided here:
+
+  * Train models on historical data and deploy these to real-time systems
+    * Anomaly detection within manufacturing.
+    * Trade surveillance.
+  * Machine Learning Operations development cycle
+    * Storage of frequently updated models for future deployment (trading models/recommendation engines).
+    * Deployment of stored models to production settings.
+    * Use of versioning to maintain control over model accountability.
+

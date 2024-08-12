@@ -1,0 +1,65 @@
+https://code.kx.com/platform/control_replication/
+
+# Replication - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/control_replication/
+
+# Replication
+
+The _Control_ cluster needs to replicate its internal state to all nodes in
+the cluster. All state-changes via the public interfaces (_Web UI_ , _Process
+API_ etc) are automatically persisted to a transaction log and streamed to
+followers in Realtime. Each change is tracked by a UID. When a process starts,
+it connects to the leader and compares its own UID with that of the cluster.
+If it has fallen behind, it will re-sync with the leader and become a
+follower.
+
+The cluster is usually setup via the install script, which writes a CSV file
+of cluster details. This file is located at `${DELTA_CONFIG}/failover.csv`.
+
+    
+    
+    servera.domain.com,5000
+    serverb.domain.com,5000
+    
+
+## Start-up
+
+When starting the _Control_ cluster, it's important to ensure all processes
+are started at the same time. This ensures the cluster is fully in-sync before
+further changes are made. The example below illustrates why this is important.
+
+  * At previous shutdown time, the followers were all shutdown first
+  * Leader was temporarily left running and state-changes occurred
+  * This process is now further ahead than the rest of the cluster
+  * Now on the next start-up, this process was not started at the same time
+  * The other processes start and elect a Leader but are missing state
+  * When the last leader starts later, there are two possibilities
+  * The cluster will have progressed beyond the previous leader - in this case the process will join as a follower and all state changes made to it previously will be lost.
+  * The cluster will still be behind the previous leader - in this case that process will refuse to start as it's UID is higher than the current leader.
+
+In the latter case, it's possible to force start in this mode and accept any
+resulting data loss. This can be enabled using the below setting in the
+**delta.profile**. With this mode enabled, this process will force its start-
+up and demote the other processes to follower status.
+
+    
+    
+    DELTACONTROL_FOLLOWER_STARTUPOVERWRITE=YES
+    
+
+## Always follower mode
+
+For disaster recovery (DR) purposes, there is often a requirement to have
+processes in the cluster that only subscribe to state changes and never become
+the leader. An example might be having a two processes running in a separate
+data centre in case of an outage. The network configuration or latency would
+make it unfeasible for them to ever become leader but they can act as a backup
+at a separate site. To enable this for a _Control_ process, set the following
+in the **delta.profile** ;
+
+    
+    
+    DELTACONTROL_ALWAYS_FOLLOWER=YES
+    
+

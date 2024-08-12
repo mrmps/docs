@@ -1,0 +1,114 @@
+https://code.kx.com/dashboards/apidatasource/
+
+# Data Sources - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/apidatasource/
+
+# Data Source
+
+The `main.js` and `app.css` files are available in the DataSources folder of [
+projects.zip](../assets/projects.zip).
+
+## Properties
+
+To add properties for a component include a getComponentDefinition function
+that returns a schema defining them. Specific inputs are available for a
+number of standard types of properties including `string`, `number` and
+`dropdown` as well as Dashboards-specific properties including `data`,
+`viewstate` and `actions`. Examples of definitions can be found in the sample
+projects.
+
+For instance, defining a property with type `data` will display a control for
+choosing a [`dataSource`](../DataModelInterface.QuickBase.DataModelInterface/)
+to the user. Once selected, the component can pass this to the following API
+methods.
+
+## subscribe
+
+Subscribes to a given data source
+
+    
+    
+    api.subscribe(dataSource, callback);
+    
+
+### Parameters
+
+#### dataSource
+
+The data source to subscribe to. A data source can be retrieved from
+`onSettingsChange` as follows; assumes a data property called `Data` in a
+category called `Basics`:
+
+    
+    
+    onSettingsChange function (settings) {
+        var dataSource = settings['Basics.Data'];
+    
+
+[onSettingsChange](../messages/#onsettingschange)
+
+#### callback
+
+A function called when there is a data update. Three parameters are passed to
+this callback:
+
+    
+    
+    {
+        columns: {
+          add: [],
+          remove: [],
+          change: [],
+          reset: []
+        }
+    }
+    
+
+##### data
+
+    
+    
+    {
+        add: [],
+        remove: [],
+        change: [],
+        reset: []
+    }
+    
+
+##### error
+
+    
+    
+    {
+        message: ''
+    }
+    
+
+### Example
+
+    
+    
+    api.subscribe(dataSource, function (meta, data, error) {
+        // Apply to component
+    });
+    
+
+### Response
+
+None
+
+## unsubscribe
+
+Unsubscribes from a given data source
+
+    
+    
+    api.unsubscribe(dataSource);
+    
+
+### Response
+
+None
+

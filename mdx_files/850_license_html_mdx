@@ -1,0 +1,76 @@
+https://code.kx.com/pykx/api/license.html
+
+# License management - PyKX
+
+Original URL: https://code.kx.com/pykx/api/license.html
+
+[ ](https://github.com/kxsystems/pykx/edit/main/docs/api/license.md "Edit this
+page")
+
+# License management
+
+The functionality presented here provides users with utilities allowing for
+the management of PyKX licenses and their lifecycle
+
+##  check
+
+    
+    
+    check(license, *, format='FILE', license_type='kc.lic')
+
+Validate that the license key information that you have provided matches the
+license saved to disk which is used by PyKX
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`license` |  | If using "FILE" format this is the location of the file being used for comparison. If "STRING" this is the base64 encoded string provided in your license email |  _required_  
+`format` |  | Is the license check being completed using a downloaded file or base64 encoded string. Accepted inputs are "FILE"(default) or "STRING". |  `'FILE'`  
+`license_type` |  | The license file type/name which is to be checked, by default this is 'kc.lic' which is the version provided with personal and commercial evaluation licenses but can be changed to 'k4.lic' or 'kx.lic' if appropriate |  `'kc.lic'`  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+`[bool](https://docs.python.org/3/library/functions.html#bool)` | A boolean indicating if the license is correct or not and a printed message describing  
+`[bool](https://docs.python.org/3/library/functions.html#bool)` | the issue  
+  
+##  expires
+
+    
+    
+    expires()
+
+The number of days until a license is set to expire
+
+**Returns:**
+
+Type | Description  
+---|---  
+`[int](https://docs.python.org/3/library/functions.html#int)` | The number of days until a users license is set to expire  
+  
+##  install
+
+    
+    
+    install(license, *, format='FILE', license_type='kc.lic', force=False)
+
+(Re)install a KX license key optionally overwriting the currently installed
+license
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`license` |  | If using "FILE" this is the location of the file being used for comparison. If "STRING" this is the base64 encoded string provided in your license email |  _required_  
+`format` |  | Is the license check being completed using a downloaded file or base64 encoded string. Accepted inputs are "FILE"(default) or "STRING". |  `'FILE'`  
+`license_type` |  | The license file type/name which is to be checked, by default this is 'kc.lic' which is the version provided with personal and commercial evaluation licenses but can be changed to 'k4.lic' or 'kx.lic' if appropriate |  `'kc.lic'`  
+`force` |  | Enforce overwrite without opt-in message for overwrite |  `False`  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+| A boolean indicating if the license has been correctly overwritten
+

@@ -1,0 +1,493 @@
+https://code.kx.com/insights/microservices/rt/quickstart/docker-compose.html
+
+# Docker - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/rt/quickstart/docker-compose.html
+
+# Running RT in docker-compose
+
+## Introduction
+
+This section and the accompanying [`docker-compose.yaml`](docker-
+artefacts/docker-compose.yaml) and [`env`](docker-artefacts/env) files provide
+a guide to deploying and running RT by bringing up:
+
+  * An RT cluster on a single docker host.
+  * A sample q publisher.
+  * A sample q subscriber.
+
+It also illustrates the required:
+
+  * Volumes
+  * Networking
+  * Startup arguments
+  * Environment variables
+
+For more information on how RT works see [here](../index.html).
+
+A useful tool for inspecting and navigating the docker compose cluster is
+[Lazydocker](https://github.com/jesseduffield/lazydocker) which provides a
+curses style GUI similar to k9s.
+
+## Images
+
+In order to view the docker requirements and pull down the relevant images,
+please see [here](index.html).
+
+## Provide a license
+
+A license for _kdb+ Cloud Edition_ is required and is provided through the
+environment variable `KDB_LICENSE_B64`. It is generated from a valid `kc.lic`
+file with base64 encoding and this environment variable passed into each
+container by this command in the [`env`](docker-artefacts/env) file:
+
+    
+    
+    export KDB_LICENSE_B64=$(base64 -w 0 ~/.qp.licenses/kc.lic)
+    
+
+The path to the `kc.lic` can be updated as appropriate.
+
+The `kc.lic` used must be for kdb+ Cloud Edition. A regular `kc.lic` for On-
+Demand kdb+ will signal a licensing error during startup.
+
+## Bring up docker-compose
+
+Download [`docker-compose.yaml`](docker-artefacts/docker-compose.yaml) and
+[`env`](docker-artefacts/env) then bring up the RT docker-compose example:
+
+    
+    
+    docker compose --env-file env -f docker-compose.yaml up
+    
+
+## Limitations
+
+Because all three containers are running on the same docker host, this is not
+an HA solution - if that host goes down then RT also goes down.
+
+Making this HA would require an application specific orchestration mechanism
+to be employed with support for:
+
+  * Running each sequencer on a different host (anti-affinity).
+  * Mounting a volume for each sequencer (stateful set).
+  * Migrating a sequencer (and its volumes) to a different host in the event of a hardware failure.
+
+This section does **not** address or advise on orchestration, but rather
+provides a template of how to deploy and run RT using an orchestration layer
+of the user's choice.
+
+## Steps to bring up docker-compose with support for SSL
+
+The RT SDKs (C, Java and q) when used an external publishers with SSL were
+designed to connect to the kdb Insights Enterprise via an Information Service
+which will provide the RT external endpoints and associated SSL ca/cert/key
+for a client which has already been enrolled with Keycloak. Deploying these
+services is outside the scope of this document but here their role can be
+mocked and the process demonstrated.
+
+It is necessary to perform some addition steps when bringing up the docker
+compose with support for SSL:
+
+  1. Run the [`make_certs_docker.sh`](docker-artefacts/make_certs_docker.sh) script which will generate client and server ca/cert/key in the `certs/` subdirectory. The `certs/server` directory is mounted into the RT nodes in the docker-compose where the server ca/cert/key is used to start the external replicators:
+
+  2. Download [`docker-compose.yaml`](docker-artefacts/docker-compose.yaml) and [`env`](docker-artefacts/env) then bring up the RT docker-compose example:
+    
+        docker compose --env-file env -f docker-compose.yaml up
+    
+
+  3. On another terminal run the [`enrol_json_docker.sh`](docker-artefacts/enrol_json_docker.sh) script which uses docker to look up the port mappings on the docker host for the external replicators, and reads the client ca/cert/key from `certs/client`:
+
+It uses this information to generate a `client.json` which conforms to the
+same structure as would be returned by curl-ing the information service:
+
+    
+        cat client.json | jq .
+    {
+      "name": "client-name",
+      "topics": {
+        "insert": "data",
+        "query": "requests"
+      },
+      "ca": "<ca>",
+      "cert": "<cert>",
+      "key": "<key>",
+      "insert": {
+        "insert": [
+          ":127.0.0.1:5000",
+          ":127.0.0.2:5000",
+          ":127.0.0.3:5000"
+        ],
+        "query": []
+      },
+      "query": []
+    }
+    
+
+The RT SDKs can now be used as external publishers with SSL by pointing the
+configuration URL to this file rather than the information service endpoint
+
+### C
+
+Full details on the C SDK are provided [here](../sdks/c-sdk.html).
+
+In order to run the C sample application with docker-compose:
+
+  1. [Download](../sdks/c-sdk-samples.html#downloading) and [build](../sdks/c-sdk-samples.html#building) the C samples.
+
+  2. [Run the samples](../sdks/c-sdk-samples.html#publishing-data) using the `client.json` generated above. For example:
+
+    
+    
+    export KXI_CONFIG_URL=file:///$(pwd)/client.json
+    export SCHEMA="sensorID:int,captureTS:ts,readTS:ts,valFloat:float,qual:byte,alarm:byte"
+    export TABLE="trace"
+    ./csvupload -u $KXI_CONFIG_URL -s $SCHEMA -t $TABLE < ../sample.csv
+    
+
+### Java (from sample code)
+
+Full details on the Java SDK are provided [here](../sdks/java-sdk.html).
+
+In order to run the Java sample application with docker-compose:
+
+  1. [Download and build](../sdks/java-sdk-samples.html#downloading-and-building) the Java samples
+
+  2. [Run the samples](../sdks/java-sdk-samples.html#running-the-samples) using the `client.json` generated above. For example:
+
+    
+    
+    export KXI_CONFIG_URL=file:///$(pwd)/client.json
+    export RT_LOG_PATH=<RT_LOG_PATH>
+    export RT_REP_DIR=<REPLICATOR_LOCATION>
+    java -jar ./build/libs/insights-java-sdk-samples-1.0-SNAPSHOT-all.jar BulkUploadBatches
+    
+
+### Java (using rtdemo docker image)
+
+The rtdemo docker image can also be used to upload a CSV.
+
+  1. Download [`docker-compose-javapub.yaml`](docker-artefacts/docker-compose-javapub.yaml) and [`java-sample.csv`](docker-artefacts/java-sample.csv)
+
+  2. Set up the required directories and run the docker-compose-javapub.yaml compose file, like this. 
+    
+        mkdir -p ./rt-data/logs
+    mkdir -p ./rt-data/repdir
+    chmod 777 -R ./rtdata/
+    docker compose --env-file env -f docker-compose-javapub.yaml up
+    
+
+### q (rt.qpk)
+
+Full details of the rt.qpk are provided [here](../sdks/rt-qpk.html).
+
+In order to publish to the docker-compose:
+
+  1. Download the rt.qpk from the kdb Insights [Nexus](https://nexus.dl.kx.com/#browse/browse:kxi-package-public) registry
+
+  2. Unzip the rt.qpk
+
+  3. Start _kdb+ Cloud Edition_ , load the rt.qpk and [publish data](../sdks/rt-qpk.html#external-publisher) using the`client.json` generated above. For example:
+
+    
+    
+    $ export KXI_CONFIG_URL="file:///$(pwd)/client.json"
+    $ qce
+    KDB+ 4.0 Cloud Edition 2022.07.01 Copyright (C) 1993-2022 Kx Systems
+    l64/ 12()core 5929MB neal a-lptp-2vccmh4k 127.0.1.1 EXPIRE 2024.01.13 nmcdonnell@kx.com KXMS KXCE #77882
+    
+    q)\cd rt
+    q)\l startq.q
+    q)url:getenv`KXI_CONFIG_URL
+    q)params:`config_url`path!(url;"/tmp/rt/")
+    q)p:.rt.pub params
+    q)show t:([]time:3#.z.p;sym:`a`b`c)
+    time                          sym
+    ---------------------------------
+    2023.10.03D16:16:31.911609807 a
+    2023.10.03D16:16:31.911609807 b
+    2023.10.03D16:16:31.911609807 c
+    q)p (`upd;`tab; t)
+    0
+    
+
+## Networking
+
+The docker-compose uses a bridged network for simplicity. If the networking
+layer used by another orchestration requires ports to be explicitly exposed
+then the following ports are required:
+
+### Intra-RT ports
+
+These are used by the RT sequencers to communicate with each other:
+
+port | type | notes  
+---|---|---  
+4000 | TCP | Sequencer  
+5009 | TCP | Xsync push server replicator  
+7000 | UDP | Raft  
+7100 | TCP | Raft  
+8000 | UDP | Sequencer  
+9000 | UDP | Watcher  
+  
+### Internal RT ports
+
+These are used by internal publishers and subscribers which typically run
+inside the cluster and do not require SSL:
+
+port | type | notes  
+---|---|---  
+5001 | TCP | Internal pull server replicator  
+5002 | TCP | Internal push server replicator  
+  
+### External RT ports
+
+This is used by external publishers which typically run outside the cluster
+and therefore require client enrollment and SSL:
+
+port | type | notes  
+---|---|---  
+5000 | TCP | External push server replicator with SSL  
+  
+### Admin ports
+
+These are used by the user to interact with the RT services:
+
+## RT Sequencer
+
+Each RT sequencer must run as a separate service (they are **not** replicas)
+with its own persistent volume. If the orchestration supports moving the RT
+sequencer to a different node in the event of a failure then its volume must
+move with it.
+
+In order to support RT [hard reset](../hard-reset.html) and [soft
+reset](../soft-reset.html) ,each RT sequencer must also have access to a
+shared volume (specified with `$RT_SEQ_SESSION_PATH`) to store the hard reset
+session number and soft reset checkpoint.
+
+### Startup arguments
+
+The RT sequencer arguments are used to configure its directories, the RAFT
+cluster size and archival policy:
+
+  * `-size` Populates the `RT_REPLICAS` environment variable, which is the ordinality of RT sequencers, i.e. RAFT cluster size. Currently `1` and `3` are supported.
+  * `-in_dir` The directory in the persistent volume where publishers' input log are stored (one subdirectory per publisher).
+  * `-out_dir` The directory in the persistent volumes where the merged output log is stored.
+  * `-state_dir` The directory in the persistent volume where the RAFT logs are stored.
+  * `-limit` See [maxLogSize](../../../enterprise/configuration/rt-archival.html#maxlogsize).
+  * `-time` See [retentionDuration](../../../enterprise/configuration/rt-archival.html#retentionduration).
+  * `-disk` See [maxDiskUsagePercent](../../../enterprise/configuration/rt-archival.html#maxdiskusagepercent).
+
+### Environment variables
+
+  * `RT_TOPIC_PREFIX` The prefix used to locate other nodes in the RT cluster via hostnames or DNS, e.g. `rt-`. Intra-RT connections are made using `${RT_TOPIC_PREFIX}${RT_SINK}-[012]`
+  * `RT_SINK` The RT identifier used to locate other nodes in the RT cluster via hostname or DNS, e.g. `data`. Intra-RT connections are made using `${RT_TOPIC_PREFIX}${RT_SINK}-[012]`
+  * `RT_SEQ_SESSION_PATH` Absolute path to a directory in the shared volume for storing the hard reset session number and soft reset checkpoint.
+  * `RT_LOGLEVEL_CONSOLE` Sets the RT logging level. Can be one of `ERROR`, `INFO`, `DEBUG`, `TRACE`. Default `INFO`.
+  * `RAFT_HEARTBEAT`, `RAFT_LOG_SIZE`, `RAFT_CHUNK_SIZE`. See [RAFT configuration](../../../enterprise/configuration/rt-archival.html#raft-configuration).
+  * `RT_QURAFT_LOG_LEVEL` Sets the QuRaft logging level. Can be one of `ERROR`, `INFO`, `DEBUG`, `TRACE`, `OFF`. Default `OFF`.
+  * `RT_LOG_LEADER` Set this env var to a non-empty string to enable QuRaft periodically log which node is the leader. Default `""`, i.e. off.
+
+## Publisher
+
+Each publisher must have its own persistent volume.
+
+q publishers are supported using the `.rt.pub` API in `rt.qpk`
+[here](../publishers.html#publishing).
+
+For an example publisher please see the [sample
+publisher](index.html#publisher) which sends a table of sensor data every
+second.
+
+`$HOSTNAME` requirement
+
+If after a `docker compose down` then `docker compose up`, you need the
+publisher to resume its previous publishing session without a potential loss
+of data, it is necessary to fix the `$HOSTNAME` of each publisher container.
+This is done by setting the `hostname` field in the docker-compose for each
+publisher service.
+
+## Subscriber
+
+[Subscribers](../subscribers.html) can either use persistent volumes or
+ephemeral storage but it's recommended that persistent volumes are used for
+performance reasons.
+
+For an example q subscriber please see the [sample
+subscriber](index.html#subscriber).
+
+q subscribers are supported using the
+`.rt.sub`stream`position`callback!(streamid; pos; callbacks)`API in`rt.qpk`:
+[here](../subscribers.html#subscribing).
+
+## How to connect a non-SSL q publisher/subscriber to RT from outside docker
+compose
+
+The rt.qpk supports running as an internal (without SSL) publisher/subscriber
+on your local host, connecting to the RT running in docker-compose using port
+forwarding.
+
+### Setup
+
+  1. Download the rt.qpk from the kdb Insights [Nexus](https://nexus.dl.kx.com/#browse/browse:kxi-package-public) registry
+
+  2. Unzip the rt.qpk
+
+  3. Port forward the internal push_server and pull_server from each RT sequencer to the docker host, using a different local IP address for each of the RT nodes:
+
+    
+    
+    services:
+      rt-data-0:
+        ports:
+        - 127.0.0.1:5001:5001/tcp
+        - 127.0.0.1:5002:5002/tcp
+      rt-data-1:
+        ports:
+        - 127.0.0.2:5001:5001/tcp
+        - 127.0.0.2:5002:5002/tcp
+      rt-data-2:
+        ports:
+        - 127.0.0.3:5001:5001/tcp
+        - 127.0.0.3:5002:5002/tcp
+    
+
+!!!note "`rt.qpk` port settings" Although the `rt.qpk` can publish using any
+port, subscribing requires connecting to port 5001 on each RT node. That is
+why each of the RT nodes is exposed using the same ports but different local
+IP addresses.
+
+### Publishing
+
+A q process on your local host can publish to the RT running in docker-compose
+by specifying the list of port-forwarded endpoints.
+
+In order to publish to the docker-compose:
+
+  1. Find the list of port-forwards corresponding to the internal push_server (`5002/tcp`) in each RT container
+    
+        $ docker container ls | grep rt-data | awk '{print $1'} | xargs -n 1 docker port | grep 5002/tcp | awk '{ print ":"$3 }'
+    :127.0.0.1:5002
+    :127.0.0.2:5002
+    :127.0.0.3:5002
+    
+
+  2. Start _kdb+ Cloud Edition_ , load the rt.qpk and [publish data](../sdks/rt-qpk.html#internal-publisher) using this list of endpoints. For example:
+    
+        $ qce
+    KDB+ 4.0 Cloud Edition 2022.07.01 Copyright (C) 1993-2022 Kx Systems
+    l64/ 12()core 5929MB neal a-lptp-2vccmh4k 127.0.1.1 EXPIRE 2024.01.13 nmcdonnell@kx.com KXMS KXCE #77882
+    
+    q)\cd rt
+    q)\l startq.q
+    q)params:(`path`stream`publisher_id`cluster)!("/tmp/rt";"data";"pub1";(":127.0.0.1:5002";":127.0.0.2:5002";":127.0.0.3:5002"))
+    q)p:.rt.pub params
+    q)show t:([]time:3#.z.p;sym:`a`b`c)
+    time                          sym
+    ---------------------------------
+    2023.10.04D11:05:05.028494659 a
+    2023.10.04D11:05:05.028494659 b
+    2023.10.04D11:05:05.028494659 c
+    q)p (`upd;`tab2; t)
+    
+
+### Subscribing
+
+A q process on your local host can subscribe to the RT running in docker-
+compose by setting up DNS entries to the port-forwarded endpoints.
+
+In order to subscribe to the docker-compose:
+
+  1. Configure your local DNS (`/etc/hosts`) to map each of RT nodes to the port-forwarded IP addresses
+
+    
+    
+    127.0.0.1 rt-data-0
+    127.0.0.2 rt-data-1
+    127.0.0.3 rt-data-2
+    
+
+  1. Start _kdb+ Cloud Edition_ , load the rt.qpk and [subscribe](../sdks/rt-qpk.html#subscriber-callback) using `$RT_TOPIC_PREFIX="rt-"` and `<streamid>="data"`
+
+    
+    
+    $ qce
+    KDB+ 4.0 Cloud Edition 2022.07.01 Copyright (C) 1993-2022 Kx Systems
+    l64/ 12()core 5929MB neal a-lptp-2vccmh4k 127.0.1.1 EXPIRE 2024.01.13 nmcdonnell@kx.com KXMS KXCE #77882
+    
+    q)\cd rt
+    q)\l startq.q
+    q)`RT_TOPIC_PREFIX setenv "rt-"
+    q)latest_pos:0
+    q)callback:{[data;pos]latest_pos::pos}
+    q).rt.sub`stream`position`callback!("data"; 0; callback)
+    q)latest_pos
+    35359
+    
+
+## Running a one node RT
+
+It is also possible to run RT in a one node configuration. The instructions
+below illustrate the differences between deploying a one node RT compared to a
+three node RT and should be read in conjunction with the more detailed
+instructions above for using RT with docker-compose.
+
+  1. Change the `RT_REPLICAS` environment variable in the `env` file to 1 as follows:
+
+    
+    
+    #/bin/bash
+    
+    # RT ordinality (only 1 and 3 are supported ATM):
+    # RT_REPLICAS=1 - use with --profile one-node
+    # RT_REPLICAS=3 - use with default profile
+    export RT_REPLICAS=1
+    
+
+  1. Bring up the docker-compose file with the `one-node` profile:
+
+    
+    
+    docker compose --env-file env -f docker-compose.yaml --profile one-node up
+    
+
+  1. If you wish to use external clients you should download and run the [`enrol_json_one_node.sh`](docker-artefacts/enrol_json_one_node.sh) script which generates a `client.json` containing the single RT endpoint:
+
+    
+    
+    cat client.json | jq .
+    {
+      "name": "client-name",
+      "topics": {
+        "insert": "data",
+        "query": "requests"
+      },
+      "ca": "<ca>",
+      "cert": "<cert>",
+      "key": "<key>",
+      "insert": {
+        "insert": [
+          ":127.0.0.1:5000"
+        ],
+        "query": []
+      },
+      "query": []
+    }
+    
+
+Connecting a non-SSL q publisher/subscriber to a one node RT from outside the
+docker-compose requires:
+
+  1. Setting up the port forwards as follows:
+
+    
+    
+    services:
+    rt-data-0:
+        ports:
+        - 127.0.0.1:5001:5001/tcp
+        - 127.0.0.1:5002:5002/tcp
+    
+
+  1. Subscribing requires configuring your `/etc/hosts` with the following:
+

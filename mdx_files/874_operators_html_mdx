@@ -1,0 +1,177 @@
+https://code.kx.com/insights/core/sql/operators.html
+
+# Operators - kdb products
+
+Original URL: https://code.kx.com/insights/core/sql/operators.html
+
+# Operators
+
+## Arithmetic operators
+
+The following arithmetic operators are supported:
+
+operator | description  
+---|---  
++ | Add  
+- | Subtract  
+* | Multiply  
+/ | Divide  
+= | Equals to  
+> | Greater than  
+< | Less than  
+>= | Greater than or equal to  
+<= | Less than or equal to  
+<> | Not equal to  
+  
+**Examples**
+
+  * **Addition** : Adding two columns together and creating a new column:
+    
+        .s.e"SELECT fare,tip,fare+tip as new_total FROM trips"
+    
+
+  * **Subtraction** : Subtracting one column from another and creating a new column:
+    
+        .s.e"SELECT month,month-1 as prev_month FROM trips"
+    
+
+  * **Multiplying** : Multiplying one column from another and creating a new column:
+    
+        // multiply *
+    .s.e"SELECT distance,5280*distance as distance_feet FROM trips"
+    
+
+  * **Dividing** : Dividing a column by a fixed value and creating a new column:
+    
+        // divide /
+    .s.e"SELECT fare, fare/100 as fare_cents FROM trips"
+    
+
+  * **Equals** : Returning only records that have a specific value in a column:
+    
+        // equal to =
+    .s.e"SELECT * FROM trips where passengers=2"
+    
+
+  * **Inequalities** : Applying filters:
+    
+        // equal to =
+    .s.e"SELECT * FROM trips where passengers=2"
+    
+    // greater than >=
+    .s.e"SELECT fare,tip,fare+tip as total FROM trips WHERE tip>0"
+    
+    // less than <=
+    .s.e"SELECT * FROM trips WHERE fare<5"
+    
+    // greater than or equal to >=
+    .s.e"SELECT * FROM trips WHERE distance>=12"
+    
+    // less than or equal to <=
+    .s.e"SELECT * FROM trips WHERE fare<=5"
+    
+
+  * **Not equal** : Do not return any records that meet a certain set of criteria:
+    
+        // not equal to <>
+    .s.e"SELECT * FROM trips WHERE passengers<>1"
+    
+    // not equal to !=
+    .s.e"SELECT * FROM trips WHERE passengers!=1"
+    
+
+## Logical operators
+
+The following logical operators supported are:
+
+operator | description  
+---|---  
+AND | TRUE if all the conditions separated by AND are TRUE  
+OR | TRUE if any of the conditions separated by OR is TRUE  
+NOT | Displays a record if the condition(s) is NOT TRUE  
+BETWEEN | TRUE if the operand is within the range of comparisons  
+IN | TRUE if the operand is equal to one of a list of expressions  
+LIKE | TRUE if the operand matches a pattern  
+IS NULL | TRUE if the value is NULL  
+  
+**Examples**
+
+  * **AND** : only returning records that meet ALL criteria:
+    
+        // AND
+    .s.e"SELECT * FROM trips  WHERE passengers=3 AND vendor='DDS'"
+    
+
+  * **OR** : returning records that meet ONE or MORE of the criteria:
+    
+        // OR
+    .s.e"SELECT * FROM trips WHERE tip>20 OR fare>100"
+    
+
+  * **IN** : specifying multiple values in a WHERE clause, which is a shorthand for multiple OR clauses:
+    
+        .s.e"SELECT * FROM trips WHERE payment_type IN ('CASH', 'CREDIT');"
+    
+
+  * **NOT** : returning records that DO NOT meet the criteria:
+    
+        // NOT
+    .s.e"SELECT * FROM trips WHERE NOT passengers=1"
+    
+
+Info
+
+This a option is equivalent to `<>` and `!=`.
+
+### Between
+
+Using `between` selects values within a given range. The values can be
+numbers, text, dates or datetimes.
+
+**Examples**
+
+  * Records that fall between two numbers:
+    
+        .s.e"SELECT * FROM trips WHERE fare BETWEEN 10 AND 12;"
+    
+
+  * Records that fall alphabetically between two text values:
+    
+        .s.e"SELECT * FROM trips WHERE payment_type BETWEEN 'CASH' AND 'DISPUTE';"
+    
+
+  * Records that fall between two datetimes:
+    
+        .s.e"SELECT * FROM trips WHERE pickup_time BETWEEN '2009-01-01 00:30:00' AND '2009-01-01 00:35:00';"
+    
+
+  * Records for a single day:
+    
+        .s.e"SELECT * FROM trips WHERE date BETWEEN '2009-01-01' AND '2009-01-02;"
+    
+
+### Like
+
+Using `like` is used in a WHERE clause to search for a specified pattern in a
+column. As in standard SQL syntax the following two wildcards are supported:
+
+  * The percent sign `%` represents zero, one, or multiple characters.
+  * The underscore sign `_` represents one, single character.
+
+**Examples**
+
+## Conditional operators
+
+The following conditional operators are supported:
+
+    
+    
+    case [a] when b then x ... else y
+    coalesce
+    nullif
+    
+
+Note
+
+Both the general and 'simple' comparison forms of `case` are supported.
+

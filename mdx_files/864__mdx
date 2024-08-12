@@ -1,0 +1,54 @@
+https://code.kx.com/platform/stream/logrecovery_template/
+
+# Log recovery - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/stream/logrecovery_template/
+
+# DS_LOG_RECOVERY
+
+Process to replay tickerplant log files. There are two runtime modes for the
+log recovery process, EOD mode and Intraday mode.
+
+In EOD mode the log recovery process runs after EOD and replays the
+tickerplant logfiles, data is flushed to the hdb whenever a certain number of
+rows have been replayed, the tables are then sorted by sym and the hdb is
+reloaded. The process then shuts down.
+
+In Intraday mode the log recovery process runs during the day. When a new
+hourly tickerplant logfile appears it is replayed and data is flushed to an
+intraday directory whenever a certain number of rows have been replayed, the
+tables are partitioned by sym. After end of day, data is transferred from the
+intraday directory to the hdb and recombined into tables sorted by sym, the
+daily tickerplant logfile is also replayed and saved directly to the hdb. The
+process stays running and waits for new logfiles for the next day.
+
+## Parameters
+
+The below table details the _LOG RECOVERY_ template parameters.
+
+name | type | default value | description  
+---|---|---|---  
+emailList | Symbol[] |  | Recipients for emails if no errors  
+errorEmailList | Symbol[] |  | Recipients for emails if there are errors  
+initialStateFunct | Analytic | dxEmptyFunctionNull | Sets the analytic to run on start up  
+logFileList | Symbol[] |  | List of TP logfiles to replay  
+date | Date | 1970.01.01 | Date to save to in HDB _if default unchanged, take date from TP log files_  
+lsProcess | Instance |  | Logstreamer to use if TP logfiles are on a different server  
+replayTableList | Symbol[] |  | Tables to replay from TP logfiles  
+filterList | Symbol[] |  | Syms to replay, leave blank for all syms  
+logReplayFunct | Analytic | dxLogReplayRecovery | Analytic to replay TP logfile  
+logMsgFunct | Analytic | dxUpdInsert | Upd function  
+blockSize | Long | 500,000 | Number of rows replayed before saving to disk  
+saveTableList | Symbol[] |  | Tables to save to HDB. Blank for existing tables on startup, ALL_TABLES for existing tables after replaying  
+hdbProcessList | Instance[] |  | HDB processes to reload when finished  
+finalStateFunct | Analytic | dxFinalRecover (dxFinalRecoveryIntraday) | Specifies final state tasks for EOD mode  
+intradayDirectory | Symbol |  | Directory to save intraday tables to  
+intradayTableList | Symbol[] |  | Tables to save to intradayDirectory  
+intradayFrequency | Integer | 60 | Frequency in seconds to check for new tickerplant logfiles  
+intradayHdbProcessList | Symbol[] |  | Intraday HDBs to reload after replaying hourly tickerplant logfile  
+rdbProcessList | Symbol[] |  | RDBs to delete from after replaying hourly tickerplant logfile  
+gwProcessList | Symbol[] |  | Gateways to take RDBs + HDBs offline  
+hdbServices | Service Class[] |  | HDB services to reload when finished  
+rdbServices | Service Class[] |  | RDB services to flush after replay  
+ihdbServices | Service Class[] |  | IHDB services to reload
+

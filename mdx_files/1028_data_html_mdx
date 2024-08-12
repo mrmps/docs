@@ -1,0 +1,63 @@
+https://code.kx.com/insights/core/sql/data.html
+
+# Data and Literals - kdb products
+
+Original URL: https://code.kx.com/insights/core/sql/data.html
+
+# Data
+
+## Data type conversions
+
+SQL type | KX SQL | q | name  
+---|---|---|---  
+text | a | 0 | list of character vectors  
+varchar, char(n>1) | s | 11 | symbol  
+char(1) | c | 10 | char  
+guid | g | 16 | guid  
+boolean | b | 1 | boolean  
+uuid | q | 2 | guid  
+tinyint | x | 4 | byte  
+smallint | h | 5 | short  
+integer | i | 6 | int  
+bigint | j | 7 | long  
+real | e | 8 | real  
+float,double,numeric | f | 9 | float  
+date | d | 14 | date  
+datetime | z | 8 | datetime  
+time | t | 19 | time  
+datetime | n | 8 | timespan  
+long | m | 4 | month  
+long | u | 4 | minute  
+long | v | 4 | second  
+timestamp (w/o tz) | p | 12 | timestamp  
+varchar | q | 20 | enum  
+| l | 20 | link (enum used for linked table access)  
+| w |  | 'null' sql value  
+  
+See [KX data types](https://code.kx.com/q/basics/datatypes/) for details of
+how the `q` data types are defined.
+
+Lists
+
+Always use uppercase characters for a list.
+
+## Literals
+
+The following literals are supported:
+
+### String Literals
+
+String literals may be converted to the following types automatically when
+possible:
+
+**Example**
+
+    
+    
+    s)select * from t where date in ('2001-01-01','2002-02-02') and time>'12:03'
+    
+
+### Type Literals
+
+Type literals are supported, for example: `date'2001-01-01'`
+

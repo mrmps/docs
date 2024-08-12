@@ -1,0 +1,127 @@
+https://code.kx.com/insights/accelerators/fsi/api-extend.html
+
+# Extending Accelerator APIs - kdb products
+
+Original URL: https://code.kx.com/insights/accelerators/fsi/api-extend.html
+
+# Extending Accelerator APIs
+
+Through the use of Insights Enterprise [custom
+APIs](../../api/database/custom/index.html) the accelerator APIs can be
+extended or enhanced.
+
+Within a custom API, the Accelerator get* functions can be called locally.
+However the input/output format must be taken note of as it is structured in a
+way that supports distributed queries and aggregations.
+
+## Use cases
+
+In the example below we will simply add a column at both the DAP and the
+aggregator, however some common use cases are:
+
+  * Reformat the data to structure for a dashboard render
+  * Append a second reference table in a way that is not natively supported by the get* APIs
+  * Run more complex analytics on top of first stage aggregations of getStats
+
+## Structure of accelerator APIs
+
+To understand how to best make use of the Accelerator APIs it is necessary to
+know the inputs and outputs. It is also worth understanding what happens
+within each of the Accelerator get* APIs at a high level,
+
+The structure of the accelerator APIs on a DAP is as follows:
+
+    
+    
+    get*:{[args]]
+    
+        /Validate arguments
+        /Adjust arguments
+        /Query data
+        /Transform data
+        /return to aggregator
+    
+        :(data;args)
+        }
+    
+
+This means it accepts a dictionary (same as if querying from a gateway)
+
+However, it returns at the DAP level a two item list:
+
+    
+    
+    - `data` the queried data from this DAP as a table
+    - `args` the argument dictionary with any adjustments applied
+    
+
+At the Aggregator level all get* APIs are serviced by one join function.
+
+    
+    
+    fsiJoin:{[returns]
+    
+        /Unpack returns variable
+        /Join data
+        /Transform data
+        /Return
+    
+        :data
+        }
+    
+
+Here the `fsiJoin` is taking a single argument, which is a variable length
+nested list of structure:
+
+    
+    
+    ((data;args);(data;args);(data;args))
+    
+
+which is a list of outputs from each DAPs.
+
+The return `data` is the joined table.
+
+## Using accelerator APIs in own custom APIs
+
+Therefore with the above in mind a custom API making use of this could be
+built like so:
+
+At the DAP
+
+    
+    
+    myAPI:{[args]
+    
+        out:getTicks[args];
+    
+        data:first out;
+        args:last out;
+    
+        data:update DAPColumn:.z.p from data;
+    
+        :(data;args)
+    
+
+At the aggregator
+
+    
+    
+    myJoin:{[returns]
+    
+        data:fsiJoin[returns];
+    
+        :update aggColumns:.z.p from data
+        }
+    
+
+These custom APIs will need to be registered with the SG as per the [custom
+API guide](../../api/database/custom/register.mdl)
+
+## Packaging
+
+The above custom API enhancements should be
+[packaged](../enterprise/packaging/index.html) separately to the Accelerator
+packages, and loaded in by referencing them in the DAP/Aggregator as described
+in the Insights Enterprise documentation.
+

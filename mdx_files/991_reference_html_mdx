@@ -1,0 +1,309 @@
+https://code.kx.com/insights/enterprise/database/configuration/assembly/reference.html
+
+# Reference - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/database/configuration/assembly/reference.html
+
+# Assembly reference
+
+A number of configuration objects within the assembly file are shared by
+different elements. This document details the specifications of a number of
+shared objects within the assembly file.
+
+## `k8sPolicy`
+
+Each element defined within the Assembly has a `k8sPolicy` object. This object
+allows additional Kubernetes configurations to be applied to the deployment
+objects created by the assembly.
+
+    
+    
+    spec:
+    ...
+      elements:
+        dap:
+          instances:
+            idb:
+              k8sPolicy: {}
+            hdb:
+              k8sPolicy: {}
+        sm:
+          k8sPolicy: {}
+        sequencer:
+          north:
+            k8sPolicy: {}
+          south:
+            k8sPolicy: {}
+    
+
+Within the `k8sPolicy`, the instances `ServiceAccount` and
+`PodSecurityContext` can be defined.
+
+Additional advanced configuration can be set as detailed in the sections
+below.
+
+#### `k8sPolicy.serviceAccount`
+
+The `serviceAccount` field allows the user to define a service account name to
+be used.
+
+    
+    
+    k8sPolicy:
+      serviceAccount: "my-svc-acc"
+    
+
+This may be a new service account name, or the name of a preexisting service
+account. If preexisting, the `create` field of `serviceAccountConfigure`
+should be set to `false`.
+
+#### `k8sPolicy.serviceAccountConfigure`
+
+The `serviceAccountConfigure` field allows the user to override defaults for a
+component's [service
+account](https://kubernetes.io/docs/concepts/security/service-accounts/).
+
+    
+    
+    k8sPolicy:
+      serviceAccountConfigure:
+        create: false
+        automountServiceAccountToken: false
+    
+
+By default the KXI Operator will create a service account for each component.
+
+This configuration allows for the creation to be disabled, and the automatic
+mounting of a service account token to also be disabled. See [configuring a
+service account](https://kubernetes.io/docs/tasks/configure-pod-
+container/configure-service-account/) for additional information.
+
+name | type | required | description  
+---|---|---|---  
+`automountServiceAccountToken` | `boolean` | No | Mount the service account token to the container  
+`create` | `boolean` | No | Create a service account for component  
+  
+#### `k8sPolicy.resources`
+
+The `resources` field allows the user to define [container
+resources](https://kubernetes.io/docs/concepts/configuration/manage-resources-
+containers/).
+
+    
+    
+    k8sPolicy:
+      resources:
+        applyResources: true
+        requests:
+          memory: "64Mi"
+          cpu: "250m"
+        limits:
+          memory: "128Mi"
+          cpu: "500m"
+    
+
+Resource configuration allows `limits` and `requests` to be set for
+containers. The Kubernetes scheduler will attempt to place the pod on a node
+with sufficient resources to meet a `request` and will enforce `limits` on a
+pod.
+
+Resource Limits
+
+When a process in the container tries to consume more than the allowed amount
+of memory, the system kernel terminates the process that attempted the
+allocation, with an out of memory (OOM) error.
+
+name | type | required | description  
+---|---|---|---  
+`applyResources` | `boolean` | No | Where resources have not been defined, they may be defaulted. Setting to `false` will disable the defaults from being applied to the container.  
+`limits.cpu` | `string` | No | Enforced CPU usage limit in units of [Kubernetes CPUs](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-cpu).  
+`limits.memory` | `string` | No | Enforced maximum memory in bytes. You can express memory as a number of bytes or a number with a unit. See [managing resources](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-memory) for more details  
+`requests.cpu` | `string` | No | Requested container CPU in units of [Kubernetes CPUs](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-cpu).  
+`requests.memory` | `string` | No | Requested container memory in bytes. You can express memory as a number of bytes or a number with a unit. See [managing resources](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-memory) for more details  
+`tmpDirSize` | `string` | No | Each container requires a `tmp` directory mounted to the container. This optional field allows you to request a specific size for the attached volume using a [volume capacity](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#capacity)  
+  
+Setting request and limits
+
+Memory and CPU requests are the baseline that your process is guaranteed to
+have available to it for processing. In general, it is recommended that if a
+limit is specified, it should match the request. For processes that require a
+significant amount of memory, such as the Storage Manager, it is recommended
+that no limit is set.
+
+#### `k8sPolicy.nodeSelector`
+
+The `nodeSelector` field allows the user to define
+[`nodeSelector`](https://kubernetes.io/docs/concepts/scheduling-
+eviction/assign-pod-node/#nodeselector) configuration for workloads.
+
+    
+    
+    k8sPolicy:
+      nodeSelector:
+        disktype: ssd
+    
+
+name | type | required | description  
+---|---|---|---  
+`nodeSelector` | `object` | No | Map of key-value pairs  
+  
+#### `k8sPolicy.affinity`
+
+The `affinity` object allows the user to define [affinity and anti-
+affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-
+node/#affinity-and-anti-affinity) configuration for workloads.
+
+    
+    
+    k8sPolicy:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/zone
+                operator: In
+                values:
+                - antarctica-east1
+                - antarctica-west1
+        ...
+        podAffinity:
+        ...
+        podAntiAffinity:
+        ...
+        podAntiAffinityPreset: "soft"
+    
+
+Pod affinity allows for more control over pod scheduling. Where `nodeSelector`
+may be used for simple scheduling, `podAffinity` allows for greater range of
+constraints.
+
+There are currently two types of [Node
+affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-
+node/#node-affinity), called `requiredDuringSchedulingIgnoredDuringExecution`
+and `preferredDuringSchedulingIgnoredDuringExecution`
+
+`requiredDuringSchedulingIgnoredDuringExecution` will only schedule pods on
+nodes matching criteria, whereas
+`preferredDuringSchedulingIgnoredDuringExecution` will attempt to schedule,
+but on failure will run on non-matching nodes.
+
+[Inter-pod affinity and anti-
+affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-
+node/#inter-pod-affinity-and-anti-affinity) allow you to constrain which nodes
+your pod is eligible to be scheduled to run on.
+
+The rules are of the form "this pod should (or, in the case of anti-affinity,
+should not) run in an X if that X is already running one or more pods that
+meet rule Y". Y is expressed as a `LabelSelector` with an optional associated
+list of namespaces.
+
+As with `nodeAffinity` there are two types of pod `affinity` and `anti-
+affinity`, called `requiredDuringSchedulingIgnoredDuringExecution` and
+`preferredDuringSchedulingIgnoredDuringExecution`.
+
+The `affinity` object also includes a `podAntiAffinityPreset`. This allows the
+user to configure `none`, `hard`, `hard-az`, `soft` or `soft-az` without the
+need to populate the `podAntiAffinity` object. See the table below for
+definitions of the preset affinity values. Setting this field tells the
+Operator to default the `podAntiAffinity` object for that component.
+
+affinity | description  
+---|---  
+`none` | No preset affinity. Pods can be scheduled on the first available node.  
+`soft` | Prefer scheduling workloads on separate nodes to avoid cascading node failure. If there are no more nodes available, this preset allows scheduling matching workloads on the same node.  
+`hard` | Require scheduling of workloads to be on separate nodes. If no more nodes are available, workload will fail scheduling.  
+`soft-az` | Prefer scheduling workloads in separate availability zones. If there are no more availability zones, this preset allows scheduling matching workloads in the same zone.  
+`hard-az` | Require scheduling of workloads to be in separate availability zones. If no more availability, zone workload scheduling will fail.  
+  
+`podAntiAffinityPreset`
+
+Where `podAntiAffinity` has been set, this will override any configuration set
+within the `podAntiAffinityPreset` field.
+
+name | type | required | description  
+---|---|---|---  
+`nodeAffinity` | `object` | No | [Node Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity) is a set of conditions for a node to meet for Pod scheduling on a node  
+`podAffinity` | `object` | No | [Pod Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#inter-pod-affinity-and-anti-affinity) is a set of conditions for additional workloads to be met for Pod scheduling on a node  
+`podAntiAffinityPreset` | `string` | No | When set, the operator will use preset [anti-affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) configuration for workloads. `none`, `hard`, `soft`, `hard-az` or `soft-az` anti-affinity may be set. See the table above for details on the presets.  
+`podAntiAffinity` | `object` | No | [Pod Anti-affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#inter-pod-affinity-and-anti-affinity) is a set of conditions for additional workloads to be met for Pod scheduling on a node  
+  
+#### `k8sPolicy.tolerations`
+
+The `tolerations` field allows the user to define
+[tolerations](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-
+and-toleration/) configuration for workloads.
+
+    
+    
+    k8sPolicy:
+      tolerations:
+      - key: "example-key"
+        operator: "Exists"
+        effect: "NoSchedule"
+    
+
+Nodes may be tainted, as means to prevent certain pods from being scheduled on
+that node. A taint is a key-value pair. Several taints are pre-existing and
+set by Kubernetes.
+
+Tolerations are applied to pods, and allow (but do not require) the pods to
+schedule onto nodes with matching taints.
+
+name | type | required | description  
+---|---|---|---  
+`tolerations` | `object` | No | Pod node taint tolerations  
+  
+#### `k8sPolicy.terminationGracePeriodSeconds`
+
+The `terminationGracePeriodSeconds` field allows the user to define
+[`terminationGracePeriodSeconds`](https://kubernetes.io/docs/concepts/workloads/pods/pod-
+lifecycle/#pod-termination) configuration for workloads.
+
+    
+    
+    k8sPolicy:
+      terminationGracePeriodSeconds: 60
+    
+
+This sets the length of time in seconds the container will be allowed to
+shutdown before the pod is killed.
+
+name | type | required | description  
+---|---|---|---  
+`terminationGracePeriodSeconds` | `integer` | No | The amount of time in seconds to wait for a workload to complete before forcefully killing it.  
+  
+#### `k8sPolicy.podSecurityContext`
+
+The `podSecurityContext` field allows for the [pod level security
+context](https://kubernetes.io/docs/tasks/configure-pod-container/security-
+context/) to be configured for the element pods.
+
+    
+    
+    k8sPolicy:
+      podSecurityContext:
+        runAsUser: 1000
+        fsGroup: 1000
+    
+
+It holds pod-level security attributes and common container settings. Some
+fields are also present in `container.securityContext`. Field values of
+`securityContext` take precedence over field values of `podSecurityContext`.
+
+#### `k8sPolicy.securityContext`
+
+The `securityContext` allows for a [container level security
+context](https://kubernetes.io/docs/tasks/configure-pod-container/security-
+context/#set-the-security-context-for-a-container) to be configured.
+
+    
+    
+    k8sPolicy:
+      securityContext:
+        runAsUser: 1000
+        fsGroup: 1000
+        readOnlyRootFilesystem: true
+        allowPrivilegeEscalation: false
+    
+

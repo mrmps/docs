@@ -1,0 +1,260 @@
+https://code.kx.com/platform/api/packaging/
+
+# Selective upgrades - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/api/packaging/
+
+# Selective upgrades
+
+## `.pkg.getCheckpoints`
+
+Calls to Control to get version numbers, times, descriptions, action
+(checkpoint or rollback) and rollback version for existing Control checkpoints
+
+**Returns:**
+
+Type | Description  
+---|---  
+table | Table of Control checkpoints  
+  
+**Example:**
+
+    
+    
+     .pkg.getCheckpoints[]
+     /=> ver  time                    description                        action        rollbackVer
+     /=> -----------------------------------------------------------------------------------------
+     /=> 2250 2020.01.20T17:00:05.067 "rolled back to checkpoint 2210"   rollback      2210
+     /=> 2227 2020.01.20T16:06:07.028 "TestPackage1 package(s) imported" checkpoint
+     /=> 2210 2020.01.20T00:00:00.089 "Automatic checkpoint"             checkpoint
+    
+
+## `.pkg.getCurrentVersion`
+
+Gets the current revision number for Control
+
+**Returns:**
+
+Type | Description  
+---|---  
+long | Current Control revision number  
+  
+**Example:**
+
+    
+    
+     .pkg.getCurrentVersion[]
+     /=> 2240j
+    
+
+## `.pkg.getImportHistory`
+
+Returns import history within a given window
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+sTime | Timestamp | Beginning of import window  
+eTime | Timestamp | End of import window  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+table | Table of package audit history  
+  
+**Example:**
+
+    
+    
+     .pkg.getImportHistory[.z.P-1D; .z.P]
+    
+
+## `.pkg.getModifiedEntities`
+
+Calls to Control to get a list of entities modified between two revision
+numbers
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+ver1 | long | Starting version number  
+ver2 | long | Ending version number  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+table | Table of modified entities  
+  
+**Example:**
+
+    
+    
+     .pkg.getModifiedEntities[2120;2135]
+     /=> name                                       entityType   | version
+     /=> -----------------------------------------------------------------
+     /=> 0a68dbe0-fae9-6c50-cf1e-4cb943171822       ui           | 2123
+     /=> delta_install_default                      configprofile| 2135
+     /=> TestParam101:DEFAULT                       configparam  | 2130
+    
+
+## `.pkg.getPkgVersion`
+
+Gets the version numbers for previously imported packages
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+pkg | symbol[] | Package names  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+table | Table of package names and version numbers  
+  
+**Example:**
+
+    
+    
+     .pkg.getPkgVersion[`DeltaStream]
+     /=> name           version
+     /=> ----------------------
+     /=> DeltaStream    4.4.0
+    
+
+## `.pkg.import`
+
+Tells Control to import a package from the given location. To avoid entity
+update permission errors, the deltacomponent user should be an Admin user.
+Control broadcasts a pre-import message to all processes with topic
+`Package.Import The payload of the message will be a dictionary with keys
+
+Key | Value  
+---|---  
+package | package name  
+version | version number before import  
+action | value of action parameter passed in to API  
+  
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+dir | symbol | Directory of package  
+pkg | symbol | Name of package  
+action | untyped | Descriptor provided by user  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | Version numbers before and after import and status of import  
+  
+**Example:**
+
+    
+    
+     dir:`$"home/install/packages/DeltaStream"
+     pkg:`DeltaStream
+     action:`import
+     .pkg.import[dir; pkg; action]
+     /=> before| 1010j
+     /=> after | 1050j
+     /=> status| `
+    
+
+## `.pkg.release`
+
+Tells Control to broadcast a message to the specified processes with topic
+`Package.Release The payload of the message will be a dictionary with keys
+
+Key | Value  
+---|---  
+version | version number to release  
+action | value of action parameter passed in to API  
+  
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+ver | long | Version number to release  
+procs | symbol[] | List of processes to broadcast message to  
+action | untyped | Descriptor provided by user  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+| Nothing returned  
+  
+**Example:**
+
+    
+    
+     .pkg.release[2130;`ds_qr_a`DS_QP; `release]
+     /=> ::
+    
+
+## `.pkg.rollback`
+
+Calls to Control to roll back to the last checkpoint before the supplied
+version number. To avoid entity update permission errors, the deltacomponent
+user should be an Admin user. Control broadcasts a message to all processes
+with topic `Package.Rollback The payload of the message will be a dictionary
+with keys
+
+Key | Value  
+---|---  
+before | version number before rollback  
+checkpoint | checkpoint rolling back to  
+after | version number after checkpoint  
+  
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+rev | long | Version number to rollback to  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+string | Status of rollback  
+  
+**Example:**
+
+    
+    
+     .pkg.rollback[2240j]
+     /=> "Successfully rolled back to version 2240"
+    
+
+## `.pkg.setVersion`
+
+Calls to Control to associate the process handle with the supplied version
+number, the process will then be operating at that version
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+ver | long | Version number to associate with the process  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+| Nothing returned  
+  
+**Example:**
+
+    
+    
+     .pkg.setVersion[2130j]
+     /=> ::
+    
+

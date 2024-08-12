@@ -1,0 +1,2911 @@
+https://code.kx.com/insights/enterprise/kxi-cli/cli.html
+
+# Reference - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/kxi-cli/cli.html
+
+# kdb Insights CLI Reference
+
+This page provides documentation for our command line tools.
+
+## kxi
+
+kdb Insights CLI
+
+**Usage:**
+
+    
+    
+    kxi [OPTIONS] COMMAND [ARGS]...
+    
+
+**Options:**
+
+    
+    
+      --version                       Show the version and exit.
+      --serviceaccount-id TEXT        Service account ID to request an access
+                                      token with
+      --serviceaccount-secret TEXT    Service account secret to request an access
+                                      token with
+      --realm TEXT                    Name of Keycloak realm
+      --hostname, --ingress-host TEXT
+                                      Hostname of kdb Insights deployment
+      --usage [microservices|enterprise]
+                                      kdb Insights deployment type:
+                                      enterprise/microservices
+      --debug                         Enable debug logging.
+      --profile TEXT                  Name of configuration profile to use.
+      --help                          Show this message and exit.
+    
+
+### kxi assembly
+
+Assembly interaction commands. These commands have been deprecated and may be
+removed from future releases. Use 'kxi package' instead.
+
+**Usage:**
+
+    
+    
+    kxi assembly [OPTIONS] COMMAND [ARGS]...
+    
+
+**Options:**
+
+    
+    
+      --help  Show this message and exit.
+    
+
+#### kxi assembly backup
+
+Back up running assemblies to a file. Deprecated. Use 'kxi package' instead
+
+**Usage:**
+
+    
+    
+    kxi assembly backup [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      -n, --namespace TEXT  Kubernetes namespace
+      -f, --filepath TEXT   Filepath to store state of running assemblies
+      --force               Perform action without prompting for confirmation
+      --help                Show this message and exit.
+    
+
+#### kxi assembly deploy
+
+Create an assembly given an assembly file. Deprecated. Use 'kxi package'
+instead.
+
+**Usage:**
+
+    
+    
+    kxi assembly deploy [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      -n, --namespace TEXT      Kubernetes namespace
+      -f, --filepath TEXT       Path to the assembly file
+      --wait, --wait-for-ready  Wait for all pods
+      --use-kubeconfig          Communicate directly with kubernetes plane
+      --help                    Show this message and exit.
+    
+
+#### kxi assembly list
+
+List assemblies. Deprecated. Use 'kxi package' instead.
+
+**Usage:**
+
+    
+    
+    kxi assembly list [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      -n, --namespace TEXT  Kubernetes namespace
+      --use-kubeconfig      Communicate directly with kubernetes plane
+      --help                Show this message and exit.
+    
+
+#### kxi assembly status
+
+Print status of the assembly. Deprecated. Use 'kxi package' instead.
+
+**Usage:**
+
+    
+    
+    kxi assembly status [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      -n, --namespace TEXT      Kubernetes namespace
+      --name TEXT               Name of the assembly  [required]
+      --wait, --wait-for-ready  Wait for all pods
+      --use-kubeconfig          Communicate directly with kubernetes plane
+      --help                    Show this message and exit.
+    
+
+#### kxi assembly teardown
+
+Tears down an assembly given its name. Deprecated. Use 'kxi package' instead.
+
+**Usage:**
+
+    
+    
+    kxi assembly teardown [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      -n, --namespace TEXT      Kubernetes namespace
+      --name TEXT               Name of the assembly  [required]
+      --wait, --wait-for-ready  Wait for all pods
+      --force                   Perform action without prompting for confirmation
+      --use-kubeconfig          Communicate directly with kubernetes plane
+      --help                    Show this message and exit.
+    
+
+### kxi auth
+
+Authentication and authorization commands
+
+**Usage:**
+
+    
+    
+    kxi auth [OPTIONS] COMMAND [ARGS]...
+    
+
+**Options:**
+
+    
+    
+      --help  Show this message and exit.
+    
+
+#### kxi auth get-admin-token
+
+Get an admin access token for the Keycloak Admin API
+
+**Usage:**
+
+    
+    
+    kxi auth get-admin-token [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --username TEXT  Keycloak admin username  [required]
+      --password TEXT  Keycloak admin password  [required]
+      --help           Show this message and exit.
+    
+
+#### kxi auth login
+
+Authenticate as a user or service account
+
+**Usage:**
+
+**Options:**
+
+    
+    
+      --redirect-host TEXT     Web host to serve token request after login
+      --redirect-port INTEGER  Port to serve token request after login
+      --serviceaccount         Use service account login flow
+      --force-code             Force manual verification code flow (non-local
+                               browser)
+      --help                   Show this message and exit.
+    
+
+#### kxi auth print-token
+
+Get an access token for a serviceaccount id and secret
+
+**Usage:**
+
+    
+    
+    kxi auth print-token [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --help  Show this message and exit.
+    
+
+### kxi backup
+
+Insights data backup related commands
+
+**Usage:**
+
+    
+    
+    kxi backup [OPTIONS] COMMAND [ARGS]...
+    
+
+**Options:**
+
+    
+    
+      --help  Show this message and exit.
+    
+
+#### kxi backup init
+
+**Usage:**
+
+    
+    
+    kxi backup init [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --az-stg-acc-name TEXT
+      --az-stg-acc-key TEXT
+      -n, --namespace TEXT       Kubernetes namespace
+      --restic-pw TEXT
+      --obj-store-provider TEXT
+      --help                     Show this message and exit.
+    
+
+#### kxi backup set-backup
+
+**Usage:**
+
+    
+    
+    kxi backup set-backup [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --backup-name TEXT
+      -n, --namespace TEXT    Kubernetes namespace
+      --azure-blob-name TEXT
+      --help                  Show this message and exit.
+    
+
+#### kxi backup snapshots
+
+**Usage:**
+
+    
+    
+    kxi backup snapshots [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --azure-blob-name TEXT
+      -n, --namespace TEXT    Kubernetes namespace
+      --help                  Show this message and exit.
+    
+
+### kxi client
+
+Commands for interacting with clients
+
+**Usage:**
+
+    
+    
+    kxi client [OPTIONS] COMMAND [ARGS]...
+    
+
+**Options:**
+
+    
+    
+      --help  Show this message and exit.
+    
+
+#### kxi client enrol
+
+Enrol a client in the system
+
+**Usage:**
+
+    
+    
+    kxi client enrol [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --name TEXT          Name of client to enrol  [required]
+      --insert-topic TEXT  Topic to insert data on  [required]
+      --help               Show this message and exit.
+    
+
+#### kxi client info
+
+Get certs and endpoints for a client
+
+**Usage:**
+
+    
+    
+    kxi client info [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --uid TEXT  Client UID to request info for  [required]
+      --help      Show this message and exit.
+    
+
+#### kxi client remove
+
+Remove a client from the system
+
+**Usage:**
+
+    
+    
+    kxi client remove [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --name TEXT  Name of the client to remove  [required]
+      --help       Show this message and exit.
+    
+
+### kxi configure
+
+Configure the CLI
+
+**Usage:**
+
+**Options:**
+
+    
+    
+      --profile TEXT  Name of profile to configure.
+      --help          Show this message and exit.
+    
+
+### kxi entitlement
+
+Insights entitlements commands
+
+**Usage:**
+
+    
+    
+    kxi entitlement [OPTIONS] COMMAND [ARGS]...
+    
+
+**Options:**
+
+    
+    
+      --help  Show this message and exit.
+    
+
+#### kxi entitlement actors
+
+List actors
+
+Actors are the list of groups that can be assigned to an entity.
+
+**Usage:**
+
+    
+    
+    kxi entitlement actors [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --timeout INTEGER  Timeout in seconds for request
+      --help             Show this message and exit.
+    
+
+#### kxi entitlement add-groups
+
+Add groups to an entitlement
+
+ID is the id of the the entity to add the groups to. GROUPS is a comma
+separated list of group IDs to add.
+
+**Usage:**
+
+    
+    
+    kxi entitlement add-groups [OPTIONS] ID TYPE GROUPS
+    
+
+**Options:**
+
+    
+    
+      --timeout INTEGER  Timeout in seconds for request
+      --help             Show this message and exit.
+    
+
+#### kxi entitlement create
+
+Create an entitlement
+
+ID is the ID of the entity being entitled. NAME is the name of the entity
+being entitled. TYPE is the type of the entity being entitled
+
+Supported entity types are 'assembly' and 'package'
+
+\--owner and --groups are optional, if not provided these will be defaulted to
+00000000-0000-0000-0000-000000000000 and [] respectively.
+
+**Usage:**
+
+    
+    
+    kxi entitlement create [OPTIONS] ID NAME TYPE
+    
+
+**Options:**
+
+    
+    
+      --owner UUID       User ID of the owner
+      --groups TEXT      Comma separated list of group IDs and access level
+                         <id>:<access>
+      --timeout INTEGER  Timeout in seconds for request
+      --help             Show this message and exit.
+    
+
+#### kxi entitlement delete
+
+Delete an entitlement
+
+This deletes an entitlement pending user confirmation. Use --force to skip
+user confirmation.
+
+**Usage:**
+
+    
+    
+    kxi entitlement delete [OPTIONS] ID TYPE
+    
+
+**Options:**
+
+    
+    
+      --timeout INTEGER  Timeout in seconds for request
+      --force            Perform action without prompting for confirmation
+      --help             Show this message and exit.
+    
+
+#### kxi entitlement filter
+
+**Usage:**
+
+    
+    
+    kxi entitlement filter [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --id TEXT          Entitlement id
+      --type TEXT        Entity type <assembly|package>
+      --access TEXT      Level of access <R|W|X>
+      --timeout INTEGER  Timeout in seconds for request
+      --help             Show this message and exit.
+    
+
+#### kxi entitlement get
+
+Get an entitlement
+
+**Usage:**
+
+    
+    
+    kxi entitlement get [OPTIONS] ID
+    
+
+**Options:**
+
+    
+    
+      --timeout INTEGER  Timeout in seconds for request
+      --help             Show this message and exit.
+    
+
+#### kxi entitlement list
+
+List entitlements
+
+**Usage:**
+
+    
+    
+    kxi entitlement list [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --timeout INTEGER  Timeout in seconds for request
+      --help             Show this message and exit.
+    
+
+#### kxi entitlement rm-groups
+
+Remove groups from an entitlement
+
+ID is the id of the the entity to remove the groups from. GROUPS is a comma
+separated list of group IDs to remove.
+
+**Usage:**
+
+    
+    
+    kxi entitlement rm-groups [OPTIONS] ID TYPE GROUPS
+    
+
+**Options:**
+
+    
+    
+      --timeout INTEGER  Timeout in seconds for request
+      --help             Show this message and exit.
+    
+
+#### kxi entitlement update
+
+Update an entitlement
+
+This updates the name, owner and groups of an entitlement based on the options
+passed.
+
+**Usage:**
+
+    
+    
+    kxi entitlement update [OPTIONS] ID TYPE
+    
+
+**Options:**
+
+    
+    
+      --name TEXT        Name of the entity
+      --owner UUID       User ID of the owner
+      --groups TEXT      Comma separated list of group IDs and access level
+                         <id>:<access>
+      --timeout INTEGER  Timeout in seconds for request
+      --help             Show this message and exit.
+    
+
+### kxi install
+
+Insights installation commands
+
+**Usage:**
+
+    
+    
+    kxi install [OPTIONS] COMMAND [ARGS]...
+    
+
+**Options:**
+
+    
+    
+      --help  Show this message and exit.
+    
+
+#### kxi install delete
+
+Uninstall kdb Insights Enterprise
+
+**Usage:**
+
+    
+    
+    kxi install delete [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --release TEXT                  Release name for the install
+      -n, --namespace TEXT            Kubernetes namespace
+      --force                         Perform action without prompting for
+                                      confirmation
+      --uninstall-operator            Remove KXI Operator installation
+      --assembly-backup-filepath TEXT
+                                      Filepath to store state of running
+                                      assemblies
+      --help                          Show this message and exit.
+    
+
+#### kxi install get-values
+
+Display the values of the currently deployed kdb Insights Enterprise
+
+**Usage:**
+
+    
+    
+    kxi install get-values [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      -n, --namespace TEXT  Kubernetes namespace
+      --release TEXT        Release name for the install
+      --help                Show this message and exit.
+    
+
+#### kxi install history
+
+List the revision history of a kdb Insights Enterprise install
+
+**Usage:**
+
+    
+    
+    kxi install history [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --release TEXT        Release name for the install
+      --show-operator       Display the install history of the kxi-operator
+      -n, --namespace TEXT  Kubernetes namespace
+      --help                Show this message and exit.
+    
+
+#### kxi install idp
+
+Azure Identity Provider commands
+
+**Usage:**
+
+    
+    
+    kxi install idp [OPTIONS] COMMAND [ARGS]...
+    
+
+**Options:**
+
+    
+    
+      --help  Show this message and exit.
+    
+
+##### kxi install idp add
+
+Add an Azure Identity Provider to a Keycloak realm
+
+**Usage:**
+
+    
+    
+    kxi install idp add [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --azure-tenant-id TEXT          Azure Tenant ID where the operations should
+                                      point to  [required]
+      --azure-app-registration-name TEXT
+                                      Name of the azure app registration to be
+                                      used  [required]
+      --azure-enable-interactive-login / --azure-disable-interactive-login
+                                      Switches interactive login for azure.
+                                      Default is enabled.
+      --hostname TEXT                 Hostname of kdb Insights deployment
+                                      [required]
+      --keycloak-admin-realm TEXT     KeyCloak admin realm
+      --keycloak-admin-username TEXT  KeyCloak admin username
+      --keycloak-admin-password TEXT  KeyCloak admin password
+      --keycloak-admin-clientid TEXT  KeyCloak admin client
+      --keycloak-idp-realm TEXT       Realm where the IdP operations should point
+                                      to
+      --keycloak-idp-alias TEXT       Identity Provider's alias
+      --keycloak-idp-display-name TEXT
+                                      Identity Provider's display name
+      --help                          Show this message and exit.
+    
+
+##### kxi install idp list
+
+List the Azure Identity Providers of a Keycloak realm
+
+**Usage:**
+
+    
+    
+    kxi install idp list [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --hostname TEXT                 Hostname of kdb Insights deployment
+                                      [required]
+      --keycloak-admin-realm TEXT     KeyCloak admin realm
+      --keycloak-admin-username TEXT  KeyCloak admin username
+      --keycloak-admin-password TEXT  KeyCloak admin password
+      --keycloak-admin-clientid TEXT  KeyCloak admin client
+      --keycloak-idp-realm TEXT       Realm where the IdP operations should point
+                                      to
+      --help                          Show this message and exit.
+    
+
+##### kxi install idp mapper
+
+Identity Provider mapper commands
+
+**Usage:**
+
+    
+    
+    kxi install idp mapper [OPTIONS] COMMAND [ARGS]...
+    
+
+**Options:**
+
+    
+    
+      --help  Show this message and exit.
+    
+
+###### kxi install idp mapper add
+
+Add a mapper to an Identity Provider
+
+**Usage:**
+
+    
+    
+    kxi install idp mapper add [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --azure-tenant-id TEXT          Azure Tenant ID where the operations should
+                                      point to  [required]
+      --azure-ad-group-name TEXT      Azure AD group name  [required]
+      --azure-enable-interactive-login / --azure-disable-interactive-login
+                                      Switches interactive login for azure.
+                                      Default is enabled.
+      --hostname TEXT                 Hostname of kdb Insights deployment
+                                      [required]
+      --keycloak-admin-realm TEXT     KeyCloak admin realm
+      --keycloak-admin-username TEXT  KeyCloak admin username
+      --keycloak-admin-password TEXT  KeyCloak admin password
+      --keycloak-admin-clientid TEXT  KeyCloak admin client
+      --keycloak-idp-realm TEXT       Realm where the IdP operations should point
+                                      to
+      --keycloak-idp-alias TEXT       Identity Provider's alias
+      --keycloak-idp-mapper-name TEXT
+                                      Mapper name of the IdP  [required]
+      --keycloak-idp-mapper-roles TEXT
+                                      Roles to add/remove to the mapper
+                                      [required]
+      --help                          Show this message and exit.
+    
+
+###### kxi install idp mapper list
+
+List the mappers of an Identity Provider
+
+**Usage:**
+
+    
+    
+    kxi install idp mapper list [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --hostname TEXT                 Hostname of kdb Insights deployment
+                                      [required]
+      --keycloak-admin-realm TEXT     KeyCloak admin realm
+      --keycloak-admin-username TEXT  KeyCloak admin username
+      --keycloak-admin-password TEXT  KeyCloak admin password
+      --keycloak-admin-clientid TEXT  KeyCloak admin client
+      --keycloak-idp-realm TEXT       Realm where the IdP operations should point
+                                      to
+      --keycloak-idp-alias TEXT       Identity Provider's alias
+      --help                          Show this message and exit.
+    
+
+#### kxi install list-versions
+
+List available versions of kdb Insights Enterprise
+
+**Usage:**
+
+    
+    
+    kxi install list-versions [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --chart-repo-name TEXT  Name for chart repository
+      --help                  Show this message and exit.
+    
+
+#### kxi install rollback
+
+**Usage:**
+
+    
+    
+    kxi install rollback [OPTIONS] [INSIGHTS_REVISION] [CHART]
+    
+
+**Options:**
+
+    
+    
+      --release TEXT                  Release name for the install
+      --operator-revision TEXT        Revision of operator to rollback to
+      --image-pull-secret TEXT        Secret containing credentials for the image
+                                      repository
+      -n, --namespace TEXT            Kubernetes namespace
+      --force                         Perform action without prompting for
+                                      confirmation
+      --assembly-backup-filepath TEXT
+                                      Filepath to store state of running
+                                      assemblies
+      --chart-repo-name TEXT          Name for chart repository
+      --operator-chart TEXT           Filename of kxi-operator chart
+      --timeout TEXT                  Helm argument. Time to wait for any
+                                      individual Kubernetes operation
+                                      (like Jobs for hooks) (default 10m0s)
+      --wait / --no-wait              Helm argument. If set, will wait until all
+                                      Pods, PVCs, Services,         and minimum
+                                      number of Pods of a Deployment, StatefulSet,
+                                      or         ReplicaSet are in a ready state
+                                      before marking the release as
+                                      successful. It will wait for as long as
+                                      --helm-timeout
+      --wait-for-jobs / --no-wait-for-jobs
+                                      Helm argument. If set and --helm-wait
+                                      enabled, will wait until all         Jobs
+                                      have been completed before marking the
+                                      release as successful.         It will wait
+                                      for as long as --helm-timeout
+      --help                          Show this message and exit.
+    
+
+#### kxi install run
+
+Install kdb Insights Enterprise with a values file
+
+**Usage:**
+
+    
+    
+    kxi install run [OPTIONS] [CHART]
+    
+
+**Options:**
+
+    
+    
+      -n, --namespace TEXT            Kubernetes namespace
+      --license-secret TEXT           Secret containing kdb+ license
+      --license-as-env-var BOOLEAN    Mount kdb+ license secret as an environment
+                                      variable
+      --license-filepath TEXT         File path and file name of kdb+ license file
+      --client-cert-secret TEXT       Secret containing TLS cert and key for
+                                      client issuer
+      --image-repo TEXT               Repository to pull images from
+      --image-repo-user TEXT          User name for image repository
+      --image-pull-secret TEXT        Secret containing credentials for the image
+                                      repository
+      --gui-client-secret TEXT        Keycloak client secret for gui service
+                                      account
+      --operator-client-secret TEXT   Keycloak client secret for operator service
+                                      account
+      --keycloak-secret TEXT          Secret containing Keycloak admin password
+      --keycloak-postgresql-secret TEXT
+                                      Secret containing Keycloak postgresql
+                                      passwords
+      --keycloak-auth-url TEXT        Auth URL for Keycloak
+      --hostname, --ingress-host TEXT
+                                      Hostname of kdb Insights deployment
+      --ingress-cert-secret TEXT      Secret containing self-managed TLS cert and
+                                      key for the ingress
+      --ingress-cert TEXT             File path to TLS certificate for the ingress
+      --ingress-key TEXT              File path to TLS private key for the ingress
+      --output-file TEXT              Name for the generated values file
+      -f, --filepath PATH             Values file to install with
+      --release TEXT                  Release name for the install
+      --version TEXT                  Version to install  [required]
+      --operator-version TEXT         Version of the operator to install
+      --force                         Perform action without prompting for
+                                      confirmation
+      --import-users BOOLEAN          Enables/disables the import of users at
+                                      deployment time
+      --encryption BOOLEAN            Enables/disables encryption
+      --management-version TEXT       Version of the management service to install
+      --insights-on-k8s-version TEXT  Version of the insights-on-k8s chart to
+                                      install
+      --skip-operator                 Running install or upgrade with this flag
+                                      will prevent installing or         upgrading
+                                      the operator.
+      --skip-management               Running install or upgrade with this flag
+                                      will prevent installing or         upgrading
+                                      the management service.
+      --timeout TEXT                  Helm argument. Time to wait for any
+                                      individual Kubernetes operation
+                                      (like Jobs for hooks) (default 10m0s)
+      --wait / --no-wait              Helm argument. If set, will wait until all
+                                      Pods, PVCs, Services,         and minimum
+                                      number of Pods of a Deployment, StatefulSet,
+                                      or         ReplicaSet are in a ready state
+                                      before marking the release as
+                                      successful. It will wait for as long as
+                                      --helm-timeout
+      --wait-for-jobs / --no-wait-for-jobs
+                                      Helm argument. If set and --helm-wait
+                                      enabled, will wait until all         Jobs
+                                      have been completed before marking the
+                                      release as successful.         It will wait
+                                      for as long as --helm-timeout
+      --help                          Show this message and exit.
+    
+
+#### kxi install setup
+
+Perform necessary setup steps to install Insights
+
+**Usage:**
+
+    
+    
+    kxi install setup [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      -n, --namespace TEXT            Kubernetes namespace
+      --license-secret TEXT           Secret containing kdb+ license
+      --license-as-env-var BOOLEAN    Mount kdb+ license secret as an environment
+                                      variable
+      --license-filepath TEXT         File path and file name of kdb+ license file
+      --client-cert-secret TEXT       Secret containing TLS cert and key for
+                                      client issuer
+      --image-repo TEXT               Repository to pull images from
+      --image-repo-user TEXT          User name for image repository
+      --image-pull-secret TEXT        Secret containing credentials for the image
+                                      repository
+      --gui-client-secret TEXT        Keycloak client secret for gui service
+                                      account
+      --operator-client-secret TEXT   Keycloak client secret for operator service
+                                      account
+      --keycloak-secret TEXT          Secret containing Keycloak admin password
+      --keycloak-postgresql-secret TEXT
+                                      Secret containing Keycloak postgresql
+                                      passwords
+      --keycloak-auth-url TEXT        Auth URL for Keycloak
+      --hostname, --ingress-host TEXT
+                                      Hostname of kdb Insights deployment
+      --ingress-cert-secret TEXT      Secret containing self-managed TLS cert and
+                                      key for the ingress
+      --ingress-cert TEXT             File path to TLS certificate for the ingress
+      --ingress-key TEXT              File path to TLS private key for the ingress
+      --ingress-certmanager-disabled  Flag to disable usage of TLS certmanager
+      --output-file TEXT              Name for the generated values file
+      --help                          Show this message and exit.
+    
+
+#### kxi install upgrade
+
+Upgrade kdb Insights Enterprise
+
+**Usage:**
+
+    
+    
+    kxi install upgrade [OPTIONS] [CHART]
+    
+
+**Options:**
+
+    
+    
+      -n, --namespace TEXT            Kubernetes namespace
+      --release TEXT                  Release name for the install
+      --assembly-backup-filepath TEXT
+                                      Filepath to store state of running
+                                      assemblies
+      --version TEXT                  Version to install  [required]
+      --operator-version TEXT         Version of the operator to install
+      --image-pull-secret TEXT        Secret containing credentials for the image
+                                      repository
+      --license-secret TEXT           Secret containing kdb+ license
+      -f, --filepath PATH             Values file to install with
+      --force                         Perform action without prompting for
+                                      confirmation
+      --import-users BOOLEAN          Enables/disables the import of users at
+                                      deployment time
+      --encryption BOOLEAN            Enables/disables encryption
+      --management-version TEXT       Version of the management service to install
+      --insights-on-k8s-version TEXT  Version of the insights-on-k8s chart to
+                                      install
+      --skip-operator                 Running install or upgrade with this flag
+                                      will prevent installing or         upgrading
+                                      the operator.
+      --skip-management               Running install or upgrade with this flag
+                                      will prevent installing or         upgrading
+                                      the management service.
+      --timeout TEXT                  Helm argument. Time to wait for any
+                                      individual Kubernetes operation
+                                      (like Jobs for hooks) (default 10m0s)
+      --wait / --no-wait              Helm argument. If set, will wait until all
+                                      Pods, PVCs, Services,         and minimum
+                                      number of Pods of a Deployment, StatefulSet,
+                                      or         ReplicaSet are in a ready state
+                                      before marking the release as
+                                      successful. It will wait for as long as
+                                      --helm-timeout
+      --wait-for-jobs / --no-wait-for-jobs
+                                      Helm argument. If set and --helm-wait
+                                      enabled, will wait until all         Jobs
+                                      have been completed before marking the
+                                      release as successful.         It will wait
+                                      for as long as --helm-timeout
+      --help                          Show this message and exit.
+    
+
+### kxi package
+
+KX Package Import/Export CLI.
+
+**Usage:**
+
+    
+    
+    kxi package [OPTIONS] COMMAND [ARGS]...
+    
+
+**Options:**
+
+    
+    
+      --artifact-store DIRECTORY  Directory in which to store packed
+                                  artifacts;[default] $KX_ARTIFACT_PATH.  [env
+                                  var: KX_ARTIFACT_PATH]
+      --pkg-lib DIRECTORY         Directory in which packages will be
+                                  installed;[default] $KX_PACKAGE_PATH.  [env var:
+                                  KX_PACKAGE_PATH]
+      --version                   Version information.
+      --debug                     Enable stacktrace print statements for easier
+                                  debugging.
+      -v, --verbose               Increase verbosity level
+      -q, --quiet                 Disable logs. Only print errors.
+      --help                      Show this message and exit.
+    
+
+#### kxi package add
+
+Add an entity to the specified package.
+
+**Usage:**
+
+    
+    
+    kxi package add [OPTIONS] COMMAND [ARGS]...
+    
+
+**Options:**
+
+    
+    
+      --to <Package>  Package, to which, the entity will be added.
+      --help          Show this message and exit.
+    
+
+##### kxi package add agg
+
+Add aggregator to the specified package
+
+**Usage:**
+
+    
+    
+    kxi package add agg [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --help  Show this message and exit.
+    
+
+##### kxi package add database
+
+Add a database to the specified package.
+
+**Usage:**
+
+    
+    
+    kxi package add database [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --name TEXT  Name of the database to be added to the package.
+      --help       Show this message and exit.
+    
+
+##### kxi package add dep
+
+Add a package dependency to the specified package.
+
+**Usage:**
+
+    
+    
+    kxi package add dep [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --name TEXT      Name of the dependent package.
+      --version TEXT   Version of the dependent package.
+      --repo TEXT      Repository of the dependent package if it is a remote
+                       package.
+      --location TEXT  Location of the dependent package - "local" or "remote".
+      --path TEXT      Path to the dependent package if it is a local package.
+      --help           Show this message and exit.
+    
+
+##### kxi package add deployment-config
+
+Add deployment_config to the specified package
+
+**Usage:**
+
+    
+    
+    kxi package add deployment-config [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --name TEXT  Name of the deployment_config to add to the package
+      --help       Show this message and exit.
+    
+
+##### kxi package add entitlements
+
+Add entitlements to the specified package.
+
+**Usage:**
+
+    
+    
+    kxi package add entitlements [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --read TEXT   Read entitlements to be added to the package.
+      --write TEXT  Write entitlements to be added to the package.
+      --help        Show this message and exit.
+    
+
+##### kxi package add entrypoint
+
+Add an entrypoint to the specified package.
+
+**Usage:**
+
+    
+    
+    kxi package add entrypoint [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --name TEXT  Name of the entrypoint to add from the package.
+      --path PATH  Path to the entrypoint.
+      --help       Show this message and exit.
+    
+
+##### kxi package add patch
+
+Add patch to the specified package
+
+**Usage:**
+
+    
+    
+    kxi package add patch [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --dep TEXT   Name of the dependency where the patch is located
+      --name TEXT  Name of the patch to add to the package
+      --help       Show this message and exit.
+    
+
+##### kxi package add pipeline
+
+Add a pipeline to the specified package.
+
+**Usage:**
+
+    
+    
+    kxi package add pipeline [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --name TEXT         Name of the pipeline to be added to the package.
+      --replicas INTEGER  Number of replica pipelines to create.
+      --spec-file TEXT    Source file for pipeline to use
+      --help              Show this message and exit.
+    
+
+##### kxi package add rc
+
+Add resource coordinator to the specified package
+
+**Usage:**
+
+    
+    
+    kxi package add rc [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --help  Show this message and exit.
+    
+
+##### kxi package add ref
+
+Add a ref to an external object in the specified package.
+
+**Usage:**
+
+    
+    
+    kxi package add ref [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --pkg TEXT         package to find object ref inside formatted as
+                         <name>/<version>
+      --uuid UUID        uuid of the object ref to be added to the package.
+      --type [Pipeline]  type of the object ref to be added to the package.
+      --name TEXT        Name of file for ref object. Not the name of the object
+                         it refers to.
+      --help             Show this message and exit.
+    
+
+##### kxi package add router
+
+Add a router to the specified package.
+
+**Usage:**
+
+    
+    
+    kxi package add router [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --name TEXT  Name of the router to add from the package.
+      --help       Show this message and exit.
+    
+
+##### kxi package add shard
+
+Add shard to the specified package
+
+**Usage:**
+
+    
+    
+    kxi package add shard [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --name TEXT  Name of the shard to be added to the database.
+      --help       Show this message and exit.
+    
+
+##### kxi package add stream
+
+Add a stream to the specified database.
+
+**Usage:**
+
+    
+    
+    kxi package add stream [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --name TEXT         Name of the stream to be added to the database.
+      --database TEXT     Name of the database to add the stream to.
+      --shard TEXT        Name of the shard to add the stream to.
+      --external BOOLEAN  Flag for internally or externally facing Sequencer.
+      --sub-topic TEXT    Name of the subtopic for the external stream.
+      --help              Show this message and exit.
+    
+
+##### kxi package add table
+
+Add a table to the specified package.
+
+**Usage:**
+
+    
+    
+    kxi package add table [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --name TEXT  Name of the table to be added to the package.
+      --help       Show this message and exit.
+    
+
+##### kxi package add view
+
+Add a view to the specified package.
+
+**Usage:**
+
+    
+    
+    kxi package add view [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --name TEXT  Name of the view to add to the package.
+      --data TEXT  Add data from an existing json file to the view
+      --help       Show this message and exit.
+    
+
+#### kxi package checkpoint
+
+Create a package artifact given a source code directory.
+
+**Usage:**
+
+    
+    
+    kxi package checkpoint [OPTIONS] SOURCE
+    
+
+**Options:**
+
+    
+    
+      --version TEXT              Override the version of the package.
+      --bump [major|minor|patch]  Increment the major/minor/patch version.
+      --version-info TEXT         Leave a description note for the checkpoint
+                                  version.
+      --help                      Show this message and exit.
+    
+
+#### kxi package convert
+
+Convert Assembly to Package and vice versa.
+
+Depending on what object the filepath points to:
+
+    
+    
+    If file contains assembly: Convert an asm -> package
+    
+    If dir  contains Package:
+            If Convert package to -> yaml/json (e.g. --fmt json)
+    
+
+**Usage:**
+
+    
+    
+    kxi package convert [OPTIONS] FILEPATH
+    
+
+**Options:**
+
+    
+    
+      --fmt [yaml|json]  json or yaml format if converting a package to new fmt
+      --to-assembly      If the input is a Package, this flag converts the output
+                         to an Assembly.
+      --help             Show this message and exit.
+    
+
+#### kxi package copy
+
+Copy an entity from the specified package.
+
+**Usage:**
+
+    
+    
+    kxi package copy [OPTIONS] COMMAND [ARGS]...
+    
+
+**Options:**
+
+    
+    
+      -f, --from <Src-Package>   Package from which the entity will be copied.
+      -t, --to <Target-Package>  Package to which the entity will be
+                                 copied;[default] `from`.
+      --help                     Show this message and exit.
+    
+
+##### kxi package copy pipeline
+
+Copy a pipeline from the specified package.
+
+Note: This operation will clobber existing pipelines.
+
+**Usage:**
+
+    
+    
+    kxi package copy pipeline [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --src-name TEXT     Name of the pipeline to copy.
+      --dest-name TEXT    Name of the newly copied pipeline.
+      --replicas INTEGER  Number of replica pipelines to create.
+      --help              Show this message and exit.
+    
+
+#### kxi package deploy
+
+Deploy a package to an insights instance.
+
+SOURCE: package-name[/version]
+
+**Usage:**
+
+    
+    
+    kxi package deploy [OPTIONS] [EXTRA_ARGS]... SOURCE
+    
+
+**Options:**
+
+    
+    
+      --hostname, --url TEXT          Insights URL  [env var: INSIGHTS_URL]
+      --realm TEXT                    Realm  [env var: INSIGHTS_REALM; default:
+                                      insights]
+      --client-id TEXT                Client id  [env var: INSIGHTS_CLIENT_ID]
+      --client-secret TEXT            Client secret  [env var:
+                                      INSIGHTS_CLIENT_SECRET]
+      --auth-enabled / --auth-disabled
+                                      Will attempt to retrieve bearer token for
+                                      request  [env var: KXI_AUTH_ENABLED;
+                                      default: auth-enabled]
+      --server-timeout FLOAT          Timeout for Insights server calls  [env var:
+                                      INSIGHTS_SERVER_TIMEOUT; default: 60]
+      --db TEXT                       Deploy an existing package's database (must
+                                      be defined in the package)
+      --pipeline TEXT                 Deploy an existing package's pipeline (must
+                                      be defined in the package)
+      --rm-existing-data              Remove the data associated with the old
+                                      deployment
+      --env TEXT                      Inject environment variables to the deployed
+                                      package. `[component_name:]VAR=value`
+      --help                          Show this message and exit.
+    
+
+#### kxi package field
+
+Find, list or mutate fields within a package.
+
+**Usage:**
+
+    
+    
+    kxi package field [OPTIONS] COMMAND [ARGS]...
+    
+
+**Options:**
+
+    
+    
+      --help  Show this message and exit.
+    
+
+##### kxi package field find
+
+Find an object inside a package by looking up it's type (e.g Table). Case
+sensitive.
+
+**Usage:**
+
+    
+    
+    kxi package field find [OPTIONS] [PACKAGE_PATH] [CLASSNAME]
+    
+
+**Options:**
+
+    
+    
+      -f, --filter TEXT  Key-value pair to filter the returned objects on.
+      --help             Show this message and exit.
+    
+
+##### kxi package field get
+
+Get a json representation of a field at a location using dot notation e.g.
+".pipelines[0].name".
+
+**Usage:**
+
+    
+    
+    kxi package field get [OPTIONS] [REQUIREMENT_SPECIFIER] [PATH]
+    
+
+**Options:**
+
+    
+    
+      --help  Show this message and exit.
+    
+
+##### kxi package field info
+
+Print out the information about the object specified. Case sensitive.
+
+**Usage:**
+
+    
+    
+    kxi package field info [OPTIONS] CLASSNAME
+    
+
+**Options:**
+
+    
+    
+      --help  Show this message and exit.
+    
+
+##### kxi package field set
+
+Set a field using dot notation path e.g.".pipelines[0].name". Can only set
+strings curently
+
+**Usage:**
+
+    
+    
+    kxi package field set [OPTIONS] [REQUIREMENT_SPECIFIER] PATH VALUE
+    
+
+**Options:**
+
+    
+    
+      --help  Show this message and exit.
+    
+
+#### kxi package info
+
+show some info about the package
+
+**Usage:**
+
+    
+    
+    kxi package info [OPTIONS] [REQUIREMENT_SPECIFIER]
+    
+
+**Options:**
+
+    
+    
+      --help  Show this message and exit.
+    
+
+#### kxi package init
+
+Creates a bare package at the specified target path.
+
+Note: this will not be saved to your KX_PACKAGE_PATH unless `install` is
+explicitly run.
+
+**Usage:**
+
+    
+    
+    kxi package init [OPTIONS] [PATH_TO_PACKAGE]
+    
+
+**Options:**
+
+    
+    
+      --force         Force initialisation: overwrite existing directory if one
+                      already exists.
+      --reset         Reset initialisation: overwrite the existing manifest only
+      --version TEXT  Version of the package to initialise.
+      --help          Show this message and exit.
+    
+
+#### kxi package install
+
+Install a package given a requirement or path.
+
+**Usage:**
+
+    
+    
+    kxi package install [OPTIONS] [REQUIREMENT_SPECIFIER]
+    
+
+**Options:**
+
+    
+    
+      --override-deps TEXT   Specify which deps to override during install. format
+                             'name/ver:path/to/new/package'
+      --simple               Simplify the output to name/version format.
+      --add-symlink-to PATH  Create a symlink of package_name/version at the
+                             specified directory.
+      --force                Force install: overwrite existing packages and
+                             dependencies.
+      --help                 Show this message and exit.
+    
+
+#### kxi package list
+
+List all installed packages or artifacts.
+
+**Usage:**
+
+    
+    
+    kxi package list [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --obj-type TEXT    List this obj type (e.g. Pipelines) overrides
+                         artifact/deployment flag. Case Sensitive.
+      --simple           Simplify the output to one line format.
+      -f, --filter TEXT  Key-value pair to filter the returned packages on.
+                         Multiple conditions ANDed together.
+      --fields TEXT      Specify the root level attrs as a comma seperated list,
+                         e.g. `name,version` or specify `all` for all fields
+      --package-json     List the full manifests for each package. (Deprecated)
+      --artifacts        List available artifacts on the system.
+      --deployments      List deployments tracked from this client
+      -d, --dir PATH     List objects in this directory
+      --in-pkg TEXT      Look for the object inside a given pkg [name/version].
+      --help             Show this message and exit.
+    
+
+#### kxi package lock
+
+Lock the q files within a source directory. Files whose first line is /dnc or
+//dnc will be ignored.
+
+**Usage:**
+
+    
+    
+    kxi package lock [OPTIONS] SOURCE
+    
+
+**Options:**
+
+    
+    
+      --keep-unlocked  Keep the original unlocked q files once the locked versions
+                       are created.
+      --help           Show this message and exit.
+    
+
+#### kxi package overlay
+
+Overlay a package using a spec file containing a subset of fields.
+
+**Usage:**
+
+    
+    
+    kxi package overlay [OPTIONS] <Package> [OVERLAY_SPEC]...
+    
+
+**Options:**
+
+    
+    
+      --help  Show this message and exit.
+    
+
+#### kxi package packit
+
+Create a package artifact given a source code directory.
+
+**Usage:**
+
+    
+    
+    kxi package packit [OPTIONS] SOURCE
+    
+
+**Options:**
+
+    
+    
+      --override-deps TEXT  Specify which deps to override during packit. format
+                            'name/ver:path/to/new/package'
+      --keep-unlocked       Keep the original unlocked q files once the locked
+                            versions are created.
+      --lock-q-files        Lock the contents of the q files in the package. Files
+                            whose first line is /dnc or //dnc will be ignored.
+      --all-deps            Package all dependencies together.
+      --tag                 Tag for release, omit the random dev hash suffix.
+      --version TEXT        Override the version of the package.
+      --package-name TEXT   Override the auto-generated package name.
+      --help                Show this message and exit.
+    
+
+#### kxi package pull
+
+Download an artifact from the running insights package manager service to your
+local directory. Where NAMEVER is the 'name/version' of the artifact we want
+to pull from the service.
+
+**Usage:**
+
+    
+    
+    kxi package pull [OPTIONS] NAMEVER
+    
+
+**Options:**
+
+    
+    
+      --hostname, --url TEXT          Insights URL  [env var: INSIGHTS_URL]
+      --realm TEXT                    Realm  [env var: INSIGHTS_REALM; default:
+                                      insights]
+      --client-id TEXT                Client id  [env var: INSIGHTS_CLIENT_ID]
+      --client-secret TEXT            Client secret  [env var:
+                                      INSIGHTS_CLIENT_SECRET]
+      --auth-enabled / --auth-disabled
+                                      Will attempt to retrieve bearer token for
+                                      request  [env var: KXI_AUTH_ENABLED;
+                                      default: auth-enabled]
+      --server-timeout FLOAT          Timeout for Insights server calls  [env var:
+                                      INSIGHTS_SERVER_TIMEOUT; default: 60]
+      --help                          Show this message and exit.
+    
+
+#### kxi package push
+
+Publish an artifact to the running insights package manager service. Where
+ARTIFACT is either the filepath or the 'name/version' of the artifact.
+
+**Usage:**
+
+    
+    
+    kxi package push [OPTIONS] ARTIFACT
+    
+
+**Options:**
+
+    
+    
+      --force                         Force push: overwrite existing packages and
+                                      their dependencies.
+      --hostname, --url TEXT          Insights URL  [env var: INSIGHTS_URL]
+      --realm TEXT                    Realm  [env var: INSIGHTS_REALM; default:
+                                      insights]
+      --client-id TEXT                Client id  [env var: INSIGHTS_CLIENT_ID]
+      --client-secret TEXT            Client secret  [env var:
+                                      INSIGHTS_CLIENT_SECRET]
+      --auth-enabled / --auth-disabled
+                                      Will attempt to retrieve bearer token for
+                                      request  [env var: KXI_AUTH_ENABLED;
+                                      default: auth-enabled]
+      --server-timeout FLOAT          Timeout for Insights server calls  [env var:
+                                      INSIGHTS_SERVER_TIMEOUT; default: 60]
+      --help                          Show this message and exit.
+    
+
+#### kxi package refresh
+
+Refresh a package, picking up any available changes from disk
+
+**Usage:**
+
+    
+    
+    kxi package refresh [OPTIONS] <Package>
+    
+
+**Options:**
+
+    
+    
+      --fix-uuids  Make all uuids unique.
+      --help       Show this message and exit.
+    
+
+#### kxi package remote
+
+V2 Remote commands.
+
+**Usage:**
+
+    
+    
+    kxi package remote [OPTIONS] COMMAND [ARGS]...
+    
+
+**Options:**
+
+    
+    
+      --hostname, --url TEXT          Insights URL  [env var: INSIGHTS_URL]
+      --realm TEXT                    Realm  [env var: INSIGHTS_REALM; default:
+                                      insights]
+      --client-id TEXT                Client id  [env var: INSIGHTS_CLIENT_ID]
+      --client-secret TEXT            Client secret  [env var:
+                                      INSIGHTS_CLIENT_SECRET]
+      --auth-enabled / --auth-disabled
+                                      Will attempt to retrieve bearer token for
+                                      request  [env var: KXI_AUTH_ENABLED;
+                                      default: auth-enabled]
+      --server-timeout FLOAT          Timeout for Insights server calls  [env var:
+                                      INSIGHTS_SERVER_TIMEOUT; default: 60]
+      --help                          Show this message and exit.
+    
+
+##### kxi package remote push
+
+Publish a package to the running insights package manager service. Where path
+is the 'path' of the package we want to push from the service.
+
+**Usage:**
+
+    
+    
+    kxi package remote push [OPTIONS] PATH
+    
+
+**Options:**
+
+    
+    
+      --help  Show this message and exit.
+    
+
+#### kxi package remote-config
+
+Remote config with KEY=VALUE
+
+**Usage:**
+
+    
+    
+    kxi package remote-config [OPTIONS] CONFIG
+    
+
+**Options:**
+
+    
+    
+      --hostname, --url TEXT          Insights URL  [env var: INSIGHTS_URL]
+      --realm TEXT                    Realm  [env var: INSIGHTS_REALM; default:
+                                      insights]
+      --client-id TEXT                Client id  [env var: INSIGHTS_CLIENT_ID]
+      --client-secret TEXT            Client secret  [env var:
+                                      INSIGHTS_CLIENT_SECRET]
+      --auth-enabled / --auth-disabled
+                                      Will attempt to retrieve bearer token for
+                                      request  [env var: KXI_AUTH_ENABLED;
+                                      default: auth-enabled]
+      --server-timeout FLOAT          Timeout for Insights server calls  [env var:
+                                      INSIGHTS_SERVER_TIMEOUT; default: 60]
+      --help                          Show this message and exit.
+    
+
+#### kxi package remote-convert
+
+Convert V1/V2 assemblies into Packages with the server. Optionally keep the
+package installed on the server.
+
+**Usage:**
+
+    
+    
+    kxi package remote-convert [OPTIONS] ASSEMBLY_FILE
+    
+
+**Options:**
+
+    
+    
+      --hostname, --url TEXT          Insights URL  [env var: INSIGHTS_URL]
+      --realm TEXT                    Realm  [env var: INSIGHTS_REALM; default:
+                                      insights]
+      --client-id TEXT                Client id  [env var: INSIGHTS_CLIENT_ID]
+      --client-secret TEXT            Client secret  [env var:
+                                      INSIGHTS_CLIENT_SECRET]
+      --auth-enabled / --auth-disabled
+                                      Will attempt to retrieve bearer token for
+                                      request  [env var: KXI_AUTH_ENABLED;
+                                      default: auth-enabled]
+      --server-timeout FLOAT          Timeout for Insights server calls  [env var:
+                                      INSIGHTS_SERVER_TIMEOUT; default: 60]
+      --install                       Additionally installs the resulting package
+                                      on the server.
+      --help                          Show this message and exit.
+    
+
+#### kxi package remote-list
+
+List all installed packages or artifacts on the running insights package
+manager service.
+
+**Usage:**
+
+    
+    
+    kxi package remote-list [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --fields TEXT                   List only the specified fields.
+      -f, --filter TEXT               Key value pair to filter on. In particular
+                                      name and version.
+      --deployments                   If passed, list available deployments on the
+                                      system.
+      --artifacts                     If passed, list available artifacts on the
+                                      system.
+      --simple                        Simplify the output to 'name/version'
+                                      format.
+      --obj-type [Package|Artifact|Stream|Database|Pipeline|Schema|Assembly|View]
+                                      List this obj type (e.g. Pipeline) overrides
+                                      artifact/deployment flag. Case Sensitive.
+      -o, --output-format [json|simple|table]
+                                      Output format for the list command
+      --hostname, --url TEXT          Insights URL  [env var: INSIGHTS_URL]
+      --realm TEXT                    Realm  [env var: INSIGHTS_REALM; default:
+                                      insights]
+      --client-id TEXT                Client id  [env var: INSIGHTS_CLIENT_ID]
+      --client-secret TEXT            Client secret  [env var:
+                                      INSIGHTS_CLIENT_SECRET]
+      --auth-enabled / --auth-disabled
+                                      Will attempt to retrieve bearer token for
+                                      request  [env var: KXI_AUTH_ENABLED;
+                                      default: auth-enabled]
+      --server-timeout FLOAT          Timeout for Insights server calls  [env var:
+                                      INSIGHTS_SERVER_TIMEOUT; default: 60]
+      --help                          Show this message and exit.
+    
+
+#### kxi package remote-migration-backup
+
+Get kxi-controller backup files.
+
+**Usage:**
+
+    
+    
+    kxi package remote-migration-backup [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --hostname, --url TEXT          Insights URL  [env var: INSIGHTS_URL]
+      --realm TEXT                    Realm  [env var: INSIGHTS_REALM; default:
+                                      insights]
+      --client-id TEXT                Client id  [env var: INSIGHTS_CLIENT_ID]
+      --client-secret TEXT            Client secret  [env var:
+                                      INSIGHTS_CLIENT_SECRET]
+      --auth-enabled / --auth-disabled
+                                      Will attempt to retrieve bearer token for
+                                      request  [env var: KXI_AUTH_ENABLED;
+                                      default: auth-enabled]
+      --server-timeout FLOAT          Timeout for Insights server calls  [env var:
+                                      INSIGHTS_SERVER_TIMEOUT; default: 60]
+      --help                          Show this message and exit.
+    
+
+#### kxi package remote-migration-retry
+
+Get kxi-controller backup files.
+
+**Usage:**
+
+    
+    
+    kxi package remote-migration-retry [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --on-restart                    If passed, retry migration on service
+                                      restart.
+      --hostname, --url TEXT          Insights URL  [env var: INSIGHTS_URL]
+      --realm TEXT                    Realm  [env var: INSIGHTS_REALM; default:
+                                      insights]
+      --client-id TEXT                Client id  [env var: INSIGHTS_CLIENT_ID]
+      --client-secret TEXT            Client secret  [env var:
+                                      INSIGHTS_CLIENT_SECRET]
+      --auth-enabled / --auth-disabled
+                                      Will attempt to retrieve bearer token for
+                                      request  [env var: KXI_AUTH_ENABLED;
+                                      default: auth-enabled]
+      --server-timeout FLOAT          Timeout for Insights server calls  [env var:
+                                      INSIGHTS_SERVER_TIMEOUT; default: 60]
+      --help                          Show this message and exit.
+    
+
+#### kxi package remote-remove
+
+Remove packages or artifacts from the running insights package manager
+service.
+
+**Usage:**
+
+    
+    
+    kxi package remote-remove [OPTIONS] [OBJECTS]...
+    
+
+**Options:**
+
+    
+    
+      --artifacts                     Remove available artifacts rather than
+                                      installed packages.
+      --obj-type [Package|Artifact]   Remove available object from system
+      --force                         Force remove: suppress the user confirmation
+                                      message during removal.
+      --hostname, --url TEXT          Insights URL  [env var: INSIGHTS_URL]
+      --realm TEXT                    Realm  [env var: INSIGHTS_REALM; default:
+                                      insights]
+      --client-id TEXT                Client id  [env var: INSIGHTS_CLIENT_ID]
+      --client-secret TEXT            Client secret  [env var:
+                                      INSIGHTS_CLIENT_SECRET]
+      --auth-enabled / --auth-disabled
+                                      Will attempt to retrieve bearer token for
+                                      request  [env var: KXI_AUTH_ENABLED;
+                                      default: auth-enabled]
+      --server-timeout FLOAT          Timeout for Insights server calls  [env var:
+                                      INSIGHTS_SERVER_TIMEOUT; default: 60]
+      --help                          Show this message and exit.
+    
+
+#### kxi package rm
+
+Remove an entity from the specified package.
+
+**Usage:**
+
+    
+    
+    kxi package rm [OPTIONS] COMMAND [ARGS]...
+    
+
+**Options:**
+
+    
+    
+      -f, --from <Package>  Package from which the entity will be removed.
+      --help                Show this message and exit.
+    
+
+##### kxi package rm agg
+
+Remove aggregator form the specified package
+
+**Usage:**
+
+    
+    
+    kxi package rm agg [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --help  Show this message and exit.
+    
+
+##### kxi package rm database
+
+Remove a database from the specified package
+
+**Usage:**
+
+    
+    
+    kxi package rm database [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --name TEXT  Name of the component to remove from the package.
+      --help       Show this message and exit.
+    
+
+##### kxi package rm dep
+
+Remove a pipeline from the specified package.
+
+**Usage:**
+
+    
+    
+    kxi package rm dep [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --name TEXT     Name of the dependency to remove from the package.
+      --version TEXT  version of the dependency to remove from the package.
+      --help          Show this message and exit.
+    
+
+##### kxi package rm deployment-config
+
+Remove deployment_config form the specified package
+
+**Usage:**
+
+    
+    
+    kxi package rm deployment-config [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --help  Show this message and exit.
+    
+
+##### kxi package rm entitlements
+
+Remove entitlements from the specified package.
+
+**Usage:**
+
+    
+    
+    kxi package rm entitlements [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --read TEXT   Read entitlements to remove from the package.
+      --write TEXT  Write entitlements to remove from the package.
+      --help        Show this message and exit.
+    
+
+##### kxi package rm entrypoint
+
+Remove entrypoint from the specified package.
+
+**Usage:**
+
+    
+    
+    kxi package rm entrypoint [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --name TEXT  Name of the entrypoint to remove from the package.
+      --help       Show this message and exit.
+    
+
+##### kxi package rm patch
+
+Remove deployment_config form the specified package
+
+**Usage:**
+
+    
+    
+    kxi package rm patch [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --name TEXT  Name of the patch to remove from the package.
+      --help       Show this message and exit.
+    
+
+##### kxi package rm pipeline
+
+Remove a pipeline from the specified package.
+
+**Usage:**
+
+    
+    
+    kxi package rm pipeline [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --name TEXT  Name of the pipeline to remove from the package.
+      --help       Show this message and exit.
+    
+
+##### kxi package rm rc
+
+Remove resource_coordinator from the specified package
+
+**Usage:**
+
+    
+    
+    kxi package rm rc [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --help  Show this message and exit.
+    
+
+##### kxi package rm router
+
+Remove a router from the specified package.
+
+**Usage:**
+
+    
+    
+    kxi package rm router [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --help  Show this message and exit.
+    
+
+##### kxi package rm shard
+
+Remove a shard from the specified package
+
+**Usage:**
+
+    
+    
+    kxi package rm shard [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --name TEXT  Name of the shard to be added to the database.
+      --help       Show this message and exit.
+    
+
+##### kxi package rm stream
+
+Remove stream from the specified package
+
+**Usage:**
+
+    
+    
+    kxi package rm stream [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --name TEXT      Name of the stream to be removed from the database.
+      --database TEXT  Name of the database where the stream is located.
+      --shard TEXT     Name of the shard where the stream is located.
+      --help           Show this message and exit.
+    
+
+##### kxi package rm table
+
+Remove a table from the specified package
+
+**Usage:**
+
+    
+    
+    kxi package rm table [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --name TEXT  Name of the table to remove from the package.
+      --help       Show this message and exit.
+    
+
+##### kxi package rm view
+
+Remove a View from the specified package.
+
+**Usage:**
+
+    
+    
+    kxi package rm view [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --name TEXT  Name of the view to remove from the package.
+      --help       Show this message and exit.
+    
+
+#### kxi package teardown
+
+Teardown a deployed packaged running on an insights instance
+
+**Usage:**
+
+    
+    
+    kxi package teardown [OPTIONS] [EXTRA_ARGS]... DEPLOYMENT_REF
+    
+
+**Options:**
+
+    
+    
+      --hostname, --url TEXT          Insights URL  [env var: INSIGHTS_URL]
+      --realm TEXT                    Realm  [env var: INSIGHTS_REALM; default:
+                                      insights]
+      --client-id TEXT                Client id  [env var: INSIGHTS_CLIENT_ID]
+      --client-secret TEXT            Client secret  [env var:
+                                      INSIGHTS_CLIENT_SECRET]
+      --auth-enabled / --auth-disabled
+                                      Will attempt to retrieve bearer token for
+                                      request  [env var: KXI_AUTH_ENABLED;
+                                      default: auth-enabled]
+      --server-timeout FLOAT          Timeout for Insights server calls  [env var:
+                                      INSIGHTS_SERVER_TIMEOUT; default: 60]
+      --rm-data                       Remove the data associated with the
+                                      deployment
+      --help                          Show this message and exit.
+    
+
+#### kxi package uninstall
+
+Uninstall specified locally installed packages and artifacts.
+
+**Usage:**
+
+    
+    
+    kxi package uninstall [OPTIONS] [OBJECTS]...
+    
+
+**Options:**
+
+    
+    
+      --artifacts                     Remove available artifacts rather than
+                                      installed packages.
+      --obj-type [Package|Artifact|Deployment]
+                                      Remove available object from system
+      --force                         Force uninstall: suppress user confirmation
+                                      during removal.
+      --help                          Show this message and exit.
+    
+
+#### kxi package unpack
+
+Unpack an artifact to a specified location.
+
+**Usage:**
+
+    
+    
+    kxi package unpack [OPTIONS] ARTIFACT_PATH
+    
+
+**Options:**
+
+    
+    
+      --unpack-dir PATH   Path to the directory where the artifact will be
+                          unpacked to;[default] `.`.
+      --force             Force unpack: Suppress user confirmation during removal
+                          of existing package
+      --clear-target-dir  Clear the target directory entirely before unpacking the
+                          artifact. Destructive.
+      --help              Show this message and exit.
+    
+
+#### kxi package validate
+
+Validate the contents of a source directory to ensure it is a valid package.
+
+**Usage:**
+
+    
+    
+    kxi package validate [OPTIONS] <Package>
+    
+
+**Options:**
+
+    
+    
+      --help  Show this message and exit.
+    
+
+### kxi publish
+
+**Usage:**
+
+**Options:**
+
+    
+    
+      --mode [tp|rt]                  tp: publish data via a tickerplant rt:
+                                      publish data using Reliable Transport (RT)
+      --url TEXT                      RT configuration URL
+      --endpoint TEXT                 RT endpoint
+      --name TEXT                     Used to distinguish multiple RT publishers
+                                      on the same host
+      --stream TEXT                   RT stream name
+      --path TEXT                     The parent path of RT log directories
+      --port INTEGER                  the port at the host (TP/QIPC)
+      --data TEXT                     The following use cases are supported: - a
+                                      file path on the local filesystem (eg.
+                                      '/home/user/data.csv') - an HTTP/S3/GS URL
+                                      - http://localhost:8080/data.csv     -
+                                      s3://bucket_name/data.csv     -
+                                      gs://bucket_name/data.csv - a directory
+                                      ('/home/user/data') - in this case,     all
+                                      files in the directory get published (non-
+                                      recursive)  [required]
+      --table TEXT                    the name of a table in the database to
+                                      insert data into  [required]
+      --file-format [csv|json|parquet|json_records]
+                                      If file_format is not provided, it will be
+                                      set based on the file extension.
+      --type-map TEXT                 JSON object of column names -> target data
+                                      types to override default Pandas type
+                                      casting. Target data type can be timespan,
+                                      timestamp, numeric. Example:
+                                      type_map={"time": "TIMEDELTA", "realTime":
+                                      "DATETIME"}
+      --help                          Show this message and exit.
+    
+
+### kxi query
+
+Execute a SQL query and print results to console/file
+
+**Usage:**
+
+**Options:**
+
+    
+    
+      --sql TEXT                      The SQL query to be executed  [required]
+      --output-format [tabular|csv|json|json_records]
+                                      tabular: print query results in tabular
+                                      format (default) csv: print query results as
+                                      csv json: print query results as columnar
+                                      json json_records: print query results as a
+                                      json object per row
+      --output-file TEXT              Optionally write results to an output_file
+                                      instead of console
+      --help                          Show this message and exit.
+    
+
+### kxi user
+
+Insights user commands
+
+**Usage:**
+
+    
+    
+    kxi user [OPTIONS] COMMAND [ARGS]...
+    
+
+**Options:**
+
+    
+    
+      --help  Show this message and exit.
+    
+
+#### kxi user assign-roles
+
+Assign roles to a user
+
+**Usage:**
+
+    
+    
+    kxi user assign-roles [OPTIONS] USERNAME
+    
+
+**Options:**
+
+    
+    
+      --roles TEXT           Comma separated list of roles  [required]
+      --admin-username TEXT  Administrator username
+      --admin-password TEXT  Administrator password
+      --timeout INTEGER      Timeout in seconds for request
+      --help                 Show this message and exit.
+    
+
+#### kxi user create
+
+Create a user
+
+**Usage:**
+
+    
+    
+    kxi user create [OPTIONS] USERNAME
+    
+
+**Options:**
+
+    
+    
+      --password TEXT                Password for user  [required]
+      --email TEXT                   Email address for user
+      --temporary / --not-temporary  Controls whether user must reset password on
+                                     first login
+      --admin-username TEXT          Administrator username
+      --admin-password TEXT          Administrator password
+      --timeout INTEGER              Timeout in seconds for request
+      --help                         Show this message and exit.
+    
+
+#### kxi user create-client
+
+Create a client
+
+**Usage:**
+
+    
+    
+    kxi user create-client [OPTIONS] CLIENT_ID
+    
+
+**Options:**
+
+    
+    
+      --admin-username TEXT  Administrator username
+      --admin-password TEXT  Administrator password
+      --timeout INTEGER      Timeout in seconds for request
+      --help                 Show this message and exit.
+    
+
+#### kxi user delete
+
+Delete a user
+
+**Usage:**
+
+    
+    
+    kxi user delete [OPTIONS] USERNAME
+    
+
+**Options:**
+
+    
+    
+      --admin-username TEXT  Administrator username
+      --admin-password TEXT  Administrator password
+      --timeout INTEGER      Timeout in seconds for request
+      --force                Perform action without prompting for confirmation
+      --help                 Show this message and exit.
+    
+
+#### kxi user delete-client
+
+Delete a client
+
+**Usage:**
+
+    
+    
+    kxi user delete-client [OPTIONS] CLIENT_ID
+    
+
+**Options:**
+
+    
+    
+      --admin-username TEXT  Administrator username
+      --admin-password TEXT  Administrator password
+      --timeout INTEGER      Timeout in seconds for request
+      --force                Perform action without prompting for confirmation
+      --help                 Show this message and exit.
+    
+
+#### kxi user get-assigned-roles
+
+View the assigned roles for a user
+
+**Usage:**
+
+    
+    
+    kxi user get-assigned-roles [OPTIONS] USERNAME
+    
+
+**Options:**
+
+    
+    
+      --admin-username TEXT  Administrator username
+      --admin-password TEXT  Administrator password
+      --timeout INTEGER      Timeout in seconds for request
+      --help                 Show this message and exit.
+    
+
+#### kxi user get-available-roles
+
+View the available roles
+
+**Usage:**
+
+    
+    
+    kxi user get-available-roles [OPTIONS]
+    
+
+**Options:**
+
+    
+    
+      --admin-username TEXT  Administrator username
+      --admin-password TEXT  Administrator password
+      --timeout INTEGER      Timeout in seconds for request
+      --help                 Show this message and exit.
+    
+
+#### kxi user get-client-secret
+
+Get client secret from client name
+
+**Usage:**
+
+    
+    
+    kxi user get-client-secret [OPTIONS] CLIENT_ID
+    
+
+**Options:**
+
+    
+    
+      --admin-username TEXT  Administrator username
+      --admin-password TEXT  Administrator password
+      --timeout INTEGER      Timeout in seconds for request
+      --help                 Show this message and exit.
+    
+
+#### kxi user list
+
+List users
+
+**Usage:**
+
+**Options:**
+
+    
+    
+      --admin-username TEXT  Administrator username
+      --admin-password TEXT  Administrator password
+      --timeout INTEGER      Timeout in seconds for request
+      --help                 Show this message and exit.
+    
+
+#### kxi user remove-roles
+
+Remove roles from a user
+
+**Usage:**
+
+    
+    
+    kxi user remove-roles [OPTIONS] USERNAME
+    
+
+**Options:**
+
+    
+    
+      --roles TEXT           Comma separated list of roles  [required]
+      --admin-username TEXT  Administrator username
+      --admin-password TEXT  Administrator password
+      --timeout INTEGER      Timeout in seconds for request
+      --help                 Show this message and exit.
+    
+
+#### kxi user reset-password
+
+Reset a user's password
+
+**Usage:**
+
+    
+    
+    kxi user reset-password [OPTIONS] USERNAME
+    
+
+**Options:**
+
+    
+    
+      --password TEXT                New password for the user
+      --temporary / --not-temporary  Controls whether user must reset password on
+                                     first login
+      --admin-username TEXT          Administrator username
+      --admin-password TEXT          Administrator password
+      --timeout INTEGER              Timeout in seconds for request
+      --help                         Show this message and exit.
+    
+

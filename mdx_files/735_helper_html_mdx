@@ -1,0 +1,247 @@
+https://code.kx.com/insights/core/big-query/helper.html
+
+# Helpers - kdb products
+
+Original URL: https://code.kx.com/insights/core/big-query/helper.html
+
+# Helpers
+
+## .com_kx_bq.fieldSchemaToKdb
+
+Apply a BigQuery Field Schema to a dataset to convert it into a kdb object
+
+See
+https://cloud.google.com/bigquery/docs/reference/rest/v2/tables#TableFieldSchema
+for the format
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+bqFieldSchema | dict | Schema object from BigQuery in kdb  
+rowObject | dict | Either a simple value mapping or a nested field mapping  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | kdb formatted schema object  
+  
+**Example:**
+
+    
+    
+     q).com_kx_bq.fieldSchemaToKdb[`name`type`mode!("dob";"DATE";"NULLABLE"); enlist[`v]!enlist "1980-10-16"]
+     dob| 1980.10.16
+    
+
+## .com_kx_bq.genBQFieldSchema
+
+Generates a BigQuery 'TableFieldSchema' from a cell of a kdb table
+
+See
+https://cloud.google.com/bigquery/docs/reference/rest/v2/tables#TableFieldSchema
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+fieldDict | dict | Cell of a table to generate a TableFieldSchema for  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | TableFieldSchema object  
+  
+**Example:**
+
+    
+    
+     q)tab:([] a:1 2;b:3 4)
+     q)tab
+     a b
+     ---
+     1 3
+     2 4
+     q)enlist[`a]#first tab
+     a| 1
+     q).com_kx_bq.genBQFieldSchema enlist[`a]#first tab
+     name| ,"a"
+     type| "INT64"
+     mode| "NULLABLE"
+    
+
+## .com_kx_bq.genBQSchema
+
+Generates a BigQuery 'TableSchema' from a kdb table This is done by inspecting
+the first row of the table
+
+See
+https://cloud.google.com/bigquery/docs/reference/rest/v2/tables#TableSchema
+for definition of the TableSchema
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+table |  |   
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | TableSchema object  
+  
+**Example:**
+
+    
+    
+     q)tab:([] a:1 2;b:3 4)
+     q)tab
+     a b
+     ---
+     1 3
+     2 4
+     q).com_kx_bq.genBQSchema tab
+     fields| +`name`type`mode!((,"a";,"b");("INT64";"INT64");("NULLABLE";"NULLABLE..
+    
+
+## .com_kx_bq.i.applyDefaultArgs
+
+Append default arguments to an argument dictionary if enabled
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+args | dict | Non-default parameters for a HTTP request  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | Parameters with the defaults added on  
+  
+**See Also:** [ .com_kx_bq.cfg.useDefaults
+](configuration.html#com_kx_bqcfgusedefaults)
+
+## .com_kx_bq.i.datasets.createInsertBody
+
+Creates json formatted body for datasets.insert API
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+projectId | string | Name of the project  
+datasetId | string | Name of the dataset to create  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+string | json formatted body  
+  
+## .com_kx_bq.i.getArgsFromURL
+
+Parse parameters from parameter patterns in a URL
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+url | string | URL with parameters wrapped in braces { }  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol[] | List of parameters  
+  
+## .com_kx_bq.i.parseDataFromQuery
+
+Parses kdb data from a query
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+respObj | dict | Dictionary response from BigQuery  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+table | Table of results  
+  
+**See Also:** [ .com_kx_bq.query ](queries.html#com_kx_bqquery)
+
+## .com_kx_bq.i.queries.createBody
+
+Creates json formatted body for queries API
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+query | string | SQL query to run on BQ  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+string | json formatted body  
+  
+## .com_kx_bq.i.replaceArgsInURL
+
+Replace parameter patterns wrapped in braces with values
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+url | string | URL with parameters wrapped in braces { }  
+args | dict | Key value mapping of arg name to value  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+string | URL with the parameters replaced  
+  
+## .com_kx_bq.i.tabledata.createInsertAllBody
+
+Creates json formatted body for tabledata.insertAll API
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+tableData | table | Table of data to insert  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+string | json formatted body  
+  
+## .com_kx_bq.i.tables.createInsertBody
+
+Creates json formatted body for tables.insert API
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+projectId | string | Name of the project  
+datasetId | string | Name of the dataset to create  
+tableId | string | Name of table  
+exampleKdbTab | table | Table to generate BQ schema from  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+string | json formatted body
+

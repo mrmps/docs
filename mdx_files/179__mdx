@@ -1,0 +1,65 @@
+https://code.kx.com/platform/deployment/prepare_deploy/
+
+# Prepare deploy - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/deployment/prepare_deploy/
+
+# Prepare deploy
+
+## Prepare Linux deploy
+
+Before you can deploy _KX Delta Platform_ , you will need to copy the
+following files onto the Server which will host the application:
+
+  * KX Delta Platform bundle(s)
+    * Linux: GA + Patch bundles
+    * Windows: Base + Patch bundles
+  * License files
+
+When the files have been copied to the server, the bundles will need to be
+unpacked.
+
+On Linux the bundles should be untarred in order, the GA bundle first, then
+the Patch bundles.
+
+    
+    
+    $ tar -xvzf PlatformKx-4.6.0-Linux-GA.tgz
+    $ tar -xvzf PlatformKx-4.6.0-Linux-P1.tgz
+    $ ls PlatformKx-4.6.0-Linux/
+    
+
+**Note** : the GA and Patch bundles will extract into the same directory,
+merging the packages together.
+
+Deploy Upgrade
+
+When upgrading to 4.6.0 _KX Delta Platform_ , any existing deploys must also
+be updated to the new Inclusive Terminology See [4.6.0 Upgrade
+Process](../upgrade_process/#460-upgrade-process) for more details.
+
+## Prepare Windows deploy
+
+On Windows, the base Bundle should be unpacked into a directory which will
+host the deployment. (**Note** : the installation path must not contain any
+spaces).
+
+**Note** : Ensure 7-zip is installed on your Windows server, see [Windows
+Prerequisites](../win_prerequisites/#7-zip) for details.
+
+To unpack click on the zip file select 7-Zip and then Extract Here.
+
+![Screenshot](../img/extract-windows.png)
+
+The unzip will now extract
+
+![Screenshot](../img/extracting-windows.png)
+
+## Copy licenses
+
+The license files should be copied to a location which will be accessible by
+the application. If you are installing the application on a Linux server or
+running the deploy on a Windows server, you will be prompt to enter a
+directory which contains the license files, which during deployment will be
+copied into the `${DELTABIN_HOME}/config` directory.
+

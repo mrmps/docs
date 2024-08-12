@@ -1,0 +1,171 @@
+https://code.kx.com/developer/libraries/
+
+# Libraries overviews - KX Developer
+
+Original URL: https://code.kx.com/developer/libraries/
+
+# AxLibraries
+
+_AxLibraries_ is a collection of q libraries that are included both as part of
+KX Developer as well as separate libraries for use from the command line, in
+scripts, other environments, or automated build pipelines.
+
+## Command line q scripts
+
+Some libraries are provided as command line scripts and can be loaded directly
+and given flags. See [Command Line Libraries](../libraries-scripts/) for more
+information about these utilities.
+
+  * _q static linter_ : `ws/linter.q_`
+  * _q test framework_ : `ws/qcumber.q_`
+  * _q documentation generator_ : `ws/qdoc.q_`
+  * _`kxscm/` repository to q script converter_: `ws/axrepo.q_`
+
+Each of these utilities will print additional help information when given the
+`-help` flag. For example, to get more information about the `qdoc` utility,
+issue the following:
+
+    
+    
+    q $AXLIBRARIES_HOME/ws/qdoc.q_ -help
+    
+
+## Q libraries
+
+Each of the _command line utilities_ as well as all public libraries that are
+included in Developer are available for use as regular q libraries. These can
+be loaded using `\l` into running q processes or from other q scripts. The
+libraries available are:
+
+  * _q code coverage_ : `ws/coverage.q_`
+  * _qdate date parser_ : `ws/.qdate.q_`
+  * _q run time and memory profiler_ : `ws/profiler.q_`
+  * _PCRE / PCRE2 regular expressions_ : `ws/.pcre.q_, ws/.pcre2.q_`
+  * _qcumber unit testing_ : `ws/qcumber.q_`
+  * _quickcheck property testing_ : `ws/quickcheck.q_`
+  * _data visualization library_ : `ws/graphics.q_`
+
+## System Dependencies
+
+Some libraries have core requirements which must be satisfied. These
+requirements are usually bundled with most Linux and Windows distributions. If
+there are any issues running any library, please ensure the [required
+dependencies](../getting-started/) are installed as the first troubleshooting
+step.
+
+## Download
+
+The _AxLibraries_ collection is provided as part of the regular KX Developer
+download. See [Getting Started](../getting-started/) for instructions on how
+to download the package.
+
+## Installation
+
+To install the libraries:
+
+  1. Unzip the KX Developer `.zip`
+  2. Unzip the `ax-libraries.zip` contained within the above archive
+  3. Copy the shared library files from `ax-libaries/ws/lib/<os>/*` to `ax-libraries/ws/lib/*` for your desired operating system
+  4. Set the `AXLIBRARIES_HOME` environment variable to the `ax-libraries` directory
+
+Once installed and the environment variable has been set, any library can be
+loaded by loading the corresponding q script from the `ws/` directory.
+
+For example, to load the `qcumber` library from the command line:
+
+    
+    
+    $ q $AXLIBRARIES_HOME/ws/qcumber.q_
+    
+
+Or to load into a q process to use the API:
+
+    
+    
+    $ q
+    q)system "l ",getenv[`AXLIBRARIES_HOME],"/ws/qcumber.q_"
+    
+
+## Library overviews
+
+### Coverage
+
+Coverage returns code coverage as a table of the number of times each logical
+line, line in a loop, and branch in a conditional was run. For more
+information on using coverage, please refer to the `Help > Function Reference`
+within Developer.
+
+The library file for Coverage is `coverage.q_`.
+
+### Grammar of Graphics
+
+The Grammar of Graphics (GG) is a q graphics library providing a rich data
+visualization suite. For more information about using GG, please refer to the
+`Help > Function Reference` within Developer and the [the grammar of graphics
+user guide](../ggplot/).
+
+The library file for GG is `graphics.q_`.
+
+### Profiler
+
+The profiler provides a framework for investigating memory use and run time
+for q functions. For more information about using the profiler, please refer
+to the `Help > Function Reference` within Developer.
+
+The library file for the profiler is `profiler.q_`.
+
+### qcumber
+
+qCumber is a unit and property testing framework. For more information about
+using qCumber, please refer to the `Help > Function Reference` in Developer
+and the [build utilities](../libraries-scripts/).
+
+The library file for qCumber is `qcumber.q_`.
+
+### qdoc
+
+The QDoc generator allows you to generate markdown and/or HTML documentation
+from comment blocks in q code. The documentation can be generated from q files
+on disk. For more information on using QDoc, please refer to the `Help >
+Function Reference` in Developer and the [build utilities](../libraries-
+scripts/).
+
+The library file for QDoc is `qdoc.q_`.
+
+### qlint
+
+QLint is a static q code analysis tool. The software detects a wide variety of
+standard q rules and common errors. For more information on using QLint,
+please refer to the `Help > Function Reference` in Developer and the [build
+utilities](../libraries-scripts/), and [the QLint user guide](../linting/).
+
+The library file for QLint is `qlint.q_`.
+
+### QuickCheck
+
+QuickCheck is a property-based testing library. Rather than testing individual
+cases, general _properties_ of the system are tested. For more information
+about using QuickCheck, please refer to the `Help > Function Reference` in
+Developer.
+
+The library file for QuickCheck is `quickcheck.q_`.
+
+### AxRepo
+
+AxRepo allows conversion from `kxscm/` style repositories (containing modules)
+to q scripts on disk. For more information on using AxRepo, please refer to
+the [build utilities](../libraries-scripts/) userguide.
+
+The library file for AxRepo is `axrepo.q_`.
+
+### AxRuntime
+
+AxRuntime is a collection of public Developer libraries that can be loaded
+into any q process. These libraries include features like QDoc and QuickCheck,
+as well as commonly used helper functions. For a list of included libraries,
+please refer to the `Help > Function reference` within Developer. Note that
+libraries related to the Grammar of Graphics have been excluded, and can be
+loaded separately below.
+
+The library file for AxRuntime is `axruntime.q_`.
+

@@ -1,0 +1,108 @@
+https://code.kx.com/insights/api/database/custom/metadata.html
+
+# Metadata - kdb products
+
+Original URL: https://code.kx.com/insights/api/database/custom/metadata.html
+
+For convenience, we have a set of meta building APIs for defining metadata. A
+description of each API is given below, and examples are given in (Examples).
+
+The meta-building APIs create entries to populate the metadata fields of APIs
+and aggregation functions. They live in the "Service API" (`.sapi`) namespace.
+
+  * `.sapi.metaDescription` \- Creates a description entry for an API/aggregation function's metadata. Parameters:
+    * `descr` \- **string** \- Description.
+  * `.sapi.metaParam` \- Creates a parameter entry for an API/aggregation function's metadata. Parameters:
+    * `param` -**dictionary** \- Dictionary containing any subset of the following keys:
+      * `name` \- **symbol** \- Name of the parameter.
+      * `type` \- **short|short[]** \- Possible type(s) for the parameter.
+      * `isReq` \- **boolean** \- Whether the parameter is required (this is only meaningful for APIs).
+      * `default` \- **any** \- Default value of the parameter if it is not required (this is only meaningful for APIs).
+      * `description` \- **string** \- Plain text description of the parameter.
+  * `.sapi.metaReturn` \- Creates a return entry for an API/aggregation function's metadata. Parameters:
+    * `return` \- **dictionary** \- Dictionary containing any subset of the following keys:
+      * `type` \- **short|short[]** \- Possible type(s) for the return.
+      * `description` \- **string** \- Plain text description of the return value.
+  * `.sapi.metaMisc` \- Creates a miscellaneous metadata entry. Parameters:
+    * `misc` \- **dictionary** \- Dictionary containing any subset of the supported misc fields:
+      * `safe` \- **boolean** \- True if API can be retried safely in the event of a failure, false otherwise.
+
+## Examples
+
+    
+    
+    //--------------------------------------------------------------------------------
+    // Metadata using JSON.
+    //--------------------------------------------------------------------------------
+    
+    // API.
+    apiMetaData:()!()
+    apiMetaData[`description]:"Simple 'select ... from ... where ...' API."
+    apiMetaData[`param]:flip
+        (`name      ,`type  ,`required  ,`default   ,`descr)!flip(
+        (`table     ;98h    ;1b         ;()         ;"Table to query");
+        (`filter    ;0 10h  ;0b         ;()         ;"Filter (in functional or string form).");
+        (`col       ;11 -11h;0b         ;`sym`time  ;"Column(s) to select.")
+        )
+    apiMetaData[`return]:`type`description!(98;"Result of the select.")
+    
+    .da.registerAPI[`myAPI;apiMetaData] // Or, equivalently ...
+    .da.registerAPI[`myAPI;.j.j apiDescr] // Stringed
+    
+    // Agg function.
+    aggMetaData:()!()
+    aggMetaData[`description]:"Takes the sum."
+    aggMetaData[`param]:`name`type`descr!(`x;2 4 5 6 7 8 9h;"Some list of summable vectors.")
+    
+    .sgagg.registerAggFn[`myAggFn;aggDescr;()] // Or equivalently ...
+    .sgagg.registerAggFn[`myAggFn;.j.j aggDescr;()] // Stringed
+    
+    //--------------------------------------------------------------------------------
+    // Description using just a plain string. This populates just the `description`
+    // field. This offers a quick way to minimally describe how an API/agg function
+    // should be used.
+    // These calls would be equivalent to just using the `description` key in the
+    // examples above.
+    //--------------------------------------------------------------------------------
+    
+    .da.registerAPI[`myAPI;"Simple 'select ... from ... where ...' API."]
+    
+    .sgagg.registerAggFn[`myAggFn;"Takes the sum.";()]
+    
+    //--------------------------------------------------------------------------------
+    // Metadata using a default dictionary. This only populates the `params` field.
+    // Also note that it marks all parameters optional.
+    //--------------------------------------------------------------------------------
+    
+    .da.registerAPI[`myAPI;`table`filter`col!(`trade;();`sym`time)]
+    
+    //--------------------------------------------------------------------------------
+    // Metadata using the meta-building APIs.
+    //--------------------------------------------------------------------------------
+    
+    .da.registerAPI[`myAPI;
+        .sapi.metaDescription["Simple 'select ... from ... where ...' API."],
+        .sapi.metaParam[`name`type`isReq`description!(`table;-11h;1b;"Table to query")],
+        .sapi.metaParam[`name`type`isReq`default`description!(`filter;0 10h;0b;();"Filter (in functional or string form).")],
+        .sapi.metaParam[`name`type`isReq`default`description!(`col;11 -11h;0b;`sym`time;"Column(s) to select.")],
+        .sapi.metaReturn[`type`description!(98h;"Result of the select.")],
+        .sapi.metaMisc[enlist[`safe]!enlist 1b]
+        ]
+    
+    // Note: Can only have 1 parameter for an agg function.
+    .sgagg.registerAggFn[`myAggFn;
+        .sapi.metaDescription["Takes the sum."],
+        .sapi.metaParam[`type`description!(2 4 5 6 7 8 9h;"Some list of summable vectors.")],
+        .sapi.metaReturn[`type`description!(6 7 8 9h;"The sum of the lists.")];
+        ()
+        ]
+    
+    //--------------------------------------------------------------------------------
+    // No description at all.
+    //--------------------------------------------------------------------------------
+    
+    .da.registerAPI[`myAPI;()]
+    
+    .sgagg.registerAggFn[`myAggFn;();()]
+    
+

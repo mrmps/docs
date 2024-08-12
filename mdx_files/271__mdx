@@ -1,0 +1,88 @@
+https://code.kx.com/platform/deployment/connection_issues/
+
+# Connections - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/deployment/connection_issues/
+
+# Connection issues
+
+If you have deployed KX Delta Platform on more than one host you may need to
+make changes to firewalls in order for the application to connect
+successfully. Firewalls can block connections to the _KX Control_ Application
+from the Web Tier (AppServer/Tomcat) if it is deployed on a separate host.
+
+### Connection test
+
+If you are having problems with your Dashboards connecting to the Control
+backend it is sometime best to simplify the problem. This can be done by using
+netcat (`nc`) to take the KX Delta Platform stack out of the equation and
+debug at a connection level.
+
+To run this test, shut down KX Delta Platform and all its components.
+
+On the Control host run the following command to listen for TCP connections.
+The port used should be the port you are running Control on (`grep
+DELTACONTROL_PORT delta.profile`).
+
+    
+    
+    $ nc -l 2001
+    
+
+On your AppServer host attempt to connect to the listening process on the
+Control host as follows:
+
+    
+    
+    $ nc <controlhost> 2001
+    
+
+The host name above should be the hostname/ip-address where you are running
+the `nc -l` command.
+
+If a firewall is blocking the connection the command above will fail with a
+connection refused error (`Ncat: Connection refused`.) or hang and eventually
+time out. If this happens then you need to try and diagnose what’s blocking
+the connection.
+
+If the connection is successful, then you can should be able to enter text in
+the AppServer nc terminal and when you hit `<Return>` it should appear on the
+Control terminal. If the connection is successful but you are still having
+issues with the Dashboards then you need to reach out to support.
+
+### Software firewalls
+
+The most common issues we see with fresh installations is that a software
+firewall (`iptables` or `firewalld`) is running on the deploy host.
+
+You can check the status of `firewalld` by running the following:
+
+    
+    
+    $ systemctl status firewalld
+    firewalld.service - firewalld - dynamic firewall daemon
+          Loaded: loaded (/usr/lib/systemd/system/firewalld.service; enabled)
+          Active: active (running) since Sat 2013-04-06 22:56:59 CEST; 2 days ago
+        Main PID: 688 (firewalld)
+          CGroup: name=systemd:/system/firewalld.service
+    
+
+If the firewall is active you can disable and stop it by running the following
+commands as root:
+
+    
+    
+    $ systemctl disable firewalld
+    $ systemctl stop firewalld
+    
+
+If you don’t have root access you will need to contact your unix team to
+either disable `firewalld` for you or add rules for the ports you are trying
+to connect to.
+
+### Network firewalls
+
+If you have confirmed that a software firewall is not blocking connections on
+a certain port then you should talk to your network team and ensure that there
+are no network firewalls running which may block access to your application.
+

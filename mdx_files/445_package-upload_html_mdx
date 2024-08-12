@@ -1,0 +1,577 @@
+https://code.kx.com/insights/enterprise/packaging/package-upload.html
+
+# Uploading a package - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/packaging/package-upload.html
+
+# Remote interaction with kdb Insights Enterprise packages
+
+The CLI can interact with packages in _kdb Insights Enterprise_ in the
+following ways:
+
+  1. Pack to create a `kxi` package. This is required before you can upload it to _kdb Insights Enterprise_.
+  2. Upload to `push` the `kxi` package to your desired _kdb Insights Enterprise_ cluster.
+  3. List packages in your desired _kdb Insights Enterprise_ cluster.
+  4. Download packages from your _kdb Insights Enterprise_ cluster to edit them locally.
+  5. Remove packages from your _kdb Insights Enterprise_ cluster.
+
+`.kxi` package files are known by the command line as `artifacts`
+
+## Packing
+
+Before a package can be uploaded to a _kdb Insights Enterprise_ instance you
+need to create a `kxi` package file out of the package, which is stored in the
+`KX_ARTIFACT_PATH`. This is facilitated using the command `kxi package packit`
+which is defined as follows:
+
+    
+    
+    kxi package packit --help
+    
+    
+    
+     Usage: kxi package packit [OPTIONS] SOURCE                                     
+    
+     Create a package artifact given a source code directory.                       
+    
+    ╭─ Options ────────────────────────────────────────────────────────────────────╮
+    │ --override-deps    TEXT  Specify which deps to override during packit.       │
+    │                          format 'name/ver:path/to/new/package'               │
+    │ --keep-unlocked          Keep the original unlocked q files once the locked  │
+    │                          versions are created.                               │
+    │ --lock-q-files           Lock the contents of the q files in the package.    │
+    │                          Files whose first line is /dnc or //dnc will be     │
+    │                          ignored.                                            │
+    │ --all-deps               Package all dependencies together.                  │
+    │ --tag                    Tag for release, omit the random dev hash suffix.   │
+    │ --version          TEXT  Override the version of the package.                │
+    │ --package-name     TEXT  Override the auto-generated package name.           │
+    │ --help                   Show this message and exit.                         │
+    ╰──────────────────────────────────────────────────────────────────────────────╯
+    
+
+### Customization
+
+This section provides some additional information on each of the options
+available when using `kxi package packit`, allowing you to customize the
+creation of a `.kxi` package file locally or within your Continuous
+Integration (CI) environment.
+
+The naming and versioning of packages is by default determined by the contents
+of the `manifest` file. For many use-cases this is sufficient to allow
+packages to be generated, however, when automating this within Continuous
+Integration/Continuous Deployment (CI/CD) processes, this limitation can make
+the process of updating versions to align with release `.kxi` package files
+difficult. The use of `--version` enables you to take the tag version of the
+code repository defining your package as the version to be used when creating
+a `.kxi` package file. Similarly, `--tag` provides the ability to determine
+what is a `production` version and what is a `development` version when
+generating your package. The following examples outline the difference when
+generating a package with and without the `--tag` option:
+
+Including `--tag` will omit the random `dev_hash` which is included by
+default. This is useful within the context of a CI/CD workflow as it enables
+the same package to be generated within the testing and distribution phases of
+your workflow without requiring a change to the underlying code.
+
+Usage of the `--tag`, `--package-name` and `--version` options results in
+changes to the `manifest` file contained within a `.kxi` package file.
+Specifically, your `manifest` file is updated to reflect the name and version
+given during the `packit` phase of your workflow.
+
+#### Including all dependencies
+
+By default, creating a `.kxi` package file will not include any
+[dependencies](package-deps.html).
+
+This means, to make use of your dependencies in _kdb Insights Enterprise_ ,
+you should either:
+
+  * Ensure all your dependencies are uploaded prior to uploading a package that depends on them.
+  * Ensure all packages can be remotely sourced from your _kdb Insights Enterprise_ cluster.
+  * Bundle all packages together and bulk install them.
+
+The `--all-deps` flag bundles and installs all packages. kdb Insights
+Enterprise sources all dependencies during `.kxi` package file creation and
+includes them all in the `.kxi` files.
+
+This functionality can be useful but does increase the size of your `.kxi`
+package files, which now include all dependent packages.
+
+#### Overriding dependencies
+
+The `override-deps` flag is an advanced feature and allows you to "swap-out"
+dependencies for other dependencies - it is intended to be used in development
+to test out if a new version of a dependency would be compatible with the
+package.
+
+Other constraints when using `override-deps`
+
+  * It must be run in conjunction with `--all-deps` or it will have no effect. This is because `--all-deps` builds the full dependency tree.
+
+  * It cannot be used with `--tag` as we don't want to automatically `--tag` a release version when testing new versions of dependencies.
+
+  * The overriding dep must be available locally
+
+In the example below `mypkg` is created and `pkg-a` and `pkg-b` as included as
+dependencies. However, when packing the package `override-deps` is used to
+replace `pkg-b` with `pkg-c`.
+
+    
+    
+    kxi package init mypkg --force 
+    kxi package init pkg-a --force 
+    kxi package init pkg-b --force 
+    kxi package init pkg-c --force 
+    kxi package add --to mypkg dep --name pkg-a --version 0.0.1 
+    kxi package add --to mypkg dep --name pkg-b --version 0.0.1 
+    echo "----Setup Finished---"
+    artifact=$(kxi package packit mypkg --all-deps --override-deps pkg-b/0.0.1:pkg-c/0.0.1 2>&1 | tail -1)
+    kxi package info $artifact
+    
+    
+    
+    Creating package at location: mypkg
+    Writing mypkg/manifest.yaml
+    Creating package at location: pkg-a
+    Writing pkg-a/manifest.yaml
+    Creating package at location: pkg-b
+    Writing pkg-b/manifest.yaml
+    Creating package at location: pkg-c
+    Writing pkg-c/manifest.yaml
+    Writing mypkg/manifest.yaml
+    Writing mypkg/manifest.yaml
+    ----Setup Finished---
+    ==PATH==
+    /tmp/artifact_store/mypkg-0.0.1_57BA462D.kxi
+    
+    ==OBJECT==
+    Artifact
+    
+    ==Manifest==
+    uuid: 16cb9de2-a970-4cf4-85ed-2bcb85b5bd15
+    name: mypkg
+    version: 0.0.1_57BA462D
+    dependencies:
+    - name: pkg-a
+      version: 0.0.1
+      path: pkg-a
+      kxi: '{{KX_ARTIFACT_PATH}}/pkg-a-0.0.1.kxi'
+    - name: pkg-c
+      version: 0.0.1
+      path: /tmp/tmpz2o6myxv/pkg-c-0.0.1_9E869B33.kxi
+      kxi: '{{KX_ARTIFACT_PATH}}/pkg-c-0.0.1.kxi'
+    metadata:
+      pakxtime: '2024-07-31T06:08:16.662776'
+    entrypoints:
+      default: init.q
+    system:
+      _pakx_version: 1.10.1
+    
+
+#### Locking code
+
+In certain circumstances, such as the dissemination of sensitive IP, it may be
+useful for you to be able to [lock q code
+scripts](https://code.kx.com/q/basics/syscmds/#_-hide-q-code). This process
+removes the ability to read the content of files and creates a `locked`
+representation of functions, which removes the ability to display the function
+content.
+
+Locking requires PyKX
+
+To lock code, you must install [`PyKX`](https://code.kx.com/pykx) and it must
+be operating in 'licensed' mode.
+
+The following examples show how to lock all code and either keep or remove the
+original copies of the q files:
+
+Standalone `lock` command for q functions.
+
+This offers the same functionality as `packit --lock-q-code` but operates
+directly on the package directory and does not produce an `.kxi` package file.
+
+    
+    
+     Usage: kxi package lock [OPTIONS] SOURCE                                       
+    
+     Lock the q files within a source directory. Files whose first line is /dnc or  
+     //dnc will be ignored.                                                         
+    
+    ╭─ Options ────────────────────────────────────────────────────────────────────╮
+    │ --keep-unlocked      Keep the original unlocked q files once the locked      │
+    │                      versions are created.                                   │
+    │ --help               Show this message and exit.                             │
+    ╰──────────────────────────────────────────────────────────────────────────────╯
+    
+
+##### Selectively locking q files
+
+By putting `/dnc` or `//dnc` at the top of a q file, you can prevent the file
+from being locked, even when the `lock` or `packit --lock-q-files` commands
+are run. This is useful for keeping public functions open so they can be
+extended easily, while locking any private libraries that are used within
+them.
+
+## Uploading
+
+Run the `push` command to upload the `.kxi` package file to your desired _kdb
+Insights Enterprise_ deployment and install it. You can then view and deploy
+it in the UI or via the CLI.
+
+To authenticate to your chosen _kdb Insights Enterprise_ deployment, follow
+the instructions on [Command Line Interface for Packaging](package-
+cli.html#kdb-insights-Enterprise-connection).
+
+    
+    
+     Usage: kxi package push [OPTIONS] ARTIFACT                                     
+    
+     Publish an artifact to the running insights package manager service. Where     
+     ARTIFACT is either the filepath or the 'name/version' of the artifact.         
+    
+    ╭─ Options ────────────────────────────────────────────────────────────────────╮
+    │ --force                                  Force push: overwrite existing      │
+    │                                          packages and their dependencies.    │
+    │ --hostname,--url                  TEXT   Insights URL                        │
+    │                                          [env var: INSIGHTS_URL]             │
+    │ --realm                           TEXT   Realm                               │
+    │                                          [env var: INSIGHTS_REALM]           │
+    │                                          [default: insights]                 │
+    │ --client-id                       TEXT   Client id                           │
+    │                                          [env var: INSIGHTS_CLIENT_ID]       │
+    │ --client-secret                   TEXT   Client secret                       │
+    │                                          [env var: INSIGHTS_CLIENT_SECRET]   │
+    │ --auth-enabled/--auth-disabled           Will attempt to retrieve bearer     │
+    │                                          token for request                   │
+    │                                          [env var: KXI_AUTH_ENABLED]         │
+    │                                          [default: auth-enabled]             │
+    │ --server-timeout                  FLOAT  Timeout for Insights server calls   │
+    │                                          [env var: INSIGHTS_SERVER_TIMEOUT]  │
+    │                                          [default: 60]                       │
+    │ --help                                   Show this message and exit.         │
+    ╰──────────────────────────────────────────────────────────────────────────────╯
+    
+
+When you `push` a package, it doesn't immediately start running. The packages
+becomes available for use in _kdb Insights Enterprise_.
+
+Packages uploaded to _kdb Insights Enterprise_ must be defined as a "unique
+name plus version" pair. If you attempt to upload a version of a package that
+already exists on your _kdb Insights Enterprise_ installation, the
+installation is skipped, resulting in a message similar to the following:
+
+    
+    
+    {
+        "test_pkg": [
+            {
+                "version": "0.0.1",
+                "_status": "InstallationStatus.SKIPPED"
+            }
+        ]
+    }
+    Error: All installations skipped
+    
+
+In the case that you are uploading a package and require packages to be
+overwritten you can use the `--force` option as follows:
+
+    
+    
+    kxi package push --force test_pkg/0.0.1
+    
+    
+    
+    {
+        "test_pkg": [
+            {
+                "version": "0.0.1",
+                "_status": "InstallationStatus.SUCCESS"
+            }
+        ]
+    }
+    
+
+## Listing
+
+Once a package has been uploaded to _kdb Insights Enterprise_ it is useful to
+validate it has been successfully uploaded to the server. This can be done
+using the `remote-list` command defined as follows:
+
+    
+    
+    kxi package remote-list --help
+    
+    
+    
+     Usage: kxi package remote-list [OPTIONS]                                       
+    
+     List all installed packages or artifacts on the running insights package       
+     manager service.                                                               
+    
+    ╭─ Options ────────────────────────────────────────────────────────────────────╮
+    │ --fields                     TEXT                    List only the specified │
+    │                                                      fields.                 │
+    │ --filter                 -f  TEXT                    Key value pair to       │
+    │                                                      filter on. In           │
+    │                                                      particular name and     │
+    │                                                      version.                │
+    │ --deployments                                        If passed, list         │
+    │                                                      available deployments   │
+    │                                                      on the system.          │
+    │ --artifacts                                          If passed, list         │
+    │                                                      available artifacts on  │
+    │                                                      the system.             │
+    │ --simple                                             Simplify the output to  │
+    │                                                      'name/version' format.  │
+    │ --obj-type                   [Package|Artifact|Stre  List this obj type      │
+    │                              am|Database|Pipeline|S  (e.g. Pipeline)         │
+    │                              chema|Assembly|View]    overrides               │
+    │                                                      artifact/deployment     │
+    │                                                      flag. Case Sensitive.   │
+    │ --output-format          -o  [json|simple|table]     Output format for the   │
+    │                                                      list command            │
+    │ --hostname,--url             TEXT                    Insights URL            │
+    │                                                      [env var: INSIGHTS_URL] │
+    │ --realm                      TEXT                    Realm                   │
+    │                                                      [env var:               │
+    │                                                      INSIGHTS_REALM]         │
+    │                                                      [default: insights]     │
+    │ --client-id                  TEXT                    Client id               │
+    │                                                      [env var:               │
+    │                                                      INSIGHTS_CLIENT_ID]     │
+    │ --client-secret              TEXT                    Client secret           │
+    │                                                      [env var:               │
+    │                                                      INSIGHTS_CLIENT_SECRET] │
+    │ --auth-enabled/--auth-…                              Will attempt to         │
+    │                                                      retrieve bearer token   │
+    │                                                      for request             │
+    │                                                      [env var:               │
+    │                                                      KXI_AUTH_ENABLED]       │
+    │                                                      [default: auth-enabled] │
+    │ --server-timeout             FLOAT                   Timeout for Insights    │
+    │                                                      server calls            │
+    │                                                      [env var:               │
+    │                                                      INSIGHTS_SERVER_TIMEOU… │
+    │                                                      [default: 60]           │
+    │ --help                                               Show this message and   │
+    │                                                      exit.                   │
+    ╰──────────────────────────────────────────────────────────────────────────────╯
+    
+
+The following examples show listing the packages on a _kdb Insights
+Enterprise_ installation containing two packages `ml` and `test_pkg` under
+various conditions:
+
+defaultUsing the `--fields` commandFiltering for specific information
+
+Default list functionality:
+
+    
+    
+    $ kxi package remote-list
+    {
+        "test_pkg": [
+            {
+                "version": "0.0.1",
+                "fields": {}
+            }
+        ],
+        "ml": [
+            {
+                "version": "1.0.0",
+                "fields": {}
+            }
+        ]
+    }
+    
+
+Retrieving all information about the packages uploaded using the `--fields`
+command:
+
+    
+    
+    $ kxi package remote-list --fields all
+    {
+        "test_pkg": [
+            {
+                "version": "0.0.1",
+                "fields": {
+                    "name": "test_pkg",
+                    "version": "0.0.1",
+                    "license": "",
+                    "dependencies": {},
+                    "entrypoints": {
+                        "default": "init.q"
+                    },
+                    "metadata": {
+                        "description": "",
+                        "authors": {
+                            "conormccarthy": {
+                                "email": ""
+                            }
+                        },
+                        "entitlements": {},
+                        "uuid": "fadf2c54-acaa-4a44-b948-0eb10cf2edde",
+                        "pakxtime": "2022-12-31T19:40:13.470337"
+                    },
+                    "system": {
+                        "_pakx_version": "1.2.0rc2"
+                    },
+                    "pipelines": {},
+                    "udfs": {
+                        "names": [
+                            "udf"
+                        ]
+                    },
+                    "databases": {}
+                }
+            }
+        ],
+        "ml": [
+            {
+                "version": "1.0.0",
+                "fields": {
+                    "name": "ml",
+                    "version": "1.0.0",
+                    "license": "",
+                    "dependencies": {},
+                    "entrypoints": {
+                        "default": "ml.q"
+                    },
+                    "metadata": {
+                        "description": "lorem ipsum dolar est",
+                        "authors": {
+                            "conormccarthy": {
+                                "email": null
+                            }
+                        },
+                        "uuid": "15122015-75e8-4249-9d94-188d4a47d55c",
+                        "pakxtime": "2022-12-28T14:17:24.795340"
+                    },
+                    "entitlements": {},
+                    "system": {
+                        "_pakx_version": "1.2.0rc2"
+                    },
+                    "pipelines": {},
+                    "databases": {},
+                    "udfs": {
+                        "names": [
+                            "udf"
+                        ]
+                    }
+                }
+            }
+        ]
+    }
+    
+
+Filtering on a specific named package with limited field information returned:
+
+    
+    
+    $ kxi package remote-list --filter name=test_pkg --fields metadata,system
+    {
+        "test_pkg": [
+            {
+                "version": "0.0.1",
+                "fields": {
+                    "metadata": {
+                        "description": "",
+                        "authors": {
+                            "conormccarthy": {
+                                "email": ""
+                            }
+                        },
+                        "entitlements": {},
+                        "uuid": "fadf2c54-acaa-4a44-b948-0eb10cf2edde",
+                        "pakxtime": "2022-12-31T19:40:13.470337"
+                    },
+                    "system": {
+                        "_pakx_version": "1.2.0rc2"
+                    }
+                }
+            }
+        ]
+    }
+    
+
+## Downloading
+
+You can pull packages from _kdb Insights Enterprise_ to your local machine
+using the `pull` command. This downloads the `.kxi` file to your current
+working directory. For example:
+
+    
+    
+    kxi package pull test_pkg/0.0.1
+    
+
+This can be very useful in conjunction with the `unpack` command:
+
+    
+    
+    kxi package unpack test_pkg-0.0.1.kxi
+    
+
+To open up and validate the contents of the package. The new directory
+structure will be in the current directory alongside the `.kxi` package file:
+`test_pkg/`.
+
+Tidy up...
+
+After pulling a package, it can be beneficial to either delete the package or
+install it into the local package folder. Doing either of these ensures that
+the package is resolved first you run any `kxi package` commands.
+
+## Deleting
+
+Once you are finished using a package in _kdb Insights Enterprise_ you can
+remove it as follows:
+
+    
+    
+    kxi package remote-remove qpackage/1.0.0 --force
+    
+    
+    
+    {
+        "qpackage": [
+            {
+                "_status": "DELETED",
+                "version": "1.0.0"
+            }
+        ]
+    }
+    
+
+By default `remote-remove` removes the packages but not the `.kxi` package
+files. In order to clear the `.kxi` package files as well, run the following
+command:
+
+    
+    
+    kxi package remote-remove --artifacts qpackage/1.0.0 --force
+    
+    
+    
+    {
+        "qpackage": [
+            {
+                "_status": "DELETED",
+                "version": "1.0.0"
+            }
+        ]
+    }
+    
+
+You can also remove your locally stored packages and `.kxi` package files.
+
+    
+    
+    kxi package uninstall qpackage/1.0.0 --force && kxi package uninstall --artifacts qpackage/1.0.0 --force
+    
+
+## Next steps
+

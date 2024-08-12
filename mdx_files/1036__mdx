@@ -1,0 +1,145 @@
+https://code.kx.com/platform/tls/
+
+# TLS - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/tls/
+
+# TLS
+
+_KX Control_ supports TLS-encrypted traffic between processes. This exploits
+the [kdb+ native support](https://code.kx.com/q/kb/ssl/) added in V3.4 [1].
+
+To use TLS, a number of SSL certificates and environment variables must be set
+up.  
+_KX Delta Platform Deployment Guide_
+
+Once an environment is installed, TLS can be enabled at the _KX Delta Control_
+or process levels. All combinations of _KX Control_ and processes enabled are
+valid.
+
+  * _KX Control_ and processes all disabled
+  * All enabled
+  * _KX Control_ disabled, some processes enabled
+  * _KX Control_ enabled, some processes enabled
+
+## Control
+
+_KX Control_ is configured via an environment variable to use TLS. If _KX
+Control_ is configured in a cluster, all instances should be configured with
+the same mode.
+
+    
+    
+    export DELTACONTROL_TLS=[ON|MIXED|OFF]
+    
+
+_KX Control_ will only accept TLS connections if enabled, so all launched
+processes need to conform. Processes bundled as part of the platform and any
+kdb+ processes launched from _KX Control_ will handle this automatically for
+the developer. There will be an extra parameter on the command-line
+(`-prTLS`). This is handled by the wrapper script _Control_ uses to launch
+instances.
+
+## Processes
+
+Instances can be individually configured to use TLS. This is done through the
+_KX Control_ UI in the [reserved parameters](../process_templates/#reserved-
+parameters) of an instance. Any processes with this setting enabled will
+require connecting clients to also use TLS.
+
+![Screenshot](../img/control/instance_tls.png)
+
+Certain frameworks in _KX Delta Platform_ rely on making connections to, or
+receiving connections from, other processes. This should be seamless from the
+developer’s point of view, whether or not the client or server is TLS-enabled.
+When instance host/port details are retrieved (either from _KX Control_ or
+elsewhere), the TLS info will be included.
+
+## Mixed mode
+
+TLS mixed mode is supported for Control and instances. Processes with this
+mode set will be accept both plain and TLS connections simultaneously. The
+connecting client decides the protocol.
+
+To ensure backward compatability with the interfaces, which use host-port
+details and connection strings, an environment variable has been introduced to
+default connections to TLS or plain system-wide.
+
+    
+    
+    DELTACONTROL_TLSMIXED_DEFAULT=[NO|YES]
+    
+
+  * If set to `NO`, all connections and host-port details will be defaulted to plain. 
+  * If set to `YES`, all will default to TLS
+
+As an example, consider the following; * An RDB is configured as `mixed` *
+Another process wants to open a handle to query data * It downloads the host-
+port details from _Control_ * If `DELTACONTROL_TLSMIXED_DEFAULT=YES`, the
+connection string will be use the TLS prefix - ``:tcps://host:port` *
+Otherwise the connection is treated as plain - ``:host:port`
+
+## Associated APIs
+
+A number of APIs have been added to further support TLS within the _KX Delta
+Platform_ ; and others updated to support the additional information needed to
+allow connectivity to TLS enabled processes.
+
+`.pl.gethostport`
+
+    Returns instance hostport in `hopen` format; updated to prefix with `:tcps://` prefix if TLS enabled
+`.utils.dccMode`
+
+    Wrapper function for opening connections with `.utils.dcc`. Will build `hopen` string with optional prefix mode (TLS, domain sockets, standard)
+`.utils.getHostPort` / `.utils.getHostPortOnly`
+
+    For building `hopen` connection strings based on a mode
+`.utils.checkTLS`
+
+    Check if TLS is enabled on this process
+`.utils.getTLS`
+
+    
+
+Get TLS configuration for this process
+
+To enable several or all process instances and connection entities to have
+their TLS status updated once an API has been added on the _KX Control_
+process. Validation is in place to ensure a connection entity has the same TLS
+setting as its corresponding process instance.
+
+`.pl.updateTLS`
+
+    
+
+Parameters are:
+
+  * process-instance list (symbol): for all process instances use ``all` or null
+  * connection list (symbol): for all connections use ``all` or null
+  * TLS setting: ``on` or ``off`
+
+    
+    
+    .pl.updateTLS[
+        `ds_gw_alert_b`ds_action_tracker_a;
+        `ds_gw_alert_b`ds_action_tracker_a;
+        `off];
+    .pl.updateTLS[`all; `all; `on];
+    
+
+## Non-kdb+ processes
+
+Non-kdb+ processes launched via the _KX Control_ `DS_LAUNCH` Process Template
+can be configured to have TLS enabled if the underlying implementation
+supports TLS. If TLS is enabled for these instances, the launch command will
+include the argument `--instance-tls=on`.
+
+If the process needs to use TLS to connect to _KX Control_ , the launch
+argument will include `--deltacontrol-primary-tls=on`.
+
+## Limitations
+
+As of September 2017, kdb+ doesn’t support TLS for the C interface, which is
+therefore not supported by _KX Delta Platform_. Any C processes will be unable
+to connect to TLS-enabled processes.
+

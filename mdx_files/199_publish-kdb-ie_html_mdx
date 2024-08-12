@@ -1,0 +1,158 @@
+https://code.kx.com/insights/microservices/rt/examples/publish-kdb-ie.html
+
+# Publishing to Enterprise using q - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/rt/examples/publish-kdb-ie.html
+
+# Publishing to kdb Insights Enterprise using q
+
+In this example we will work through a q process sending data to an instance
+of _kdb Insights Enterprise_ using a 1 or 3 node deployment of RT. The
+publisher will be running outside of the _kdb Insights Enterprise_ deployment,
+meaning you could be sending data to _kdb Insights Enterprise_ using a q
+session running on your laptop.
+
+Reliable Transport (RT) comes with a set of q functions to send or receive
+message to and from RT. Details on these q function are touched on below, but
+for more information see [here](../sdks/rt-qpk.html)
+
+## Authentication
+
+Before data can be sent to _kdb Insights Enterprise_ , a set of authentication
+steps need to be followed. These steps are outlined below.
+
+The steps below show you how to authenticate and enrol a publisher client to
+RT, using the KXI CLI.
+
+Create a user
+
+The steps below assume that the user executing the steps has been provided
+with a set of credentials to log in to their _kdb Insights Enterprise_
+deployment.
+
+  1. Configure your KXI CLI with the details of your deployment and namespace 
+    
+        $ kxi configure
+    Profile type (enterprise, microservices) [enterprise]:
+    Hostname []: https://my-deploy.com/
+    Namespace []: namespace
+    Service account ID []:
+    Encryption enabled (true/false) [true]: 
+    CLI successfully configured, configuration stored in /home/user/.insights/cli-config
+    
+
+The file created should look like
+
+    
+    
+    $ cat ~/.insights/cli-config
+    [default]
+    usage = enterprise
+    hostname = https://my-deploy.com/
+    namespace = namespace
+    auth.serviceaccount.id =
+    auth.serviceaccount.secret =
+    encryption = true
+    admin.password = password
+    
+
+admin.password
+
+The entry for `admin.password` must be manually added to the file above. It
+will not be added using the `kxi configure` command.
+
+  1. Authenticate against your insights deploy You should login with the credentials your Insights administrator have provided, for example user@company.com
+
+  1. Create a client in keycloak 
+    
+        kxi user create-client my-publisher
+    
+
+  2. Assign the relevant permissions to that client 
+    
+        kxi user assign-roles service-account-my-publisher --roles insights.role.maintainer
+    
+
+  3. Obtain the client secret for the client 
+    
+        kxi user get-client-secret my-publisher
+    
+
+  4. Configure your KXI CLI with the details obtained for the client ID and client secret 
+    
+        kxi configure
+    Profile type (enterprise, microservices) [enterprise]: enterprise
+    Hostname [https://my-deploy.com/]:
+    Namespace [namespace]: namespace
+    Service account ID [my-app]: my-publisher
+    Service account Secret (input hidden):
+    Re-enter to confirm (input hidden):
+    Encryption enabled (true/false) [false]:
+    CLI successfully configured, configuration stored in /home/username/.insights/cli-config
+    
+
+  5. Identify your external reference ID If using an assembly file, this will be the value "ext-taxi" 
+    
+            sequencer:
+          transport:
+            external: true
+            topicConfig:
+              subTopic: "ext-taxi"
+    
+
+  6. Enrol a client using the kxi cli 
+    
+        $ kxi client enrol --name my-publisher --insert-topic ext-taxi
+    {
+      "message": "success",
+      "detail": "Client enrolled",
+      "url": "d955a31fc4deb880e53704794671bd49",
+      "config_url": "https://my-deploy.com/informationservice/details/d955a31fc4deb880e53704794671bd49"
+    }
+    
+
+## Publish
+
+In this example, we will make use of a RT publish function, `.rt.pub`. This is
+an API, maintained by KX, that can be called to send data into RT.
+
+In order to access the API, download the
+[`rt.qpk`](https://portal.dl.kx.com/assets/raw/rt/).
+
+    
+    
+    version=1.10.0
+    curl -L  https://portal.dl.kx.com/assets/raw/rt/$version/rt-$version.qpk -o rt.tar.gz
+    unzip rt.tar.gz
+    
+
+Start a q session and publish the data
+
+    
+    
+    $ cd rt
+    $ q startq.q
+    q)
+    q)setenv[`KXI_CONFIG_URL] "https://my-deploy.com/informationservice/details/d955a31fc4deb880e53704794671bd49"; // Note, this is taken from the client enrolment step above
+    q)params:`config_url`path!(getenv`KXI_CONFIG_URL; "/tmp/rt/");
+    q)params
+    config_url| "https://my-deploy.com/informationservice/details/d955a31fc4deb880e53704794671bd49"  
+    path      | "/tmp/rt/"               // location where the user wishes to write the RT log file. A location with suitable disk space should be chosen.
+    q)p:.rt.pub[params];            // initialize your connection to RT. This creates a foreign object used to publish.
+    q)data:([] col1:`a`b`c; col2:1 2 3)
+    q)p(`.b; `table; data)  // publish to RT
+    
+
+Data format
+
+RT is data format agnostic. The 3 item list we are publishing above is a
+messageType, table name and payload. The kdb Insights Database and Stream
+Processor expect data in this format.
+
+## Querying Data
+
+You have now sent data into _kdb Insights Enterprise_. There are a number of
+ways of querying that data back, including the REST call
+[getData](../../../enterprise/database/query/rest-vs-qipc.html) and
+[SQL](../../../enterprise/database/query/sql.html).
+

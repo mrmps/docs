@@ -1,0 +1,108 @@
+https://code.kx.com/insights/api/stream-processor/python/string.html
+
+# String - kdb products
+
+Original URL: https://code.kx.com/insights/api/stream-processor/python/string.html
+
+# kxi.sp.string
+
+#### to_uppercase
+
+    
+    
+    @StringOperator
+    def to_uppercase(
+            field: Union[str, List[str], int, List[int]]) -> StringOperator
+    
+
+Transform fields containing lists of strings to uppercase.
+
+**Arguments** :
+
+  * `field` \- a list of column names or a list of indices, corresponding to one of the following:
+  * a string
+  * a list of strings
+  * an index
+  * list of indexes
+
+A field represents a incoming stream of data. This can be any string data ex
+database entries
+
+**Returns** :
+
+A pipeline comprised of a 'to_uppercase' operator, which can be joined to
+other pipelines.
+
+Transforms string columns to uppercase
+
+    
+    
+    >>> from kxi import sp
+    >>> import pykx as kx
+    
+    >>> sp.run(sp.read.from_expr('([] x: til 5; y: ("Records"; "Name"; "AGE"; "JOB"; "owner"))')
+           | sp.string.to_uppercase('y')
+           | sp.write.to_variable('out'))
+    >>> kx.q('out')
+    
+    
+    
+    x y
+    -----------
+    0 "RECORDS"
+    1 "NAME"
+    2 "AGE"
+    3 "JOB"
+    4 "OWNER"
+    
+
+#### to_lowercase
+
+    
+    
+    @StringOperator
+    def to_lowercase(
+            field: Union[str, List[str], int, List[int]]) -> StringOperator
+    
+
+Transform fields containing lists of strings to lowercase.
+
+**Arguments** :
+
+  * `field` \- a list of column names or a list of indices, corresponding to one of the following:
+  * a string
+  * a list of strings
+  * an index
+  * list of indexes
+
+A field represents a incoming stream of data. This can be any string data ex
+database entries
+
+**Returns** :
+
+A pipeline comprised of a 'to_lowercase' operator, which can be joined to
+other pipelines.
+
+Transforms string columns to lowercase
+
+    
+    
+    >>> from kxi import sp
+    >>> import pykx as kx
+    
+    >>> sp.run(sp.read.from_expr('([] x: til 5; y: ("Records"; "Name"; "AGE"; "JOB"; "owner"))')
+           | sp.string.to_lowercase('y')
+           | sp.write.to_variable('out'))
+    >>> kx.q('out')
+    
+    
+    
+    x y
+    -----------
+    0 "records"
+    1 "name"
+    2 "age"
+    3 "job"
+    4 "owner"
+    
+

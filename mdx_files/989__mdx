@@ -1,0 +1,517 @@
+https://code.kx.com/dashboards/viewstateparameters/
+
+# View States - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/viewstateparameters/
+
+# View States
+
+_This section describes view states which are used to store values accessible
+to all components of the dashboard. They can be used to pass values like user
+selections or preferences between components and
+into[queries](../datasources/)._
+
+This section provides information on:
+
+## View State Dialog
+
+The View State dialog is used to create and manage view states. The following
+screenshot shows a **View State** dialog with a selected view state, its
+properties, and a graphical representation of its relationship to data sources
+and components.
+
+![Screenshot](../img/viewstate/viewstatemenu.png)
+
+To open the **View State** dialog use one of the following methods:
+
+  1. Click on the eye icon ![Screenshot](../img/viewstate/eyeicon.jpg) at the top of the Properties Panel.
+
+![Screenshot](../img/viewstate/viewstatedashproperties.png)
+
+  2. Click inside any input box showing the eye icon ![Screenshot](../img/viewstate/eyeicon.jpg).
+
+Hidden eyes
+
+Some inputs offer View States, but the icon is hidden. For some it’s to the
+left of the ![Screenshot](../img/viewstate/clearbutton.jpg) Clear button. If a
+View State is available, a rollover of the input displays the eye icon.
+
+![Screenshot](../img/viewstate/viewstatehidden.jpg)
+
+With a View State paired to a [Text Input](../textinput/) or [Drop
+Down](../dropdownlist/) component, a user’s input can be passed to any
+dashboard component.
+
+User input
+
+To prevent errors, it may be necessary to include a text prompt to help the
+user to put information in the correct form.
+
+## View State dialog layout
+
+At the top of the dialog are buttons to create, edit, and delete or clean up
+view states that are not used.
+
+The body of the dialog consists of 3 main sections:
+
+  * a list of view states and folders on the left
+  * a **Properties** panel which is used to specify the type and values for the selected view state
+  * a view state **Graph** which depicts the selected view state and all data sources or components that reference the selected view state. Each component in the graph is named, as described in the next section.
+
+![Screenshot](../img/viewstate/viewstategraph.png)
+
+### Component Names in the View State Graph
+
+Each Dashboard component is given an internal name by default, which is
+displayed in the view state graph, shown here.
+
+![Screenshot](../img/viewstate/viewstategraphinternalname.png)
+
+Any component in your Dashboard can be given a user-defined name by assigning
+a value to its Name property, shown here.
+
+![Screenshot](../img/viewstate/datagrid_userdefined_component_name.png)
+
+If present, the view state graph displays the user-defined name instead of its
+internal name, shown here.
+
+![Screenshot](../img/viewstate/viewstategraphcomponentname.png)
+
+Component Names
+
+Assigning a user-defined name to a component can help identify components in
+the view state graph.
+![Screenshot](../img/viewstate/viewstategraph_userdefinednames.png)
+
+## Creating a View State
+
+  1. In the Select View State dialog, click **New** to create a new View State. 
+
+  2. Enter a **Name** for the new parameter. 
+
+![Screenshot](../img/viewstate/viewstatenew.jpg)
+
+  3. Set the field values described in the following tables.
+
+**Field name** |  **Description**  
+---|---  
+Type  |  Choose from one of the options in the **Type** drop-down list: `boolean`, `byte`, `char`, `date`, `datetime`, `dict`, `double`, `float`, `guid`, `int`, `list`, `long`, `minute`, `month`, `second`, `short`, `string`, `symbol`, `time`, `timespan`, `timestamp`  
+Rolling  |  The **Rolling** checkbox is displayed when the **Type** is set to one of the following; date, datetime, minute, month, second, time, timestamp. See Rolling for details.   
+Default  |  You have the option to enter a default value for the new view state. Components and queries referencing this view state use the default value in the following situations:  
+
+     * The Reset View State button in the toolbar ![Screenshot](../img/viewstate/resetviewstatebutton.png) is clicked. 
+     * The Dashboard is loaded, has not been previously saved by the user, and the view state value has not been passed to the Dashboard (that is [Enable "Share Dashboard"](workspace.md#basics) has not been ticket in the Basics properties). 
+     * The Dashboard is loaded with the [Save Viewer State](workspace.md#basics) property disabled, the Dashboard has not been previously saved by the user, and the view state value has not been passed to the Dashboard (that is, when Sharing View States across Dashboards with a button).   
+Value  |  This represents the current value of the view state. If a component is using a view state, and the user changes the value, the **Value** attribute of that view state is updated to that value.   
+  
+
+  4. Click **Select Item**. 
+
+![Screenshot](../img/viewstate/viewstatselect.jpg)
+
+## Rolling
+
+The Rolling feature allows you to specify a default value that is dynamic.
+This feature uses syntax that is evaluated in the following situations:
+
+  * In the same circumstances as for a view state's **Default** field, as described in the previous section.
+  * When a Dashboards component refers to it as an [Action](../action/#apply-rolling-syntaxview-state-default).
+  * When a [data source](../datasources/#rolling-view-states-in-data-source-queries) parameter is configured to use the rolling syntax from a view state.
+
+To create a Rolling view state:
+
+  1. Create a new view state as described above.
+  2. Choose one of the following data types from the **Type** drop-down list: **date** , **datetime** , **minute** , **month** , **second** , **time** , **timestamp**.
+
+For each of these types, a checkbox labelled **Rolling** is visible above the
+**Default** field.
+
+  3. Check **Rolling** to enable the **Default** field for data entry. 
+
+  4. In the **Default** field, enter a value using the appropriate rolling syntax. 
+
+For example, using **NOW+24:00** causes the view state's value to be set to
+tomorrow's date and time whenever a default value is needed for this view
+state.
+
+Notice that when you set this value as the **Default** it automatically
+updates the **Value** field.
+
+  5. Click **Close**. 
+
+![Screenshot](../img/viewstate/viewstaterolling.png)
+
+### Persistent state for rolling view states
+
+You can remove rolling syntax from a View State by unchecking **Rolling**
+above the **Default** field in a View State parameter.
+
+However it is not possible to remove the rolling syntax from a view state if
+it is in use by a [data source](../datasources/) committed to the Dashboard.
+This does not mean the Dashboard has to be saved, but it does mean the data
+source has to be applied to the Dashboard.
+
+Therefore when the rolling syntax of a view state is being used by a data
+source, the **Rolling** checkbox is disabled in the view state dialog.
+
+The following screenshot shows a view state with Rolling deactivated, because
+the view state is being used by a data source.
+
+![Rolling Syntax disabled](../img/viewstate/rolling-deactivated.png)
+
+When the rolling syntax of a view state is being used by a data source, only
+data types that support rolling syntax can be selected in the View States
+dialog, as illustrated below.
+
+![Selectable data types](../img/viewstate/rolling-datatypes.png)
+
+### Rolling Syntax
+
+The following table describes the valid syntax for Rolling view states.
+
+**Syntax** |  **Description**  
+---|---  
+**NOW** |    
+Refers to the current moment in time and can be used alone or as part of an
+expression.  
+NOW can be immediately followed by an operator (+ or -) and an operand.  
+**NOW+x  
+NOW-x ** |  **x** refers to a number that is provided by the user who is authoring the rolling syntax. The value of **x** is a multiple of a duration based on the data type.   
+The table below shows the duration associated with **x** for each data type:  |  **Data Type** |  **Duration**  
+---|---  
+second  |  seconds   
+minute, time  |  minutes   
+date, datetime, timestamp  |  days   
+month  |  months   
+The operator (+, -) is used to add or subtract a duration as part of the expression. For example:  **Data Type** |  **Expression** |  **Result**  
+---|---|---  
+second  |  NOW+10  |  Adds 10 seconds to NOW   
+time  |  NOW+30  |  Adds 30 minutes to NOW   
+date  |  NOW-5  |  Subtracts 5 days from NOW   
+month  |  NOW-10  |  Subtracts 10 months from NOW   
+  
+For the datetime and timestamp data types, using NOW+x or NOW-x the time value
+is set to 00:00:00.  
+To advance or reverse while retaining the current time, use the time format
+with multiples of 24 hours (that is NOW+24:00, NOW+48:00).  
+**NOW+hh: mm:ss.sss  
+NOW-hh:mm:ss.sss ** |  **NOW+hh: mm:ss.sss** adds the specified time duration to the value of NOW.   
+**NOW-hh: mm:ss.sss** subtracts the specified time duration from the value of
+NOW.  
+When specifying a time formatted value, the number of hours can exceed 24. For example:  |  **Expression** |  **Result**  
+---|---  
+NOW+00:30  | Adds 30 minutes to NOW   
+NOW-48:00  | Subtracts 48 hours from NOW   
+NOW+1:30:10  |  Adds 1 hour, 30 minutes and 10 seconds to NOW   
+  
+When using the month data type, it is possible for the NOW+hh:mm:ss.sss
+expression to result in a different month.  
+**NOW+x@hh: mm:ss.sss  
+NOW-x@hh:mm:ss.sss ** |  NOW+x@hh:mm:ss.sss adds a specified number of days (**x**) to NOW, and sets the time to the value specified after the **@** sign.   
+NOW-x@hh:mm:ss.sss subtracts a specified number of days (**x**) from NOW, and
+sets the time to the value specified after the **@** sign.  
+  
+These expressions work with the datetime and timestamp data types. For example:  |  **Expression** |  **Result**  
+---|---  
+NOW+1@12:00  |  Adds 1 day to NOW and the time value is 12:00   
+NOW-1@23:59:59  |  Subtracts 1 day from NOW and the time value is 23:59:59   
+  
+The rolling syntax expression is expected to have no spaces. If the
+**Rolling** checkbox is checked and no rolling syntax is provided, the keyword
+NOW is used.  
+  
+The use of the **T** keyword remains functional. However, it is recommended
+that the NOW keyword be used instead because the **T** keyword is deprecated.  
+Weekdays (WD)  |  See here for details on weekdays syntax.  
+Business days (BD)  |  See here for details on business days syntax.  
+  
+#### Weekdays
+
+A weekday is defined as any day within the week except Saturday and Sunday.
+The rolling feature allows you to specify what type of day to consider by
+using the keyword **WD**. When **WD** is present, only weekdays are used to
+determine the calendar day. **WD** can be used with the following data types:
+
+`date`, `datetime`, `timestamp`
+
+Weekday syntax includes:
+
+**Syntax** | **Description**  
+---|---  
+**NOW+xWD** | Adds a specified number of weekdays (**x**) to NOW.  
+**NOW-xWD** | Subtracts a specified number of weekdays (**x**) from NOW.  
+**NOW+xWD@hh: mm:ss.sss** | Adds a specified number of weekdays (**x**) to NOW, and sets the time to the value specified after the **@** sign.  
+**NOW-xWD@hh: mm:ss.sss** | Subtracts a specified number of weekdays (**x**) from NOW, and sets the time to the value specified after the **@** sign.  
+  
+For example:
+
+**Expression** | **Result**  
+---|---  
+**NOW+2WD** | Adds 2 weekdays to NOW  
+**NOW-7WD@1:59:59** | Subtracts 7 weekdays from NOW and the time value is 1:59:59  
+**NOW+1WD** | When value of NOW refers to Friday, the resulting day is next Monday  
+  
+#### Business Days
+
+A business day is a day within the week where normal business operations are
+conducted. Dashboards defines a business day by considering two pieces of
+information:
+
+  * Days within the week that are used for work activity (for example, Monday through Friday)
+  * Exclusionary dates on the calendar (for example, holidays recognized by the business)
+
+The rolling feature allows you to specify what type of day to consider by
+using a special keyword **BD**. When **BD** is present, only business days are
+used to determine the calendar day. **BD** can be used with the following data
+types:
+
+`date`, `datetime`, `timestamp`
+
+Business day syntax includes:
+
+**Syntax** | **Description**  
+---|---  
+**NOW+xBD** | Adds a specified number of business days **x** to NOW.  
+**NOW-xBD** | Subtracts a specified number of business days **x** from NOW.  
+**NOW+xBD@hh: mm:ss.sss** | Adds a specified number of business days **x** to NOW, and sets the time to the value specified after the **@** sign.  
+**NOW-xBD@hh: mm:ss.sss** | Subtracts a specified number of business days **x** from NOW, and sets the time to the value specified after the **@** sign.  
+  
+For example:
+
+**Expression** | **Result**  
+---|---  
+**NOW+2BD** | Adds 2 business days to NOW  
+**NOW-7BD@9:00** | Subtracts 7 business days from NOW and the time value is 9:00  
+**NOW+1BD** | When value of NOW refers to December 31, and January 1 is not a business day,   
+the result is January 2  
+  
+#### Defining the Workweek and Holidays
+
+When calculating business days, the rolling feature uses 2 files located on
+the web server where Dashboards has been deployed. The website reference to
+these files is:
+
+_http(s):// <_website_ >/modules/<_QuickBase Version_ >/calendar_
+
+Where <_QuickBase Version_ > is the text that appears to the right of the
+QuickBase UI Component when viewing the [User Menu's About
+page](../workspace/#user-menu). In the following screenshot, for the depicted
+About page, the website reference is:
+http(s)://<website>/modules/QuickBase_fd61a7a457/calendar
+
+![Screenshot](../img/viewstate/quickbase_component_version_number.png)
+
+**File** | **Description**  
+---|---  
+workweek.csv | This file defines which days of the week are considered work days.  
+\- Each day of the week is represented by a number where 1 = Sun, 2 = Mon,
+etc.  
+\- Only the first 7 valid entries are used.  
+\- The entries can be separated by a new line or a comma.  
+\- The initial version of this file defines Monday through Friday as work
+days:  
+For example:  
+2,3,4,5,6  
+holidayCalendar.csv |   
+This file contains a list of exclusionary dates (e.g. holidays recognized by
+the business).  
+\- Dates can be formatted as: YYYY-MM-DD or MM-DD-YYYY  
+\- Leading zeroes are optional for the month and day (e.g. **2024-1-1** ,
+**2024-02-02**)  
+\- Acceptable (Year Month Day) delimiters are the hyphen, dot and forward
+slash characters (e.g. **2024-01-01** , **2024.01.01** , **2024/01/01**)  
+\- The entries can be separated by a new line or a comma.  
+\- The initial version of this file defines Jan 1, 2024 as a holiday:
+**2024-01-01**  
+  
+Work week must be defined for business day calculations
+
+If the work week is not defined (i.e. workweek.csv file does not exist, cannot
+be read, or is an empty file), business days are not calculated.
+
+## View states in Query Editor
+
+### kdb+/q Query Editor
+
+View state parameters can be referenced from within the kdb+/q editor.
+
+#### 1\. Function parameters
+
+For a kdb+/q function, view states can be defined at the start of the
+function.
+
+Add the required view state parameter enclosed in square brackets. Multiple
+view states can be defined by separating parameters with semi colons.
+
+Note
+
+The maximum number of parameters permitted is 8; specifying more than eight
+parameters causes an error. You can avoid this restriction by encapsulating
+multiple parameters in a list or dictionary.
+
+    
+    
+    {[x]
+        select from table where (column1 = x)
+     }
+    
+
+This causes the supplied view state to be substituted for all occurrences of
+the parameter x, the expression to be evaluated and the result returned as the
+output value.
+
+#### 2\. In-query parameters
+
+Alternative approach to add a view state parameter is to define an in-query
+parameter in a kdb+/q query, view states can be added to the query using the
+following syntax <%param%>.
+
+    
+    
+        select from table where column1 = <%x%>
+    
+    
+
+This causes the supplied view state to be substituted for all occurrences of
+the parameter x, the expression to be evaluated and the result returned as the
+output value.
+
+### SQL Query Editor
+
+View state parameters can be referenced from within the SQL editor.
+
+#### 1\. In query parameters
+
+In your SQL query editor you can add a view state parameter to the query by
+using a set of double curly brackets e.g. {{trader}}.
+
+    
+    
+        SELECT * FROM table WHERE column1 = {{x}}
+    
+    
+
+This causes the supplied view state to be substituted for all occurrences of
+the parameter x, the expression to be evaluated and the result returned as the
+output value.
+
+### Map View states in Query Editor
+
+As new data sources are defined in the kdb+/q Query Editor, it is often
+convenient to map them immediately to View States.
+
+This can be done with a single click on the eye-and-gear button. The following
+example maps a query’s `trade` argument to an eponymous View State
+
+![Screenshot](../img/viewstate/queryviewstate.jpg)
+
+This updates **Value** to reflect the mapped View State. For example,
+`<%Query/value%>` as mapped in the image below:
+
+![Screenshot](../img/viewstate/automaticmap.jpg)
+
+To edit the View State, click on the eye button to summon the Select View
+State dialog.
+
+![Screenshot](../img/viewstate/manualmap.jpg)
+
+Parameter types
+
+Parameter types must match. A parameter’s type is defined in the View State
+dialog. Check to ensure the same type is assigned in the Query Editor for
+which the View State is assigned.
+
+In the Query Editor, if there is an assigned value prior to creating a View
+State, the created View State will adopt the assigned value as the default
+value; ensuring the query will run when executed.
+
+## Selected values
+
+**Selected Values** are available in chart components. Values are captured
+using:
+
+**Name** | **Description**  
+---|---  
+**Selected Value** | A View State – ‘publishing’ the selection for other components  
+**Selected Value Attribute** | A column from the component’s [Data Source](../datasources/)  
+  
+Data types
+
+When mapping Selected Values to Selected Value Attribute, ensure the data type
+of the View State matches the data type of the Data Source column; e.g.
+integer for numbered data.
+
+## View State Routing
+
+When a user selects a data row in [Data Grid](../datagrid/), or line point in
+Charts, represented value(s) can be assigned to [view state parameters](./) in
+[Actions](../action/) section.
+
+![Screenshot](../img/viewstate/viewstaterouting.png)
+
+### Sharing View States across dashboards
+
+When sharing View States between different dashboards, matching View States
+(case sensitive) must be created on the host and destination dashboard. This
+is relevant when creating [Buttons](../button/) to switch between dashboards.
+
+## Linking components
+
+Components can be linked so that changes in one component are reflected in
+another.
+
+For example, drilling down on the [Pivot Grid](../datagrid/) below results in
+changes to the linked [Breadcrumbs](../breadcrumbs/) and [Canvas
+Chart](../canvascharts/).
+
+![Linked components](../img/viewstate/link1.jpg)
+
+Drill-down on the data grid also updates breadcrumbs and canvas bar chart, as
+shown here.
+
+![Screenshot](../img/viewstate/link2.jpg)
+
+Link components by creating a [View State](./) and setting it as the **Focus**
+property of the linked components.
+
+![Screenshot](../img/viewstate/componentlink.jpg)
+
+## System View States
+
+System view states contain information about the current Dashboard session and
+are accessible to all components of the dashboard.
+
+The following screenshot shows the **View State** dialog with a selected
+System View State, its properties, and a graphical representation of its
+relationship to a Dashboard component
+
+![Screenshot](../img/viewstate/systemviewstates.png)
+
+The **Settings** folder contains the system view states. Users cannot edit
+this folder or edit view states that appear in this folder.
+
+The following is a list of the system view states:
+
+**View state** | **Description**  
+---|---  
+**dashboardStartTimestamp** | Provides the date and time for when the dashboard was opened (in UTC format)  
+**dashboardTimezone** | Provides the timezone associated with the Dashboard session. The [Dashboard User Menu](../workspace/#user-menu) provides a dialog to access this timezone setting.  
+**dashboardTitle** | Provides the title of current dashboard. The **Name** property in the [Dashboard Basics section](../workspace/#basics) can be used to maintain this value.  
+**dashboardUrl** | Provides the url of the current dashboard  
+**dashboardUser** | Identifies the user currently logged in to the Dashboards session  
+  
+## Clean Up
+
+Clicking on **Clean Up** opens the **Unused View States** dialog.
+
+![Screenshot](../img/viewstate/cleanupbuttonviewstatedialog.png)
+
+The **Unused View States** dialog shows a list of view states not used by the
+Dashboard. To remove one or more view states, check the checkbox next to its
+name, and then click **Delete Selected**. To select the entire list, check the
+topmost checkbox labelled **View States**.
+
+![Screenshot](../img/viewstate/unusedviewstatesdialog.png)
+
+## Further Reading
+

@@ -1,0 +1,32 @@
+https://code.kx.com/platform/stream/filewatcher_template/
+
+# Filewatcher - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/stream/filewatcher_template/
+
+# DS_FILEWATCHER
+
+This process is used to poll/scan a configurable set of directories for target
+files. Upon identification of the arrival of a target file an analytic is
+called which can load the data from that file, transform/cleanse the data and
+publish it onto KX Delta Platform.
+
+On finding any file, a message Is published to identify that a file has
+arrived and if the file matches the regular expression in configuration, it
+will also try to process that file.
+
+An Alert can be triggered for a missing file based on expected arrival time.
+
+## Parameters
+
+The below table details the _FILEWATCHER_ template parameters.
+
+name | type | default value | description  
+---|---|---|---  
+initialStateFunct | Analytic | dxEmptyFunctionNull | Sets the analytic to run on start up  
+messagingServer | Configuration | DS_MESSAGING_SERVER | Messaging server  
+publishChannel | Symbol |  | Messaging channel to publish on  
+pollInterval | Integer | 30 | Poll Interval  
+fileListConfigName | Configuration | DS_FILEWATCHER_MATCHTABLE | Config parameter to use to load file information  
+consumerProcesses | Process Instance |  | Published to processes
+

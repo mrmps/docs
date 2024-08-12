@@ -1,0 +1,244 @@
+https://code.kx.com/platform/release_420/
+
+# 4.2.0 - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/release_420/
+
+# Changes in 4.2.0
+
+## Security
+
+### Secure parser
+
+The secure parser is used to enforce permissions on incoming client IPC
+requests. Users are restricted to calling APIs only. String and lambda
+requests are forbidden for non-administrator users.
+
+Enabled by setting `DELTACONTROL_SECURE_PARSER` environment variable to `YES`.
+
+[Security](../security/#secure-parser)
+
+### Async permissions
+
+By default, permissioned instances will enforce permissions only on sync
+requests. An instance config variable has been added to enable this system-
+wide or per-instance. The boolean `.pm.async.enabled` flag should be set to
+`true` to enable.
+
+Async queries will not be included in query logging by default with above flag
+enabled.
+
+### Password hashing
+
+Password security has been improved by using a more secure hashing algorithm.
+Passwords are also secured with a randomly generated salt, which gets updated
+whenever the password is changed.
+
+### Control logins
+
+The ability to open direct handles to Control has been restricted to
+permissioned users.
+
+In order for non-admins to access Control, the user must have permission on
+the `CxLogin` entity group.
+
+The restriction only exists for IDE connections or direct IPC handles to
+Control. Connections via the App Server are unaffected.
+
+### Process-level administrator
+
+Ability to configure users as administrators on a per-instance basis. Users
+will have full access to instances where they have `Read/Write` permission.
+
+Existing Read/Write permissions on instances should be reviewed on upgraded
+systems to ensure they are appropriate.
+
+### Web tier secure headers and CSP
+
+Content Security Policy (CSP) implemented. Extended Secure header options to
+include CSP policy restricting third-party XSS and injections.
+
+## Namespace migration
+
+The `.r` namespace has been migrated to `.rpl` to allow usage of the KX [R
+interface](https://code.kx.com/q/interfaces/r/).
+
+To ensure backward compatibility, all functions can be copied back to the `.r`
+namespace by setting the `DELTACONTROL_NAMESPACE_MAP` environment variable to
+`YES`.
+
+If `DELTACONTROL_PERM_MAP` is not set, `DELTACONTROL_NAMESPACE_MAP` will also
+control the `.pm` to `.p` mapping.
+
+## Query router
+
+### Polling query updates
+
+Added support for supressing results if they haven’t changed from the previous
+attempt. This brings the behavior into line with the old managed-query
+functionality via the QM.
+
+Whether to publish all results or only on change is configurable when
+registering a polling request. The kdb+ client interface is set up to receive
+all by default but can be overridden by setting the `updatesOnly` flag in only
+publish results if they differ from the previous run.
+
+By default it is disabled in the kdb+ client but can be enabled by setting
+`updatesOnly` in the `opts` dictionary of `.qr.client.addPollingSub` to
+`true`.
+
+### Sub-requests
+
+Allow **nested sub-requests** , i.e. a sub-request triggering another sub-
+request. Previously this was not supported and would signal an error during
+the aggregation.
+
+When sending a sub-request, the user can solution can now specify **multiple
+targets** for it. For routed requests, this allows any request routings to be
+overwritten if only a subset of the data is required for the sub-request
+result.
+
+This will be the default behavior.
+
+To use the original routings for the request, add `routing` flag to the `opts`
+parameter of `.qr.sub.sendRequest`.
+
+**Polling requests** are now allowed to trigger sub-requests.
+
+### Multiple targets
+
+As part of the above feature changes, the ability to target multiple processes
+was enabled for client requests. The kdb+ client can now specify multiple
+processes to target and the QR will route to those processes by default
+without needing to setup a routed request. This will override any routings
+configured for the request but the same aggregation function will still be
+used if one is set.
+
+### Manual failover
+
+Ability to manually trigger a failover of the QR cluster by publishing a
+broadcast message with a preferred list of instances.
+
+[Triggered failover](../qr_overview/#triggered-failover)
+
+## Action tracker
+
+### Action tracker management moved to Control UI
+
+The ability to create, update and manage Action Trackers, Queues and
+Transitions has been added to _KX Control_. See _KX Stream_ documentation.
+
+### Delete attachments
+
+Can now delete attachments from within an Action Tracker item.
+
+## Release management/Git integration
+
+The Package importer and exporter now support pulling and pushing to Git
+repositories. More information can be found in the [Release
+Management](../release_management/) section and there is now a
+[Revisions](../revisions/) section to describe how to work with local and
+remove revisions and comparisons.
+
+## New code editing features
+
+To assist in code editing for Analytics, Instructions or Process templates,
+new content assist capabilities have been added. Definitions for the core
+language and the Process Template API are now available. Hover help for
+functions in code will be shown. F3 to navigate to an Analytic or Schema is
+also now supported. See the details in the [Analytic code
+editing](../analytics/#code-editing-features) section.
+
+## Distinct UI permission groups
+
+Several permission groups have been added to assign or revoke privileges more
+easily for certain tasks within the Control Web UI. See the [Control UI
+Permissions](../controlui_api_permissions/) section for more information. Upon
+upgrade (not on a fresh install) the Control Web UI API groups that existed
+prior to 4.2.0 will still exist, namely `CtrluiAPI` and `CtrluiAdminAPI`. To
+enable non-administrator users of Control Web UI to be set up, these two API
+groups should be removed. This can be achieved by executing the following on
+_KX Control_
+
+    
+    
+    .pm.deletevargroup'[`CtrluiAPI`CtrluiAdminAPI]
+    
+
+## Miscellaneous
+
+### Schema details
+
+All schemas loaded into instances from Control will be registered in the
+`.schema` namespace by default now. Previously this was only done in selected
+Stream templates. `.schema.cols` dictionary can be used to get the list of
+columns for each loaded schema.
+
+### Instance configuration
+
+object | use  
+---|---  
+`.log.precision` | Ability to set `\P`  
+`.log.tsPrecision` | Number of decimal places in stdout logging timestamp  
+`.log.consoleSize` | Set the console width  
+`.pm.async.enabled` | Enable async permissions  
+  
+### Windows log rolling
+
+Log file rolling now supported for Control process and instances.
+
+The `rollBy` option only supports `process`.
+
+### Remembering analytic push locations
+
+When changes are made to an analytic and it needs to be manually pushed, the
+dialog now remembers the previous destinations. See the
+[Analytics](../analytics/#analytic-push) section.
+
+### Multi-select access change
+
+The user and group list in the _Entitlements_ tab now supports multi-select to
+change the access level for multiple items.
+
+[Entitlements](../entitlements/#set-entity-permissions)
+
+### Parameter search
+
+The viewer for Parameters now supports search across all parameters in the
+system.
+
+[Parameters Viewer](../configurations/#parameters-viewer)
+
+### Show partial log for Control
+
+The _Tools_ menu now has an item to open up the log viewer against Control
+
+### Improved about dialog information
+
+The _User > About_ dialog now contains more information about the underlying
+KX Delta Platform, kdb+ install, license information, etc.
+
+![About Dialog](../img/control/aboutdialog.png)
+
+### Web tier tomcat upgraded
+
+KX Delta Platform-bundled Tomcat now running latest version 9
+
+### SNMP notifications
+
+Ability to send SNMP notifications for integration with third-party monitoring
+tools.
+
+[SNMP Notifications](../email_server/#snmp-notifications)
+
+### Streaming analytics binary message support
+
+Messages from q through to clients remain in IPC binary format for client side
+decoding. Increases speed and memory footprint within _KX Delta Platform_
+
+### Unlock user on password reset
+
+Configuration now available to unlock a user when password is reset.
+
+[Unlock user on reset](../forgot_password_service/#unlock-user-on-reset)
+

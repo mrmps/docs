@@ -1,0 +1,152 @@
+https://code.kx.com/insights/microservices/database/query/late-data.html
+
+# Late data - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/database/query/late-data.html
+
+# Late data queries
+
+The kdb Insights database supports the persisting and querying of late and out
+of order data. This is done through configuration and coordination between the
+_Storage Manager_ and the _Data Access Process_.
+
+## Core concepts
+
+### Late data
+
+Timeseries data is considered late if the timestamp in the
+[`prtnCol`](../configuration/assembly/schema.html) for the table is less than
+the current time of the system. For example, if at 12:00pm we ingest
+timeseries data with a `prtnCol` time of 11:45am, that data is 15 minutes
+late.
+
+### Out of order data
+
+Out of order data refers to receiving data in a non-monotonically increasing
+order. For example, if we received three timeseries data updates with
+timestamps of 11:00am, 10:00am, and 12:00pm respectively, that data is out of
+order.
+
+### Temporal Purview
+
+Temporal purview refers to the period of time that a DAP is responsible for
+servicing queries for. This is represented as a range of timestamps that is
+inclusive on the start time, and exclusive on the end time.
+
+See [purviews](purviews.html).
+
+### Base table
+
+For partitioned data the "main" data is located in the main table within the
+global namespace. For an RDB this is an in-memory table, but for local DAPs
+the partitioned table in global namespace is an on-disk table which was
+written down by the Storage Manager.
+
+### In-memory table
+
+For local DAPs (IDB and HDB), in addition to the on-disk base table, there is
+an in-memory table which stores updates and new data, within the temporal
+purview, which have not yet been written to disk by an EOX event (EOI for IDB,
+and EOD for HDB). This is used to ensure queries to this DAP are able to fully
+satisfy the request with the most up to date information. The in-memory table
+can always be accessed with `.da.getTableMem`.
+
+### In-memory delta table
+
+Local DAPs (IDB and HDB) have a second in-memory table. It is used to store
+in-purview updates that occur between the start and end of an EOX event. This
+is because those updates should still be queryable but will not be written to
+disk during the current EOX event. This table can be accessed with
+`.da.getTableDelta`.
+
+### `.kxi.selectTable`
+
+A custom API helper function provided by the data access process to abstract
+the location of data from the query. It is a function which understands the
+data access configuration and data model and is able to correctly interact
+with base, in-memory, and in-memory delta tables when running a query.
+
+### `_prtnEnd`
+
+Signal from Storage Manager that an EOX event has started. Received via the
+data stream. Details of the signal are used to determine if the event is an
+EOI or an EOD.
+
+### `_reload`
+
+Signal received from Storage Manager via IPC that an EOX event has finished.
+Details of the event are used to determine if the event was an EOI or an EOD.
+
+## Configuring late data
+
+There are two variables that must be set to ensure that late data is enabled.
+The first is that the Storage Manager has the `KXI_LATE_DATA` environment
+variable set to a value of `"true"`. This ensures that the SM progresses the
+purview based on clock time, instead of the amount of data ingested so far.
+
+To ensure the DAPs know that late data is enabled, it must be set in the
+_assembly file_ , at the `elements.dap.instances.*.lateData` or
+`elements.dap.lateData` level.
+
+Example 1: Sets `lateData` to on for all DAPs individually.
+
+    
+    
+    elements:
+      dap:
+        instances:
+          rdb:
+            lateData: true
+            mountName:RDB
+          idb:
+            lateData: true
+            mountName: IDB
+          hdb:
+            lateData: true
+            mountName: HDB
+    
+
+The second variable that must be set is `lateData`. All DAPs need to be in a
+position to subscribe, and thus require access to the TP log if using tick, or
+the RT logs/PVC if using _kdb Insights Reliable Transport_.
+
+Example 2: Turns `lateData` on for all DAPs at `elements.dap` level.
+
+    
+    
+    elements:
+      dap:
+        lateData: true
+        instances:
+          rdb:
+            mountName: RDB
+          idb:
+            mountName: IDB
+          hdb:
+            mountName: HDB
+    
+
+## Data flow
+
+When late data is enabled, all DAPs subscribe to the stream, and filter
+timeseries data based on their current or expected purview and store it in
+memory. DAPs continue ingesting and storing relevant records in memory until
+the receipt of the `_prtnEnd` signal. When this is received the DAPs react
+differently depending on their `dapType`. An RDB DAP does not do anything
+special when it receives the `_prtnEnd` signal.
+
+For `local` DAPs like the `IDB` and `HDB`, they first determine what kind of
+signal the `_prtnEnd` is for, either end of interval or end of day. If the
+signal is relevant to the DAP, it will extend the data it filters for and
+direct updates to the in-memory delta table.
+
+On the `_reload` signal, the local DAP purges its in-memory table and moves
+any updates from the delta table into the in-memory table. Its new purview is
+reported to the _kdb Insights Resource Coordinator_ and it continues filtering
+for data within its purview.
+
+Object Tier
+
+The _kdb Insights Storage Manager_ **does not** currently support ingestion
+and persistence of late data that would hit the `object` tier."
+

@@ -1,0 +1,88 @@
+https://code.kx.com/insights/api/stream-processor/q/string.html
+
+# String - kdb products
+
+Original URL: https://code.kx.com/insights/api/stream-processor/q/string.html
+
+# String
+
+## `.qsp.string.toLowercase`
+
+    
+    
+    .qsp.string.toLowercase[field]
+    
+
+**Parameters:**
+
+name | type | description | default  
+---|---|---|---  
+field | symbol or symbol[] or all integral types (i.e. short, int, long) | A list of column names or a list of indices. | Required  
+  
+> For all common arguments, refer to [configuring operators](configuring-
+> operators.html)
+
+Transforms incoming string columns to lowercase.
+
+    
+    
+    .qsp.run
+        .qsp.read.fromCallback[`publish]
+        .qsp.string.toLowercase[`y]
+        .qsp.write.toVariable[`output];
+    
+    publish ([] x: til 5; y: ("Records"; "Name"; "AGE"; "JOB"; "owner"))
+    output
+    
+    
+    
+    x y
+    ---------
+    0 "records"
+    1 "name"
+    2 "age"
+    3 "job"
+    4 "owner"
+    
+
+## `.qsp.string.toUppercase`
+
+    
+    
+    .qsp.string.toUppercase[field]
+    
+
+**Parameters:**
+
+name | type | description | default  
+---|---|---|---  
+fields | symbol or symbol[] or int or int[] | A list of column names or a list of indices | Required  
+  
+> For all common arguments, refer to [configuring operators](configuring-
+> operators.html)
+
+This transforms incoming string or symbol data to uppercase
+
+This example transforms a random string to uppercase
+
+    
+    
+    .qsp.run
+        .qsp.read.fromCallback[`publish]
+        .qsp.string.toUppercase[`y]
+        .qsp.write.toVariable[`output];
+    
+    publish ([] x: til 5; y: ("Records"; "Name"; "AGE"; "JOB"; "owner"))
+    output
+    
+    
+    
+    x y
+    ---------
+    0 "records"
+    1 "name"
+    2 "age"
+    3 "job"
+    4 "owner"
+    
+

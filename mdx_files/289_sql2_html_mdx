@@ -1,0 +1,447 @@
+https://code.kx.com/insights/api/database/query/sql2.html
+
+# SQL2 - kdb products
+
+Original URL: https://code.kx.com/insights/api/database/query/sql2.html
+
+# SQL2
+
+## Introduction
+
+SQL2 is a significant enhancement to the SQL functionality in kdb Insights, it
+is designed to address the memory, performance, and implementation limitations
+of its predecessor, [SQL](sql.html). The new implementation is now fully
+integrated with kdb Insights, eliminating previous compatibility issues and
+enabling a more seamless experience. SQL2 is built to work natively within the
+kdb Insights query architecture, ensuring that it evolves alongside the
+product, reducing the likelihood of compatibility issues that were common in
+previous versions.
+
+The primary goal for SQL2 is to achieve substantial compliance with the
+PostgreSQL standard. While we may not reach 100% compliance due to the
+underlying kdb database architecture, this objective serves as our guiding
+principle for ongoing development and improvements.
+
+The SQL2 API allows for the specification of ad-hoc SQL queries that can be
+distributed and aggregated across the system. However, the SQL2 API only
+supports a subset of the full SQL operators and functions specified
+[here](sql-functions.html).
+
+## Supported Syntax
+
+The SQL2 implementation supports the following query structures:
+
+    
+    
+    SELECT [DISTINCT] ... FROM TABLE [WHERE ...] [GROUP BY ...] [ORDER BY ...] [LIMIT ...]
+    
+
+Warning
+
+The SQL2 API does **not** support `INSERT`, `CREATE`, or `DELETE` statements.
+
+### Query Examples
+
+The following examples demonstrate the supported SQL query syntax:
+
+This example selects all columns from the _quote_ table.
+
+    
+    
+    SELECT count(*) FROM trade
+    
+
+This example calculates the total number of rows in the _trade_ table.
+
+    
+    
+    SELECT DISTINCT country,currency FROM exchange
+    
+
+This example selects the distinct country and currency combinations in the
+_exchange_ table.
+
+    
+    
+    SELECT sym,price FROM trade WHERE date='2024.01.26' ORDER BY price DESC LIMIT 10
+    
+
+This example selects the _sym_ and _price_ columns from the _trade_ table
+where the _date_ is _2024.01.26_ , ordered by _price_ in descending order, and
+limited to 10 results.
+
+    
+    
+    SELECT min(ask) as min_price,max(bid) as max_price FROM quote WHERE label_exchange = 'nyse' AND time >= '2024.01.26 12:00:00'
+    
+
+This example selects the minimum _ask_ and maximum _bid_ values from the
+_quote_ table, aliased as _min_price_ and _max_price_ , respectively, where
+the _label_exchange_ column equals _nyse_ and the _time_ column is greater
+than or equal to _2024.01.26 12:00:00_.
+
+## Calling SQL vs SQL2
+
+SQL2 is enabled by default in query environments. If you want to enable SQL2
+in environments not primarily designed for queries, include `.kxi.sql2` in the
+comma-separated list of allowed sandbox APIs in the `KXI_ALLOWED_SBX_APIS`
+environment variable.
+
+For example:
+
+    
+    
+    KXI_ALLOWED_SBX_APIS=".kxi.sql,.kxi.sql2"
+    
+
+  * If you don’t activate SQL2, all SQL queries continue to use the existing SQL API, as in versions earlier than 1.9.
+
+  * Once enabled, the new SQL2 API aims to phase out the old SQL API over time as we implement new features. You don’t need to take any extra steps to use it, just call `.kxi.sql` as you normally would. If the SQL2 API can handle the query, it does. If it can’t, the system automatically falls back to the old SQL API.
+
+### Target SQL or SQL2 Explicitly in the Following ways
+
+  * To call SQL2 explicitly, use `.kxi.sql2` instead of `.kxi.sql`.
+  * To target a specific version in the API request, use the `opts` parameter and specify version=2 (for SQL2) or version=1 (for SQL).
+
+For example:
+
+qREST
+
+Gateway URL
+
+The `GATEWAY` variable below is defined as an IPC connection to the Service
+Gateway. For example, ``:insights-qe-gateway:5050` connects to the query
+environment gateway within an `insights` namespace.
+
+    
+    
+    / Target SQL2
+    GATEWAY (`.kxi.sql2;enlist[`query]!enlist("SELECT sym,realTime,price,size FROM trade LIMIT 5");`;()!())
+    / Target SQL2
+    GATEWAY (`.kxi.sql;enlist[`query]!enlist("SELECT sym,realTime,price,size FROM trade LIMIT 5");`;enlist[`version]!(enlist 2))
+    / Target SQL (version=1)
+    GATEWAY (`.kxi.sql;enlist[`query]!enlist("SELECT sym,realTime,price,size FROM trade");`;enlist[`version]!(enlist 1))
+    
+
+The body of the response is a tuple with a
+[header](../api/header.html#response-header) and the payload.
+
+Response Header
+
+    
+    
+    rcvTS     | 2024.03.14D21:31:00.414000000
+    corr      | 554ed9a1-e138-4948-8aa0-33bf371bbfe1
+    protocol  | `gw
+    logCorr   | "554ed9a1-e138-4948-8aa0-33bf371bbfe1"
+    client    | `:10.1.1.1:5050
+    api       | `.kxi.sql2
+    userName  | `
+    version   | 2
+    userID    | 00000000-0000-0000-0000-000000000000
+    retryCount| 0
+    to        | 2024.03.14D21:31:00.414000000
+    agg       | `:10.1.1.1:5070
+    pvVer     | 8
+    rpID      | 0
+    refVintage| -0W
+    startTS   | 2024.03.14D20:25:59.000000001
+    endTS     | 0Wp
+    rc        | 0h
+    ac        | 0h
+    ai        | ""
+    
+
+Inspecting the payload of the response, we see the query result.
+
+    
+    
+    sym      realTime                      price    size
+    ----------------------------------------------------
+    JBMH.CAN 2024.01.15D00:00:04.500000000 127.9574 880
+    FNLH.CAN 2024.01.15D00:00:09.500000000 403.3123 853
+    DNDF.CAN 2024.01.15D00:00:14.500000000 357.7171 969
+    MGPJ.CAN 2024.01.15D00:00:19.500000000 87.40093 753
+    JBMH.CAN 2024.01.15D00:00:24.500000000 127.994  984
+    ..
+    
+
+Gateway URL
+
+The `$GATEWAY` variable should point at your kdb Insights install. For a
+microservice install, this is the hostname using port 8080. For an enterprise
+install, this is your `$INSIGHTS_HOSTNAME` with `/servicegateway/qe` as the
+URL prefix.
+
+    
+    
+    SELECT sym,realTime,price,size FROM trade
+    
+
+This example uses the above query set as a variable called `$QUERY`.
+
+    
+    
+            # Target SQL2
+            curl -X POST "$GATEWAY/kxi/sql2" \
+            --header "Content-Type: application/json" \
+            --header "Accepted: application/json" \
+            --data "{query: \"$QUERY\"}"
+    
+    
+    
+            # Target SQL2
+            curl -X POST "$GATEWAY/kxi/sql" \
+            --header "Content-Type: application/json" \
+            --header "Accepted: application/json" \
+            --data "{query: \"$QUERY\" , opts: { version : 2 }}"
+    
+    
+    
+            # Target SQL (version=1)
+            curl -X POST "$GATEWAY/kxi/sql" \
+            --header "Content-Type: application/json" \
+            --header "Accepted: application/json" \
+            --data "{query: \"$QUERY\" , opts: { version : 1 }}"
+    
+
+The body of the response is an object with a
+[header](../api/header.html#response-header) and the payload.
+
+    
+    
+    { "header": { ... }, "payload": { ... } }
+    
+
+Response Header
+
+    
+    
+    "header":{
+        "rcvTS":"2024-03-14T22:05:47.177000000",
+        "corr":"a284ade8-b710-430f-a071-a2d01d8bcc55",
+        "protocol":"gw",
+        "logCorr":"a284ade8-b710-430f-a071-a2d01d8bcc55",
+        "client":":10.1.1.1:30000",
+        "http":"json",
+        "api":".kxi.sql2",
+        "userName":"",
+        "userID":"00000000-0000-0000-0000-000000000000",
+        "retryCount":0,
+        "to":"2024-03-14T22:07:47.177000000",
+        "agg":":10.1.1.1:5070",
+        "pvVer":12,
+        "rpID":0,
+        "refVintage":-9223372036854775807,
+        "startTS":"2024-03-14T20:25:59.000000001",
+        "endTS":"2292-04-10T23:47:16.854775807",
+        "rc":0,
+        "ac":0,
+        "ai":""}
+    
+
+The query result is displayed in the response payload.
+
+    
+    
+    [
+        {
+            "sym":"JBMH.CAN",
+            "realTime":"2024-01-15T00:00:04.500000000",
+            "price":127.9574,
+            "size":880
+        },
+        {
+            "sym":"FNLH.CAN",
+            "realTime":"2024-01-15T00:00:09.500000000",
+            "price":403.3123,
+            "size":853
+        },
+        {
+            "sym":"DNDF.CAN",
+            "realTime":"2024-01-15T00:00:14.500000000",
+            "price":357.7171,
+            "size":969
+        },
+        {
+            "sym":"MGPJ.CAN",
+            "realTime":"2024-01-15T00:00:19.500000000",
+            "price":87.40093,
+            "size":753
+        },
+        {
+            "sym":"JBMH.CAN",
+            "realTime":"2024-01-15T00:00:24.500000000",
+            "price":127.994,
+            "size":984
+        }
+    ]
+    
+
+### Differences between SQL and SQL2
+
+  * When doing `SELECT * FROM ...`, virtual columns (date and labels) are the first columns, rather than the last.
+  * SQL supports both the old label style and the new label style [here](sql.html#response). Therefore the virtual label columns are always prefixed with `label_{label_name}`.
+  * Slightly different logic when returning columns without explicitly specifying the output column name, see Differences between SQL2 and PostgreSQL.
+
+### Differences between SQL2 and PostgreSQL
+
+The goal is to achieve as much compliance with PostgreSQL as possible.
+However, due to the fact that kdb+ is not a traditional SQL server, there are
+some differences. The known differences are listed below:
+
+  * kdb Insights SQL does not retain trailing zeros in floating-point values. For more information on how kdb+ handles precision, see [here](https://code.kx.com/q/basics/precision/)
+  * If you don’t explicitly specify column names in the query, the default column names follow the default kdb+ behavior, not PostgreSQL. Refer to the following examples:
+
+  * kdb+ has the concept of typed nulls. However, there’s no `String` type null (equivalent of char or varchar), so the untyped null `(::)` is the appropriate equivalent. More information on this will be provided as string functions are added.
+
+  * Symbols and strings are not interchangeable. More information on this will be provided as string functions are added.
+  * Table and column names are case-sensitive. For example, `SELECT * FROM MYTABLE` is **Not** equivalent to `SELECT * FROM mytable`.
+
+## Known Limitations
+
+Please note the following limitations when using SQL2:
+
+  * **Sorting Direction** : SQL2 does not support multi-directional sorting in the `ORDER BY` clause. You must specify all columns to be sorted in the same direction, either `ASC` (ascending) or `DESC` (descending).
+
+  * **String Comparisons** : The `in` and `=` operators in SQL2 currently do not support string comparisons.
+
+  * **Date and Time Restrictions** : When restricting the date or partition time column in `WHERE` clauses in SQL2, irreversible operations are not allowed. Here are some examples to illustrate this:
+    
+        // This is acceptable in SQL2.
+    SELECT * FROM myTable WHERE date+1 = '2024-01-26'
+    
+    // This is not supported in SQL2.
+    SELECT * FROM myTable WHERE date % 2 = 0
+    
+
+  * **Selects on Set Operations** : Currently only `LIMIT` and `ORDER BY` clauses are supported on the results of `UNION`, `EXCEPT` and `INTERSECT` queries. For example:
+    
+        // This is acceptable in SQL2.
+    (SELECT sym , price FROM TRADE)
+    UNION
+    (SELECT sym , bid FROM QUOTE)
+     ORDER BY sym LIMIT 5
+    
+    // This is not suppored in SQL2.
+    SELECT sym, price as test FROM (SELECT sym , price FROM TRADE)
+    UNION
+    (SELECT sym , bid FROM QUOTE)
+    WHERE sym='ABC"
+    
+
+  * **Join Restrictions** : Currently a single join between two tables is supported with a single join `on` clause. The join clause must be `=` and both the left and right-hand columns must be the same kdb+ datatype. For more information see the [Joins section](sql-select.html#joins). For example:
+    
+        // This is acceptable in SQL2.
+    SELECT * FROM
+    (SELECT sym , price FROM TRADE) t
+    INNER JOIN
+    (SELECT sym , bid FROM QUOTE) q
+    ON t.sym=q.sym
+    
+    // This is not suppored in SQL2.
+    SELECT * FROM
+    (SELECT sym , price FROM TRADE) t
+    INNER JOIN
+    (SELECT sym , bid FROM QUOTE) q
+    ON t.price>q.bid
+    
+
+## Routing and Labels
+
+This section provides information on how to use routing and labels with the
+SQL2 API.
+
+### Enabling the API
+
+By default, this API is only enabled in query environments. If you want to
+enable it in non query environments, you need to set the
+`KXI_ALLOWED_SBX_APIS` in the RCs and DAPs where you want to enable it. For
+more information, see the [Database configuration
+section](../../../microservices/database/configuration/assembly/database.html#extra-
+apis).
+
+### Routing Decisions
+
+Routing decisions across multiple assemblies are determined by specifying the
+desired assembly labels in the `WHERE` clause of the SQL query. Alternatively,
+you can use the `scope.assembly` parameter to target an individual assembly.
+For more information, see the
+[Scope](../../../microservices/database/query/scope.html) section.
+
+### Examples
+
+Consider the following assemblies with their respective `name` and `labels`
+sections:
+
+Labels in Queries
+
+In a query, labels should be referenced with a `label_` prefix. For example,
+the label `class` would be referenced as `label_class` in the query.
+
+    
+    
+    # Assembly tsx-equity.
+    name: tsx_eq
+    labels:
+      exchange: tsx
+      class: equity
+    
+    # Assembly tsx-futures.
+    name: tsx_fut
+    labels:
+      exchange: tsx
+      class: futures
+    
+    # Assembly nyse-equity.
+    name: nyse_eq
+    labels:
+      exchange: nyse
+      class: equity
+    
+    # Assembly nyse-futures.
+    name: nyse_fut
+    labels:
+      exchange: nyse
+      class: futures
+    
+    # Assembly lse-equity.
+    name: lse_eq
+    labels:
+      exchange: lse
+      class: equity
+    
+    # Assembly lse-futures.
+    name: lse_fut
+    labels:
+      exchange: lse
+      class: futures
+    
+
+The following table shows how different queries target different assemblies:
+
+**Query** | **scope.assembly** | **Assemblies** | **Explanation**  
+---|---|---|---  
+`SELECT ...` |  | All | No where clause defaults to all.  
+`SELECT ... WHERE label_exchange='tsx'` |  | `tsx-equity`, `tsx-futures` | One exchange, all classes.  
+`SELECT ... WHERE label_exchange='nyse' and class='equity'` |  | `nyse-equity` | Specify both exchange and class.  
+`SELECT ... WHERE label_exchange in ('tsx', 'lse') or class<>'futures'` |  | All except `nyse-futures` | Logically equivalent to `not(label_exchange='nyse' and class='futures')`.  
+`SELECT ...` | `tsx_eq` | `tsx_eq` | Uniquely target assembly with specified name.  
+`SELECT ... WHERE label_exchange='tsx'` | `tsx_eq` | `tsx_eq` | As above. The labels of `tsx-eq` are more than required, but they are consistent with the labels of `tsx`.  
+`SELECT ... WHERE label_exchange='tsx'` | `nyse_eq` | None (failure) | Label does not match `nyse_eq`.  
+  
+Labels can be used to target as many or as few assemblies as required. They
+also don’t need to be consistent across assemblies, allowing the creation of
+new assemblies with different labels within a running system. For example, if
+we deploy the following assembly to the above set:
+
+    
+    
+    # New assembly with different labels.
+    labels:
+      dev: john_doe
+    
+
+Then a query of the form `SELECT ... WHERE label_dev='john_doe'` targets only
+this new assembly.
+

@@ -1,0 +1,346 @@
+https://code.kx.com/insights/enterprise/cli/backup-and-restore.html
+
+# kdb Insights Enterprise Backup using the CLI - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/cli/backup-and-restore.html
+
+# Backup and Restore
+
+kdb Insights CLI allows you to backup data stored in _kdb Insights Enterprise_
+hosted on any cloud provider, to an Azure blob using [K8up](https://k8up.io).
+
+The following data repositories are backed up as part of this process:
+
+  * Historical database (HDB)
+  * Intraday database (IDB)
+  * Packages repository
+  * Postgres database used by Keycloak
+
+A backup can only target Azure
+
+A backup can be taken from _kdb Insights Enterprise_ that is hosted on any
+cloud provider, but they can only be backed up to Azure at present.
+
+## Prerequisities
+
+Before taking a backup, the following prerequisites need to be in place:
+
+  * helm is installed
+  * kdb Insights CLI is [installed](install.html)
+  * You have a running instance of _kdb Insights Enterprise_
+  * You have direct Kubernetes cluster access
+  * You have a new blob container created to store your backup
+
+## Backup
+
+### Initialization
+
+  1. Teardown the following:
+
+    1. Teardown all databases deployed in the UI and any assemblies managed outside of the UI.
+
+    2. Teardown any pipelines that are ingesting data into these databases and assemblies.
+
+Teardown but do not clean up
+
+From the UI make sure you **do not** check the clean up resources option as
+that deletes all data as well.
+
+  2. Publishers, or feedhandlers, sending data to any of the databases or assemblies that use an RT SDK can remain running as long as the local storage is sufficient to hold all the published messages while the database is offline.
+
+Publisher warnings
+
+The publishers emit warning messages about the dropped connection if you keep
+them running.
+
+  3. The kdb Insights CLI needs the Azure storage account properties to be initialized:
+
+    1. Run the `backup init` command as follows:
+        
+                kxi backup init -n <NAMESPACE>
+        
+
+where  is the namespace where the resources you wish to backup are located.
+
+    2. You are prompted for the following storage account details:
+        
+                Please enter Azure storage account name: <ACCOUNT>
+        Please enter Azure storage account access key: <ACCESS_KEY>
+        Please create custom Restic repo password: <PASSWORD>
+        Repeat for confirmation: <PASSWORD>
+        
+
+    3. Cloud provider options. You are asked to specify the cloud provider. Currently 'AZURE' is the only available option, therefore any other provider specified is ignored.
+        
+                ```sh
+        Determining cloud provider...
+        Cloud provider: AZURE
+        Determining cloud provider...
+        Cloud provider: AZURE
+        Please enter target object store type AZURE/GCP/AWS [AZURE]: AZURE
+        ```
+        
+
+    4. When the initialization is complete, the following messages are displayed:
+        
+                Secret created: <ACCOUNT>
+        Secret created: <ACCESS_KEY>
+        Postgres pod annotation successful: insights-postgresql-0
+        
+
+The initialization only needs to be done before the first backup is taken or
+when the credentials change.
+
+Changing credentials
+
+If you change the credentials, remove the `backup-repo` and `azure-blob-creds`
+secrets from the target Kubernetes namespace before you run this
+initialization again.
+
+### Start the backup
+
+To start the backup take the following steps:
+
+  1. Run the `backup set-backup` command as follows:
+    
+        kxi backup set-backup -n <NAMESPACE>
+    
+
+  2. You are prompted for the following details:
+
+     * `JOB_NAME`: used to identify the backup job when checking the status
+     * `CONTAINER_NAME`: ensure this blob container has been created before the back starts.
+    
+        Please enter backup job name: <JOB_NAME>
+    Please enter backup job blob container name: <CONTAINER_NAME>
+    
+
+You can choose the blob storage container at backup time
+
+As part of the initialization step you defined the storage account details,
+but as part of the backup step you can choose which blob container to use.
+
+Annotations to ReadWriteOnce PVCs
+
+The kdb Insights CLI annotates all ReadWriteOnce PVCs with the following
+`k8up.io/backup=false` before starting the backup to ensure that those PVCs
+are ignored.
+
+  1. When the backup has been started, the following messages are displayed:
+    
+        Configure and start a backup
+    K8up Backup CRD creation done: backupjobname
+    
+
+Do not abort a backup
+
+Once started, we recommend that you do not abort a backup as the Azure blob
+container will be left in an unknown state.
+
+  2. Check the backup status. As K8up CRD-s are similar objects to a pod, you can use the `get` verb to list basic information:
+    
+        kubectl get backups --namespace insights
+    
+
+K8up operator schedules a backup pod using the backup job name you picked
+above. Detailed information can be found in its logs.
+
+  3. When the backup is complete it is present in the backup snapshots list. We recommend that you check your Azure blob container folder, contains the following:
+    
+        /data
+    /index
+    /keys
+    /snapshots
+    config
+    
+
+### Snapshots
+
+To list the completed backups in a specific blob container, call the `kxi
+backup snapshots` command. This provides details of the snapshot id, which
+needs to be referenced as part of the restore, as well as the time the backup
+completed and the path to the backup.
+
+  1. Run the snapshots command:
+    
+        kxi backup snapshots -n <NAMESPACE>
+    
+
+  2. Enter the blob container name:
+    
+        Please enter backup job blob container name: <CONTAINER_NAME>
+    
+
+  3. A list is returned; it contains the backups that have completed in this blob container, as shown in the example below:
+    
+        Check and list created snapshots
+    Pod creation done: k8up-snapshot-list-pod
+    
+    Reading logs
+    ID        Time                 Host        Tags        Paths
+    ----------------------------------------------------------------------------------
+    46aba94e  2023-06-22 09:34:12  insights                /data/insights-packages-pvc
+    ab82c3a1  2023-06-22 09:34:15  insights                /data/assembly-hdb
+    ab82c3a1  2023-06-22 09:34:15  insights                /data/assembly-idb
+    59d90c13  2023-06-22 09:34:24  insights                /insights-postgresql.sql
+    1999a27a  2023-06-23 10:48:32  insights                /data/insights-packages-pvc
+    aba6d2ae  2023-06-23 10:48:37  insights                /data/assembly-hdb
+    1ba0e0db  2023-06-23 10:48:47  insights                /data/assembly-idb
+    3aff729d  2023-06-23 10:49:10  insights                /insights-postgresql.sql    ----------------------------------------------------------------------------------
+    8 snapshots
+    Deleting pod
+    Pod deletion successful: k8up-snapshot-list-pod
+    
+
+## Restore
+
+Currently restoration is not available as part of the kdb Insights CLI, but it
+can be done via a K8up Restore CRD.
+
+### HDB, IDB and packages
+
+To restore the HDB, IDB and packages repository follow the steps below:
+
+  1. When restoring the HDB or IDB, teardown the following:
+
+    1. Teardown all databases deployed in the UI and any assemblies managed outside of the UI
+
+    2. Teardown any pipelines that are ingesting data into these databases and assemblies.
+
+Teardown but not clean up
+
+From the UI make sure you **do not** check the clean up resources option as
+that will delete all the resources.
+
+  2. When restoring the HDB or IDB, publishers, or feedhandlers, sending data to _kdb Insights Enterprise_ that use an RT language interface can remain running as long as their local storage is sufficient to hold all the messages being published while the database is offline.
+
+  3. Prepare target volumes:
+
+The target system is either the original one or one freshly created, as
+mentioned above.
+
+    1. We recommended that you ensure an exact copy of the database/assembly definition is defined on the target system to ensure all underlaying objects are provisioned.
+
+    2. The target database/assembly should be **stopped (but not cleared)**.
+
+    3. HDB and IDB volumes must be cleaned manually before restoration using the following commands:
+        
+                kubectl exec -n insights <ASSEMBLYNAME>-sm-0 -- bash -c "rm -rf /data/db/idb/*"
+        kubectl exec -n insights <ASSEMBLYNAME>-sm-0 -- bash -c "rm -rf /data/db/hdb/*"
+        
+
+Set ASSEMBLYNAME to the name of your database or assembly.
+
+  4. Save a yaml file for each repository being restored with the following content:
+    
+        apiVersion: k8up.io/v1
+    kind: Restore
+    metadata:
+        name: <NAME>
+        namespace: <NAMESPACE>
+    spec:
+        podSecurityContext:
+            fsGroup: 65532
+            fsGroupChangePolicy: OnRootMismatch
+        restoreMethod:
+            folder:
+                claimName: <CLAIM_NAME>
+        snapshot: <SNAPSHOT_ID>
+        backend:
+            repoPasswordSecretRef:
+                name: backup-repo
+                key: password
+            azure:
+                container: k8upcontainer
+                accountNameSecretRef:
+                    name: azure-blob-creds
+                    key: username
+                accountKeySecretRef:
+                    name: azure-blob-creds
+                    key: password
+    
+
+  5. Update the yaml files as follows:
+
+     * `NAME` \- Restore CRD name
+     * `NAMESPACE` \- Name of the namespace where _kdb Insights Enterprise_ is deployed
+     * `CLAIM_NAME` \- Target PersistentVolumeClaim
+     * `SNAPSHOT_ID` \- the appropriate snapshot ID collected from the `kxi backup snapshots` command, or the Restic snapshot list.
+  6. Apply the files using the following command:
+    
+        kubectl apply -f <your_file>.yaml
+    
+
+  7. Check the restore status. As K8up CRD-s are similar objects to a pod, you can use the `get` verb to list basic information:
+    
+        kubectl get restores --namespace <NAMESPACE>
+    
+
+K8up operator schedules a restore pod named after the backup name you picked
+above, detailed information can be found in its logs.
+
+  8. When the restore jobs are complete, start the restored assemblies/databases, pipelines and publishers you might have stopped.
+
+  9. Run a simple query to verify the restored data. You can do this using any of the querying methods available, including the [UI](../visualization/query.html) and [REST](../database/query/rest-vs-qipc.html).
+
+### Postgres database used by Keycloak
+
+To restore the Postgres database, follow the steps below.
+
+  1. Install restic on your local machine:
+    
+        export RESTIC_PASSWORD=<resticRepoPassword>
+    export AZURE_ACCOUNT_NAME=<azureStorageAccountName>
+    export AZURE_ACCOUNT_KEY=<azureStorageAccountAccessKey>
+    sudo apt-get install restic
+    sudo restic self-update
+    
+
+  2. Set the number of replicas to 0 for the Keycloak statefulset to prevent modifications to the database while it is being restored.
+    
+        kubectl scale statefulsets $KEYCLOAK_STATEFULSET --replicas=0
+    
+
+  3. Copy the backup into the Postgresql primary pod and connect to it.
+    
+        restic -r <OBJ_STORE_TYPE>:<CONTAINER_NAME>:/ restore <SNAPSHOT_ID> --target /tmp/
+    kubectl cp /tmp/insights-postgresql.sql <NAMESPACE>/insights-postgresql-0:/opt/init.sql
+    
+
+where:
+
+     * `CONTAINER_NAME` \- Azure blob container name in the Storage Account
+     * `OBJ_STORE_TYPE` \- Currently on `azure` is supported
+     * `NAMESPACE` \- namespace where the Postgres pod runs
+     * `SNAPSHOT_ID` \- the appropriate snapshot ID collected from the `kxi backup snapshots` command, or the Restic snapshot list.
+  4. Drop the existing database:
+    
+        cat <<EOF > /opt/init.sql
+    drop database $POSTGRES_DB;
+    create database $POSTGRES_DB;
+    create user $POSTGRES_USER;
+    alter role $POSTGRES_USER with password '$POSTGRES_PASSWORD';
+    grant all privileges on database $POSTGRES_DB to $POSTGRES_USER;
+    alter database $POSTGRES_DB owner to $POSTGRES_USER;
+    EOF
+    
+    
+        # This command will prompt for a password
+    # The password for the 'postgres' user can be view in the environment variable POSTGRESQL_POSTGRES_PASSWORD
+    psql -U postgres < /opt/init.sql;
+    
+
+  5. Restore the backup (replacing  with the appropriate value):
+    
+        # This command will prompt for a password
+    # The password for the 'postgres' user can be view in the environment variable POSTGRESQL_POSTGRES_PASSWORD
+    psql -U postgres $POSTGRES_DB < /opt/<backup file>;
+    
+
+  6. Detach from the pod using CTRL+P,CTRL+Q.
+
+  7. Scale the number of Keycloak replicas back to 1.
+    
+        kubectl scale statefulsets $KEYCLOAK_STATEFULSET --replicas=1
+    
+

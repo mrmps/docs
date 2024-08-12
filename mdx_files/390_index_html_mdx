@@ -1,0 +1,66 @@
+https://code.kx.com/insights/enterprise/infrastructure/docs/index.html
+
+# Overview - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/infrastructure/docs/index.html
+
+# Overview
+
+This section details an example infrastructure architecture for deploying kdb
+Insights Enterprise on the Kubernetes container orchestration system.
+
+## Example infrastructure
+
+To support the deployment of kdb Insights Enterprise, we provide an
+Infrastructure as Code (IaC) bundle. The bundle contains a
+[Dockerized](https://www.docker.com/) environment with
+[Terraform](https://www.terraform.io/) code and the tools required to create a
+managed Kubernetes cluster in any of the three major cloud providers.
+
+Warning
+
+These scripts are examples only and should not be used to provision production
+infrastructure
+
+The infrastructure provisioned satisfies the base requirements for deploying
+kdb Insights Enterprise and provides additional integrations including Cloud
+Logging and Metrics. The result is a secure, but not production hardened
+infrastructure, with the Kubernetes cluster deployed into a private network
+and is only accessible via a VPN.
+
+The following diagram shows a high-level overview of the cloud infrastructure
+provisioned by the IaC bundle.
+
+![Architecture](images/architecture.png)
+
+### Terraform
+
+HashiCorp Terraform is an infrastructure as code tool that lets you define
+both cloud and on-prem resources in human-readable configuration files that
+you can version, reuse, and share.
+
+We chose Terraform as it is multi-cloud, with plugins for AWS, Azure, GCP and
+others. This allows you to spin up the same architecture regardless of your
+chosen cloud provider, with only minor difference in the configuration steps.
+
+## Resources provisioned
+
+The IaC bundle provisions resources at both the cloud service provider and
+Kubernetes level.
+
+### Cloud Provider resources
+
+  * Virtual Private Cloud (VPC)
+  * Public subnets used by the bastion host and any resources created by the Kubernetes cluster (e.g. Load Balancer)
+  * Private subnets to deploy the Kubernetes worker nodes
+  * Bastion host running on a compute instance which acts as a VPN server to provide access to the Kubernetes cluster
+  * Managed Kubernetes Cluster (AKS,EKS,GKE) with separate node pools for compute and storage (with locally attached SSDs).
+
+### Kubernetes resources
+
+  * [cert-manager](https://github.com/jetstack/cert-manager) [1.13.3](https://github.com/jetstack/cert-manager/releases/tag/v1.13.3) (generates certificates for any endpoint exposed by nginx-ingress)
+  * [nginx-ingress](https://github.com/kubernetes/ingress-nginx) [4.9.0](https://github.com/kubernetes/ingress-nginx/releases/tag/helm-chart-4.9.0) (exposes kdb Insights Enterprise endpoint which can be either REST API or Web Interface)
+  * [rook-ceph](https://github.com/rook/rook) [1.13.1](https://github.com/rook/rook/releases/tag/v1.13.1) (provides a shared filesystem for kdb Insights Enterprise)
+  * [Istio](https://github.com/istio/istio) [1.20.2](https://github.com/istio/istio/releases/tag/1.20.2) (provides the ability to support in-flight encryption between services)
+  * A StorageClass named **sharedfiles** that is backed by shared storage. A recommended option is to deploy the cloud provider's CSI driver that implements network file storage ([AWS](https://docs.aws.amazon.com/eks/latest/userguide/efs-csi.html),[Azure](https://docs.microsoft.com/en-us/azure/aks/azure-files-csi),[GCP](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/filestore-csi-driver))
+

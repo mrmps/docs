@@ -1,0 +1,90 @@
+https://code.kx.com/insights/microservices/rt/subscribers.html
+
+# Subscribers - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/rt/subscribers.html
+
+# Subscribers
+
+Subscribers receive messages from an RT stream using one of the following
+interfaces:
+
+  * [q interface](sdks/rt-qpk.html#subscriber) \- the Stream Processor, Storage Manager, and Data Access Processes use this interface in _kdb Insights Enterprise_.
+  * [C interface](sdks/c-sdk.html#sample-illustration)
+
+These interfaces monitor the replicated merged log files, using file-system
+events, respond to their changes and surface those changes to the subscriber.
+
+## Subscribing
+
+The subscriber needs to implement a message callback which provides the
+deserialized q messages and a position that can be used for restarting the
+subscriber from this point.
+
+## Pause and Resume
+
+The subscriber can also decide to pause and resume the delivery of incoming
+new messages. While the subscriber is paused the subscriber's local log files
+still continue to grow so that on resume the delivery of messages can be
+resumed without the loss of any messages.
+
+## Filtering
+
+The [q interface](sdks/rt-qpk.html#subscriber) provides an efficient way to
+filter messages that are generic lists with one or two leading symbols, e.g
+(`upd;`trade;data).
+
+The [filtering function](sdks/rt-qpk.html#filtering) uses limited IO before
+deciding if the message satisfies the filtering criteria. The whole message
+payload is not loaded into memory from disk and it is not fully deserialized.
+
+The filter will only deliver the messages to the subscriber that satisfies the
+criteria.
+
+## Garbage collection of subscriber stream log files
+
+### Adopt the RT garbage collection policy
+
+The RT Archiver manages the garbage collection of all merged stream logs
+inside RT based on a configurable policy.
+
+These archival options can be defined as part of the [kdb Insights
+Configuration](../../enterprise/configuration/rt-archival.html).
+
+By default the subscribers will adopt the garbage collection policy used by RT
+(opt-in). When log files are truncated in RT they are also truncated on all
+subscribers.
+
+### Subscriber opt-out
+
+There are use cases where a subscriber may want to opt-out of the default
+behavior and independently manage the garbage collection of their local log
+files.
+
+This decouples the subscriber from RT's global garbage collection policy.
+Therefore the subscriber must truncate their own local log files as messages
+are consumed and no longer need to be replayed (say on a restart).
+
+Limited to q subscribers
+
+At present only q subscribers can opt out. See [here](sdks/rt-
+qpk.html#subscriber-opt-out) for details.
+
+### Lead subscriber
+
+Another use case is where one of the subscribers can observe when messages
+have been persisted downstream either to a storage tier or another durable
+messaging system. After this has occurred those messages are no longer
+required to be replayed to it or other subscribers.
+
+Note
+
+This needs to be done as a deliberate design decision where one of the
+subscribers can be configured as the lead.
+
+In this scenario that lead subscriber will drive the truncation of merged logs
+both in RT and the other subscribers. Note this would work alongside the RT
+Archiver, which is still required to ensure RT itself doesn't run out of disk
+space should the lead subscriber fail. However, an early truncation decision
+by the lead subscriber will take precedence over the RT Archiver policy.
+

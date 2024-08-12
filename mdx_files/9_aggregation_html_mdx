@@ -1,0 +1,40 @@
+https://code.kx.com/insights/enterprise/database/configuration/aggregation.html
+
+# Aggregation - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/database/configuration/aggregation.html
+
+# Aggregation
+
+## Aggregation
+
+Aggregation is performed by the [Aggregator](../query/index.html#architecture)
+which collects partials results into a single unified response for a query.
+Similarly to the [routing components](routing.html), the Aggregator is
+deployed outside of an assembly so that it can aggregator across assemblies.
+It is primarily configured by setting environment variables on the service.
+
+## Environment Variables
+
+Configuration can be supplied to the Aggregator using environment variables.
+Environment variables are configured differently depending on the method of
+deployment. In all cases, the variables are always string values.
+
+name | description  
+---|---  
+`KXI_NAME` | Process name.  
+`KXI_PORT` | Port.  
+`KXI_SG_RC_ADDR` | `host:port` of RC process to connect to.  
+`KXI_CUSTOM_FILE` | File containing custom code to load into Agg process.  
+`KXI_GC_FREQ` | Frequency in milliseconds to run garbage collect in a timer (default: `600000`, set to `0` to disable).  
+`KXI_SG_TIMEOUT` | Default request timeout in milliseconds (default: `30000`).  
+`KXI_SG_CONN_TIMEOUT` | Timeout on connection open.  
+`KXI_SG_REQ_DEL_FREQ` | Time in milliseconds to run the request table delete routine (default: `10000`).  
+`KXI_SAPI_HB_FREQ` | Time in milliseconds to run the heartbeat to connected processes (default: `30000`).  
+`KXI_SAPI_HB_TOL` | Number of heartbeat intervals a process can miss before being disconnected (default: `2`).  
+`KXI_ENABLE_FLUSH` | Set to `true` to enable async flush on messages from RC to DA/Agg and from Agg to GW (default `false`).  
+`KXI_DISC_MODE` | Discovery mode: `"kubernetes"` (currently only listed mode available, modes will be extended in future releases).Not required if using `KXI_SG_RC_ADDR`.  
+`KXI_RC_LABEL_SELECTOR` | Label selector to discover RCs via Kubernetes-based discovery (default: `app.kubernetes.io/name=resource-coordinator`).  
+`KXI_RC_CONTAINER_NAME` | RC container name for Kubernetes-based discovery (default: `resource-coordinator`).  
+`KXI_ORDINAL` | Override Aggregator's ordinal. See [ordinals](../query/resilience.html#ordinal-connection).
+

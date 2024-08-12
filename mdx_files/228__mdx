@@ -1,0 +1,1013 @@
+https://code.kx.com/analyst/libraries/testing-quickcheck/
+
+# Quickcheck - KX Analyst
+
+Original URL: https://code.kx.com/analyst/libraries/testing-quickcheck/
+
+# QuickCheck: property based testing for q (`.qch`)
+
+## Writing QuickCheck tests
+
+QuickCheck is a **property-based testing** framework. This means that rather
+than testing individual cases, general **properties** of the system are
+tested. For example, given a function `reverse`, we might write unit tests
+such as:
+
+    
+    
+        3 2 1 ~ reverse 1 2 3
+        -3 -2 -1 ~ reverse -1 -2 -3
+        ...
+    
+
+This function is clearly supposed to reverse its argument. Specific cases have
+been tested (numbers, specifically positive and negative). Perhaps cases have
+been forgotten, such as lists of tables, or the empty list. More generally, we
+want to test that this reverse function behaves as expected. Properties are
+defined using lambdas, where the arguments to the lambda represent a possible
+argument, and should return the boolean value `true` for success:
+
+    
+    
+        { reverse[x,y] ~ reverse[y],reverse[x] }
+        { x ~ reverse reverse x }
+    
+
+Then, the `x` and `y` arguments need to be scoped. These `x` and `y` arguments
+should represent ALL possible lists. We can specify that by writing the
+following:
+
+    
+    
+        .qch.forall2 [.qch.g.list[]; .qch.g.list[]] { reverse[x,y] ~ reverse[y],reverse[x] }
+        .qch.forall [.qch.g.list[]] { x ~ reverse reverse x }
+    
+
+These are two fully specified properties of the reverse function. In general,
+a property has three parts:
+
+    
+    
+        .qch.forall2 [.qch.g.list[]; .qch.g.list[]] { reverse[x,y] ~ reverse[y],reverse[x] }
+        ^^^^^^^^^^^^ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+             1                     2                                   3
+    
+
+  1. `.qch.forallN` creates the property object. `N` specifies the number of arguments to the property. This property takes two arguments, so we use `.qch.forall2`. If only a single argument is used, we can use `.qch.forall`, as in the second property. Properties up to seven arguments are supported.
+  2. Argument **generators**. These specify the values that the arguments can possibly be. There should be one generator for every argument to the property. The generators are semicolon delimited in square brackets. There is a very flexible generator library available (see Writing Generators).
+  3. Finally, the property is just a function as mentioned previously.
+
+### Skipping tests
+
+Tests can be conditionally skipped from within the property simply by
+returning `.qch.discard` from the property. QuickCheck will succeed if all non
+discarded tests pass.
+
+    
+    
+        .qch.check .qch.forall [.qch.g.int[]] {
+            // Discard the test if negative
+            if [x < 0; : .qch.discard];
+            : x <= 0;
+            }
+    
+
+## Running QuickCheck tests
+
+QuickCheck tests can be run two ways: standalone, or integrated within
+qCumber.
+
+### Running QuickCheck standalone
+
+To run a QuickCheck test standalone, pass the entire QuickCheck property
+object to `.qch.check`. This will run the property on 100 (default) randomly
+generated arguments. If a failure is found, QuickCheck stops immediately and
+reports the failure. `.qch.check` returns a basic dictionary of information
+about the test run. In particular, this dictionary has a `success` field that
+specifies whether the 100 tests passed, or if a failure was found. If a
+failure was found, the arguments that cause the failure will be kept in the
+`failed` field of the resulting dictionary.
+
+    
+    
+        .qch.summary .qch.check .qch.forall2 [.qch.g.list[]; .qch.g.list[]] { reverse[x,y] ~ reverse[y],reverse[x] }
+    
+        /=> OK, passed 100 tests.
+    
+
+If a failure occurs, the failure will be reported along with the number of
+tests that passed and the failed arguments:
+
+    
+    
+        .qch.summary .qch.check .qch.forall [.qch.g.list .qch.g.int[10]] { not 5 in x };
+    
+        /=> Failed! Falsifiable (after 2 tests).
+        /=>    Counter-example: 
+        /=>       [0]: 4 0 4 7 6 1 9 0 3 1 1 1 0 6 9 2 5i
+        /=>    Shrunk (2 times):
+        /=>       [0]: ,5i
+    
+
+Above we are asserting that there is no list of integers less than ten that
+contains a `5`. QuickCheck fails after two tests and reports the list that
+caused the failure. QuickCheck then attempts to make a smaller failing test
+case out of the one that it found. It does this until it cannot find a smaller
+reproducible case. In the above, QuickCheck determined that the smallest
+failing test case for the assertion that no list contains a `5` is a list with
+a **single** element: `5`.
+
+### Running QuickCheck with qcumber
+
+QuickCheck can also be run from within qCumber using `property` blocks.
+
+    
+    
+        feature QuickCheck Example
+            property no list of integers less than 10 contains a 5, clearly falsifiable
+                .qch.check .qch.forall [.qch.g.list .qch.g.int[10]] { not 5 in x }
+    
+            property all lists have the same length, also clearly falsifiable
+                .qch.check .qch.forall2 [.qch.g.list[]; .qch.g.list[]] { count[x] ~ count y }
+    
+
+### Changing the run times
+
+By default, QuickCheck checks each property 100 times with different random
+argument each time. This can be changed globally by running:
+
+    
+    
+        .qch.setTimes X
+    
+
+where `X` is an integer. For example, `.qch.setTimes 10` will change the
+default from `100` runs to `10` runs.
+
+### Observing argument distributions
+
+To get an idea of what is being generated by QuickCheck, custom classifiers
+can be used. A classifier is a function from a generated value to a
+classification string.
+
+    
+    
+        intensify : { x + 2 };
+    
+        prop_intensify : { (x + 2) = intensify x };
+    
+        // An optional classifier to get random distribution information
+        // on the generated data
+        classifier: { $[x>0; "positive"; x=0; "zero"; "negative"] };
+    
+        .qch.summary .qch.check
+            // Run this classifier on each input (optional)
+            .qch.with.classifier[classifier]
+            .qch.forall [.qch.g.int[]] prop_intensify;
+    
+        /=> OK, passed 100 tests.
+        /=>    Classifications:
+        /=>       53.70741% negative
+        /=>       46.29259% positive
+    
+
+## Writing generators
+
+Random data is specified by building descriptions of the data using the
+QuickCheck generators. The generators are in the `.qch.g` module. These can be
+used independently of QuickCheck.
+
+First, a random value can be extracted for a generator by reifying the
+generator:
+
+    
+    
+        .qch.g.reify generator
+        /=> a random result
+    
+
+### Base values
+
+A generator exists for each base type (names are always lowercase).
+
+#### Numbers
+
+Numbers are generated using the Q `first 1?x`. If not specified, `x` is set to
+be the zero value of the correct type (generating randoms from the entire
+domain of the type). If `x` is specified, then random numbers from `0` to `x`
+are generated of the correct type.
+
+    
+    
+        .qch.g.reify .qch.g.int[]
+        /=> 1421176632i
+    
+        .qch.g.reify .qch.g.int[5i]
+        /=> 3i
+    
+
+Arbitrary numbers can be generated with `.qch.g.number[]` and arbitrary
+integers (short, int, or real) with `.qch.g.integer[]`.
+
+#### Ranges
+
+For a range of numbers, the g.range.* functions exist:
+
+    
+    
+        .qch.g.reify .qch.g.range.float[-20f; -15f]
+        /=> -18.28338
+    
+
+#### Others
+
+All other base types are g.*, and do not take an argument:
+
+    
+    
+        .qch.g.reify .qch.g.timestamp[]
+        /=> 2002.11.07D00:58:59.949598160
+    
+        .qch.g.reify .qch.g.symbol[]
+        /=> `pifidjm
+    
+
+### Complex values
+
+#### Vectors
+
+The random primitive in Q `(left?right)` is wrapped in a generator called
+`.qch.g.vector[left; right]`. This is MUCH faster than generating large
+vectors with `.qch.g.list` (below) since it does not sample for each element.
+Large tables can be constructed by flipping a dictionary whose values are
+created with `.qch.g.vector`.
+
+    
+    
+        .qch.g.reify .qch.g.vector[100000; 5j]
+        /=> 2 3 1 3 4 2 4 4 1 3 1 2 2 2 3 2 0 1 2 1 4 3 1 3 0 3 1 2 1 ...
+    
+        flip .qch.g.reify .qch.g.dict `a`b!(.qch.g.vector[3; 0]; .qch.g.vector[3;0])
+        /=> a                    b
+        /=> ----------------------------------------
+        /=> -1688661736184075239 3838750325811358196
+        /=> 269882543935740396   2749155131475518269
+        /=> 1739421853105997842  8904078131295199521
+    
+
+#### Lists
+
+Lists of arbitrary length or given length take a generator specifying the type
+of the list:
+
+    
+    
+        // An arbitrary-length list of booleans
+        .qch.g.reify .qch.g.list .qch.g.boolean[]
+        /=> 1011001000b
+    
+        // A length 5 list of anything
+        .qch.g.reify .qch.g.listn[5] .qch.g.any[]
+        /=> (2002.04.06;2;29105h;0b;-6565914219366623234)
+    
+
+Of course, these are themselves generators, so a list of 3x3 0-1 matrices can
+be created easily:
+
+    
+    
+        .qch.g.reify
+            .qch.g.list
+            .qch.g.listn[3]
+            .qch.g.listn[3]
+            .qch.g.oneof (.qch.g.const 0; .qch.g.const 1)
+        /=> 0 1 0 0 0 1 1 1 1 
+        /=> 0 1 1 0 0 0 1 1 0
+    
+
+Note that each 3x3 0-1 matrix is shown on its own line in the console.
+
+#### Tuples
+
+Tuples are finite heterogeneous lists, described with the g.tuple generator
+which takes a list of generators:
+
+    
+    
+        .qch.g.reify .qch.g.tuple (.qch.g.int[]; .qch.g.guid[])
+        // => (2074000032i;94324512-1e59-beca-441b-3c12ba35faac)
+    
+
+#### Dictionaries
+
+Dictionaries are generated with the g.dict generator. If given a dictionary of
+generators, it creates a dictionary of the same shape:
+
+    
+    
+        .qch.g.reify .qch.g.dict `a`b`c!(
+            .qch.g.boolean[];
+            .qch.g.guid[];
+            .qch.g.oneof (.qch.g.list .qch.g.char[]; .qch.g.symbol[]))
+        /=> a| 1b
+        /=> b| fdfe2b7f-e821-b7d7-894e-cbb1200af295
+        /=> c| "pwlkkki"
+    
+
+Otherwise, a random dictionary can be created without specifying an argument:
+
+    
+    
+        .qch.g.reify .qch.g.dict[]
+        /=> jcnhj| -964h
+        /=> alhjk| 09:19
+        /=> agjkg| 759652475045247869
+        /=> jkhfi| "k"
+        /=> ffjmj| `kdmn
+    
+
+#### Tables
+
+Like dictionaries, tables can be created with a table argument (keyed or
+unkeyed), or with no argument for a random table.
+
+    
+    
+        .qch.g.reify .qch.g.table
+            ([id:enlist .qch.g.guid[]] name:enlist .qch.g.list .qch.g.char[])
+        /=> id                                  | name
+        /=> ------------------------------------| -------------------
+        /=> 3ca8d02d-5714-d124-6553-91c326b33ddb| "bmv"
+        /=> c77656aa-64b9-f2b8-df67-585b9ba26c5f| "cdoddz"
+        /=> f74ed316-d963-5f42-809f-d7b56cf39faa| "lfaxpvrz"
+    
+
+### Changing the maximum size
+
+The maximum size of the generated value (20 by default) can be configured on
+each generator. For example, if we want to create lists of length < 1234, we
+can specify the custom max length with:
+
+    
+    
+        count .qch.g.reify .qch.g.maxSize[1234] .qch.g.list .qch.g.int[]
+        /=> 984
+    
+
+Note however, that this only works on fully expressed generators. Many
+generators are built in terms of other generators, in which case the inner
+generators will not have the local max size applied, such as in the following:
+
+    
+    
+        count .qch.g.reify .qch.g.maxSize[1234] .qch.g.list[]
+        /=> 12
+    
+
+If this is required, the global maxSize can be set manually, which will apply
+for all generators that haven't had their maxSize property set manually.
+
+    
+    
+        .qch.g.i.MAXSIZE : 1234
+    
+        count .qch.g.reify .qch.g.maxSize[1234] .qch.g.list[]
+        // => 693
+    
+
+### Custom combinators (adding nulls, infinities, constants)
+
+The customizers `.qch.g.const, .qch.g.any, .qch.g.oneof, .qch.g.oneof_w,` and
+`.qch.g.integer` allow more interesting structures to be built.
+
+  * `g.const` turns a Q value into a generator for use with any of the other generators. Reification allows results in the given value.
+  * `g.any` returns a random base value each time it is reified.
+  * `g.elements` takes a list of values (not generators), and returns one of the values at random each time.
+  * `g.oneof` takes a list of generators, and returns a value of one of the generators at random each time.
+  * `g.oneof_w` takes a list of generators and a list of weights, and returns a value of one of the generators with probability defined by the weights. Lists with nulls and infinities can be created along a desired distribution such as:
+
+    
+    
+        .qch.g.reify .qch.g.list .qch.g.oneof_w[(.qch.g.int[]; .qch.g.const 0Ni); 10 1]
+        /=> -116430526 1724339645 0N 680252841 -750478914 -1331497625i
+    
+
+### Creating new generators
+
+In some cases, the generators may not be enough to generate data of certain
+formats. For example, if testing a tree library with tree implemented as
+tables, the default `g.table[]` generator will generate nonsense trees.
+Instead, a new generator should be built for generating well-formed trees.
+
+A generator is just a dictionary with three fields: arb, shrink, and less.
+
+A new generator can be created with `.qch.g.new` by specifying the three
+behaviours (shrink and less are optional and should be null `(::)` if not
+used):
+
+    
+    
+        treeGen : .qch.g.new (
+            // Generating function
+            {[]
+                tree : // Create a random tree 
+                : tree;
+                };
+    
+            // Shrinking function or null (return a list of possible shrunk values)
+            ::;
+    
+            // Less-Than function or null (define what 'size' means for the custom data)
+            ::
+          );
+    
+
+The shrinking function is given the current failing argument, and should
+return a list of possible smaller arguments. For example, the shrinker for
+lists randomly samples the argument list and returns 20 new lists (a list of
+20 lists).
+
+The less-than function takes two shrunk values (i.e., two sampled lists for
+the list generator), and returns true if the first is strictly smaller than
+the second – this defines what the notion of "size" means and what should be
+minimized. The less-than function is used to sort the list of possibly-shrunk
+values in order from smallest to largest so that QuickCheck tests the smallest
+cases first.
+
+For lists, size is just the number of elements in the list. An example of the
+shrinker and less-than function for lists is provided below:
+
+    
+    
+        // List shrinking and less-than:
+        // Shrink
+        {[list] : {[x;y;z] x@where y?0b}[list;count list] each til 20; };
+        // Less Than
+        {[a;b] : (count a) < (count b); }
+    
+
+The new generator can then be used to test properties of the library:
+
+    
+    
+        .qch.summary
+            .qch.check
+            .qch.forall [treeGen] { .mytree.isBalanced .mytree.balance x }
+    
+
+## Testing APIs and state with QuickCheck
+
+### Why?
+
+QuickCheck itself handles testing "unit-level" properties, i.e., properties on
+individual functions. This is great if the function is pure, but it is
+difficult to write a QuickCheck test for a stateful function. Further, the
+interaction between the _entire_ API is often not captured by a set of
+properties. QuickCheck for APIs and State allows the entire system to be
+specified in a similar way to QuickCheck properties. The entire system
+specification is then given to QuickCheck which tries to find inconsistencies
+between the specification and the API implementation.
+
+### Description
+
+QuickCheck models each API as a "command" which contains a label, code to
+execute the command, a function to generate random arguments, and pre-/post-
+conditions for command with the following signatures:
+
+    
+    
+        Command ::
+            label : symbol
+            execute : args -> any
+            args : () -> [gen]
+            precondition : () -> bool
+            postconditions : [state, args, return -> bool]
+    
+        And then models the system with a specification of the following form:
+    
+        Specification ::
+            init : () -> ()
+            currentState : () -> any
+            commands : [Command]
+    
+
+### Example
+
+As a simple example, let's test a simple stateful key-value store. This key-
+value store will store the data in global state to simplify the example, but
+threading APIs can be tested in a similar way by storing the threaded state in
+a temporary global.
+
+    
+    
+        // Key-value store
+        .kv.init    : { .kv.STATE :: ()!() };
+        .kv.add     : { .kv.STATE[x] :: y };
+        .kv.remove  : { .kv.STATE :: enlist[x] _ .kv.STATE };
+        .kv.get     : { .kv.STATE[x] };
+    
+
+#### Commands
+
+##### `add`
+
+Now that we have an API, we should specify the behaviour of the API. Each API
+(other than the initialization) is modelled with a Command. For example, here
+is the command modelling the "add" command:
+
+    
+    
+        cmd_add : .qch.state.cmd (
+            // label
+            `add;
+            // execute
+            .kv.add;
+            // args
+            {[st] (.qch.g.symbol[]; .qch.g.any[]) };
+            // precondition
+            {1b};
+            // postconditions
+            enlist {[cs;ls;a;r] cs ~  ls , enlist[a 0]!enlist[a 1] }
+            );
+    
+
+The command is given a label and the actual API call. The third argument is a
+function that takes the CURRENT state of the system and returns a list of
+QuickCheck generators that describe arguments to pass to the function. 'add'
+takes a symbol and any value, so this function returns a list of a symbol
+generator and an any generator. Next, 'add' can be called with no conditions,
+so the preconditions always return true. Last, a list of postcondition
+functions is provided. 'add' has only one postcondition – the NEW state is the
+OLD state with the new key mapping to the new value. Note that each
+postcondition function is given the state BEFORE calling 'add', the arguments
+to 'add', and the return value of 'add'. This allows the postconditions to
+test against the return value, and check for changes in the state as a result
+of the call.
+
+##### `remove`
+
+We can go ahead and add a specification for remove as well:
+
+    
+    
+        cmd_remove : .qch.state.cmd (
+            // label
+            `remove;
+            // execute
+            .kv.remove;
+            // args
+            {[st] enlist .qch.g.elements key .kv.STATE };
+            // precondition
+            { 0 < count key .kv.STATE };
+            // postconditions
+            (   {[cs;ls;a;r] not a[0] in key cs };
+                {[cs;ls;a;r] count[key ls] = 1 + count key cs })
+            );
+    
+
+There are a couple of interesting things to note about this specification.
+First, 'remove' relies on something being in the store before it can be
+called, this is specified in the precondition. Next, the arguments to 'remove'
+rely on the current state (a random key is chosen from the current store).
+Last, there are two postconditions rather than one. The first checks that the
+key now maps to nothing, and the seconds checks that the key has been removed
+from the store keys.
+
+##### `get`
+
+The specification for 'get' follows in the same way:
+
+    
+    
+        cmd_get : .qch.state.cmd (
+            // label
+            `get;
+            // execute
+            .kv.get;
+            // args
+            {[st] enlist .qch.g.elements key .kv.STATE };
+            // precondition
+            { 0 < count key .kv.STATE };
+            // postconditions
+            (   {[cs;ls;a;r] r ~ cs a 0 };
+                {[cs;ls;a;r] ls ~ cs })
+            );
+    
+
+#### Specification
+
+Finally, the commands are gathered in a specification of the system:
+
+    
+    
+        dict_spec : .qch.state.spec (
+            // initialization
+            .kv.init;
+            // state snapshot
+            { .kv.STATE };
+            // commands/api
+            (cmd_add; cmd_remove; cmd_get)
+            );
+    
+
+The first argument is a function that performs any stateful initialization.
+The next is a function that returns a snapshot of the CURRENT state of the
+system, whatever that may be. The last is a list of the commands we have
+already defined.
+
+We can then run this system specification by passing it to QuickCheck:
+
+    
+    
+        .qch.state.summary .qch.state.check dict_spec
+    
+        /=> State simulation results: 
+        /=> 
+        /=>         ::  =  add     @  `b, 6344385196431618702  <-  ()!()                      
+        /=>         ::  =  remove  @  `b                       <-  (,`b)!,6344385196431618702 
+        /=>         ::  =  add     @  `doadbh, 1377664762i     <-  (`symbol$())!`long$()      
+        /=> 
+        /=> Failed! Falsifiable (after 3 calls).
+        /=>         Error: add postcondition 0 not satisfied
+    
+
+The output present the IO of the simulation path. The path can be read as
+`RETURNVALUE = CALL \@ \[ ARGS \] <- WITHSTATE`. Looking at the result, we are
+told that the test failed because the first postcondition of 'add' could not
+be satisfied. Looking at the result, we can see that this only happens when
+add is called twice, with a different argument the second time. Looking at the
+state, after adding the first element, the underlying dictionary becomes a
+_typed_ dictionary, and adding anything else will fail.
+
+#### Fix
+
+Let's fix the issue:
+
+    
+    
+        .kv.init    : { .kv.STATE :: ()!() };
+        .kv.add     : { .kv.STATE[x] :: .kv.STATE , enlist[x]!enlist y };  // Ensure the result is not typed
+        .kv.remove  : { .kv.STATE :: enlist[x] _ .kv.STATE };
+        .kv.get     : { .kv.STATE[x] };
+    
+
+If we run the test again, we get:
+
+    
+    
+        State simulation results: 
+        ...
+        OK, passed simulation with 63 calls.
+    
+
+Looks like we fixed the bug.
+
+### Wrapping in QuickCheck for qcumber and repeated simulations
+
+This only runs one simulation though, so to be sure, let's wrap this in a
+QuickCheck test and decrease the probability of stopping:
+
+    
+    
+        dict_spec : .qch.state.spec (
+            // initialization
+            .kv.init;
+            // state snapshot
+            { .kv.STATE };
+            // commands/api
+            (cmd_add; cmd_remove; cmd_get);
+            0.005   // <- 0.5% chance of stopping (large simulations)
+            );
+    
+        .qch.state.quick dict_spec;
+        /=> 1b
+    
+
+QuickCheck passed 100 random simulations of the API.
+
+## .qch.genS.arb
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+<param> | dict | Generator definition  
+<param>.arb | fn |   
+<param>.shrink | fn |   
+<param>.less | fn |   
+<param>.maxSize | fn |   
+  
+**Returns:**
+
+Type | Description  
+---|---  
+fn | generator  
+  
+## .qch.genS.shrink
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+<param> | dict | Generator definition  
+<param>.arb | fn |   
+<param>.shrink | fn |   
+<param>.less | fn |   
+<param>.maxSize | fn |   
+  
+**Returns:**
+
+Type | Description  
+---|---  
+fn | create a number of possibly shrunk values from a value  
+  
+## .qch.genS.less
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+<param> | dict | Generator definition  
+<param>.arb | fn |   
+<param>.shrink | fn |   
+<param>.less | fn |   
+<param>.maxSize | fn |   
+  
+**Returns:**
+
+Type | Description  
+---|---  
+fn | return true if left arg is less than right arg  
+  
+## .qch.genS.with.maxSize
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+| fn | maximum size/length to generate  
+<param> | dict | Generator definition  
+<param>.arb | fn |   
+<param>.shrink | fn |   
+<param>.less | fn |   
+<param>.maxSize | fn |   
+  
+**Returns:**
+
+Name | Type | Description  
+---|---|---  
+<returns> | dict | Generator definition  
+<returns>.arb | fn |   
+<returns>.shrink | fn |   
+<returns>.less | fn |   
+<returns>.maxSize | fn |   
+  
+## .qch.genS.maxSize
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+<param> | dict | Generator definition  
+<param>.arb | fn |   
+<param>.shrink | fn |   
+<param>.less | fn |   
+<param>.maxSize | fn |   
+  
+**Returns:**
+
+Type | Description  
+---|---  
+fn | maximum size/length to generate  
+  
+## .qch.genS.new
+
+Generator definition
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+| (fn; fn; fn; fn) | A tuple of:   
+generator  
+create a number of possibly shrunk values from a value  
+return true if left arg is less than right arg  
+maximum size/length to generate  
+  
+## .qch.check
+
+Check a property holds
+
+## .qch.discard
+
+Return this value from a property to discard the test.
+
+**Example:**
+
+    
+    
+     .qch.summary .qch.check .qch.forall[.qch.g.boolean[]] {
+             if [not x; : .qch.discard];
+             : x
+         }
+     /=> OK, passed 97 tests, discarded 100 tests.
+    
+
+## .qch.forall
+
+Create a new property of a single argument.
+
+Note - There are 7 versions of this function. Each version expects a different
+number of spec definitions. This was done so that the spec definitions are
+separated in the api, and not forced into an unintuitive list.
+
+## .qch.forall1
+
+Create a new property of a single argument.
+
+## .qch.forall2
+
+Create a new property of two arguments.
+
+## .qch.forall3
+
+Create a new property of three arguments.
+
+## .qch.forall4
+
+Create a new property of four arguments.
+
+## .qch.forall5
+
+Create a new property of five arguments.
+
+## .qch.forall6
+
+Create a new property of six arguments.
+
+## .qch.forall7
+
+Create a new property of seven arguments.
+
+## .qch.quick
+
+**Deprecated**
+
+Create and run a property of a single argument. An error is thrown if the
+property failed. Otherwise, return true. This is used to interface with
+qCumber.
+
+Note - There are 7 versions of this function. Each version expects a different
+number of spec definitions. This was done so that the spec definitions are
+separated in the api, and not forced into an unintuitive list.
+
+These functions are deprecated. Please use `property` blocks if testing within
+_qcumber_ test files.
+
+## .qch.quick1
+
+**Deprecated**
+
+Create and run a property of one argument.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+spec | dict |   
+prop | fn |   
+  
+**Returns:**
+
+**See Also:** [ .qch.quick ](./#qchquick)
+
+## .qch.quick2
+
+**Deprecated**
+
+Create and run a property of two arguments.
+
+**See Also:** [ .qch.quick ](./#qchquick)
+
+## .qch.quick3
+
+**Deprecated**
+
+Create and run a property of three arguments.
+
+**See Also:** [ .qch.quick ](./#qchquick)
+
+## .qch.quick4
+
+**Deprecated**
+
+Create and run a property of four arguments.
+
+**See Also:** [ .qch.quick ](./#qchquick)
+
+## .qch.quick5
+
+**Deprecated**
+
+Create and run a property of five arguments.
+
+**See Also:** [ .qch.quick ](./#qchquick)
+
+## .qch.quick6
+
+**Deprecated**
+
+Create and run a property of six arguments.
+
+**See Also:** [ .qch.quick ](./#qchquick)
+
+## .qch.quick7
+
+**Deprecated**
+
+Create and run a property of seven arguments.
+
+**See Also:** [ .qch.quick ](./#qchquick)
+
+## .qch.setTimes
+
+Set the number of times to run each property globally.
+
+**Example:**
+
+    
+    
+     .qch.setTimes 10
+    
+
+**Example:**
+
+    
+    
+     .qch.setTimes 1000
+    
+
+## .qch.summary
+
+Summarize a single run.
+
+**Example:**
+
+    
+    
+     .qch.summary .qch.check .qch.forall[.qch.g.int[]] {x=x}
+     /=> Ok, passed 100 tests.
+    
+
+## .qch.with.classifier
+
+Add a classifier to a property.
+
+**Example:**
+
+    
+    
+     intensify : { x + 2 };
+    
+     // Want this to hold
+     prop_intensify : { (x + 2) = intensify x };
+    
+     // An optional classifier to get random distribution information 
+     // on the generated data
+     classifier: { $[x>0; "positive"; x=0; "zero"; "negative"] };
+    
+     .qch.summary .qch.check  
+         .qch.with.times[500]                    // Run 500 random tests (optional)
+         .qch.with.classifier[classifier]        // Run this classifier on each input (optional)
+         .qch.forall [.qch.g.int[]] prop_intensify;
+    
+     /=> "OK, passed 500 tests."
+     /=> "   Classifications:"
+     /=> "      53.70741% negative"
+     /=> "      46.29259% positive"
+    
+
+## .qch.with.times
+
+Set the number of times to run a specific property.
+
+**Example:**
+
+    
+    
+     intensify : { x + 2 };
+    
+     // Want this to hold
+     prop_intensify : { (x + 2) = intensify x };
+    
+     .qch.summary .qch.check  
+         .qch.with.times[500]                    // Run 500 random tests (optional)
+         .qch.with.classifier[classifier]        // Run this classifier on each input (optional)
+         .qch.forall [.qch.g.int[]] prop_intensify;
+    
+     /=> "OK, passed 500 tests."
+     /=> "   Classifications:"
+     /=> "      53.70741% negative"
+     /=> "      46.29259% positive"
+    
+

@@ -1,0 +1,132 @@
+https://code.kx.com/developer/libraries/grammar-of-graphics-rendering/
+
+# Rendering - KX Developer
+
+Original URL: https://code.kx.com/developer/libraries/grammar-of-graphics-rendering/
+
+# Rendering
+
+## .qp.display
+
+Display a plot with the given width and height. The renders the plot, but does
+not serve the plot to the IDE. The bytes can be used directly. For serving a
+visual, see `.qp.go`.
+
+The image output (for whichever renderer was used) will be stored in the
+``output` field of the result. The default renderer is a png renderer, and
+contains the following keys: ``w`h`bytes`.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+w | long | width in pixels  
+h | long | height in pixels  
+v | table | specification table  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | displayed GG object  
+  
+**See Also:** [ .qp.go ](./#qpgo)
+
+**Example:**
+
+    
+    
+     .qp.display[500;500] .qp.point[([]x:til 45); `x; `x; ::]
+     /=>              | ::
+     /=> i_.type      | `.gg.ty
+     /=> i_.extensions| `symbol$()
+     /=> id           | ::
+     /=> spec         | +`id`parents`children`item!(3fe4d662-12ab-ed6...
+     /=> output       | ``i_.type`i_.extensions`w`h`bytes!(::; ...
+    
+
+## .qp.go
+
+Render a visual specification at the given width and height, and send the
+visual to the Analyst IDE
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+w | long | width in pixels  
+h | long | height in pixels  
+spec | table | a GG specification (for example, `.qp.point[t; `x; `y; ::]`)  
+  
+**Returns:**
+
+**Example:**
+
+    
+    
+     .qp.go[500;500] .qp.point[([]x:til 45); `x; `x; ::]
+    
+
+## .qp.managed
+
+Render a visual specification at the given width and height, and send the
+visual to the Analyst IDE
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+id | symbol | id of the managed plot  
+w | long | width in pixels  
+h | long | height in pixels  
+spec | table | a GG specification (for example, `.qp.point[t; `x; `y; ::]`)  
+  
+**Returns:**
+
+**Example:**
+
+    
+    
+     .qp.managed[`name;500;500] .qp.point[([]x:til 45); `x; `x; ::]
+    
+
+## .qp.png
+
+Save a GG specification as a png
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+filename | symbol | Symbolic file handle to PNG output location  
+w | long | width  
+h | long | height  
+spec | table | gg specification  
+  
+**Example:**
+
+    
+    
+     .qp.png[`:/output/file.png; 500; 500]
+          .qp.point[([]x:til 45); `x; `x; ::]
+    
+
+## .qp.push
+
+Push a pre-rendered visual to the client
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+gg | dict | a pre-rendered GG  
+  
+**Returns:**
+
+**Example:**
+
+    
+    
+     .qp.push .gg.dsl[()!()] `:image.gg
+    
+

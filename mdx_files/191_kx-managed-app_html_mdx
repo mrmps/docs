@@ -1,0 +1,47 @@
+https://code.kx.com/insights/enterprise/azure-marketplace/kx-managed-app.html
+
+# KX Managed kdb Insights Enterprise Deployment - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/azure-marketplace/kx-managed-app.html
+
+# KX Managed kdb Insights Enterprise Deployment
+
+The [Managed kdb Insights Enterprise
+Deployment](https://azuremarketplace.microsoft.com/en-
+us/marketplace/apps/firstderivativesplc1596469572732.kx-insights-platform)
+offer on the Azure Marketplace spins up the resources and infrastructure as
+well as deploying the application. This offer leverages the Azure [Managed
+Application](https://learn.microsoft.com/en-us/azure/azure-resource-
+manager/managed-applications/deploy-service-catalog-quickstart) mechanism. KX
+will have access to the relevant resource groups and will be able to manage
+the application on your behalf.
+
+![KxManagedApp](images/plan-kx-managed-app.png)
+
+Follow the [Install Prerequisites](azure-prerequisites.html) to get your
+system ready before installing kdb Insights Enterprise.
+
+## Installation summary
+
+kdb Insights Enterprise on Azure Marketplace is deployed as a [Managed
+Application](https://learn.microsoft.com/en-us/azure/azure-resource-
+manager/managed-applications/monitor-managed-application-portal) and the set
+of resources provisioned in your subscription depends on your configuration
+choices.
+
+The following third party dependencies are installed and used by kdb Insights
+Enterprise:
+
+The following third party dependency is optional and will only be deployed if
+you select this in your configuration:
+
+The following Azure resources are created and deployed during installation:
+
+[![KxManagedApp](images/AzureReferenceArchTransp.png)](images/AzureReferenceArchZoom.png)
+
+The kdb Insights Enterprise Helm charts and images are stored in our Azure
+Container Registry [ACR](https://learn.microsoft.com/en-us/azure/container-
+registry/container-registry-intro) and are all pulled from here at deployment
+time, except for Keycloak. The [CLI](../cli/index.html) will be used to
+upgrade your application when new versions are available.
+

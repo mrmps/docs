@@ -1,0 +1,172 @@
+https://code.kx.com/dashboards/breadcrumbs/
+
+# Breadcrumbs - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/breadcrumbs/
+
+# Breadcrumbs
+
+A screen control that can be used for Pivot/OLAP navigation
+
+![Screenshot](../img/breadcrumbs/breadcrumbhtmllight.jpg)
+
+## Set up
+
+  1. Assign a view state to the _Path_ property. When using the Breadcrumbs component for Pivot/OLAP navigation, this viewstate is shared with the [_Focus_](../pivotgrid/#basics) property of the [Pivot Grid](../pivotgrid/). 
+
+  2. Assign a view state of type `list` to the _Visible Breadcrumbs_ property. The value of this view state depicts the order of the visible breadcrumbs. When using the Breadcrumbs component for Pivot/OLAP navigation, this viewstate is shared with the [_Breakdown Cols_](../datasources/#pivot-query) field in the Pivot Grid's Data Source/Pivot Query section.
+
+## Settings
+
+![Screenshot](../img/breadcrumbs/breadcrumbsmenu.png)
+
+_Name_
+
+    A name for the component provided by the user. 
+_Path_
+
+    
+
+A [View State Parameter](../viewstateparameters/):
+
+  * With comma separated values or values from a list data type.
+  * Each value corresponds to the sequential list of visible breadcrumbs. 
+  * Instead of using the _Visible Breadcrumbs_ property for the breadcrumb text, the value from the _Path_ property provides the text to be displayed, if a value is present and the _Use Path For Alternative Text_ is checked. Otherwise, the text comes from the _Visible Breadcrumbs_ property.
+
+    
+
+When using the Breadcrumbs component for Pivot/OLAP navigation, e.g. charts
+and [Pivot Grid](../pivotgrid/), this view state shares their _Focus_ setting.
+
+![Screenshot](../img/breadcrumbs/breadcrumbsetuphtmllight.jpg)
+
+_Visible Breadcrumbs_
+
+    
+
+A View State Parameter of `list` data type:
+
+  * These values represent the sequential list of visible breadcrumbs in the order that they appear.
+
+![Screenshot](../img/breadcrumbs/breakdownlist.jpg)
+
+    
+
+When using the Breadcrumbs component for Pivot/OLAP navigation, e.g. charts
+and [Pivot Grid](../pivotgrid/), this view state shares their _Breakdown_
+setting.
+
+![Screenshot](../img/breadcrumbs/visiblebreadcrumbs.png)
+![Screenshot](../img/breadcrumbs/pivotquerybreadcrumb.jpg)
+
+_Use Path For Alternative Text_
+
+    When checked, instead of using the _Visible Breadcrumbs_ property for the breadcrumb text, the value from the _Path_ property provides the text to be displayed, if present. If there is no corresponding value for a breadcrumb, the text will come from the _Visible Breadcrumbs_ property. 
+    
+
+When unchecked, the text of each breadcrumb comes solely from the values of
+the view state that has been assigned to the _Visible Breadcrumbs_ property.
+
+  * For Pivot/OLAP navigation to use the data source column names in the breadcrumbs, uncheck the _Use Path For Alternative Text_ property.
+
+![Screenshot](../img/breadcrumbs/breadcolumnnames.jpg)
+
+_Allow Reordering_
+
+    
+
+When checked, each breadcrumb listed in the _Visible Breadcrumbs_ view state
+can be reordered using drag and drop or the Edit Breadcrumbs dialog.
+
+![Screenshot](../img/breadcrumbs/breadcrumbreorder.png)
+
+_Breadcrumb Data Source_
+
+    
+
+(Optional) The list of values returned by the [data source](../datasources/)
+assigned to this property provides a complete set of breadcrumb elements
+available for use by this component. The first column in each row returned by
+this data source becomes a breadcrumb element. This property is only available
+when the _Allow Reordering_ property is checked.
+
+![Screenshot](../img/breadcrumbs/breadcrumbdatasource.png)
+
+    
+    
+    ([]
+            c:(`Prov`County`AvgTemp`Population`Rainfall`HoursSun`TempHigh`TempLow)
+    )
+    
+
+_Available Breadcrumbs_
+
+    
+
+(Optional) As an alternative to the _Breadcrumb Data Source_ , users can
+assign a view state parameter of type `list` to provide a complete set of
+breadcrumb elements available for use by this component. However, if the
+_Breadcrumb Data Source_ is defined, that setting will supersede this
+property. This property is only available when the _Allow Reordering_ property
+is checked.
+
+![Screenshot](../img/breadcrumbs/breadcrumblist.png)
+
+_Show Edit Button_
+
+    
+
+When checked, displays the Edit button
+![Screenshot](../img/breadcrumbs/editbutton.png) to the left of the Home icon.
+This property is only available when the _Allow Reordering_ property is
+checked.
+
+![Screenshot](../img/breadcrumbs/breadcrumbwitheditbutton.png)
+
+## Edit Breadcrumbs dialog
+
+Clicking on the Edit button ![Screenshot](../img/breadcrumbs/editbutton.png)
+will bring up the Edit Breadcrumbs dialog. This dialog allows users to add,
+remove and change the order of the breadcrumbs.
+
+![Screenshot](../img/breadcrumbs/editbreadcrumbsdialog.png)
+
+_Available_
+
+    This section contains a list of breadcrumbs that are available but not visible in the Breadcrumbs component. To make an available breadcrumb visible, drag and drop it from the _Available_ breadcrumbs list to the _Visible_ breadcrumbs list.
+_Visible_
+
+    This section contains a list of the visible breadcrumbs in the order that they will appear. To rearrange the list, drag and drop the breadcrumbs within this section.
+    To remove a visible breadcrumb, drag and drop it from the _Visible_ breadcrumbs list to the _Available_ breadcrumbs list. 
+_Warning Icon_
+
+    
+
+A warning icon may appear to the right of a breadcrumb element in the
+_Available_ list when a breadcrumb is moved from _Visible_ to _Available_.
+
+![Screenshot](../img/breadcrumbs/editbreadcrumbsdialogwarningicon.png)
+
+    
+
+This occurs if one of the following is true:
+
+  * The _Breadcrumb Data Source_ or _Available Breadcrumbs_ property is not defined. 
+  * The breadcrumb element exists in the _Visible Breadcrumbs_ viewstate but it is not found in the complete set of breadcrumbs defined by the _Breadcrumb Data Source_ or _Available Breadcrumbs_ property. 
+
+    
+
+In either case, any breadcrumb element displaying a warning icon will be
+permanently removed during the session when the user commits their change by
+clicking the OK button.
+
+## Component behavior
+
+  * Breadcrumbs with a corresponding value in the _Path_ property can be clicked on and rearranged.
+  * Breadcrumbs without a corresponding value in the _Path_ property can only be rearranged.
+  * When the user clicks on a breadcrumb with a corresponding value in the _Path_ property, the path will be truncated to that point.
+
+## Style
+
+[Style](../style/#component-style) for common settings
+

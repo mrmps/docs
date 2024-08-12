@@ -1,0 +1,179 @@
+https://code.kx.com/insights/microservices/database/storage/batch-ingest.html
+
+# Batch ingest - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/database/storage/batch-ingest.html
+
+# Batch ingest
+
+Batch ingest allows you to backfill static data directly to the historical
+tier of an existing database. This is a useful option for reducing memory
+footprint when importing large amounts of static data. Batch ingest works by
+replacing partitions for a given partitioned table with a static copy provided
+to the database. This is best used for replacing empty partitions with
+backfilled data.
+
+Data replacement
+
+Batch ingest replaces partitions in the HDB with a new version.
+
+Initial import
+
+Batch ingest is similar to an [initial import](initial-import.html) except it
+is intended for an existing database instead of an empty database.
+
+## Data organization
+
+For batch ingestion, data must be located in the `staging` directory in the
+HDB root. This location is pointed to by the `baseURI` of the [HDB
+mount](../configuration/assembly/database.html#mounts). The top level
+directory is considered the _session_ name for ingestion. The content within
+the directory should be a partitioned database with only the tables related to
+the ingestion. Below is an example directory layout.
+
+Example schema definition
+
+    
+    
+    tables:
+      trace:
+        description: Manufacturing trace data
+        type: partitioned
+        blockSize: 10000
+        prtnCol: updateTS
+        sortColsOrd: [sensorID]
+        sortColsDisk: [sensorID]
+        columns:
+          - name: sensorID
+            description: Sensor Identifier
+            type: int
+            attrMem: grouped
+            attrOrd: parted
+            attrDisk: parted
+          - name: readTS
+            description: Reading timestamp
+            type: timestamp
+          - name: captureTS
+            description: Capture timestamp
+            type: timestamp
+          - name: valFloat
+            description: Sensor value
+            type: float
+          - name: qual
+            description: Reading quality
+            type: byte
+          - name: alarm
+            description: Enumerated alarm flag
+            type: byte
+          - name: updateTS
+            description: Ingestion timestamp
+            type: timestamp
+    
+    
+    
+    /data/db/hdb/staging/backfill
+    ├── 2023.01.01
+    │   └── trace
+    │       ├── alarm
+    │       ├── qual
+    │       ├── readTS
+    │       ├── sensorID
+    │       ├── updateTS
+    │       └── valFloat
+    ├── 2023.01.03
+    │   └── trace
+    │       ├── alarm
+    │       ├── qual
+    │       ├── readTS
+    │       ├── sensorID
+    │       ├── updateTS
+    │       └── valFloat
+    └── sym
+    
+
+In this scenario, the table `trace` for the dates `2023.01.01` and
+`2023.01.03` will be overwritten with the content of these directories when a
+session is started for the `backfill` directory.
+
+## Running a batch ingest
+
+Once data has been written to the staging directory, a batch ingest can be
+triggered using the [REST interface](../../../api/database/rest/storage-
+manager.html) provided by on the Storage Manager container.
+
+### Creating an ingest session
+
+To start an ingestion session, a `POST` request must be issued to the SM
+container's `/ingest` endpoint. The body of the request is a JSON object that
+indicates the name of the ingest session. The response will be `200` if the
+session started successfully, `404` if the session directory was not found or
+`409` if a session already exists with the given name.
+
+Storage Manager URL
+
+In the example below, `$SM` is intended to be the hostname and port of the SM
+container. If running in Docker, this could be localhost of a [port forwarded
+container](https://docs.docker.com/config/containers/container-networking/).
+If running in Kubernetes, this should be the SM pod name and port of the SM
+process.
+
+    
+    
+    curl -X POST "$SM/ingest" -H 'Content-Type: application/json' -d '{"name":"backfill"}'
+    
+
+The default `mode` for batch ingest is `overwrite` which as the name suggests
+will overwrite existing data for the same date. The other `mode` of operation
+is `merge` which will append incoming data to any data already ingested.
+
+    
+    
+    curl -X POST "$SM/ingest" -H 'Content-Type: application/json' -d '{"name":"backfill2", "mode":"merge"}'
+    
+
+### Checking an ingest session status
+
+Once the session is running, the `/ingest/{name}` endpoint can be used to
+check the status. This endpoint will report what stage the ingestion is in, if
+it has completed or if there is an error.
+
+Storage Manager URL
+
+In the example below, `$SM` is intended to be the hostname and port of the SM
+container. If running in Docker, this could be localhost of a port forwarded
+container. If running in Kubernetes, this should be the SM pod name and port
+of the SM process.
+
+    
+    
+    curl -X GET "$SM/ingest/backfill"
+    
+    
+    
+    {
+        "status": "completed",
+        "error": ""
+    }
+    
+
+Error response
+
+If an ingestion session has errored, the status API will return a code of 200
+but will indicate the error in the JSON response.
+
+    
+    
+    {
+        "status": "errored",
+        "error": "No such directory 'backfill'"
+    }
+    
+
+## Cleaning up a batch ingest
+
+If a batch ingestion session completes successfully, the session directory
+will automatically be cleared. If the ingestion fails, the session directory
+will be left on disk for the user to perform a cleanup. An error will be
+reported to the client that triggered the ingest which can be used to help
+debug the failed ingest for another attempt.
+

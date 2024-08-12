@@ -1,0 +1,64 @@
+https://code.kx.com/insights/microservices/stream-processor/concepts/glob.html
+
+# Glob patterns - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/stream-processor/concepts/glob.html
+
+# Glob Patterns
+
+Glob patterns provide a way to specify a path that can match one or more
+files, such as `data/*.json` to match all json files in a directory.
+
+## Wildcards
+
+  * `?` will match any single character  
+Example: `2020?stats.csv` would match `2020-stats.csv` or `2020_stats.csv`,
+but not `2020stats.csv`
+
+  * `*` will match any string in a directory or file name, including the empty string, but won't match across directories  
+Example: `/data*/test.csv` will match `/data/test.csv` and `/data-
+backup/test.csv`, but not `/data/backup/test.csv`
+
+  * `**` will match any number of directories, recursively searching through directories and symlinks (while not traversing a cyclic symlink)  
+Example: `/data/**/test.csv` will match `/data/test.csv`,
+`/data/backup/test.csv`, and `/data/backup/test/init/test.csv`
+
+## Character Classes
+
+  * `[...]` \- An expression between brackets not starting with `!` and that is not empty matches any single character in the set.  
+Example: `/data/test.[ct]sv` will match `/data/test.csv` and `/data/test.tsv`
+
+  * `[!..]` \- An expression between brackets starting with `!` matches any single character except the characters in the set. This is only true if `!` is the first character.  
+Example: `/data/test-[!ABC].csv` will match `/data/test-D.csv` but not
+`/data/test-B.csv`
+
+  * `[ - ]` \- With a character set, the use of `-` indicates a range using the ASCII range from the character on the left to the character on the right. These can be used in both the inclusive and exclusive character classes.  
+Example: `/data/test[0-9].csv` will match `/data/test0.csv` and
+`/data/test5.csv`
+
+  * Multiple ranges can be included in a character class, alongside characters not in a range.  
+Example: `/data/test-[a-zA-Z0-9#].csv` will match `/data/test-3.csv` and
+`/data/test-#.csv`
+
+  * `*` and `?` are not special characters inside a character class. They will only match the characters `*` and `?`.
+
+## Escaping special characters
+
+The special characters outside a character class are `*`, `?`, and `[`.  
+Inside or a character class, `!`, `-`, and `]` are the only special
+characters, and `!` is only special when it is the first character.  
+An unmatched `]` is not a special character
+
+Character classes can be used to escape special characters.  
+Example: `/data/test[?].csv` will match `/data/test?.csv` but not
+`/data/test2.csv`  
+Example 2: `test[[]backup].csv` will match `test[backup].csv`, as `[[]` is a
+character class matching `[`
+
+`\` should not be used as an escape character. `/data/my\ file.txt` should be
+written instead as `/data/my file.txt`
+
+## Notes
+
+Glob patterns are case sensitive if the file system is case-sensitive.
+

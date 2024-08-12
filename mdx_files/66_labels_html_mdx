@@ -1,0 +1,40 @@
+https://code.kx.com/insights/core/qpacker/labels.html
+
+# labels | QPacker | kdb Insights Core - kdb products
+
+Original URL: https://code.kx.com/insights/core/qpacker/labels.html
+
+# qp.labels file
+
+_An optional file which can be incorporated into`qp build` to allow users to
+append metadata to the docker container created._
+
+## Requirements
+
+  * place `qp.labels` file in the applications top level directory. Once `qp build` is called, it will be picked up and placed in the `qpbuild` directory.
+
+## qp.labels format
+
+General format is displayed below.
+
+    
+    
+    LABEL label1="hello world!"
+    LABEL label.kx.com="foo"
+    ...
+    
+
+### Actions by qp
+
+Once `qp.labels` is found and picked up during `qp build`, qp will then merge
+the contents of the file with the `Dockerfile.app`. You will then be able to
+view the metadata added to the container by calling the command below.
+
+    
+    
+    docker inspect --format='' $INSTANCE_ID
+    
+
+You can read more about the Label instruction and how to use it with Docker
+[here](https://docs.docker.com/engine/reference/builder/#label).
+

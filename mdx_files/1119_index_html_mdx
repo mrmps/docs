@@ -1,0 +1,71 @@
+https://code.kx.com/insights/core/qpexample-tick/index.html
+
+# Basic Tick - kdb products
+
+Original URL: https://code.kx.com/insights/core/qpexample-tick/index.html
+
+# Basic tick system
+
+This is a basic tick system with fake feed, tickerplant, rdb+ hdb and a
+gateway to query data.
+
+Mutliple rdbs/hdbs can be spawned and will connect and subscribe and be able
+to be queried.
+
+There is no data persistance, however hdb data can be generated using the
+`createHdb.q` script.
+
+## Building under qp
+
+Download the `qpacker-examples.tgz` package via
+[Nexus](https://nexus.dl.kx.com/#browse/browse:kx-insights-packages:qpacker):
+
+To build each of the containers run
+
+    
+    
+    tar -xvzf qpacker-examples.tgz
+    cd qpacker-examples/basic-tick-system
+    qp build
+    
+
+## Running under docker-compose
+
+After building you can run under docker-compose as follows
+
+## Repo structure
+
+cfg - Configuration directory
+
+  * Contains schema and process configuration
+
+src/lib - Libraries dir
+
+  * Contains code that multiple processes share
+
+src/processes - process files
+
+## Gateway usage
+
+By default the gateway is on 5050 if booted through `bootSystem.q`.
+
+Can query via `queryData[table;syms]` on the gw that will dispatch to a random
+rdb and hdb.
+
+The table flowing through the system is `example`. To connect to the gw and
+query for all syms:
+
+    
+    
+    gw:hopen 5050;
+    gw(`queryData;`example;`)
+    
+
+## Compilation
+
+The repo contains a library `funcDownHandle.q` that contains a function for
+the gw that will send a function down a handle tto rdb/hdbs.
+
+For this to work, this library must remain uncompiled. This lib is here to
+verify that the build can identify which libs to not compile
+

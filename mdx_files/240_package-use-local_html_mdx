@@ -1,0 +1,205 @@
+https://code.kx.com/insights/enterprise/packaging/package-use-local.html
+
+# Using package code locally - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/packaging/package-use-local.html
+
+# Using packages locally
+
+You can run any [Custom APIs](package-entrypoints.html) or [UDFs](package-
+udfs.html) stored within your packages locally to prototype the loading of
+your package content. This enables you to develop and test the functions.
+
+To do this, you need to install the package into the `KX_PACKAGE_PATH`, which
+is a special directory that the CLI uses as a repository for packages. It
+provides a common location to store packages which the CLI uses to find
+packages, load code, and resolve [links](package-deps.html) with other
+packages.
+
+A package is installed when it appears in the `KX_PACKAGE_PATH` directory.
+Once in this directory, you can load the package and test the runtime code
+components using q or Python development environments.
+
+## Installing
+
+You can use the help command to provide information regarding the additional
+options.
+
+    
+    
+    kxi package install --help
+    
+    
+    
+     Usage: kxi package install [OPTIONS] [REQUIREMENT_SPECIFIER]                   
+    
+     Install a package given a requirement or path.                                 
+    
+    ╭─ Options ────────────────────────────────────────────────────────────────────╮
+    │ --override-deps     TEXT  Specify which deps to override during install.     │
+    │                           format 'name/ver:path/to/new/package'              │
+    │ --simple                  Simplify the output to name/version format.        │
+    │ --add-symlink-to    PATH  Create a symlink of package_name/version at the    │
+    │                           specified directory.                               │
+    │ --force                   Force install: overwrite existing packages and     │
+    │                           dependencies.                                      │
+    │ --help                    Show this message and exit.                        │
+    ╰──────────────────────────────────────────────────────────────────────────────╯
+    
+
+If any dependencies are specified in the manifest, the CLI will download them,
+if possible, and install them in `KX_PACKAGE_PATH` .
+
+The install command can be run as follows:
+
+    
+    
+    kxi package install mypkg
+    
+
+The following example details how to create three packages, add `pkg-b` and
+`pkg-c` as dependencies to `pkg-a` and install `pkg-a`:
+
+    
+    
+    kxi package init --force pkg-a
+    kxi package init --force pkg-b
+    kxi package init --force pkg-c
+    kxi package add --to pkg-a dep --name pkg-b --version 0.0.1
+    kxi package add --to pkg-a dep --name pkg-c --version 0.0.1
+    kxi package install pkg-a
+    
+    
+    
+    Creating package at location: pkg-a
+    Writing pkg-a/manifest.yaml
+    Creating package at location: pkg-b
+    Writing pkg-b/manifest.yaml
+    Creating package at location: pkg-c
+    Writing pkg-c/manifest.yaml
+    Writing pkg-a/manifest.yaml
+    Writing pkg-a/manifest.yaml
+    pkg-a-0.0.1-local
+        └──pkg-b-0.0.1-local
+        └──pkg-c-0.0.1-local
+    Writing /tmp/package_lib/pkg-a/0.0.1/manifest.yaml
+    Writing /tmp/package_lib/pkg-b/0.0.1/manifest.yaml
+    Writing /tmp/package_lib/pkg-c/0.0.1/manifest.yaml
+    {
+        "pkg-b": [
+            {
+                "version": "0.0.1",
+                "_status": "InstallationStatus.SUCCESS"
+            }
+        ],
+        "pkg-c": [
+            {
+                "version": "0.0.1",
+                "_status": "InstallationStatus.SUCCESS"
+            }
+        ],
+        "pkg-a": [
+            {
+                "version": "0.0.1",
+                "_status": "InstallationStatus.SUCCESS"
+            }
+        ]
+    }
+    
+
+By installing `pkg-a` all three packages will be added to `KX_PACKAGE_PATH`
+location.
+
+## Developing and testing
+
+The following examples outline how you can locally list and load available
+packages and UDFs in addition to developing a unit test for a specified UDF
+using the [`Python`](../../api/packaging/python/index.html) and
+[`q`](../../api/packaging/q/index.html) APIs. This example uses a package
+generated and installed following the [command line interface API
+quickstart](../../api/packaging) guide.
+
+## Removing
+
+You can use the help command to provide information regarding the additional
+options.
+
+    
+    
+     Usage: kxi package uninstall [OPTIONS] [OBJECTS]...                            
+    
+     Uninstall specified locally installed packages and artifacts.                  
+    
+    ╭─ Options ────────────────────────────────────────────────────────────────────╮
+    │ --artifacts                                   Remove available artifacts     │
+    │                                               rather than installed          │
+    │                                               packages.                      │
+    │ --obj-type     [Package|Artifact|Deployment]  Remove available object from   │
+    │                                               system                         │
+    │ --force                                       Force uninstall: suppress user │
+    │                                               confirmation during removal.   │
+    │ --help                                        Show this message and exit.    │
+    ╰──────────────────────────────────────────────────────────────────────────────╯
+    
+
+Remove installed packages and `.kxi` package files as follows:
+
+Packages`.kxi` package files
+
+    
+    
+    kxi package uninstall all --force
+    
+    
+    
+    {
+        "myotherpkg": [
+            {
+                "_status": "DELETED",
+                "version": "0.0.1"
+            }
+        ],
+        "pkg-a": [
+            {
+                "_status": "DELETED",
+                "version": "0.0.1"
+            }
+        ],
+        "pkg-b": [
+            {
+                "_status": "DELETED",
+                "version": "0.0.1"
+            }
+        ],
+        "pkg-c": [
+            {
+                "_status": "DELETED",
+                "version": "0.0.1"
+            }
+        ]
+    }
+    
+    
+    
+    kxi package uninstall all --force --obj-type=Artifact
+    
+    
+    
+    {
+        "mypkg": [
+            {
+                "_status": "DELETED",
+                "version": "0.0.1_E6D3ACC9"
+            },
+            {
+                "_status": "DELETED",
+                "version": "0.0.1"
+            },
+            {
+                "_status": "DELETED",
+                "version": "0.0.1_57BA462D"
+            }
+        ]
+    }
+    
+

@@ -1,0 +1,145 @@
+https://code.kx.com/insights/api/database/query/ping.html
+
+# Ping API - kdb products
+
+Original URL: https://code.kx.com/insights/api/database/query/ping.html
+
+# Ping
+
+This API is intended to run on a data access process and returns true if it
+reaches a target.
+
+qREST
+
+Gateway URL
+
+The `GATEWAY` variable below is defined as an IPC connection to the Service
+Gateway. For example ``:insights-qe-gateway:5050` would connect to the query
+environment gateway within an `insights` namespace.
+
+    
+    
+    // API arguments dictionary.
+    args: (!) . flip enlist (
+        (`labels; labels)
+        );
+    
+    // Extra options dictionary.
+    opts: enlist[`timeout]!enlist timeout;
+    
+    // Response callback for asynchronous queries.
+    callback: {[hdr; pl] show (hdr; pl); };
+    
+    GATEWAY (`.kxi.ping; args; `callback; opts)
+    
+
+When issuing an IPC request, synchronous requests will return a tuple where
+the first element is the response payload and the second is the response data.
+See the asynchronous requests section below for how to use the `callback`
+parameter to get an asynchronous response.
+
+Gateway URL
+
+The `$GATEWAY` variable should point at your kdb Insights install. For a
+microservice install, this will be the hostname of the install using port
+8080. For an enterprise install, this is your `$INSIGHTS_HOSTNAME` with
+`/servicegateway` as the URL prefix.
+
+    
+    
+    curl -X POST "$GATEWAY/kxi/ping" \
+        -H "Content-Type: application/json" \
+        -H "Accept: application/json" \
+        -H "Authorization: Bearer $INSIGHTS_TOKEN" \
+        -d "$(jq -n '{ labels: {} }' | jq -cr .)"
+    
+
+## Parameters
+
+This API currently accepts
+[labels](../../../microservices/database/configuration/assembly/database.html#labels)
+as an argument to selectively ping specific database processes.
+
+name | required | type | description  
+---|---|---|---  
+`labels` | no | `object` | Are used to indicate relevant assemblies (shards) to target the given query with. This object is a map of label names to desired label values. When running an IPC based query, the type of each label must be a symbol or a list of symbols. For a REST request, this can either be a string or an array of strings. It is recommended that this field is used in every request to narrow down the scope of a given query and to target the DAPs. See [database label configuration](../../../microservices/database/configuration/assembly/database.html#labels) for details on configuring labels.  
+  
+Labels
+
+The `labels` parameter allows you to query against DAPs that are part of
+assemblies matching that label. For example if the there are DAPs belonging to
+two assemblies, one with a `region` label of `canada` another with a region
+label of `europe`, then a dictionary with a `region` value of `canada` would
+return only the `canada` data. The assembly label arguments are always
+optional, and will query all assemblies when not specified. If multiple labels
+are provided with multiple values, the cross product of all the label
+combinations is used to select target assemblies.
+
+## Response
+
+The response includes a [response header](../api/header.html#response-header)
+and a payload, where the value is a boolean for each process in the query
+path.
+
+For issues with the query or responses checkout the [troubleshooting
+guide](../../../microservices/database/query/troubleshooting.html).
+
+## Examples
+
+In this example we do a request. Response and application codes are both OK.
+
+qREST
+
+Gateway URL
+
+The `GATEWAY` variable below is defined as an IPC connection to the Service
+Gateway. For example ``:insights-qe-gateway:5050` would connect to the query
+environment gateway within an `insights` namespace.
+
+    
+    
+    GATEWAY (`.kxi.ping;()!();`;()!())
+    
+
+Gateway URL
+
+The `$GATEWAY` variable should point at your kdb Insights install. For a
+microservice install, this will be the hostname of the install using port
+8080. For an enterprise install, this is your `$INSIGHTS_HOSTNAME` with
+`/servicegateway` as the URL prefix.
+
+    
+    
+    curl -G -H "Authorization: Bearer $INSIGHTS_TOKEN" "$GATEWAY/kxi/ping"
+    
+    
+    
+    {
+      "header": {
+        "rcvTS": "2023-02-03T21:03:59.533000000",
+        "corr": "031baeba-b54b-443f-9f4e-06931899cb9e",
+        "protocol": "gw",
+        "logCorr": "031baeba-b54b-443f-9f4e-06931899cb9e",
+        "client": ":10.6.136.92:5050",
+        "http": "json",
+        "api": ".kxi.ping",
+        "ogRcID": "insights-resource-coordinator-0:5060",
+        "retryCount": 0,
+        "to": "2023-02-03T21:04:29.533000000",
+        "agg": ":10.6.149.113:5070",
+        "pvVer": 4,
+        "rpID": 0,
+        "refVintage": -9223372036854776000,
+        "startTS": "1707-09-22T00:12:43.145224193",
+        "endTS": "2023-02-03T00:00:01.000000000",
+        "rc": 0,
+        "ac": 0,
+        "ai": ""
+      },
+      "payload": [
+        true,
+        true
+      ]
+    }
+    
+

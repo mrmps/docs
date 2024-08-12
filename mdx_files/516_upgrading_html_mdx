@@ -1,0 +1,331 @@
+https://code.kx.com/insights/microservices/database/upgrading.html
+
+# Upgrading - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/database/upgrading.html
+
+# Upgrading
+
+As new features are added to the kdb Insights Database, APIs and state may
+change. This document outlines considerations when upgrading between different
+versions of the kdb Insights Database.
+
+Upgrade Compatibility
+
+For changes that would result in a breaking change, an upwards compatible path
+will **always** be supported in minor release versions. Features may be
+deprecated in a minor release and could be removed in a major release upgrade.
+
+## Upgrading to 1.8
+
+### Configuring error trapping in 1.8
+
+The environment variables controlling error trapping, called
+`KXI_SM_ERROR_TRAP` and `KXI_DA_ERROR_TRAP` in previous versions, have been
+replaced with a single variable, `KXI_ERROR_TRAP`. For single-container DAP
+and SM, error trapping in child processes is controlled by
+`KXI_WORKER_ERROR_TRAP`.
+
+## Upgrading to 1.7
+
+### IPC in 1.7
+
+In 1.7, new security measures have been added for IPC connections to database
+services that restrict ad-hoc connections. Attempting to send an ad-hoc IPC
+request by directly sending an IPC message to a database process may result in
+the error `IPC execution restricted. Rejecting function`. All IPC
+communication must use a supported API. To disable this feature and allow
+arbitrary connections, set `KXI_SECURE_ENABLED=false` on the environment
+variable configuration for each target process.
+
+Disabling IPC security
+
+It is recommended that IPC security remain enabled for all production
+deployments. Disabling this level of security can allow users to modify
+internal state or access data they are not priviledged to see.
+
+### Sandboxes in 1.7
+
+When configuring a sandbox process, the environment variable `SBX_MAX_ROWS`
+could be provided to set the maximum rows for a sandbox process. This variable
+has been updated to include a `KXI_` prefix and is now `KXI_SBX_MAX_ROWS`. The
+old value will be supported for an additional release but is deprecated.
+
+## Upgrading to 1.5
+
+### Labels in 1.5
+
+Querying with labels has changed in 1.5 to be a distinguished top level
+parameter. Previously, labels could be included as directly as parameters in
+requests to query APIs such as [`getData`](../../api/database/query/get-
+data.html) or [`sql`](../../api/database/query/sql.html). This has been
+changed such that labels are now nested under a labels object or prefixed with
+`label_` in SQL. This change has been made to resolve an issue of unresolvable
+collisions between labels and custom API parameters or table columns. For
+example, previously if you had a table with a column called `region` and an
+assembly with a label called `region`, referencing `region` in a query was
+ambiguous and could result in undesired results. With this change, `region` in
+a query will always refer to the table column and a labels object is used to
+refer to the label called `region`.
+
+Deprecation notice
+
+In the 1.5 release, the old label style is still supported but is deprecated
+and will result in a warning log in the Resource Coordinator. An extra
+environment variable `ALLOW_OLD_LABEL_STYLE` has been added to the Resource
+Coordinator that preserves the old behaviour prior to 1.5 which defaults to
+`"true"`. While enabled, this allows both the old and new label parameter
+style in the same query. In 1.6, this will now default to `"false"` but can be
+enabled by overriding the environment variable setting. In 2.0, this feature
+will be removed entirely.
+
+#### Upgrading
+
+A slight modification is required to convert queries to the new format.
+Requests now must specify labels as a top level parameter for `getData`
+requests or custom APIs. For SQL requests, labels in the query must have the
+`label_` prefix.
+
+**Get Data**
+
+For full API details, see the [`getData`](../../api/database/query/get-
+data.html) reference page.
+
+qREST
+
+Gateway URL
+
+The `GATEWAY` variable below is defined as an IPC connection to the Service
+Gateway. For example ``:insights-qe-gateway:5050` would connect to the query
+environment gateway within an `insights` namespace.
+
+Prior to 1.5, the `region` label in a request would be top level in the
+argument field.
+
+    
+    
+    args: (!) . flip (
+        (`table   ; `trace);
+        (`region  ; `$"us-east-1");
+        (`startTS ; .z.p - 0D00:05:00); // Select the last 5 minutes of data
+        (`endTS   ; .z.p)
+        )
+    
+    GATEWAY (`.kxi.getData; args; `; ()!())
+    
+
+In 1.5, this should now be nested under a `labels` object.
+
+    
+    
+    args: (!) . flip (
+        (`table   ; `trace);
+        (`labels  ; enlist[`region]!enlist`$"us-east-1");
+        (`startTS ; .z.p - 0D00:05:00); // Select the last 5 minutes of data
+        (`endTS   ; .z.p)
+        )
+    
+    GATEWAY (`.kxi.getData; args; `; ()!())
+    
+
+Gateway URL
+
+The `$GATEWAY` variable should point at your kdb Insights install. For a
+microservice install, this will be the hostname of the install using port
+8080. For an enterprise install, this is your `$INSIGHTS_HOSTNAME` with
+`/servicegateway` as the URL prefix.
+
+Prior to 1.5, the `region` label in a request would be top level in the
+argument field.
+
+    
+    
+    curl -X POST "$GATEWAY/kxi/getData" \
+        -H "Content-Type: application/json" \
+        -H "Accept: application/json" \
+        -H "Authorization: Bearer $INSIGHTS_TOKEN" \
+        -d "$(jq -n \
+            --arg startTS "$(date -u '+%Y.%m.%dD%H:00:00')" \
+            --arg endTS "$(date -u '+%Y.%m.%dD%H:%M%:%S')" \
+            '{
+                table   : "trace",
+                region  : "us-east-1",
+                startTS : $startTS,
+                endTS   : $endTS
+            }' | jq -cr .)"
+    
+
+In 1.5, this should now be nested under a `labels` object.
+
+    
+    
+    curl -X POST "$GATEWAY/kxi/getData" \
+        -H "Content-Type: application/json" \
+        -H "Accept: application/json" \
+        -H "Authorization: Bearer $INSIGHTS_TOKEN" \
+        -d "$(jq -n \
+            --arg startTS "$(date -u '+%Y.%m.%dD%H:00:00')" \
+            --arg endTS "$(date -u '+%Y.%m.%dD%H:%M%:%S')" \
+            '{
+                table   : "trace",
+                labels  : { region: "us-east-1" },
+                startTS : $startTS,
+                endTS   : $endTS
+            }' | jq -cr .)"
+    
+
+**SQL**
+
+For full API details, see the [`sql`](../../api/database/query/sql.html)
+reference page.
+
+qREST
+
+Gateway URL
+
+The `GATEWAY` variable below is defined as an IPC connection to the Service
+Gateway. For example ``:insights-qe-gateway:5050` would connect to the query
+environment gateway within an `insights` namespace.
+
+Prior to 1.5, the `exchange` label in a query would be referenced directly.
+
+    
+    
+    query: "select date,sym,avg(price) from trade ",
+      "where (date between '2021.01.01' and '2021.01.07') ",
+      "and (exchange='nyse') group by date,sym";
+    GATEWAY (`.kxi.sql; enlist[`query]!enlist query;`;()!())
+    
+
+In 1.5, this should now have a `label_` prefix.
+
+    
+    
+    query: "select date,sym,avg(price) from trade ",
+      "where (date between '2021.01.01' and '2021.01.07') ",
+      "and (label_exchange='nyse') group by date,sym";
+    GATEWAY (`.kxi.sql; enlist[`query]!enlist query;`;()!())
+    
+
+Gateway URL
+
+The `$GATEWAY` variable should point at your kdb Insights install. For a
+microservice install, this will be the hostname of the install using port
+8080. For an enterprise install, this is your `$INSIGHTS_HOSTNAME` with
+`/servicegateway/qe` as the URL prefix.
+
+Prior to 1.5, the `exchange` label in a query would be referenced directly.
+
+    
+    
+    select date,sym,avg(price) from trade
+        where (date between '2021.01.01' and '2021.01.07') and (exchange='nyse')
+        group by date,sym
+    
+
+In 1.5, this should now have a `label_` prefix.
+
+    
+    
+    select date,sym,avg(price) from trade
+        where (date between '2021.01.01' and '2021.01.07') and (label_exchange='nyse')
+        group by date,sym
+    
+
+This example uses the above query set as a variable called `$QUERY`.
+
+    
+    
+    curl -X POST "$GATEWAY/kxi/sql" \
+        -H "Content-Type: application/json" \
+        -H "Accept: application/json" \
+        -H "Authorization: Bearer $INSIGHTS_TOKEN" \
+        -d "$(jq -n --arg query "$QUERY" '{ query: $query }' | jq -cr .)"
+    
+
+### Batch ingest in 1.5
+
+To enable fault tolerant [batch ingests](storage/batch-ingest.html), a new
+`_batchIngest` signal has been added to the Storage Manager. To facilitate
+this change, any tickerplant based streams will require an additional table to
+be defined to support this table.
+
+    
+    
+    (`$"_batchIngest")set ([] time:"n"$(); sym: `$(); session:`$(); address:`$(); callback:());
+    
+
+Additionally, if your install is using the provided `rt_tick_client_lib.q`
+from a previous install, it must be upgraded to the newly supplied version to
+support dictionary signals.
+
+TP client code
+
+```{.q title="rt_tick_client_lib.q"} // === internal tables without time/sym
+columns ===
+
+.rt.NO_TIME_SYM:`$("_prtnEnd";"_reload";"_batchIngest";"_batchDelete";"_schemaChange")
+.rt.IS_DICT:`$("_batchIngest";"_batchDelete";"_schemaChange")
+
+// === rt publish and push functions === .rt.push:{'"cannot push unless you
+have called .rt.pub first"}; // will be overridden
+
+.rt.pub:{[topic] if[not 10h=type topic;'"topic must be a string"]; h:neg hopen
+hsym`$getenv`KXI_RT_NODES; .rt.push:{[nph;payload] x:$[98h=type x:last
+payload; value flip x;99h=type x;enlist each value x;x]; if[(t:first
+payload)in .rt.NO_TIME_SYM; x:(count[first x]#'(0Nn;`)),x];
+nph(`.u.upd;t;x);}[h;]; .rt.push }
+
+// === rt update and subscribe ===
+
+if[`upd in key`.; '"do not define upd: rt+tick will implement this"]; if[`end
+in key`.u; '"do not define .u.end: rt+tick will implement this"];
+
+if[not type key`.rt.upd; .rt.upd:{[payload;idx] '"need to implement
+.rt.upd"}];
+
+.rt.sub:{[topic;startIdx;uf] if[not 10h=type topic;'"topic must be a string"];
+
+//connect to the tickerplant h:hopen hsym`$getenv`KXI_RT_NODES;
+
+//initialize our message counter .rt.idx:0;
+
+// === tick.q will call back to these === upd::{[uf;t;x] if[not type x;
+x:flip(cols .rt.schema t)!x]; // for log replay if[t in .rt.NO_TIME_SYM;
+x:`time`sym _x]; if[t in .rt.IS_DICT; x:first x]; uf[(t;x);.rt.idx];
+.rt.idx+:1; }[uf]; .com_kx_secure.addAPI`upd;
+
+.u.end:{.rt.idx:.rt.date2startIdx x+1};
+
+//replay log file and continue the live subscription if[null
+startIdx;startIdx:0W]; // null means follow only, not start from beginning
+
+//subscribe res:h "(.u.sub[`;`]; .u `i`L; .u.d)"; .rt.schema:(!/)flip res 0;
+// used to convert arrays to tables during log replay
+
+//if start index is less than current index, then recover
+if[startIdx<.rt.idx:(.rt.date2startIdx res 2)+res[1;0];
+.rt.recoverMultiDay[res[1];startIdx]]; .kxbus.triggerReplayEnd[]; }
+
+//100 billion records per day .rt.MAX_LOG_SZ:"j"$1e11;
+
+.rt.date2startIdx:{("J"$(string x) except ".")*.rt.MAX_LOG_SZ};
+
+.rt.recoverMultiDay:{[iL;startIdx] //iL - index and Log (as can be fed into
+-11!) i:first iL; L:last iL; //get all files in the same folder as the tp log
+file files:key dir:first pf:`vs last L; //get the name of the logfile itself
+fileName:last pf; //get all the lognameXXXX.XX.XX files (logname is sym by
+default - so usually the files are of the form sym2021.01.01, sym2021.01.02,
+sym2021.01.03, etc) files:files where files like (-10_ string fileName),"*";
+//from those files, get those with dates in the range we are interested in
+files:` sv/: dir,/:asc files where ("J"$(-10#/:string files) except:
+".")>=startIdx div .rt.MAX_LOG_SZ; //set up upd to skip the first part of the
+file and revert to regular definition when you hit start index
+upd::{[startIdx;updo;t;x] \\([.rt.idx>=startIdx; [upd::updo; upd[t;x]];
+.rt.idx+:1]}[startIdx;upd]; //read all of all the log files except the last,
+where you read up to 'i' files:0W,/:files; files[(count files)-1;0]:i; //reset
+.rt.idx for each new day and replay the log file {.rt.idx:.rt.date2startIdx
+"D"\\)-10#string x 1; -11!x}each files; };
+
+//100 billion updates per day - 1e11 //30210610*1e11
+

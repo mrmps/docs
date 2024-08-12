@@ -1,0 +1,44 @@
+https://code.kx.com/insights/api/database/custom/register.html
+
+# Registration - kdb products
+
+Original URL: https://code.kx.com/insights/api/database/custom/register.html
+
+# API registration
+
+API and aggregation functions can be registered with metadata about the
+function that is subsequently surfaced by the `.kxi.getMeta` API (see "SG -
+API"). The metadata is a dictionary containing the following keys:
+
+  * description - **string** \- Plain text description of the function.
+  * `params` \- **dictionary[]** \- List of parameters to the function, each of which consists of any subset of the following keys:
+    * `name` \- **symbol** \- Name of the parameter.
+    * `type` \- **short|short[]** \- Possible type(s) for the parameter.
+    * `isReq` \- **boolean** \- Whether the parameter is required (this is only meaningful for APIs).
+    * `default` \- **any** \- Default value of the parameter if it is not required (this is only meaningful for APIs).
+    * `description` \- **string** \- Plain text description of the parameter.
+  * `return` \- **dictionary** \- Return value of the function, which consists of any subset of the following keys:
+    * `type` \- **short|short[]** \- Possible type(s) for the return.
+    * `description` \- **string** \- Plain text description of the return value.
+  * `misc` \- **dictionary** \- Miscellaneous metadata values. Currently only supports one value:
+    * `safe` \- **boolean** \- Only applicable to APIs. True if the API can be retried safely in the event of a failure, false otherwise.
+
+When making API calls via HTTP, parameters are cast to the first `type`, if it
+is defined. If no `type` is defined, the parameter is not cast
+
+The metadata of an API/aggregation function is a parameter in the registration
+function (`.da.registerAPI` for API functions, and `.sgagg.registerAggFn` for
+aggregation functions, see "DA" and "SG" configuration pages). In either case,
+the metadata can be passed to the appropriate registration function in any of
+the following formats:
+
+  * **string** \- A string which may be:
+    * Serialized JSON of the format described above, which would allow function metadata to be stored as JSON files to be read into the q code. Note that `default` values for `params` in this case are cast to the first `type`, if it is defined. If no `type` is defined, the `default` value is not cast.
+    * Non-serialized JSON string. In this case, the string is used as the function `description`, and the `params`, `return`, and `misc` keys are left empty.
+  * **dictionary** \- A dictionary, which may be:
+    * A dictionary of the format above.
+    * A dictionary of default values (only applicable to APIs). In this case, we populate the `params` value of the metadata with the default values given, and the `description`, `return`, and `misc` keys are left empty. Note also that this marks all parameters as optional.
+  * **list** \- A list which may be:
+    * List of `.sapi.meta` objects (see [Meta Builders](metadata.html)).
+    * Empty list to not include any metadata for the function.
+

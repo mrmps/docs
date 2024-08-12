@@ -1,0 +1,72 @@
+https://code.kx.com/platform/stream/hdb_template/
+
+# HDB - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/stream/hdb_template/
+
+# DS_HDB
+
+Process Template used to query at high speed the persisted historical database
+directory structure. The HDB loads the historical data base from the HDB
+directory. Data is typically written to the HDB directory during EOD events in
+the associated RDB. The data is usually saved as a table splayed by date and
+grouped by sym.
+
+## Parameters
+
+The below table details the _HDB_ template parameters.
+
+name | type | default value | description  
+---|---|---|---  
+directory | Symbol |  | Base directory HDB is located  
+gatewayQuery | Analytic | dxQuery_Basic | Specifies which analytic to use to handle gateway queries  
+initialStateFunct | Analytic | dxEmptyFunction | Specifies initial state tasks, executed after loading base directory  
+messagingServer | Configuration | DS_MESSAGING_SERVER | Messaging server  
+subscriptionChannel | Symbol |  | Channel to subscribe to  
+subscriptionTableList | Symbol[] |  | List of tables to subscribe to  
+publishChannel | Symbol |  | Channel to publish on  
+publishTableList | Symbol[] |  | List of tables to publish to  
+realTimeMsgFunct | Analytic | dxEmptyFunction | Real-time messaging function  
+reloadFunct | Analytic | dxEmptyFunctionNull | Function called when HDB is reloaded  
+  
+## Initialization
+
+  * The HDB directory is loaded by the `.ds.hdb.loadDbDir` function.
+  * The initialStateFunct assigned in the input parameters is executed. Common actions executed at this stage include the loading of pip maps or corporate action variables.
+
+## End-Of-Day
+
+  * During an EOD, the RDB saves down data to the relevant directory as dictated by the hdb configuration. The RDB has a parameter that allows the user to specify the corresponding HDB process instance that it should be paired with. The RDB will use the ‘Directory’ parameter of this process instance to determine where to write the data by default.
+  * In the default EOD function the `.ds.hdb.reloadDB` function is called in the HDB process which reloads the updated historical database without calling the initialStateFunct.
+
+## APIs
+
+### `.ds.hdb.reloadDB`
+
+Reloads historical database and calls reload analytic.
+
+**Example:**
+
+    
+    
+    .ds.hdb.reloadDB[];
+    
+    <->2020.07.06D14:58:27.655 ### normal ### (22864): Reloading database ### `/install/delta-data/DeltaStreamData/opshdblog
+    <->2020.07.06D14:58:27.660 ### normal ### (22864): Reloaded database ### `/install/delta-data/DeltaStreamData/opshdblog
+    <->2020.07.06D14:58:27.660 ### normal ### (22864): Running HDB reload analytic ### 
+    
+
+### `.ds.hdb.reloadDBOnly`
+
+Reloads historical database without calling reload analytic.
+
+**Example:**
+
+    
+    
+    .ds.hdb.reloadDBOnly[];
+    
+    <->2020.07.06D14:58:27.655 ### normal ### (22864): Reloading database ### `/install/delta-data/DeltaStreamData/opshdblog
+    <->2020.07.06D14:58:27.660 ### normal ### (22864): Reloaded database ### `/install/delta-data/DeltaStreamData/opshdblog
+    
+

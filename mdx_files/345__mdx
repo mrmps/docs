@@ -1,0 +1,104 @@
+https://code.kx.com/platform/process_templates/
+
+# Overview - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/process_templates/
+
+# Process templates
+
+Every system consists of a series of processes with customized behavior. _KX
+Control_ installs with a number of default process templates, each with a
+description and an example configuration.
+
+process | description  
+---|---  
+DS_LAUNCH | A launch process with the ability to launch non-kdb+ processes and allow them to report back to the system. More details can be found [here](../ds_launch/)  
+DC_ARCHIVE | A process to [archive files](../archive_files/) based on configuration. More details can be found [here](../dc_archive/)  
+DC_Housekeeping | Housekeeping tasks and checkpoints. Pre-configured. More details can be found [here](../dc_housekeeping/)  
+DS_QM | The Query Manager process. Part of the Query execution interface in the KX Delta Platform. More details can be found [here](../ds_qm/)  
+DS_QR | The Query Router process. Part of the Query execution interface in the KX Delta Platform. More details can be found [here](../ds_qr/)  
+DS_QP | The Query Processor process. Part of the Query execution interface in the KX Delta Platform. More details can be found [here](../ds_qp/)  
+DS_STARTER | Starter Processes. These are for creating empty tasks which are used to kick off multiple workflows at the same time.  
+  
+Templates can be created by defining the process metadata along with a valid q
+script within the _KX Control_ UI.
+
+![Screenshot](../img/control/processtemplatescript.png)
+
+There are seven tabs in the Process Template Editor.
+
+## Process template details
+
+Describes the process, the name and path of the underlying q script for the
+Process Template.
+
+[Code Editing](../analytics/#code-editing-features)
+
+## Reserved parameters
+
+![Screenshot](../img/control/processtemplateparams.png)
+
+Some parameters are reserved by default, as they are intrinsic to the
+functionality of a process. These reserved names cannot be used as user-
+defined parameter names in the template. The values can be set if required for
+more advanced control: e.g., Delta daemons, run on specific core, memory
+limits, etc. They can also be defined or overridden on a Process Instance
+basis.
+
+property | description | example  
+---|---|---  
+Host | Host machine to run the process on | `server1.domain.com`  
+Port | Port to run the process on | `9283`  
+Taskset | Specify which server core the process should be tied to. An environment variable may be used as the taskset value. To specify an environment variable in this field enter the value: `ENV=<env_var_taskset>` | `3`  
+Debug | Whether to start process in debug mode | `Yes`  
+32/64 bit | Specify whether process will run on 32-bit or 64-bit kdb+ cores | `64`  
+Permissioned | Enables permissions on the process. If enabled requires authenticated user logins | `Yes`  
+No Client System Calls | This must be set to `Yes` to prevent users of the instance from making call-outs to the system such as requests to get directory listings or to modify the system. | `Yes`  
+Garbage Collection | This sets whether the process should run garbage collection immediately or deferred to a later time. | `Yes`  
+Bind Address | Binds the process to a specific address for IP connections. | `127.0.0.0.1:5000`  
+Number of Secondaries | Number of secondaries available for parallel processing. A negative value indicates processes should be used, instead of threads | `2`  
+Timeout | Maximum number of seconds to run a query before timing out | `30`  
+Memory Limit | Maximum size of workspace in Mb | `2000`  
+Memory Backed FS | Path to memory backed filesystem | `/path/to/file`  
+Additional Files | Additional q files that should be loaded in addition to the process file | `Local/file1.q`  
+Analytic Groups | Analytic Groups to be loaded on process startup | `AG1,AG2`  
+Schema Tables | When a schema table is included in an instance through reserved parameters it gets created when the instance is starting. | If the dfxQuote table is selected at instance start, then can `select from dfxQuote`  
+Schema Table Groups | A group of schema tables. When a group is included in an instance through reserved parameters, each table is included as if you checked them individually. Each table is also available for adding as permissioned variables and filters. | `daxADMIN, daxMarketData`  
+Socket Sharding | This socket option allows multiple sockets (kdb+ processes) to listen on the same IP address and port combination |   
+TLS | Any processes with this setting enabled will require connecting clients to also use TLS |   
+  
+## Process parameters
+
+Parameters are added and removed using the controls on the right. Save when
+complete.
+
+property | description  
+---|---  
+Name | The parameter name must be unique within the process.  
+Is Required | Set this value to true if the parameter is required within the process otherwise it is an optional parameter.  
+Type | The datatype of the parameter. All q datatypes (except table) are supported; also a number of _KX Control_ entities are supported as parameters: _Analytic_ , _Process Instance_ , _Config Parameter_ , _Analytic Group_. Narrow down the available selection within the _Value_ drop-down.  
+Value | Depending on the Type selected this field will offer a differing type of input. _Text_ for simple parameters; _Pop-up Dialog_ for entering data for list parameter types.  
+Drop-down | For entering selectable items (Analytics, Process Instances…)  
+Description | Click to edit and type a description for the parameter.  
+  
+## Analytics
+
+Add or remove [Analytic Groups](../analytic_groups/) from the process template
+
+![Screenshot](../img/control/processtemplateanalytics.png)
+
+## Schemas
+
+Add or remove [Schemas](../schemas/) or Schema groups from the process
+template
+
+![Screenshot](../img/control/processtemplateanalytics.png)
+
+## Entitlements
+
+Update the [Entitlements](../entitlements/) for the Process Template
+
+## Revisions
+
+History of changes to the Process Template
+

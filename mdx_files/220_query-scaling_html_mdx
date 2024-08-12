@@ -1,0 +1,81 @@
+https://code.kx.com/insights/enterprise/database/configuration/advanced/query-scaling.html
+
+# Query scaling - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/database/configuration/advanced/query-scaling.html
+
+# Query scaling
+
+For large volumes of queries or for complex, long-running queries, it may be
+necessary to increase the amount of resources servicing queries to maintain
+desired performance. There are different options available to tune, depending
+on the profile and scale of the queries. Adding more threads can be used to
+speed up individual queries. Adding more replicas can increase parallelism
+when there is a high number of concurrent requests. If the number of replicas
+becomes very high, scaling your routing layer should be considered. Adding
+replicas is also a good practice for increasing query resiliency by adding
+redundant processes.
+
+## Threads
+
+Adding additional threads to a DAP allows for query filtering and aggregation
+to be performed in parallel within a single process. DAP process make use of
+additional threads when they are available.
+
+DAPs are kdb+ processes which are configured to have [secondary
+threads](https://code.kx.com/q/basics/cmdline/#-s-secondary-threads) using the
+`-s` flag provided to the process.
+
+In a kdb Insights Enterprise deployment, `-s` is added automatically based on
+your `k8sPolicy`. The number of threads will be automatically configured to
+match the requested number of CPU cores.
+
+This value should be tuned to match the desired execution parallelism
+requirements of the query profile. See the [performance best
+practices](../../best-practices/performance.html#threads) on threads for
+details.
+
+## Replicas
+
+Data Access Processes are individual kdb+ processes, which, while fast in
+executing queries, only have a single main thread. To increase query
+throughput and the number of concurrent queries the system can manage, adding
+additional DAP replicas will give the gateway a greater number of targets with
+which to serve the queries in parallel. The gateway makes use of all replicas
+available when load-balancing query work by default.
+
+This value should be tuned to match the desired parallelism requirements of
+the query profile. See the [performance best practices](../../best-
+practices/performance.html#replicas) on replicas for details.
+
+## Routing
+
+As the number of DAP replicas increases, it will become necessary to increase
+the number of Resource Coordinators and Service Gateways that are servicing
+queries.
+
+In a kdb Insights Enterprise deployment, the Service Gateway (SG) and Resource
+Coordinator (RC) intelligently route query requests across all replicas,
+providing automatic load balancing. SGs and RCs will also automatically
+discover newly-added replicas and balance the number of requests across the
+updated set.
+
+Base install
+
+The number of replicas for the RC and SG need to be configured as part of your
+kdb Insights Enterprise install.
+
+To configure this value, set the [`resource-
+coordinator.replicaCount`](../routing.html#resource-coordinator) and [`sg-
+gateway.replicaCount`](../routing.html#service-gateway) in your install's
+[values file](../../../installation/insights.html#installation).
+
+    
+    
+    service-gateway:
+      resource-coordinator:
+        replicaCount: 3
+      sg-gateway:
+        replicaCount: 3
+    
+

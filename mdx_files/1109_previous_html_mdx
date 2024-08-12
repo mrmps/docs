@@ -1,0 +1,1332 @@
+https://code.kx.com/insights/core/release-notes/previous.html
+
+# Previous - kdb products
+
+Original URL: https://code.kx.com/insights/core/release-notes/previous.html
+
+# kdb Insights Core - Previous Release Notes
+
+This page outlines release notes from past releases. For the most recent
+release, refer to the [latest release](latest.html) page.
+
+## 4.0.9
+
+### Release Date
+
+2024.04.19
+
+###  Fixes
+
+Expand to see the full detail of resolved issues here
+
+**kdb+**
+
+  * Insights Core 4.0.9 has been upgraded to run kdb+ 4.0 2024.03.04. For details of this kdb+ release, see the kdb+ README file in the package.
+
+## 4.0.8
+
+### Release Date
+
+2024.02.27
+
+###  Fixes
+
+Expand to see the full detail of resolved issues here
+
+**kdb+**
+
+  * Insights Core 4.0.8 has been upgraded to run kdb+ 4.0 2024.02.22. For details of this kdb+ release, see the kdb+ README file in the package.
+
+## 4.0.7
+
+### Release Date
+
+2024.02.02
+
+###  Fixes
+
+Expand to see the full detail of resolved issues here
+
+**kdb+**
+
+  * In rare circumstances, applying a p# or g# attribute to a mapped Enum could cause a `SIGSEGV: Fault address` error. This issue has been resolved.
+
+## 4.0.6
+
+### Release Date
+
+2023.12.08
+
+### Improvements
+
+**SQL (s.k)**
+
+  * Query compilation/execution no longer requires full metadata of the tables involved. Now, only the columns mentioned will be opened.
+
+  * `timespan` can be now be cast to numeric types.
+
+###  Fixes
+
+Expand to see the full detail of resolved issues here
+
+**Object Storage**
+
+  * To avoid misinterpreting an out-of-range object storage read request as an error, kdb+ now clamps the request to a valid range. Without this, it was possible to receive an error when reading non-compressed, zero length files, such as those written by earlier versions of kdb+, for example `:file set enlist"" .
+
+## 4.0.5
+
+### Release Date
+
+2023.11.29
+
+###  Fixes
+
+Expand to see the full detail of resolved issues here
+
+**Kurl**
+
+  * Improvements have been made to the refresh token logic for AWS deployments. Previously, token refresh logic was erroneous if the session was not requesting bucket data, rotating every 30 minutes instead of at the intended deadline. 
+
+  * Added a fix for the GCP system command expiry timer being discarded/ignored. This was causing tokens to not be refreshed at all using `gcloud auth`. 
+
+## 4.0.4
+
+### Release Date
+
+2023.08.24
+
+### Improvements
+
+kdb Insights Core 4.0.4 now runs kdb+ 4.0CE 2023.08.11, which contains a
+single security fix. For details, please review the README in the 4.0.4
+package.
+
+## 4.0.3
+
+### Release Date
+
+2023.08.07
+
+### Improvements
+
+kdb Insights Core 4.0.3 now runs kdb+ 4.0CE 2023.07.20. For a full list of
+changes regarding kdb+ since 4.0.2, please review the README in the 4.0.3
+package.
+
+###  Fixes
+
+Expand to see the full detail of resolved issues here
+
+**Storage**
+
+  * Resolved an issue when attempting to migrate HDB data to Azure Blob Storage. Previously, this would fail with a signature error. 
+
+**REST Server**
+
+  * Heartbeat logs were previously logged as INFO logs. They are now set to TRACE to reduce log output. 
+
+**SQL**
+
+  * `Limit` and `order by` operations no longer error when executed against empty partitions. 
+
+## 4.0.2
+
+### Release Date
+
+2023.03.16
+
+### Improvements
+
+[NEW] Implementation of retries for generating new access tokens and increased
+default duration of token validity for object storage. There are now perpetual
+internal retries with exponential backoff for token refresh to prevent access
+loss, and configuration has been updated to increase
+KX_KURL_AWS_TOKEN_DURATION from a default of 900 seconds to 3600 seconds to
+reduce the frequency of requests.
+
+_For GCP/Azure and OAuth2 support, the session duration is not configurable on
+the client side, and must be configured in Google Cloud or Azure._
+
+## 4.0.1
+
+### Release Date
+
+2023.01.23
+
+### New features
+
+[NEW] function `.Q.ld` exposes logic used by `\l` to group script lines for
+evaluation.
+
+    
+    
+    q).Q.ld read0`:funcs.q
+    1                   2                5                    6
+    "/ multi line func" "f:{\n  x+y\n }" "/ single line func" "g:{x*y}"
+    
+
+[NEW] `-p` cmd line option (or `\p` system command) can now listen on a port
+within a specified range e.g.
+
+The range of ports is inclusive and tried in a random order. A service name
+can be used instead of a port number. The existing option of using `0W` to
+choose a free ephemeral port can be more efficient (where suitable). Range can
+be used in place of port number, when using existing rules e.g. for hostname.
+
+    
+    
+    q)\p myhost:2000/2010
+    // or for multithreaded port
+    q)\p -2000/2010
+    
+
+[NEW] `x)` will try to load `x.k_` if loading `x.k` fails
+
+[FIX] The debugger could return incorrect line numbers for multi-line
+functions containing multi-line comments.
+
+[FIX] Reading with `1:` no longer strips quotes, e.g. `("abcd";"\"ef\"")~first
+each("**";4 4)1:"abcd\"ef\""`
+
+[FIX] Windows will now pick up versions of openssl prior to v3.
+
+## 4.0.0
+
+### Release Date
+
+2022.12.21
+
+### Rebranding and Contents
+
+[NEW] `KX Cloud Edition` has been rebranded `kdb Insights Core`.
+
+[NEW] The package name has been changed to
+`kdbInsightsCore-x.y.z.tgz`(formerly `KxCloudEdition-x.y.z.tgz`)
+
+[NEW] The packaging application `QPacker` has been removed from `kdb Insights
+Core` package. It is still available as a separate download from Nexus
+depending on your kdb Insights subscription tier.
+
+[NEW] The qce installers have been removed from `kdb Insights Core` package.
+They are still available as a separate download from Nexus depending on your
+kdb Insights subscription tier.
+
+## 3.2.6
+
+### Release Date
+
+2022-11-28
+
+### Object Store
+
+[NEW] Symlink like functionality allowed in inventory files. The meta
+information was previously stored as a pair of key,size vectors. A 3rd vector
+has been added that contains the 'realpath'. It is populated from an optional
+field 'Path' in an inventory file entry.
+
+[FIX] Improved performance of key lookup in inventory files such that the
+overhead should be negligible.
+
+### SQL
+
+[FIX] Extract (epoch from time|timespan) now uses 2010.01.01 as date to work
+around grafana display bug.
+
+[FIX] Grafana query builder is able to list tables.
+
+[NEW] Support for implicit join notation (was previously executed as cross
+join).
+
+    
+    
+     s)select * from t0,t1,t2 where t0.a=t1.b and t1.c=t2.d
+    
+
+## 3.2.5
+
+### Release Date
+
+2022-11-04
+
+### REST Client
+
+[FIX] Add retry attempts for non-http error and improvements to logging api.
+
+## 3.2.4
+
+### Release Date
+
+2022-10-13
+
+### SQL
+
+[FIX] Improved compatibility with psqlodbc for pgwire. NB psqlodbc option
+UseServerSidePrepare=0 is necessary for queries with parameters.
+
+## 3.2.3
+
+### Release Date
+
+2022-10-03
+
+### kdb Insights
+
+[NEW] NUC - various changes to `.Q.id`
+
+    
+    
+    // NUC
+    // .Q.id for atom now produces `a when contains single character that is not in .Q.an (instead of empty sym) e.g.
+    q).Q.id`$"+"
+    `a  // (previous version returned `)
+    
+    // .Q.id for atom changes are reflected in .Q.id for tables (as before, it was applied to each column name).
+    // .Q.id for tables also has additional logic to cater for duplicate col names (names now appended with 1,2,etc when matched against previous cols) after applying previously defined rules e.g.
+    q)cols .Q.id(`$("count+";"count*";"count1"))xcol([]1 2;3 4;5 6)
+    `count1`count11`count12  // (previous version returned `count1`count1`count1)
+    q)cols .Q.id(`$("aa";"=";"+"))xcol([]1 2;3 4;5 6)
+    `aa`a`a1  // (previous version returned `aa`1`1)
+    
+    // .Q.id now follows the same rule when provided name begins with an underscore as it does when it begins with a numerical character. Previously could produce an invalid column name.
+    q).Q.id`$"_"
+    `a_
+    q)cols .Q.id(`$("3aa";"_aa";"_aa"))xcol([]1 2;3 4;5 6)
+    `a3aa`a_aa`a_aa1
+    
+
+### Object Store
+
+[FIX] `qce` now works with Data Enablement license instead of throwing the
+below error:
+
+    
+    
+    'Object Storage not licensed
+    
+
+### SQL
+
+[FIX] `select` w/o aggregates performance improvement.
+
+[FIX] Errors when browsing tables in Spotfire information designer have been
+fixed.
+
+[NEW] pgwire text format now has 1us precision timestamp.
+
+[FIX] `q` type minute now mapped to pgwire time.
+
+## 3.2.2
+
+### Release Date
+
+2022-09-20
+
+### kdb Insights
+
+[NEW] Added support for Zstandard(zstd) algo for file compression, as
+compression algo 5.
+
+    
+    
+    // Compression levels -7 (fastest) .. 22 (slowest, but best compression ratio). e.g.
+    q).z.zd:17 5 1;x~get `:ziptest set x:asc 10000000?1000
+    
+
+[FIX] Support for openssl v3 on linux, q will now try to load versioned shared
+libraries for openssl if libssl-dev[el] is not installed.
+
+[FIX] Extended no_proxy support for ondemand reporting to custom endpoints.
+
+## 3.2.1
+
+### Release Date
+
+2022-09-09
+
+### REST Client
+
+[FIX] AWS regional endpoints used on startup when `AWS_REGION` parameter is
+set.
+
+## 3.2.0
+
+### Release Date
+
+2022-08-17
+
+### SQL
+
+[NEW] Compatibility with Tibco Spotfire 12.0
+
+[NEW] `xbar` function exposed in SQL e.g.
+
+    
+    
+    s)select xbar(10,x) from qt('([]1 12 23)')
+    s)select xbar('0D00:10',x) from qt('([]0D+10:21 11:32 13:43)')
+    
+
+## 3.1.1
+
+### Release Date
+
+2022-07-27
+
+### SQL
+
+[FIX] Change to pgwire to disconnect the client connection when the server
+connection is dropped or closed.
+
+[NEW] Support for Datetime filtering and comparison when using Grafana
+
+[NEW] Added NOHUP stubs for pg_settings and set_config
+
+[NEW] Added support for meta data for tables in other namespaces
+
+## 3.1.0
+
+### Release Date
+
+2022-07-12
+
+### kdb Insights Installer
+
+[FIX] Ubuntu 22.04 support added to installer
+
+[FIX] [NUC] Instead of passing the license key to the the installer as a
+base64 encoded variable as below
+
+    
+    
+    sh KxCloudEdition/code/kdb/qce-install.sh --license="$KDB_LICENSE_B64"
+    
+
+It is now passed in using the path to the license file
+
+    
+    
+    sh KxCloudEdition/code/kdb/qce-install.sh --license-file="/path/to/license/file"
+    
+
+This fix also improves the installer error handling.
+
+## 3.0.1
+
+### Release Date
+
+2022-05-27
+
+### kdb Insights
+
+[FIX] Previously `.z.f` and `.z.x` were inconsistent between `q` and `qce`.
+`qce` has been updated to reflect historic `q` behavior.
+
+Pre 3.0.1 behavior
+
+    
+    
+    $ qce hello.q 0 1 2
+    q).z.f
+    `startq.q
+    q).z.x
+    "hello.q"
+    ,"0"
+    ,"1"
+    ,"2"
+    
+
+Updated behavior
+
+    
+    
+    $ q hello.q 0 1 2
+    q).z.f
+    `hello.q
+    q).z.x
+    ,"0"
+    ,"1"
+    ,"2"
+    
+
+### REST Client
+
+[FIX] Free memory used for async responses and sd1() handles
+
+[FIX] Add timeouts to registration calls - KX_KURL_AWS_REGISTER_TIMEOUT,
+KX_KURL_AZURE_REGISTER_TIMEOUT and KX_KURL_GCP_REGISTER_TIMEOUT
+
+[FIX] Catch errors getting service accounts on GCP
+
+[NEW] Support for IMDSv2 on AWS
+
+[FIX] Refresh Azure tokens every half day
+
+### qpacker
+
+[FIX] sobuilder should generate a compile_comands.json which can be copied out
+by q-packer and used by sonarqube. qpacker should exclude
+compile_commands.json from qpk
+
+[FIX] qpacker now checks if license file is readable
+
+### SQL
+
+[FIX] Various fixes to the sql library
+
+## 3.0.0
+
+### Release Date
+
+2022-03-14
+
+### Licensing
+
+A new subscription based Licensing model has been introduced. Due to these
+changes, existing licenses will need to be re-issued. Please
+[contact](mailto:sales@kx.com) your KX representative for more information.
+
+### Versioning
+
+Information about the version of kdb Insights is now available from within the
+core process similar to .z.K/.z.k.
+
+    
+    
+    q).comkxic
+         | ::
+    Kf   | code
+    K    | "3.0.0"
+    k    | 2022.03.09
+    Kl   | 3145728
+    major| 3i
+    minor| 0i
+    patch| 0i
+    
+
+The following information is available:
+
+  * `K` semantic version of kdb Insights
+
+  * `k` build date
+
+  * `Kl` semantic version as a long
+
+  * `major` semantic major version
+
+  * `minor` semantic minor version
+
+  * `patch` semantic patch number
+
+  * `Kf` function to convert `.comkxic.K` to `.comkxic.Kl`
+
+### BigQuery
+
+[FIX] If the payload response from BigQuery included a JSON null a type error
+occurred.
+
+[FIX] Improved casting performance, especially for large payloads.
+
+### Object Store
+
+[FIX] Under certain conditions a garbage prefix was being added to buckets for
+virtual host path spec, e.g. A.
+
+    
+    
+    Requesting https://kxinsights-marketplace-data.storage.googleapis.com/?prefix=_inventory/gcp.json.gz
+    Requesting bytes=0-21953 from https://A.kxinsights-marketplace-data.storage.googleapis.com/_inventory/gcp.json.gz
+    Raw xml error msg: SSL peer certificate or SSH remote key was not OK
+    
+
+### SQL
+
+[FIX] Various fixes to the sql library
+
+## 2.1.0
+
+### Release Date
+
+2022-02-02
+
+### SQL
+
+[NEW] Added ANSI SQL Support
+
+### qpacker
+
+[FIX] qpacker include qp version in container names. The builder containers
+should include the qp version in the name to allow for multiple versions of
+qpacker to run on our build systems.
+
+[FIX] Allow qpacker to run on machine with >16 cores using QPTASKSET
+
+[FIX] Improved startup performance
+
+[FIX] Fix to prevent deletion of shared object files
+
+[FIX] Allow path relative to project in QPPATH
+
+[FIX] Use an underscore as a separator in container names
+
+### REST Client
+
+[FIX] Added https:// prefix when attempting to re-use INSIGHTS_HOSTNAME
+
+### REST Server
+
+[FIX] Now uses `qlog` for logging
+
+## 2.0.9
+
+### Release Date
+
+2021-12-14
+
+### Logging
+
+[NEW] Allow a default log level to to be set in configuration
+
+    
+    
+    logging:
+      endpoints:         # list of endpoints (can provide multiple)
+        - fd://stdout
+      formatMode: json
+      routings:          # mapping of log component to level
+        ALL: INFO        # `ALL` is the default routing
+        qlog: TRACE      # can also use `ALL` as a wildcard for all levels
+        # ..             # can add as many as required
+      routings:             # mapping of log component to level
+        DEFAULT: INFO       # `DEFAULT` is the default routing
+        InfoService: TRACE  # set the InfoService component to TRACE
+        Discovery: ALL      # can also use `ALL` as a wildcard for all levels
+        # ..                # can add as many as required
+    
+
+### qpacker
+
+[FIX] Added check to make sure jq is installed on docker images.
+
+[NEW] Update to python38.
+
+[FIX] Allow images to be built upon rockylinux.
+
+[FIX] Allow QPDOCKER_BUILD_BASE to have '/' in name e.g.
+`rockylinux/rockylinux:8`
+
+[FIX] Add addition support for symlinks
+
+[NEW] Improved license handling
+
+[NEW] Improved housekeeping of test images and packages
+
+[NEW] Improved command line argument and qp.json parsing
+
+[FIX] Allow concurrent qpacker builds to run
+
+[NEW] Upgrade from version log4j2 from 2.13 to 2.15 to fix CVE
+
+### REST Client
+
+[FIX] Corrects VM Tokens for Azure Storage not getting refreshed due to lack
+of expected refresh_token
+
+[FIX] Fix added to prevent crash on deregistration
+
+[FIX] .kurl.verifyToken callback now signals failures back to the main process
+
+[FIX] Added handling for non json messages from Azure
+
+## 2.0.8
+
+### Release Date
+
+2021-12-01
+
+### Object Store
+
+[FIX] Creation of an inventory file will help speed up hdb load times.
+
+Upload to the bucket itself via
+
+=== GCP
+
+    
+    
+    gsutil cp all.json.gz gs://kxinsights-marketplace-data/_inventory/all.json.gz
+    
+
+User can control which file is used as inventory via env var
+
+    
+    
+    export KX_OBJSTR_INVENTORY_FILE=_inventory/all.json.gz
+    
+
+The reading of the inventory file bypasses the cache, and to avoid cache
+invalidation issues, is not readable explicitly.
+
+The file must be gzipped json, as an array of {Key:string,Size:int} objects.
+
+[FIX] Renamed environment variables to be vendor neutral(S3->OBJSTR).
+
+    
+    
+    KX_S3_CACHE_PATH->KX_OBJSTR_CACHE_PATH
+    KX_TRACE_S3->KX_TRACE_OBJSTR
+    
+
+[FIX] A memory corruption issue has been fixed in the kxreaper caching
+process. When the same cached file is accessed twice or more in a row, and
+then eventually when that file is squeezed out of the cache due to size
+constraints on the dir, it will double free/crash/abort. This scenario is more
+likely to be hit when the cache size is small(e.g. 10MB) and can only hold a
+few files.
+
+### REST Client
+
+[FIX] Azure metadata registration can return non json messages if there are no
+service accounts. This would cause an error as shown below
+
+    
+    
+    q).j.k "getting assigned identities for pod default/insights-discovery-proxy-79f67f865-c9zn5"
+    'illegal char g at 0
+      [0]  .j.k "getting assigned identities for pod default/insights-discovery-proxy-79f67f865-c9zn5"
+    
+
+The library has been updated to handle error conditions like this and log the
+errors as debug messages.
+
+### Known Issues
+
+  * KX_S3_CACHE_SIZE is still active. This will also be renamed in an upcoming release.
+
+## 2.0.7
+
+### Release Date
+
+2021-11-08
+
+### Object Store
+
+[FIX] .Q.gz was not processing compressed data larger than 4GB. e.g.
+
+    
+    
+    q)r~.Q.gz .Q.gz(6;r:4294967295?0x00)
+    misleading 'OS reports: File exists'
+    
+
+when malformed .z.zd is used to write compressed files, now reports 'file
+compression..., e.g. reads were excessively large for compressed|encrypted
+files from block storage since initial 4.0 kdb Insights.
+
+    
+    
+    q).z.zd:();`:/tmp/aaa set til 10
+     'file compression - expecting (blockSize;algo;zipLevel) or filenames!((blockSize;algo;zipLevel);...)
+    
+
+### Miscellaneous
+
+[FIX] q could crash on startup whilst reading a malformed k4.lic (e.g. kc.lic
+renamed to k4.lic)
+
+[FIX] On linux, processes started by \q would not be cleaned up on exit, shown
+as state Z or  in ps output, again since 4.1t 2021.03.30 / 4.0 2021.04.06
+
+## 2.0.6
+
+### Release Date
+
+2021-10-27
+
+### Big Query API
+
+[NEW] Stored procedure calls to BigQuery are now parameterized.
+
+For example
+
+    
+    
+    CREATE OR REPLACE PROCEDURE mydataset.create_customer(name STRING)
+    BEGIN
+    DECLARE id STRING;
+    SET id = GENERATE_UUID();
+    INSERT INTO mydataset.customers (customer_id, name)
+      VALUES(id, name);
+    SELECT FORMAT("Created customer %s (%s)", id, name);
+    END
+    
+
+In SQL can be written as
+
+    
+    
+    EXEC mydataset.create_customer @name = 'john'
+    
+
+In kdb Insights, this can now be written as
+
+    
+    
+    .bq.sp[`mydataset.create_customer; enlist[`name]!enlist `john]
+    
+
+### qpacker
+
+[NEW] Built upon KDB+ 4.0 kdb Insights 2021.10.15
+
+[NEW] qpacker can now delete docker images associated with the project when
+running using `qp clean -docker`
+
+[FIX] qpacker will now honour the `targets` when building with extra options
+(see [usage](../qpacker/qpacker.html#usage))
+
+[FIX] qpacker now detects changes in underlying dependencies during a build
+
+[FIX] Previous versions of qp allowed for the entrypoint in a qp.json file to
+have multiple values. It appears since 1.1.11+ this is no longer an option. An
+error is now reported for multiple entry points
+
+    
+    
+    qp.json format error
+    Only single entrypoints are supported
+    ['qpmake.sh', 'libkfk.so'] is too long in default
+    
+
+[FIX] Improvements to qce installer
+
+[FIX] Improvements to qpacker error handling
+
+### REST Client
+
+[FIX] Allow minio password to be any length. Previously it required the
+password to be 40 characters similar to the AWS constraint.
+
+### REST Server
+
+[FIX] Projections are now supported as endpoint handlers
+
+## 2.0.5
+
+### Release Date
+
+2021-09-10
+
+### Object Store
+
+[NEW] Users can specify an explicit `hostname[:port]` in the S3 uri, as
+`:s3://http[s]://hostname[:port]://bucket/path` in addition to the implicit
+`:s3://bucket/path` in which case it will use the default amazon hostname,
+UNLESS the env var `KX_S3_ENDPOINT` is set e.g.
+
+    
+    
+    export KX_S3_ENDPOINT=https://play.min.io:9000
+    
+
+The default path style of virtual-hosted style requests can be switched to
+path-style requests via the env var
+
+    
+    
+    export KX_S3_USE_PATH_REQUEST_STYLE=1
+    
+
+For example, the simplest min.io setup uses http and path style requests.
+minio, and likely other stores, require the service and region to be set for
+the header signature. Presently these default to s3 and us-east-1, and the
+region is picked up from the env var AWS_REGION.
+
+### REST Client
+
+[NEW] Flag to force the response to be type 4h, regardless of Mime type e.g.
+`.kurl.sync (url; method; ``binary!(::;1b))`
+
+[NEW] Use `KX_S3_ENDPOINT` to set S3 URI, such as `http://127.0.0.1:9000`.
+Enables the REST Client to register Amazon S3 cloud storage credentials, with
+a service like [MinIO](https://docs.min.io/docs/minio-quickstart-guide.html).
+
+### qpacker
+
+[NEW] Built upon KDB+ 4.0 kdb Insights 2021.06.09
+
+[FIX] Load `.py` entry point without `.p` parsing issues
+
+[FIX] Signal handling improvements
+
+[FIX] Updates to M1 Mac build process
+
+[FIX] Build more then one project at the same time e.g. `qp build proj1 proj2
+/ where they're both qpk files`
+
+[FIX] Improvements to QPPATH parsing
+
+## 2.0.4
+
+### Release Date
+
+2021-08-18
+
+### REST Client
+
+[FIX] Library now exits when an incorrect license type is detected.
+
+[FIX] A bug existed in .kurl.gcp.getServiceAccounts where it always trimmed
+the last character off the name of the service account. This is fine most of
+the time because there is usually a slash at the end of the service account
+name. However, when running in google cloud shell the slash is not present, so
+the name gets truncated by one character. This fix changes the behavior so
+that only trailing slashes and newlines are removed, not any trailing
+character.
+
+[FIX] Take SHA-256 of file length, for Azure, and SHA-256 of entire file for
+AWS.
+
+### REST Server
+
+[FIX] `brkOnErr` is now being honored.
+
+### Object Store
+
+[FIX] Enumeration key fix
+
+    
+    
+    q)key $":s3://kxi-sm-test/db/2021.05.14/trace/.d"
+    1
+    
+
+compared to kdb 4.0 with objstor 1.0.9 and kurl 1.0.6, key applied to a file
+object returned the full URI
+
+    
+    
+    q)key $":s3://kxi-sm-test/db/2021.05.14/trace/.d"
+    `:s3://kxi-sm-test/db/2021.05.14/trace/.d
+    
+
+As the enumeration logic changed in v4.1t recently. This fix for 4.1t is
+backwards compatible with 4.0.
+
+Additionally, the refreshing of meta data via key`:/bucket/_ had broken due to
+kdb+ no longer checking whether path is a file or folder prior to requesting
+the folder contents. This fix for 4.1t is also compatible with v4.0 kdb
+Insights.
+
+### qpacker
+
+[NEW] qpacker now available on Apple M1
+
+[FIX] Always run validate_json inside qlocker container
+
+[FIX] Performance Improvements
+
+[FIX] qshell no longer prevents q from exiting when kxreaper running
+
+[FIX] qce installer now correctly working on GCP cloud shell
+
+[FIX] qpacker excludes libssl/libcrypto
+
+## 2.0.3
+
+### Release Date
+
+2021-07-16
+
+### qpacker
+
+[FIX] Various updates to improve Python integration.
+
+## 2.0.2
+
+### Release Date
+
+2021-07-15
+
+### qpacker
+
+[NEW] Built upon KDB+ 4.0 kdb Insights 2021-07-12
+
+[FIX] qp push now shows an error when permissions are incorrect.
+
+## 2.0.10
+
+### Release Date
+
+2022-01-11
+
+### qpacker
+
+[FIX] qp pull deps now uses json version information to create docker label
+file
+
+## 2.0.1
+
+### Release Date
+
+2021-07-06
+
+### REST Client
+
+[FIX] Slow startup of `qce` was being caused by kurl Azure auto-logins. The
+fix will not register these by default, and is smart enough to register
+storage if AZURE_STORAGE_ACCOUNT is defined, because it knows objstor looks
+for that variable.
+
+### qpacker
+
+[FIX] `qce` installer now works with base64 license input
+
+[FIX] Trailing `/` no longer affects QPPATH search
+
+## 2.0.0
+
+### Release Date
+
+2021-06-30
+
+### kdb Insights - New Features
+
+[NEW] Release of the new kxce installer and rpm
+
+### REST Client
+
+[FIX] Fix bug where kurl didn't validate AWS_SECRET_ACCESS_KEY was exactly 40.
+Previously, if you wanted to use an Azure shared key, we supported this, but
+you were required to manually call .kurl.register. This now adds shared keys
+to automatic registration, and uses the same ENV var that Objstor uses for
+storage account name.
+
+[FIX] Support PATCH body
+
+[FIX] kurl support added for centos7
+
+[FIX] kurl supports dynamic binding of libcurl.so and libxml2.so
+
+[FIX] Allow HTTP PUT, without also setting CURLOPT_UPLOAD
+
+### REST Server
+
+[FIX] Rest server no longer overrides `.z.ph` and `.z.pp` resulting in
+breaking pre-existing handler chain. The rest server now adds its callbacks to
+a chain
+
+### qpacker
+
+[FIX] qp built apps now has better error messaging when running on Darwin
+
+[FIX] Extension added to allow use of Nexus
+
+[FIX] `-nokurl` option integrated into qpacker
+
+[FIX] package --receipt output
+
+[FIX] when the user installs the package, they must choose the installation
+directory (through means already satisfactory), but they must also supply a
+license. The license could be specific to that product, so a non KXCE-license
+cannot be used
+
+  1. if a KXCE is in $QLIC or $QHOME or $HOME/q or (for convenience sake) ~/.qp.licenses/ it is copied into the package-specific license directory.
+  2. the license can be given as a --license command line argument, whose argument is a base64url or base64 encoded string. in this way, license updates can be added
+
+[NEW] qp man pages added
+
+[NEW] qlocker base image is now configurable
+
+[NEW] console added for Linux
+
+[FIX] QPPATH fix to allow qpk pick up
+
+## 1.0.6
+
+### Release Date
+
+2021-05-27
+
+### REST Client
+
+[FIX] Allow HSYM file names when using http PUT
+
+[FIX] Documentation example added to show recursive folder upload to S3
+
+### REST Server
+
+[FIX] Allow variadic function application using named parameters
+
+### qpacker
+
+[NEW] qp pull extension added
+
+[FIX] qp docker `cp` commands now work in Podman
+
+[FIX] Improved qp generated Dockerfiles by making better use of the Docker
+cache when building multiple apps from a single `qp.json` in a project.
+
+[FIX] qp installer now prompts for directory creation if it doesn't exist
+
+[FIX] qp now stops killing qp-owned images (trust timeout)
+
+## 1.0.5
+
+### Release Date
+
+2021-05-17
+
+### qpacker
+
+[FIX] qshell no longer prevents q exiting when kxreaper running
+
+[FIX] qpacker image sha check fixed on podman. Running podman docker build -q
+-f Dockerfile on podman returned the sha256 value without the sha256 prefix.
+This broke qpacker ability to identify the image in the .env file. The check
+for this was changed due to an issue on mac with latest docker version which
+prints out the prefix. The fix now looks for the 64 char string using grep -o
+"[0-9a-f]{64}"
+
+## 1.0.4
+
+### Release Date
+
+2021-05-11
+
+### REST Client
+
+[FIX] CURL_CA_BUNDLE flag introduced to allow specification of location of CA
+cert file
+
+[FIX] OAuth2 Remote Disclaimers added
+
+### Object Store
+
+[FIX] Nested file support added. This was previously missing as it did not
+escape # or ## which is part of the nested tri-file. This escapes the usual
+special chars other than !'()*@ which should not be in a filename anyway.
+Tested by reading the nested tri-files at `get`:s3://kxtaq/data/nested` the
+tri-files are nested, nested# and nested##, all of which are read when one
+loads nested.
+
+[FIX] ignore keys ending in /. When a folder is created via the aws console,
+it creates a null object in the folder. This was causing an error in par.txt
+usage. So for example:
+
+    
+    
+    q)key$":s3://app-id-89167-dep-id-64668-uu-id-zgviythhnjyt/"
+    s#cleanBK_2021.04.15fx-priceecnhdb-fx-price-ecnsym-files
+    q)key$":s3://app-id-89167-dep-id-64668-uu-id-zgviythhnjyt/hdb-fx-price-ecn/"
+    s#``2017.12.06
+    q)key$":s3://app-id-89167-dep-id-64668-uu-id-zgviythhnjyt/hdb-fx-price-ecn/2017.12.06"
+    ,priceECN
+    
+
+Notice the `hdb-fx-price-ecn` directory has a null as the first element. The
+fix eliminates the null folder.
+
+    
+    
+    q)key$":s3://app-id-89167-dep-id-64668-uu-id-zgviythhnjyt/fx-hdb/"
+    s#priceECN
+    q)key`$":s3://app-id-89167-dep-id-64668-uu-id-zgviythhnjyt/fx-hdb/priceECN/"
+    `s#2017.12.06
+    q)key$":s3://app-id-89167-dep-id-64668-uu-id-zgviythhnjyt/fx-hdb/priceECN/2017.12.06"
+    s#``priceECN
+    
+
+### Logging
+
+[FIX] Better handling when KXI_LOG_CONFIG is set to the wrong value
+
+[FIX] System wide logging configuration added
+
+### qpacker
+
+[NEW] Update Kdb+ 4.0 2021-05-07
+
+[FIX] Several build improvements (cleaning, validation, shared object sharing)
+
+[FIX] qpacker qpk search name should match qpk name. When searching for a qpk
+for comparison in is_unclean qp should use the same naming convention for the
+qpk as the create_qpk function
+
+[FIX] qpacker now checks for changes in dependencies when rebuilding
+
+[FIX] Allow users to add content (such as proxy settings) to dockerfiles
+produced by q-packer without manually editing files
+
+[FIX] Update to allow correct loading when qp python pathlib isn't accessible.
+
+[FIX] Add //dnc for qpacker dnc option
+
+[FIX] Allow qp push to release from qpbuild subdirs
+
+[FIX] qpacker now checks if application directories contain at least a
+startq.q file and report failure if they do not. Previously this condition was
+not picked up
+
+[FIX] qpacker doctor now lists available apps for qp run if an app named
+`default` cannot be found
+
+[FIX] qpacker no longer prints license text when not using tty
+
+[FIX] qp installer now checks if installed in non-default location
+
+[FIX] build and use qpacker on OSX
+
+[FIX] zconf and alpine-openssl added
+
+[FIX] is_unclean was failing in certain circumstances. As a result if
+applications would not have been built correctly.
+
+[FIX] qp warning added to notify the user if image contents are the same
+
+[FIX] qp warning added if invalid dep layout detected
+
+[FIX] Extra handling added to fund ssl certificates in default locations on
+different OS
+
+    
+    
+    This is where qpacler looks for public root certificates:
+    "/etc/ssl/certs/ca-certificates.crt",                // Debian/Ubuntu/Gentoo etc.
+    "/etc/pki/tls/certs/ca-bundle.crt",                  // Fedora/RHEL 6
+    "/etc/ssl/ca-bundle.pem",                            // OpenSUSE
+    "/etc/pki/tls/cacert.pem",                           // OpenELEC
+    "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem", // CentOS/RHEL 7
+    "/etc/ssl/cert.pem",                                 // Alpine Linux
+    
+    Also:
+    
+    "/etc/ssl/certs",               // SLES10/SLES11, https://golang.org/issue/12139
+    "/system/etc/security/cacerts", // Android
+    "/usr/local/share/certs",       // FreeBSD
+    "/etc/pki/tls/certs",           // Fedora/RHEL
+    "/etc/openssl/certs",           // NetBSD
+    "/var/ssl/certs",               // AIX
+    
+    
+    libcurl (and thus kurl) always respect CURL_CA_BUNDLE thus
+    
+    export CURL_CA_BUNDLE=/etc/pki/tls/certs/ca-bundle.crt
+    
+
+[FIX] qp now presents users with image sizes `docker images --no-trunc -f "dangling=true" --format "{{.ID}}: {{.Size}}" | grep ${tp} | awk '{print $2}'`
+
+[FIX] qp optimised so that docker will symlink several libs in one docker
+build layer
+
+[FIX] qp now used qpbuild as shadow dir
+
+[FIX] qpk tool added to help manage qpk files
+
+    
+    
+    qpk -xd [appname]
+    
+    opens qp.json in the current directory, and unzip each dependency of appname into qpbuild/appname/ respecting e.g. weird-dep sample
+    
+
+[FIX] Error now reported from qp push when registry fails to update
+
+[FIX] Allow `ctrl-z` when using qshell
+
+[FIX] p.q now treated as a load-instruction in the startq.q
+
+[FIX] qp no longer runs build step as root user
+
+## 1.0.3
+
+### Release Date
+
+2021-03-22
+
+[FIX] Cleaned up build tree by automatically excluding deps.
+
+## 1.0.2
+
+### Release Date
+
+2021-03-22
+
+### Logging
+
+[FIX] Correction to timestamp in GKE fluent agent which caused logs to
+disappear.
+
+### qpacker
+
+[FIX] Skip unnecessary copy step when using k4.lic and decoding correct
+license variable
+
+[FIX] Various parsing improvements
+
+[FIX] Fixes to qshell line wrapping
+
+[FIX] Allow docker.include.txt in dockerfiles at build time
+
+[FIX] Tighten up docker daemon checks to allow for minikube and older docker
+versions
+
+[FIX] Timeout fix for sobuilder step
+
+[FIX] Removed use of -w in docker exec command
+
+[FIX] Allow image build to work with older versions of docker
+
+[FIX] Fixed appending of run/Dockerfile
+
+[FIX] Flag when qpmake.sh exists but the permissions are wrong
+
+[FIX] Avoid injection vulnerabilities and support dash in qp.json
+
+[FIX] `-it` removed from packer docker commands
+
+## 1.0.1
+
+### Release Date
+
+2021-03-12
+
+### qpacker
+
+[FIX] Support added for `k4.lic` licenses
+
+### REST Client
+
+[FIX] kurl support added for centos7
+
+[FIX] Resolved conflict using libkurl in centos8 if Alpine used to build ssl
+dependent applications
+
+### Big Query API
+
+[FIX] Handling added for enumerated data types in .com_kx_bq.tables.insert
+
+# kdb Insights Core 1.0.0
+
+### Release Date
+
+2021-03-12
+
+### Initial Release of kdb Insights
+
+[NEW] Packaging (QPacker) - a packaging utility to help build cloud
+applications
+
+[NEW] Orchestration (Helm & Kubernetes) - a deployment guide for Kdb+ cloud
+applications
+
+[NEW] REST client (Kurl) and server - libraries to help interact with other
+cloud services
+
+[NEW] Logging (QLog) - integration with cloud logging services
+
+[NEW] Object storage - native support for reading from object storage is built
+into the new kdb+ binaries
+
+[NEW] Google Cloud Platform (BigQuery) - easily interact with the REST API
+Google exposes for BigQuery
+

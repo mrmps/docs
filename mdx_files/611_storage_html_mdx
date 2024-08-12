@@ -1,0 +1,259 @@
+https://code.kx.com/insights/microservices/database/configuration/assembly/storage.html
+
+# Storage - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/database/configuration/assembly/storage.html
+
+# Storage configuration
+
+The kdb Insights Database uses the _Storage Manager_ (SM) to perform data
+writedown and data tier migration. The Storage Manager configuration goes
+under the `sm` key of the [elements](database.html#elements) field within an
+assembly file. The configuration for storage details a data source via a
+[stream](stream.html) and a set of tiers for data to migrate through. Storage
+configuration relies on [mounts](database.html#mounts) to be configured with a
+location for storing data.
+
+Deployment
+
+To see a deployment example of the Storage Manager with the other components
+of a database, see the [docker deployment example](../../deploy/index.html).
+
+User interface configuration
+
+This guide discusses configuration using YAML files. If you are using kdb
+Insights Enterprise, you can configure your system using the [kdb Insights
+user
+interface](../../../../enterprise/database/configuration/ui/database.html#writedown-
+settings)
+
+## Configuration
+
+Configuration for the Storage Manager is nested under an `elements.sm` key
+within an assembly file.
+
+Top level elements key
+
+In a microservices assembly, the elements key is top level. This differs from
+kdb Insights Enterprise where the key is nested under a `spec` key.
+
+    
+    
+    elements:
+      sm:
+        source: stream
+        tiers:
+          - name: rdb
+            mount: rdb
+          - name: idb
+            mount: idb
+            schedule:
+              freq: 0D00:10:00 # every 10 minutes
+          - name: hdb
+        mount: hdb
+        schedule:
+          freq: 1D00:00:00 # every day
+          snap:   01:35:00 # at 1:35 AM
+        retain:
+          time: 2 days
+    
+
+name | type | required | description  
+---|---|---|---  
+`source` | string | Yes | The source field is the entrypoint for all data in the database. The stream configuration is the name of a [bus](database.html#bus) that is configured in the assembly file.  
+`initialImport` | boolean | No | When the flag is enabled the SM will check for an existing kdb+ database under the `data` sub-directory of the directory pointed to by `baseURI` of the HDB-based mount. If a database isn't found at the location the SM will terminate. After the first SM startup, the flag is redundant and can be removed.  
+`tiers` | list | Yes | Tiers describe how data migrates over time within the database. This is an ordered list that indicates the flow of data, from most recent to least. See tiers configuration below for details.  
+`enforceSchema` | boolean | No | Indicates if table schemas should be enforced during writedown, otherwise error. Enabling this field ensures that no data is written which may introduce schema inconsistencies but does add performance overhead at writedown time. This check is disabled by default.  
+`disableDiscovery` | boolean | No | Allows discovery to be disabled when running an install without discovery. This can be useful when running the database as a microservice without discovery installed.  
+`chunkSize` | integer | No | When writing tables during an EOI or EOD operation, this value is the maximum number of records to write to disk at once. Increasing this value will increase writedown throughput but will consume more memory. Defaults to `500000` records.  
+`sortLimitGB` | integer | No | Limits the amount of memory consumed during a sort operation. The limit is the number of GB of data to hold in memory during the sort operation. Data is sorted by pulling the sort columns into memory, applying the sort and then using the sort order across the other columns in the table. This limit applies to the other columns of the table, memory still must be allocated for the entire sort column. If the size of data exceeds the size limit, it is processed in chunks. Defaults to `10` GB.  
+`waitTm` | integer | No | When connecting to other processes, this value is the number of milliseconds to wait for between subsequent connection attempts. Defaults to `250`ms.  
+`eodPeachLevel` | string[] | No | Multiple levels of parallelism can be specified as a list but as of this release only the topmost level of parallelism can result in a performance improvement. The available levels are:  
+• `part` \- Write each partition in parallel.  
+• `table` \- Write each table in parallel.  
+• `column` \- Write each column within a table in parallel.  
+By default, tables are written in parallel.  
+`reloadTimeout` | string | No | Indicates the maximum amount of time that SM will wait for a DAP or other client process to reload its data purview. This value is specified as a q timespan string, e.g. "0D01:00:00". By default, this is set to the EOI interval frequency.  
+`idbUsed` | boolean | No | Indicates whether system configuration expects a DAP for access to an ordinal mount. When off, SM will calculate temporal purviews assuming the RDB covers the purview since the last EOD. Defaults to `true`.  
+  
+## Tiers
+
+_Tiers_ describe the locality, segmentation format, and rollover configuration
+of each storage tier. Storage tiers are used to migrate data over time from
+fast, expensive storage to slower, less-expensive storage. Depending on your
+use case, this configuration can be tuned to either have more data in memory
+for faster query performance, or have more data on disk to reduce costs.
+
+Tier design
+
+For more information on tiers and how best to configure your storage, see the
+[storage tiering guide](../../storage/tiers.html).
+
+A _storage tier_ has the following structure:
+
+name | type | required | description  
+---|---|---|---  
+`name` | string | Yes | The name of the storage tier. This name must be unique and is used in logs to identify a specific tier.  
+`mount` | string | Yes | Corresponding `mounts` entry which determine locality and segmentation format, and also location at which data in the tier may be accessed. See [mounts](database.html#mounts) for more details.  
+`store` | string | No | Where the tier physically stores data on the specified mount. See store  
+`schedule` | string | No | Policy for when rollovers should be considered. See schedule below for details.  
+`retain` | string | No | Policy for how much data should be stored in this tier before it is rolled over into the next tier. See retain below for details.  
+`compression` | string | No | Policy for compression of data. See compression below for details.  
+`inventory` | string | No | Object storage inventory file location for object storage tiers.  
+  
+#### `store`
+
+URI describing where this tier physically stores data. If not specified,
+becomes `<baseURI>/data` of the corresponding `mount` (enforced, even if
+specified, for mounts of type `local` with `partition:ordinal`). For multiple
+tiers within the same mount, there can be only one tier without explicitly
+specified `store`. If specified explicitly, `store` must be outside the
+mount's `baseURI`.
+
+#### `schedule`
+
+If present, this dictionary contains the following keys.
+
+  * `freq`: `HH:MM:SS` Used by the _ordinal partition mount_ (IDB) to specify length of interval in each ordinal partition (default: `00:10:00`).
+  * `snap`: `HH:MM:SS` Used by the _date partition mount_ (HDB) to specify when to move data from ordinal to date partition mount (default: `00:00:00`).
+
+snap
+
+A snap value of `00:01:00` allows any late data that arrives in the one minute
+from `00:00` to `00:01` belonging to the previous date partition to be saved
+to that location. Any late data that arrives after 00:01:00 belonging to the
+previous date partition is written at the next snap. The data received from
+`00:00` to `00:01` belonging to the current date partition is also saved at
+this time.
+
+#### `retain`
+
+This dictionary may have one or more of the following keys.
+
+  * `time`: A timespan consisting of a number followed by a unit: {`Years`,`Months`,`Weeks`,`Days`,`Hours`,`Minutes`}, e.g. `2 Years`. Data which has been stored for this length of time is rolled over.
+  * `sizePct`: A size as percentage of total storage of corresponding mount, specified as a number from 1 to 100.
+
+If multiple keys are set, they are interpreted in an inclusive-OR fashion.
+
+Because of how Storage Manager components interact with the on-disk database,
+the actual number of partitions on HDB tiers may be one greater on disk than
+in the configuration.
+
+A `mount` partitioned as `ordinal`, or of type `stream` cannot be used with a
+storage tier that has a `retain` policy.
+
+#### `compression`
+
+If present, this dictionary contains the following keys.
+
+  * `algorithm`: Compression algorithm: {`none`, `qipc`, `gzip`, `snappy`, `lz4hc`}
+  * `block`: Block size
+  * `level`: Compression level
+
+The `compression` policy currently applies only to tiers associated with a
+`mount` of `type:local` and `partition:date`.
+
+#### `inventory`
+
+If present, this dictionary contains the following keys.
+
+  * `enabled`: `true` or `false` to enable inventory files. If true, you must provide `location` (default: `false`)
+  * `location`: Location relative to the root of the bucket/storage that the inventory is written to.
+
+Inventory only applies when using a store that is an object storage URI.
+
+The following example configuration produces `s3://kxi-example-
+data/inventory/inventory.tgz`:
+
+    
+    
+        name: hdb-s3
+        mount: hdb
+        store: s3://kxi-example-data/db
+        inventory:
+          enabled: true
+          location: inventory/test-db-inventory.tgz
+    
+
+## Object Storage Inventory files
+
+The Storage Manager can write [inventory
+files](../../../../core/objstor/main.html#hdb-load-times) at end of day, or
+produce them on startup if none exist. The inventory files are used to speed
+up subsequent reload times for the Storage Manager and Data Access processes.
+
+To configure the SM to produce these files, set `inventory` along with `store`
+under the tier configuration. See the tiers section above for layout
+information.
+
+You can configure the DA to set `KX_OBJSTR_INVENTORY_FILE` to the inventory
+path, relative to the root of the bucket.
+
+A full configuration of the DA and the SM follows:
+
+    
+    
+        sm:
+          tiers:
+            - name: streaming
+              mount: rdb
+            - name: interval
+              mount: idb
+              schedule:
+                freq: 01:00:00
+            - name: recent
+              mount: hdb
+              schedule:
+                freq: 1D00:00:00
+                snap:   00:00:00
+              retain:
+                time: 7 Days
+            - name: s3
+              mount: hb
+              store: s3://kxi-sm-example/db
+              inventory:
+                enabled: true
+                location: inventory/inventory.tgz
+        dap:
+          instances:
+            da:
+              env:
+                - name: KX_OBJSTR_INVENTORY_FILE
+                  value: "inventory/inventory.tgz"
+    
+
+## Environment Variables
+
+Advanced configuration can be supplied to the Storage Manager using
+environment variables. Environment variables are configured differently
+depending on the method of deployment. In all cases, the variables are always
+string values.
+
+name | description  
+---|---  
+`KXI_NAME` | Process name.  
+`KXI_SC` | Service class.  
+`KXI_PORT` | Port.  
+`KXI_ASSEMBLY_FILE` | Assembly configuration file.  
+`KXI_RT_LIB` | Path to Reliable-Transport client-side q module. Required when using a message bus of type `custom`.  
+`KXI_SM_SMADDR` | SM container’s address for inter-container communication.  
+`KXI_SM_EOIADDR` | EOI container’s address for inter-container communication.  
+`KXI_RT_SM_LOG_PATH` | Specifies the path to the logs for the SM process (e.g., `"/logs/rt/sm"`).  
+`KXI_RT_EOI_LOG_PATH` | Specifies the path to the logs for the EOI process (e.g., `"/logs/rt/eoi"`).  
+`KXI_SM_EOI_THREADS` | Thread count for the EOI process (e.g., `"8"`).  
+`KXI_SM_EOD_THREADS` | Thread count for the EOD process (e.g., `"8"`).  
+`KXI_SM_DBM_THREADS` | Thread count for the DBM process (e.g., `"8"`).  
+`KXI_SM_INGEST_CLEANUP_AFTER` | DEPRECATED. Use `KXI_SM_BATCHUPD_CLEANUP_AFTER` instead.  
+`KXI_SM_BATCHUPD_CLEANUP_AFTER` | A timestamp indicating how long to hold onto a [batch ingest](../../storage/batch-ingest.html) or delete session created from the [REST interface](../../../../api/database/rest/storage-manager.html) before removing it from the status table. (default: `"1D"`)  
+`KXI_RT_EVENT_FATAL` | If "true", RT `badtail` and `badmsg` events are treated as fatal; SM crashes and ingestion stops. If "false" or unspecified, events are logged but ingestion continues. Note that `reset` events are never treated as fatal.  
+`AWS_ACCESS_KEY_ID` | AWS access key. _Required when using object storage on AWS, as well as the next two variables._  
+`AWS_SECRET_ACCESS_KEY` | AWS secret key associated with the access key.  
+`AWS_REGION` | AWS region.  
+`AZURE_STORAGE_ACCOUNT` | Azure storage account name. _Required when using object storage on Azure, as well as the next variable._  
+`AZURE_STORAGE_SHARED_KEY` | Azure storage key  
+`KXI_SM_EOD_SORT` | Activates a new sorting algorithm to help lower RAM requirements and improve performance. The algorithm sorts each table in chunks that use `KXI_SM_EOD_SORT_LIMIT` of memory. Once the data is sorted, the application of attributes may cause the memory usage to exceed this limit. It is recommended that `KXI_SM_EOD_THREADS` is set to a value greater than 4 and the `eodPeachLevel` is set to `column`(in particular when the HDB tier is compressed). (default: `"1"`).  
+`KXI_SM_EOD_SORT_LIMIT` | Sets the limit on the amount of RAM used by the EOD sorting algorithm. Note: this limit does not apply to application of the attributes which may require more RAM. (default: `kubernetes SM pod RAM limit`).  
+  
+In addition, the following environment variables apply to both the sidecar and
+SM images.
+

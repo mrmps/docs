@@ -1,0 +1,149 @@
+https://code.kx.com/insights/microservices/rt/sdks/c-sdk-samples.html
+
+# C samples - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/rt/sdks/c-sdk-samples.html
+
+# Using the sample program for the kdb Insights C interface
+
+This section describes how to use our sample `c` program, available on Nexus,
+to:
+
+  * Publish data from the sample.csv file to either:
+  * _kdb Insights Reliable Transport_
+  * An `sdk_sample_assembly` assembly inside the _kdb Insights Enterprise_. You can download this assembly using the instructions [here](../../../enterprise/use-cases/overview.html#downloading-assemblies).
+  * Subscribe to data
+
+## Downloading
+
+The samples-${VERSION}.zip file, downloaded from the kdb Insights
+[Nexus](https://nexus.dl.kx.com/#browse/browse:kxi-package-public) registry),
+contains the following files:
+
+  * `csvupload.c` \- csv upload source code
+  * `CMakeLists.txt` \- cmake file
+  * `sample.csv` \- a CSV file containing sample data based on the `sdk-sample-assembly` schema
+
+The source code for the sample program can be taken and edited for use inside
+your applications.
+
+## Building
+
+​ Build the sample programs as follows: ​
+
+    
+    
+    unzip kxi-c-sdk-${VERSION}.zip && unzip kxi-c-sdk_samples-${VERSION}.zip
+    mkdir samples/build && cd samples/build
+    cmake .. -DKXI_C_SDK_INCLUDE_DIR:PATH=../kxi_c_sdk/include -DKXI_C_SDK_LINK_DIR:PATH=../kxi_c_sdk && cmake --build .
+    
+
+​ This generates an executable `csvupload` for publishing data and executables
+`test_c`, `test_k` and `test_kf` for subscribing to data (extensions will vary
+depending on the platform). ​ ​
+
+## Publishing
+
+### Application parameters
+
+`csvupload` demonstrates how to publish data from the sample.csv file and the
+following parameters are used to configure the application:
+
+parameter | required | default | description  
+---|---|---|---  
+`-u str` | Mandatory | none | [Authenticated client URL](getting-started-sdks.html#authentication)  
+`-s str` | Mandatory | none | Schema - see note below.  
+`-t str` | Mandatory | none | Table (for example: "trace")  
+`-r str` | Optional | /tmp/rt | RT log directory  
+`-f int` | Optional | 5000 | Time in ms to sleep between reads of the configuration details.  
+`-c int` | Optional | 300000 | Maximum age of configuration details in milliseconds. After this amount of time, if still unable to fetch a new configuration, the connection is considered to be broken and any subsequent attempts to send data to _kdb Insights Enterprise_ will fail with a `Not connected` error. This is only needed when using the kdb Insights Enterprise Information Service to obtain the configuration details.  
+`-l int` | Optional | 600000 | Local persistence period (in milliseconds)  
+`-g str` | Optional | info | Log Level (example: "info")  
+`-m str` | Optional | err | Console log level (info/warn/err/off)  
+`-n str` | Optional | off | replicator file log level (trace/debug/info/warn/err/fatal/off)  
+`-w num` | Optional | 2000 | Milliseconds to wait for the connection to establish  
+`-i str` | Optional | stdin | Used to set an input file name, rather than stdin, eg. '../sample.csv'  
+`-o int` | Optional | 1 | Send the file a specific number of times, -1 for infinite loop  
+`-z int` | Optional | 0 | Set to 1 to write a single test record  
+`-x str` | Optional | none | Absolute or relative path of CA cert file  
+`-d str` | Optional | none | DedupId to identify publishers (typically to the same stream) to be deduped  
+`-b int` | Optional | 0 | Upload data in batches, sending each batch as a table  
+  
+The schema defined here MUST match what is defined in the assembly
+
+  * `s str`: The schema must match that defined in the pipeline assembly. If the schema in the table matches the one in the `sdk_sample_assembly`, described here, the schema definition is as follows: sensorID:int,captureTS:ts,readTS:ts,valFloat:float,qual:int,alarm:int
+
+### Publishing data
+
+The example below runs the `csvupload` program from the command line. It sets
+the mandatory parameters and uses defaults for the rest:
+
+    
+    
+    url="$KXI_CONFIG_URL"
+    schema="sensorID:int,captureTS:ts,readTS:ts,valFloat:float,qual:byte,alarm:byte"
+    table="trace"
+    ./csvupload -u $url -s $schema -t $table < ../sample.csv
+    
+
+url
+
+The `url` parameter can be set to:
+
+  * `KXI_CONFIG_URL` to access _kdb Insights Enterprise_ from [outside the cluster](getting-started-sdks.html#from-outside-the-cluster)
+  * `file:///location/config_file_name` to use a local file to access _kdb Insights Enterprise_ or a _kdb Insights Reliable Transport_ from [inside the cluster](getting-started-sdks.html#from-inside-the-cluster)
+
+​
+
+## Subscribing
+
+### Application parameters
+
+`test_c` and `test_k` demonstrate how to subscribe to data and the following
+parameters are used to configure the applications:
+
+parameter | required | default | description  
+---|---|---|---  
+`str` | Mandatory | none | A JSON file name in the URL format that contains RT connection information  
+`long` | Optional | none | RT Log position to subscribe from  
+  
+`test_kf` demonstrates how to filter subscribed data and the following
+parameters are used to configure the application:
+
+parameter | required | default | description  
+---|---|---|---  
+`str` | Mandatory | none | A json file name in the URL format that contains RT connection information  
+`str` | Mandatory | none | Table (for example: "trace"), data will be filtered based on this  
+`long` | Optional | none | RT Log position to subscribe from  
+  
+### Subscribing to data
+
+The example below runs the subscription test programs from the command line
+using the following parameters:
+
+  * `$KXI_CONFIG_URL` \- the config URL should be specified as a file URL for a local file that contains the RT connection information.
+  * `position` \- the position parameter indicates the position in the RT log from which messages will be subscribed. If absent, this is defaulted to the very first RT message available in the stream logs.
+
+    
+    
+    url="$KXI_CONFIG_URL" #(which is in the format file:///<path_to_config>/sub_config.json)
+    table="trace"
+    ./test_c $url <position>
+    ./test_k $url <position>
+    ./test_kf $url $table <position>
+    
+
+## Supported data types
+
+The following data types are supported by the sample application:
+
+type | schema notation | example  
+---|---|---  
+string | string | name  
+symbol | symbol | LLOY  
+int | int | 1  
+byte | byte | 0  
+long | long | 200000  
+float | float | 1.2345  
+timestamp | ts | 2000.01.01D00:00:00.000000000
+

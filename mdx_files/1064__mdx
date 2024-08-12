@@ -1,0 +1,97 @@
+https://code.kx.com/platform/stream/pdfs/
+
+# Generate PDFs - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/stream/pdfs/
+
+# Generate PDF documents
+
+## Define the report document
+
+The configuration parameter `DeltaReportDocDefinitions` is a core component of
+the PDF Document Generator. This parameter describes how each report PDF is
+constructed. It includes file locations for all images, and the report JRXMLs
+used.
+
+Three main types of PDF report are available; each uses a different type of
+JRXML template – `Configurable`, `Dynamic`, and [`Custom`](../custom-jrxml/) –
+all of which rely on `DeltaReportDocDefinitions`.
+
+The Document Generator uses a report definition stored in the
+`DeltaReportDocDefinitions` config parameter. Each row defines a document
+definition.
+
+parameter | description  
+---|---  
+dynamicReport | Flag whether the report is dynamic. For configurable PDFs, `false`.  
+reportJRXML | Location of the JRXML file. For dynamic reports this defines template formatting, otherwise it can be left blank for defaults. The parameter supports all available _KX Delta Platform_ environmental variables set in `delta.profile`. For configurable PDFs this defines the JRXML file where the generated JRXML template will be written.  
+imageFileLocation | Location of an image in the JRXML header. Like `reportJRXML`, it also supports full _KX Delta Platform_ environmental variables  
+pdfCompliant | Flag: if `true` limits the use of fonts to Verdana and increases the size of PDFs, which then embed fonts and other resources.  
+  
+![Screenshot](../img/reporting/deltareportdocdefinitionsh5.png)
+
+## Use dynamic JRXMLs
+
+One way to produce a formatted PDF report without experience in using JRXML is
+to use the dynamic template provided as part of the reporting package.
+
+The `dynamicTemplate.jrxml` file fits a PDF template to the report data
+provided by a report analytic. The template can handle tables of different
+sizes and data types and assigns the First Derivatives logo to the report
+header.
+
+While this is a useful feature of the report generator, using the configurable
+PDF action analytic (see following section) not only allows a report to be
+generated without previous knowledge of JRXML but also produces a JRXML file
+specific to a given report, which can then be tweaked to make the PDF more
+user-specific. To use a dynamic JRXML to produce a PDF, use the following in
+`DeltaReportDocDefinitions`.
+
+parameter | value  
+---|---  
+dynamicReport | true  
+reportJRXML | full file path to the dynamic JRXML template, which defaults to `${DELTADOCGENREPORTJRXMLS_EXAMPLES}/dynamicTemplate.jrxml`  
+imageFileLocation | a list of full file paths for any images used e.g. `${DELTADOCGENREPORTJRXMLS_EXAMPLES}/FDLogo.jpg`  
+  
+## Use configurable JRXMLs
+
+Configurable JRXMLs make the process of creating a PDF report from a kdb+ data
+set relatively straightforward. By selecting the report action analytic
+`saveToConfigurablePDF`, the report generator produces a JRXML which is a best
+fit for the table it receives; thereby allowing a PDF to be created from any
+report ran without having to rewrite a JRXML file.
+
+Populate the fields of `DeltaReportDocDefinitions` as follows.
+
+parameter | value  
+---|---  
+dynamicReport | `false`  
+reportJRXML | a name for the generated JRXML, which will be written to the following location  
+imageFileLocation | a list of full file paths for any images used  
+  
+## Create custom JRXMLs
+
+It is possible to tailor the visual layout and content of a PDF report by
+using a custom JRXML file.
+
+### Configuration and setup
+
+Upload custom JRXML files to a server directory permissioned to the _KX
+Control_ user.
+
+The report instance configuration defines the JRXML file to be run, by
+defining the override of `DeltaReportDocDefinitions` to be used.
+
+### Example
+
+![Screenshot](../img/reporting/customjrxmlexamplereference.png)
+
+The above report action defines `bucketconf_pdf` as the override
+`DeltaReportDocDefinitions` to use in the action parameter.
+
+When the report action is run as set up above it will use the JRXML defined by
+the `reportJRXML` value in the `bucketconf_pdf` override of
+`DeltaReportDocDefinitions`.
+
+Set the `dynamicReport` attribute to `false` for custom JRXMLs.
+

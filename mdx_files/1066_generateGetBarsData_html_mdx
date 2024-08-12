@@ -1,0 +1,344 @@
+https://code.kx.com/insights/accelerators/fsi/generateGetBarsData.html
+
+# Customize getBars data - kdb products
+
+Original URL: https://code.kx.com/insights/accelerators/fsi/generateGetBarsData.html
+
+# Customizing Data for use with `getBars`
+
+To use the `getBars` API, the aggregations it queries must first be generated.
+This is achieved via a pipeline that takes data from an existing table (for
+example `Trade` or `Quote`), calculates aggregations and persists the results
+to a separate table. This is then queried by `getBars` to calculate the
+requested aggregations.
+
+## Pipeline
+
+The `fsi-data-assembly` includes one pipeline to generate bar aggregations for
+the `Quote` table, namely `bargeneration`. This pipeline can be duplicated for
+other tables that require bar aggregations to be generated. By default the
+`Quote` bar generation pipeline querys data for yesterday's date, generates
+the aggregations and persists this data to the database.
+
+## Customizing the pipeline
+
+The existing pipeline can be customized to adjust the table, or date, to
+generate aggregations for. The `bargeneration-pipeline-spec.q` can be edited
+to adjust the `table` or `dt` arguments as required.
+
+    
+    
+    trargs[`table]:`Quote;
+    trargs[`dt]:.z.d-1;
+    
+
+Steps to update a pipeline are outlined here  [Customizing an Existing
+Pipeline](pipeline-admin.html#customizing-an-existing-pipeline).
+
+After pushing the changes to the deployed package (steps
+[here](customize.html#deploy)), the pipeline runs with the updated arguments.
+If the source table is not `Quote` or `Trade` then a schema for the calculated
+aggregations must be added.
+
+## Additional Schema for Aggregated Data
+
+Once generated, aggregated data is persisted to two separate tables from the
+source table. One for minute bars and one for day bars.
+
+The schema for these two tables differ from the source table but are derived
+from the columns in the source table. The `fsi-data-assembly` includes schema
+for the derived tables from `Quote` and `Trade` source tables.
+
+The schema for these derived tables can be seen in the `schema.yaml` file for
+the `fsi-data-assembly` and examining these schema show how they relate to the
+source table, the table names are:
+
+    
+    
+    fsi_bar_Quote_minStats
+    fsi_bar_Quote_dayStats
+    fsi_bar_Trade_minStats
+    fsi_bar_Trade_dayStats
+    
+
+If it is necessary to generate aggregated data for additional tables then
+schema for the derived tables must be added following the same naming
+convention. For example, if generating aggregated data for a table named
+`Depth`, then schema named
+
+    
+    
+    fsi_bar_Depth_minStats
+    fsi_bar_Depth_dayStats
+    
+
+must be added.
+
+For steps to update or add schema to the assembly refer to  [Updating
+schema](customize.html#overlaying-a-schema-with-custom-columns).
+
+Warning
+
+If generating aggregated data for source tables beyond the defaults Quote or
+Trade, schemas for the derived `minStats` and `dayStats` tables MUST be added
+following the table naming convention above
+
+The derived `minStats` and `dayStats` schema should include the time and
+identifier columns from the source table.
+
+For the minute bar aggregation table, generic operations `(`first;`last)` are
+applied to all columns of the source table, and numerical operations
+`(`min;`max;`avg;`sum;`med)` are applied where applicable based on the table
+schema. The column naming convention is the aggregate keyword and the column
+to which it is applied. For example, avgPrice is equivalent to `(avg;`price)`.
+Some or all of these columns can be included in the derived `minStats` table
+schema.
+
+For the day bar aggregation table, generic operations `(`first;`last)` are
+applied to all columns of the source table, and numerical operations
+`(`min;`max;`sum)` are applied where applicable based on the table schema. The
+same column naming convention is followed. Some or all of these columns can be
+included in the derived `dayStats` table schema.
+
+To generate and persist custom aggregations see  custom aggregations.
+
+## Restricting the Bars Generated
+
+By default the bar generation pipeline will calculate and persist all of the
+generic and custom aggregations mentioned in the previous section for a
+schema. Depending on the number of columns in the schema, this could be a
+large number of aggregations requiring a large amount of computation. If it is
+only necessary to persist a subset of the possible aggregations, then these
+can be specified in the pipeline, removing the need to calculate them all.
+This can be achieved by adding a `bars` argument to the pipeline. For example,
+to only generate the firstBidPrice, lastBidPrice, firstBidSize and lastBidSize
+aggregations for the `Quote` schema, the `bars` argument should be set to that
+list in the pipeline spec file.
+
+    
+    
+    trargs[`table]:`Quote;
+    trargs[`dt]:.z.d-1;
+    trargs[`bars]:`firstBidPrice`lastBidPrice`firstBidSize`lastBidSize;
+    
+
+## Increasing the Timeout for Bar Generation
+
+Apart from restricting the bars generated, another option for larger schema is
+to increase the timeout for the query made in the pipeline that generates the
+bars. This can be achieved by passing an optional `timeout` argument (units of
+ms) into the `.fsi.bar.generateAllAggs` API in the pipeline spec file. For
+example, to increase the timeout to 200 seconds
+
+    
+    
+    r:h(`.fsi.bar.generateAllAggs; trargs; `; (enlist `timeout)!(enlist 200000));
+    
+
+## Configuring Additional Pipelines
+
+The existing `bargeneration` pipeline can be used as a model for new pipelines
+to generate aggregations for additional tables. If a new pipeline is being
+added, the creation of a spec file is required. This file could be similar to
+the spec file for the `bargeneration` pipeline with changes as required.
+
+Instructions for adding a new pipeline can be found here  [Creating Custom
+Ingestion Pipelines](dataIngestion.html#creating-custom-ingestion-pipelines).
+
+### Updating spec File
+
+If the existing `bargeneration` spec file is used as a model for new
+pipelines, then the arguments in the spec file should be updated as required
+to reference the source table and date in question.
+
+For example, to generate data for the Trade table and yesterday's date:
+
+    
+    
+    trargs[`table]:`Trade;
+    trargs[`dt]:.z.d-1;
+    
+
+## Customizing Variables or Aggregations of Bar Generation Configuration
+
+There are several variables relating to bar generation/querying that are
+detailed in the following sections. These variables can be updated by creating
+configuration in a custom package. This allows independent upgrade of the
+`fsi-lib` package
+
+### Adding a custom package
+
+The configuration variables detailed in the upcoming sections can be included
+in a custom package. Instructions to create and load a package can be found
+[here](customize.html#adding-custom-configuration-or-code).
+
+## Adding Source Tables to Bar Generation Configuration
+
+In order to add any additional tables, beyond defaults `Quote` and `Trade`, to
+bar generation configuration, the additional tables can be added to a symbol
+list named `.fsi.custom.bar.tables` in a custom package. General instructions
+for this method are here.
+
+When using the custom package method, the fsi assembly looks for the
+`.fsi.custom.bar.tables` variable on initialization. If it is present and
+passes validation as a symbol list then it is added to the configured bar
+generation tables. This variable, `.fsi.custom.bar.tables`, should be loaded
+in a custom library ahead of FSI packages.
+
+## Scheduling Pipeline
+
+The source data must already have been ingested before any pipelines to
+generate bar data run. If generating data for yesterday's date, then bar
+generation pipelines should be scheduled to run _after_ end of day.
+
+This could be accomplished with a cronjob,  [Using a cronjob to Schedule a
+Pipeline](dataIngestion.html#using-a-cronjob-to-schedule-a-pipeline).
+
+## Querying Generated Aggregations
+
+The data generated by the pipeline is queried via the `getBars` API
+[getBars](getBars.html).
+
+## Adding Custom Aggregations
+
+Aggregations for any custom analytics that have been configured for the source
+table are automatically calculated and persisted by the pipeline  [Customizing
+getStats](getStatsCustomize.html). The `first` and `last` aggregations for the
+custom analytics are then queryable using `getBars`.
+
+It is possible to add custom aggregations to calculate and query with
+`getBars`. The following three sections detail how this can be accomplished.
+
+For all the variables in the following three sections, they can be added as a
+variable with an additional `custom` in the name (i.e. `.fsi.custom.bar`) to
+your own package. General instructions for this method are here.
+
+If using the custom package, the fsi assembly looks for the variables on
+initialization. If any are present and pass validation then they are added to
+the applicable configuration. The variables should be loaded in a custom
+library ahead of FSI packages if required. Steps to add custom configuration
+can be found here  [Adding Custom Configuration or
+Code](customize.html#adding-custom-configuration-or-code).
+
+### Adding Custom Generated Aggregations
+
+To add custom aggregations that will be persisted to the `minStats` table by a
+bar generation pipeline, add a variable named `.fsi.custom.bar.analytics` with
+the aggregations required to a custom package (guide here). For the custom
+variable, this should be a table with the same format as outlined here
+[customizing getStats](getStatsCustomize.html), namely
+
+column | type | Description  
+---|---|---  
+tableName | symbol | Name of the table that the analytic operates on  
+analytic | symbol | Name of the aggregation  
+clause | mixed | q functional clause  
+  
+The analytic names must be unique per table, this uniqueness will be enforced
+inclusive of any `getStats` analytics. The analytics will operate directly on
+the table in question, for example `Quote` or `Trade`, and should therefore
+only reference applicable columns in clauses.
+
+An example could be
+
+    
+    
+    .fsi.custom.bar.analytics:flip `tableName`analytic`clause! flip (
+            (`Trade;        `maxSale;            (max;(*;`price;`volume)));
+            (`Depth;        `medSaleBid;            (med;(*;`bidPrice;`bidSize)));
+            (`Depth;        `avgSpread;            (avg;(-;`askPrice;`bidPrice)))
+            );
+    
+
+Warning
+
+The names of any custom generated aggregations added must be added as columns
+to the relevant `minStats` schema or they will not be persisted
+
+### Adding Custom Generated Day Bar Aggregations
+
+To add custom aggregations that will be persisted to the `dayStats` table by a
+bar generation pipeline, add a variable named
+`.fsi.custom.bar.dayTableFunctions` with the aggregations required to a custom
+package (guide here).
+
+The format of `.fsi.custom.bar.dayTableFunctions` should be a dictionary with
+a key for each table you are adding custom aggregations for. The value for
+each table should be a dictionary with the custom aggregation names mapped to
+custom clauses required for that table.
+
+.fsi.custom.bar.dayTableFunctions clauses
+
+Data for the `dayStats` table is generated from the `minStats` table data for
+the same date, any custom clauses should therefore only reference applicable
+columns from the relevant `minStats` table
+
+An example could be
+
+    
+    
+    .fsi.custom.bar.dayTableFunctions:()!()
+    .fsi.custom.bar.dayTableFunctions[`]:()!()
+    .fsi.custom.bar.dayTableFunctions[`Quote]:`askBidGap`medBidPrice!(
+      (-;(sum;`sumAskPrice);(sum;`sumBidPrice));
+      (med;`medBidPrice)
+     );
+    
+    .fsi.custom.bar.dayTableFunctions[`Trade]:(enlist `medVolume)!(
+      enlist (med;`medVolume)
+     );
+    
+
+Warning
+
+The names of any custom generated day bar aggregations added must be added as
+columns to the relevant `dayStats` schema or they will not be persisted.
+
+### Adding Custom Aggregations Queryable Using `getBars`
+
+To be able to use `getBars` to query any custom aggregations added in the
+previous two sections, or to add any additional aggregation queries for use
+with `getBars`, add them to a variable named `.fsi.custom.bar.queries` in a
+custom package (guide here).
+
+The format of `.fsi.custom.bar.queries` should be a dictionary with a key for
+each table you are adding custom queries for. The value for each table should
+be a dictionary with the custom aggregation query names mapped to custom
+clauses required for that table.
+
+.fsi.custom.bar.queries clauses
+
+Any queries added operate on the relevant `minStats` or `dayStats` table when
+used with `getBars`, the clauses should therefore only reference applicable
+columns from the relevant `minStats` or `dayStats` table
+
+An example could be
+
+    
+    
+    .fsi.custom.bar.queries:()!()
+    .fsi.custom.bar.queries[`]:()!()
+    .fsi.custom.bar.queries[`Depth]:`medAvgBuyNo`maxAvgSpread!(
+      (med;`avgBuyNo);
+      (max;(`avgSpread))
+     );
+    .fsi.custom.bar.queries[`Quote]:`avgMaxSpread`medSumAskSize!(
+      (avg;(-;`maxAskPrice;`maxBidPrice));
+      (med;`sumAskSize)
+     );
+    
+
+## Customizing `getBars` Data Checklist
+
+When customizing data for use with the `getBars` API, ensure all the necessary
+steps have been taken:
+
+  * Modify existing, or create new generation pipeline/s
+  * Add schema for any new `minStats` and `dayStats` tables needed
+  * Add any new source tables to `.fsi.custom.bar.tables` in a custom package
+  * Add any custom analytics to `.fsi.custom.bar.analytics` in a custom package
+  * Add the names of any custom analytics as columns in the schema for the relevant `minStats` table
+  * Add any custom day rollups required to `.fsi.custom.bar.dayTableFunctions` in a custom package
+  * Add the names of any custom day rollups as columns in the schema for the relevant `dayStats` table
+  * Add any custom aggregation queries for use with `getBars` to `.fsi.custom.bar.queries` in a custom package
+

@@ -1,0 +1,259 @@
+https://code.kx.com/insights/enterprise/database/upgrading.html
+
+# Upgrading - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/database/upgrading.html
+
+# Upgrading
+
+As new features are added to the kdb Insights Database, APIs and state may
+change. This document outlines considerations when upgrading between different
+versions of the kdb Insights Database.
+
+Upgrade Compatibility
+
+For changes that would result in a breaking change, an upwards compatible path
+will **always** be supported in minor release versions. Features may be
+deprecated in a minor release and could be removed in a major release upgrade.
+
+## Upgrading to 1.8
+
+### Configuring error trapping in 1.8
+
+The environment variables controlling error trapping, called
+`KXI_SM_ERROR_TRAP` and `KXI_DA_ERROR_TRAP` in previous versions, have been
+replaced with a single variable, `KXI_ERROR_TRAP`. For single-container DAP
+and SM, error trapping in child processes is controlled by
+`KXI_WORKER_ERROR_TRAP`.
+
+## Upgrading to 1.7
+
+## Autoscaling aggregators in 1.7
+
+In 1.7, aggregators now install a [horizontal pod
+autoscaler](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-
+autoscale/) by default. This allows the aggregator to scale up and down to
+match query demand. When configuring the base install, aggregators would
+previously set a `replicaCount` to indicate how many static aggregators should
+be deployed. This value is now replaced with `autoscaling.minReplicas` to
+indicate the minimum number of instances that should be running. To support
+backward compatibility, the aggregator will take the maximum value between the
+old `replicaCount` and `autoscaling.minReplicas`. See [aggregator
+configuration](../configuration/database.html) for more details on
+autoscaling.
+
+### IPC in 1.7
+
+In 1.7, new security measures have been added for IPC connections to database
+services that restrict ad-hoc connections. Attempting to send an ad-hoc IPC
+request by directly sending an IPC message to a database process may result in
+the error `IPC execution restricted. Rejecting function`. All IPC
+communication must use a supported API. To disable this feature and allow
+arbitrary connections, set `KXI_SECURE_ENABLED=false` on the environment
+variable configuration for each target process.
+
+Disabling IPC security
+
+It is recommended that IPC security remain enabled for all production
+deployments. Disabling this level of security can allow users to modify
+internal state or access data they are not priviledged to see.
+
+### Sandboxes in 1.7
+
+When configuring a sandbox process, the environment variable `SBX_MAX_ROWS`
+could be provided to set the maximum rows for a sandbox process. This variable
+has been updated to include a `KXI_` prefix and is now `KXI_SBX_MAX_ROWS`. The
+old value will be supported for an additional release but is deprecated.
+
+## Upgrading to 1.5
+
+### Labels in 1.5
+
+Querying with labels has changed in 1.5 to be a distinguished top level
+parameter. Previously, labels could be included as directly as parameters in
+requests to query APIs such as [`getData`](../../api/database/query/get-
+data.html) or [`sql`](../../api/database/query/sql.html). This has been
+changed such that labels are now nested under a labels object or prefixed with
+`label_` in SQL. This change has been made to resolve an issue of unresolvable
+collisions between labels and custom API parameters or table columns. For
+example, previously if you had a table with a column called `region` and an
+assembly with a label called `region`, referencing `region` in a query was
+ambiguous and could result in undesired results. With this change, `region` in
+a query will always refer to the table column and a labels object is used to
+refer to the label called `region`.
+
+Deprecation notice
+
+In the 1.5 release, the old label style is still supported but is deprecated
+and will result in a warning log in the Resource Coordinator. An extra
+environment variable `ALLOW_OLD_LABEL_STYLE` has been added to the Resource
+Coordinator that preserves the old behaviour prior to 1.5 which defaults to
+`"true"`. While enabled, this allows both the old and new label parameter
+style in the same query. In 1.6, this will now default to `"false"` but can be
+enabled by overriding the environment variable setting. In 2.0, this feature
+will be removed entirely.
+
+#### Upgrading
+
+A slight modification is required to convert queries to the new format.
+Requests now must specify labels as a top level parameter for `getData`
+requests or custom APIs. For SQL requests, labels in the query must have the
+`label_` prefix.
+
+**Get Data**
+
+For full API details, see the [`getData`](../../api/database/query/get-
+data.html) reference page.
+
+qREST
+
+Gateway URL
+
+The `GATEWAY` variable below is defined as an IPC connection to the Service
+Gateway. For example ``:insights-qe-gateway:5050` would connect to the query
+environment gateway within an `insights` namespace.
+
+Prior to 1.5, the `region` label in a request would be top level in the
+argument field.
+
+    
+    
+    args: (!) . flip (
+        (`table   ; `trace);
+        (`region  ; `$"us-east-1");
+        (`startTS ; .z.p - 0D00:05:00); // Select the last 5 minutes of data
+        (`endTS   ; .z.p)
+        )
+    
+    GATEWAY (`.kxi.getData; args; `; ()!())
+    
+
+In 1.5, this should now be nested under a `labels` object.
+
+    
+    
+    args: (!) . flip (
+        (`table   ; `trace);
+        (`labels  ; enlist[`region]!enlist`$"us-east-1");
+        (`startTS ; .z.p - 0D00:05:00); // Select the last 5 minutes of data
+        (`endTS   ; .z.p)
+        )
+    
+    GATEWAY (`.kxi.getData; args; `; ()!())
+    
+
+Gateway URL
+
+The `$GATEWAY` variable should point at your kdb Insights install. For a
+microservice install, this will be the hostname of the install using port
+8080. For an enterprise install, this is your `$INSIGHTS_HOSTNAME` with
+`/servicegateway` as the URL prefix.
+
+Prior to 1.5, the `region` label in a request would be top level in the
+argument field.
+
+    
+    
+    curl -X POST "$GATEWAY/kxi/getData" \
+        -H "Content-Type: application/json" \
+        -H "Accept: application/json" \
+        -H "Authorization: Bearer $INSIGHTS_TOKEN" \
+        -d "$(jq -n \
+            --arg startTS "$(date -u '+%Y.%m.%dD%H:00:00')" \
+            --arg endTS "$(date -u '+%Y.%m.%dD%H:%M%:%S')" \
+            '{
+                table   : "trace",
+                region  : "us-east-1",
+                startTS : $startTS,
+                endTS   : $endTS
+            }' | jq -cr .)"
+    
+
+In 1.5, this should now be nested under a `labels` object.
+
+    
+    
+    curl -X POST "$GATEWAY/kxi/getData" \
+        -H "Content-Type: application/json" \
+        -H "Accept: application/json" \
+        -H "Authorization: Bearer $INSIGHTS_TOKEN" \
+        -d "$(jq -n \
+            --arg startTS "$(date -u '+%Y.%m.%dD%H:00:00')" \
+            --arg endTS "$(date -u '+%Y.%m.%dD%H:%M%:%S')" \
+            '{
+                table   : "trace",
+                labels  : { region: "us-east-1" },
+                startTS : $startTS,
+                endTS   : $endTS
+            }' | jq -cr .)"
+    
+
+**SQL**
+
+For full API details, see the [`sql`](../../api/database/query/sql.html)
+reference page.
+
+qREST
+
+Gateway URL
+
+The `GATEWAY` variable below is defined as an IPC connection to the Service
+Gateway. For example ``:insights-qe-gateway:5050` would connect to the query
+environment gateway within an `insights` namespace.
+
+Prior to 1.5, the `exchange` label in a query would be referenced directly.
+
+    
+    
+    query: "select date,sym,avg(price) from trade ",
+      "where (date between '2021.01.01' and '2021.01.07') ",
+      "and (exchange='nyse') group by date,sym";
+    GATEWAY (`.kxi.sql; enlist[`query]!enlist query;`;()!())
+    
+
+In 1.5, this should now have a `label_` prefix.
+
+    
+    
+    query: "select date,sym,avg(price) from trade ",
+      "where (date between '2021.01.01' and '2021.01.07') ",
+      "and (label_exchange='nyse') group by date,sym";
+    GATEWAY (`.kxi.sql; enlist[`query]!enlist query;`;()!())
+    
+
+Gateway URL
+
+The `$GATEWAY` variable should point at your kdb Insights install. For a
+microservice install, this will be the hostname of the install using port
+8080. For an enterprise install, this is your `$INSIGHTS_HOSTNAME` with
+`/servicegateway/qe` as the URL prefix.
+
+Prior to 1.5, the `exchange` label in a query would be referenced directly.
+
+    
+    
+    select date,sym,avg(price) from trade
+        where (date between '2021.01.01' and '2021.01.07') and (exchange='nyse')
+        group by date,sym
+    
+
+In 1.5, this should now have a `label_` prefix.
+
+    
+    
+    select date,sym,avg(price) from trade
+        where (date between '2021.01.01' and '2021.01.07') and (label_exchange='nyse')
+        group by date,sym
+    
+
+This example uses the above query set as a variable called `$QUERY`.
+
+    
+    
+    curl -X POST "$GATEWAY/kxi/sql" \
+        -H "Content-Type: application/json" \
+        -H "Accept: application/json" \
+        -H "Authorization: Bearer $INSIGHTS_TOKEN" \
+        -d "$(jq -n --arg query "$QUERY" '{ query: $query }' | jq -cr .)"
+    
+

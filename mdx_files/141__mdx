@@ -1,0 +1,45 @@
+https://code.kx.com/platform/stream/dw_qr_async/
+
+# Kdb+ async - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/stream/dw_qr_async/
+
+# Kdb+ async
+
+  * Login to Analyst with `kxSupport` and create a `sandbox` process. Select `Create` and hit _Connect_
+
+[![Screenshot](../img/serviceclass/qr_sandbox.png)](../img/serviceclass/qr_sandbox.png
+"click to expand")
+
+  * Open a handle to the running `kxw_qr_gw` service. The port in this case is `41203`. 
+
+[![Screenshot](../img/serviceclass/qr_gw_port.jpg)](../img/serviceclass/qr_gw_port.jpg
+"click to expand")
+
+  * Execute the `.mon.getMemAsync` analytic with an `id` and `dict` as the parameters.
+
+    
+    
+    id:0;
+    dict:()!();
+    
+    // Define the function for when the results are returned
+    // Log the id 
+    // Print the result in descending order if it's a table
+    
+    collectResults:{[id; res] 
+      .log.out[.z.h; "Collected results for id:", string id; ()]; 
+      if[98h=type res; res:reverse res];
+      show res;
+     };
+    
+    h:hopen <PORT>;
+    
+    // Run the two lines below together
+    .log.out[.z.h; "Message is being sent sync!!"; ()];
+    h(`.mon.getMemAsync; id+:1; dict);
+    
+
+[![Screenshot](../img/serviceclass/qr_async_sandbox_result.jpg)](../img/serviceclass/qr_async_sandbox_result.jpg
+"click to expand")
+

@@ -1,0 +1,81 @@
+https://code.kx.com/insights/enterprise/user-interface/index.html
+
+# High-level overview | kdb Insights Enterprise documentation - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/user-interface/index.html
+
+# System overview (UI)
+
+Before you [sign in](login.html#log-in) to the [_kdb Insights Enterprise_
+UI](ui-overview.html) we recommend you review this high-level overview of the
+workflow for importing data, writing it to a database then querying and
+visualizing that data in _kdb Insights Enterprise_.
+
+We also recommend that you take the [interactive guided
+tour](../walkthrough/index.html) to put your knowledge into practice.
+
+## Create a database
+
+Data is stored in kdb Insights Enterprise using kdb+, column-based, relational
+time series database technology. Create a
+[database](../glossary.html#database) by giving a new instance a name; an
+instance can be opened from the [+] header menu, or _Build a Database_ on the
+Overview page.
+
+[More about databases](../database/index.html)
+
+### Create a schema
+
+A [schema](../glossary.html#schema) contains table definitions to ensure
+imported data is compatible with kdb+ data types. You must create a schema for
+the data that you want to import. This is done manually, or using a JSON file,
+as part of the [database](../glossary.html#database).
+
+[More about creating a schema](../database/configuration/ui/schema.html)
+
+## Create a pipeline
+
+A [pipeline](../glossary.html#pipeline) is the **process** that ingests data
+from a source into kdb+. The process is defined in a [**pipeline
+template**](../glossary.html#pipeline-template). The simplest template
+comprises three nodes:
+
+  * A reader - reads data from a source
+  * A transformer - applies a schema to import data
+  * A writer - writes data to the kdb Insights Enterprise database.
+
+Other [nodes](../glossary.html#nodes) are available.
+
+You must create one or more pipeline templates to import data.
+
+[More about creating a pipeline](../ingest/pipeline/index.html)
+
+### Import data
+
+To import data, you must:
+
+  1. Deploy the database
+
+  2. Deploy at least one pipeline
+
+Data ingestion begins when you deploy a pipeline. You can deploy several
+pipelines at once, or, if resources are limited, one at a time, tearing down
+each pipeline after the import.
+
+[More about importing data via the import wizard](../ingest/wizard.html)
+
+## Query data
+
+You can query imported data using q, SQL or Python. View results in the
+console window, a formatted table, or a simple chart.
+
+[More about running queries](../database/query/index.html)
+
+## Visualize data
+
+Imported data tables are available in a visualization tool. You can
+incorporate data into charts, maps and more, and share these views with
+colleagues.
+
+[More about visualizing data](../visualization/index.html)
+

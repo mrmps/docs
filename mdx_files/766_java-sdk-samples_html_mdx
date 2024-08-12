@@ -1,0 +1,76 @@
+https://code.kx.com/insights/microservices/rt/sdks/java-sdk-samples.html
+
+# Java samples - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/rt/sdks/java-sdk-samples.html
+
+# Using the sample program for the kdb Insights Java interface
+
+This section describes how to use our sample Java program, available on Nexus,
+to send data in a sample.csv file, or a random set of data, to either:
+
+  * _kdb Insights Reliable Transport_
+  * An `sdk_sample_assembly` assembly inside the _kdb Insights Enterprise_. You can download this assembly using the instructions [here](../../../enterprise/use-cases/overview.html#downloading-assemblies).
+
+## Downloading and Building
+
+The `insights-java-sdk-samples.${VERSION}.zip` can be downloaded from the kdb
+Insights [Nexus](https://nexus.dl.kx.com/#browse/browse:kxi-package-
+public:kxi-java-sdk-samples) registry.
+
+You can build the samples with the following command:
+
+### Running the samples
+
+You can run the samples like this:
+
+    
+    
+    java -jar ./build/libs/insights-java-sdk-samples-1.0-SNAPSHOT-all.jar <sample name> <sample args>
+    
+
+The different samples need different arguments and environment variables as
+follows:
+
+sample name | arguments | env vars needed | description  
+---|---|---|---  
+BulkUploadBatches | none | KXI_CONFIG_URL, RT_REP_DIR, RT_LOG_PATH | Streams data to kdb Insights Enterprise using the bulk loader in batches  
+BulkUploadSingleLines | none | KXI_CONFIG_URL, RT_REP_DIR, RT_LOG_PATH | Streams data to kdb Insights Enterprise using the bulk loader one entry at a time  
+RawDataTransfer | none | KXI_CONFIG_URL, RT_REP_DIR, RT_LOG_PATH | Streams data to kdb Insights Enterprise using the API provided by RtClient directly  
+Ping | none | KXI_CONFIG_URL + Query login details | Pings the query endpoint  
+GetMeta | none | KXI_CONFIG_URL + Query login details | Shows the metadata  
+QsqlQuery | The query to run (optional) | KXI_CONFIG_URL + Query login details | Runs a Qsql query against the data  
+SqlQuery | The query to run (optional) | KXI_CONFIG_URL + Query login details | Runs a Sql query against the data  
+SimpleGetData | none | KXI_CONFIG_URL + Query login details | Calls the simple version of GetData, using a time range of ± one year  
+SimpleGetDataWithoutEnvVars | configUrl clientId clientSecret | none | Calls the simple version of GetData, using a time range of ± one year. Note: This doesn't get any details from the environment variables.  
+FullGetData | none | KXI_CONFIG_URL + Query login details | Calls the simple version of GetData, using a time range of ± one year  
+  
+For example, if you wanted to run the BulkUploadBatches sample, that would
+look like this:
+
+    
+    
+    KXI_CONFIG_URL=https://kdbinisights.installation.com/informationservice/details/guid RT_LOG_PATH=~/logpath RT_REP_DIR=~/repdir java -jar ./build/libs/insights-java-sdk-samples-1.0-SNAPSHOT-all.jar BulkUploadBatches
+    
+
+Samples that need Query login details require either:
+
+or:
+
+  * `KXI_QUERY_USER`
+  * `KXI_QUERY_SECRET`
+
+### Environment variables
+
+You will need some of the following environment variables to run each of the
+samples:
+
+variable | details  
+---|---  
+`KXI_CONFIG_URL` | The URL that is used to pull the configuration information needed to start the interface  
+`RT_LOG_PATH` | The location where the RT log files are written locally  
+`RT_REP_DIR` | The location to extract the interface replicator executable  
+`KXI_QUERY_TOKEN` | A bearer token used for authentication when making queries. If this is set `KXI_QUERY_USER` and `KXI_QUERY_SECRET` are ignored.  
+`KXI_QUERY_USER` | The Keycloak client that will be used to generate bearer tokens to log in for query  
+`KXI_QUERY_SECRET` | The Keycloak client secret that will be used to generate bearer tokens for query
+

@@ -1,0 +1,68 @@
+https://code.kx.com/platform/pykx_troubleshooter/
+
+# PyKX Troubleshooter - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/pykx_troubleshooter/
+
+# PyKX installation troubleshooter
+
+The following procedure can help identify and resolve issues with
+installation.
+
+## Check Dependencies
+
+The installer uses python and pip to complete the installation of PyKX.
+Supported versions are currently python 3.8 to 3.11. Check these are present
+on your server before attempting to install PyKX.
+
+## Check License flags are enabled.
+
+From the q console run the following command to print the list of Insights
+Core flags enabled.
+
+    
+    
+    " " vs .z.l 4
+    
+
+In order to run PyKX with q, it is imperative to have the
+`insights.lib.embedq` and `insights.lib.pykx` flags enabled. See
+[licenses](https://code.kx.com/pykx/2.4/troubleshooting.html#accessing-a-
+license-valid-for-pykx) for further details regarding obtaining a license.
+
+## Check libpython
+
+Running PyKX within a q session requires libpython installed on the server. If
+multiple versions are installed, PyKX may fail to detect this library. To
+resolve this add the below to delta.profile with the path to the libpython
+version. You will need to restart q processes to pick up the change.
+
+    
+    
+    export PYKX_PYTHON_LIB_PATH=/usr/lib64/libpython3.11.so.1.0
+    
+
+## Upgrade from EmbedPy
+
+The following commands can be executed to determine which package is loaded
+into a q session running python.
+
+EmbedPy - returns 1b if embedPy is installed
+
+    
+    
+    `embedPy in key `.p
+    
+
+PyKX - returns PyKX version if PyKX is installed
+
+    
+    
+    .pykx.version[]
+    
+
+If expecting PyKX to overwrite EmbedPy, check that you have followed the steps
+in [Upgrading from KX
+EmbedPy](https://code.kx.com/platform/pykx_integration#Upgrading-from-KX-
+EmbedPy).
+

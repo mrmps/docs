@@ -1,0 +1,363 @@
+https://code.kx.com/insights/accelerators/fsi/getTicksFutures.html
+
+# Futures - kdb products
+
+Original URL: https://code.kx.com/insights/accelerators/fsi/getTicksFutures.html
+
+# Futures
+
+Futures specific functionality is specified via the `futures` argument using
+the following options:
+
+  * `actual` \- this returns the trade history for a range of instruments. The user can provide the instruments in two ways:
+    * `Absolute` \- this is the absolute instrument reference example `BRENT.2023.AUG`
+    * `Relative` \- this is the relative instrument reference (i.e. reference relating to the front month example `BRENT.c1`)
+  * `forward` \- this returns data to construct forward curves for a range of contracts
+  * `continuous` \- this provides the continuous (rolled over) trade history for a range of contracts, continuous months and observations
+
+Note
+
+The `continuous` method only works on `FutQuoteDayStats` table in this current
+release.
+
+## Arguments
+
+name | required | type | default | example | description  
+---|---|---|---|---|---  
+futures | yes (see note below) | symbol | () | `forward | Futures functionality to execute  
+contract | yes | symbol[] | () | (`aa;`bb;`bb) | Contract (or instrument)  
+rollover | no | symbol | `expiry |`openInterest | Rollover method - for continuous only |   
+xDays | yes (for expiry) | integer | 0 | 5 | Roll days before expiry - for rollover method only  
+obs | no | symbol[] | `settlPrice | (\`settlPrice;`highPrice) | observations - for continuous only |   
+relativeContract | no | integer[] | 1 | (5;10) | Relative contracts - for continuous only  
+backAdjust | no | boolean | 1b | 0b | Back adjust observations - for continuous only  
+  
+Note
+
+The APIs currently assume data tables contain data points pertaining to a
+single source (`srcSys`). In the case of multiple sources, results returned
+may not be expected. An additional filter to `getTicks` should be supplied (on
+the `srcSys` column) to return results from the desired source.
+
+Note
+
+The `futures` argument can be excluded if the contracts/instruments passed to
+the `contract` argument meet certain conditions, see
+[this](getTicksFutures.html#interpretation-of-contract-argument-if-futures-
+argument-absent) section for more details
+
+## Note on baseline getTick args
+
+### columns
+
+Due to the futures logic, there are minimum required columns - when using the
+`columns` argument it must include the following columns:
+
+  * `srcSys, instrumentID, contractID, exchangeID, tradeDate, expirationDate, settlPrice, openInterest`
+
+### temporality
+
+Since `FutQuoteDayStats` is the only table supported at the moment,
+`temporality` is not a valid argument for use with futures for this release.
+
+### interpretation of contract argument if futures argument absent
+
+If the `futures` argument is not supplied the following interpreation of the
+`contract` argument will be applied with the priority order as listed:
+
+  * A search will be made for the supplied contract(s) in the `Instrument` reference table. If present, actual (absolute) results will be returned
+  * A search will be made for the supplied contract(s) in the `RelativeContract` reference table. If present, actual (relative) results will be returned
+  * If the `futures` argument is absent and neither of the above are satisfied, the default behavior is to return continuous curve data for the time period
+
+## Note on having multiple sources
+
+### reference data
+
+The futures functionality makes use of reference tables. This is to account
+for holidays (`ExchangeHolidayCal`) and relative contract names
+(`RelativeContract`). These reference tables contain a column indicating the
+source vendor for the data (`srcSys`). The futures logic will not account for
+disparities between reference data from multiple vendors. Nor will it account
+for multiple versions of reference data from different vendors. Please ensure
+the reference data ingested into the system solely contains data desired for
+use.
+
+### data tables
+
+The futures functionality currently assumes data tables (for example
+`FutQuoteDayStats`) contain data points pertaining to a single source
+(`srcSys` column). If there is data from multiple vendors the results returned
+may contain data points from these multiple sources and provide a misleading
+picture. An additional filter should be supplied to the API (on the `srcSys`
+column) to return results from the desired source.
+
+## Configuring Global Variables
+
+Global variables, such as those used for validation of `getTicks` parameter
+inputs, can be adjusted to override their default values as required. These
+are:
+
+  * `maxDays` \- maximum value of `xDays` argument permitted, 15 by default
+  * `futuresTables` \- The permitted tables that can be queried with futures functionality, FutQuoteDayStats, FutQuoteMinStats, FutQuote, FutTrade, FutTradeDayStats, FutTradeMinStats by default
+
+There are also data types specified for these global variables, which are used
+for type validation of the variable values.
+
+To change the defaults, or to add new global variables, there are two options:
+
+  * unpack the `fsi-futures` package and edit the `src/futures.config.q` file, which contains the configuration
+  * a package can be created that includes your values 
+
+### Changing the variables in the `fsi-futures` package
+
+This should be done before deploying the `fsi-futures` assembly. The steps to
+follow to update the variables in the `fsi-futures` package are:
+
+  * unpack the `fsi-futures` package
+  * edit the `src/futures.config.q` file and update the variables (in the `.fsi.globalVariables.futures` table), and data types (in the `.fsi.globalVariablesTypes.futures` dictionary), to the desired values
+  * re-package the `fsi-futures` package
+  * push the `fsi-futures` package
+  * bounce the aggregators and resource-coordinators
+  * when the `fsi-futures` assembly is deployed the updated variable values will take effect
+
+Commands to unpack and re-package a package can be found
+[here](customize.html#unpack-fsi-data-assembly).
+
+Commands to push a package and bounce aggregators/resource-coordinators can be
+found [here](deploy.html#push-the-packages).
+
+### Creating your own package
+
+Instructions to create and load a package can be found
+[here](customize.html#adding-custom-configuration-or-code).
+
+When futures code initializes it will look for a table named
+`.fsi.globalVariables.futures`. Any variables in this table will be added to
+the global variables available, or will override the default values of
+existing global variables with the same names. Including a table with this
+name in your package, which should be configured to load before `fsi-lib`,
+will add the contents to the global variables.
+
+The format this table must take is
+
+    
+    
+    varName       varValue
+    ----------------------------------------------------------------------------------------------------
+    maxDays       15
+    futuresTables `FutQuoteDayStats`FutQuoteMinStats`FutQuote`FutTrade`FutTradeDayStats`FutTradeMinStats
+    
+
+You can also add an optional type for any new global variables added. This
+will be in a dictionary named `.fsi.globalVariablesTypes.futures`. If this is
+present when futures code initializes it will validate the values of global
+variables against the expected types and signal an error in the event of
+failure. To add types for validation of global variables include this
+dictionary in your package, which should be configured to load before `fsi-
+lib`.
+
+    
+    
+    .fsi.globalVariablesTypes.futures:`maxDays`otherVar`futuresTables!(
+        -7h;
+        99h;
+        11h
+     )
+    
+
+## Continuous Futures
+
+When requesting continuous futures the following arguments are used:
+
+  * `rollover` \- can be `expiry`, `daysBefore` or `openInterest`
+  * `xDays` \- number of days to roll contract before expiry: 
+    * optional for `openInterest`
+    * required for `daysBefore`
+    * illegal for `expiry`
+    * when provided with `openInterest` it is used to limit the days before - i.e. if `openInterest` triggers a roll 15days before but `xDays` is set as 10, then the rollover happens at 10days and not 15days
+  * `backAdjust` \- boolean - optional, if not provided implicitly set to `1b` (i.e back adjust) by default
+
+## Actuals - Absolute Contracts
+
+    
+    
+    args:(!). flip(
+            (`contract;`BRENT.2023.AUG`NG.2023.AUG);
+            (`startTS;`timestamp$2023.03.15);
+            (`endTS;`timestamp$2023.03.17);
+            (`table;`FutQuoteDayStats);
+            (`futures;`actual)
+            );
+    
+    last  gw(`getTicks;args;`callback;()!())
+    
+    eventTimestamp                srcSys  instrumentID   contractID exchangeID tradeDate  expirationDate settlPrice openPrice lowPrice highPrice openInterest
+    ---------------------------------------------------------------------------------------------------------------------------------------------------------
+    2023.03.15D00:00:00.000000000 vendorA BRENT.2023.AUG BRENT      IEU        2023.03.15 2023.06.29     149.31     0         0        0         174362      
+    2023.03.16D00:00:00.000000000 vendorA BRENT.2023.AUG BRENT      IEU        2023.03.16 2023.06.29     150.22     0         0        0         216208      
+    2023.03.17D00:00:00.000000000 vendorA BRENT.2023.AUG BRENT      IEU        2023.03.17 2023.06.29     148.34     0         0        0         270260      
+    2023.03.15D00:00:00.000000000 vendorA NG.2023.AUG    NG         NYM        2023.03.15 2023.06.29     141.84     0         0        0         165644      
+    2023.03.16D00:00:00.000000000 vendorA NG.2023.AUG    NG         NYM        2023.03.16 2023.06.29     142.71     0         0        0         205398      
+    2023.03.17D00:00:00.000000000 vendorA NG.2023.AUG    NG         NYM        2023.03.17 2023.06.29     140.92     0         0        0         256747       
+    
+
+## Actuals - Relative Contracts
+
+    
+    
+    args:(!). flip(
+            (`contract;`BRENT.c1`NG.c1);
+            (`startTS;`timestamp$2023.03.15);
+            (`endTS;`timestamp$2023.03.17);
+            (`table;`FutQuoteDayStats);
+            (`futures;`actual)
+            );
+    
+    last  gw(`getTicks;args;`callback;()!())
+    
+    eventTimestamp                srcSys  instrumentID   contractID exchangeID tradeDate  expirationDate settlPrice openPrice lowPrice highPrice openInterest seq relativeContract
+    ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    2023.03.15D00:00:00.000000000 vendorA BRENT.2023.MAY BRENT      IEU        2023.03.15 2023.03.23     144.81     0         0        0         4075         1   BRENT.c1        
+    2023.03.16D00:00:00.000000000 vendorA BRENT.2023.MAY BRENT      IEU        2023.03.16 2023.03.23     145.72     0         0        0         2445         1   BRENT.c1        
+    2023.03.17D00:00:00.000000000 vendorA BRENT.2023.MAY BRENT      IEU        2023.03.17 2023.03.23     143.84     0         0        0         1426         1   BRENT.c1        
+    2023.03.15D00:00:00.000000000 vendorA NG.2023.MAY    NG         NYM        2023.03.15 2023.03.23     137.57     0         0        0         3871         1   NG.c1           
+    2023.03.16D00:00:00.000000000 vendorA NG.2023.MAY    NG         NYM        2023.03.16 2023.03.23     138.43     0         0        0         2323         1   NG.c1           
+    2023.03.17D00:00:00.000000000 vendorA NG.2023.MAY    NG         NYM        2023.03.17 2023.03.23     136.65     0         0        0         1355         1   NG.c1    
+    
+
+## Forward Curve Data
+
+    
+    
+    args:(!). flip(
+            (`contract;`BRENT`);
+            (`startTS;`timestamp$2019.12.30);
+            (`endTS;`timestamp$2020.01.05);
+            (`table;`FutQuoteDayStats);
+            (`futures;`forward)
+            );
+    
+    last  gw(`getTicks;args;`callback;()!())
+    
+    --------------------------------------------------------------
+    2019.12.30 BRENT.2020.APR 2020.02.05     BRENT      503.89    
+    2019.12.30 BRENT.2020.AUG 2020.06.11     BRENT      505.55    
+    2019.12.30 BRENT.2020.DEC 2020.10.15     BRENT      507.49    
+    2019.12.30 BRENT.2020.JUN 2020.04.30     BRENT      504.97    
+    2019.12.30 BRENT.2020.MAY 2020.03.18     BRENT      504.41    
+    2019.12.30 BRENT.2020.NOV 2020.09.03     BRENT      506.81    
+    2019.12.30 BRENT.2020.SEP 2020.07.23     BRENT      506.17    
+    2019.12.30 BRENT.2021.APR 2021.02.22     BRENT      509.69    
+    2019.12.30 BRENT.2021.AUG 2021.06.29     BRENT      512.17    
+    ...
+    
+
+## Continuous - rollover on expiry
+
+Example rolling contracts on expiry - requesting back-adjusted history of
+`settlPrice` for `1` and `20` front month continuous contracts (relative
+contracts):
+
+    
+    
+    args:(!). flip(
+            (`contract ;`BRENT`NG);
+            (`startTS;`timestamp$2018.01.01);
+            (`endTS;`timestamp$2023.12.10);
+            (`table;`FutQuoteDayStats);
+            (`futures;`continuous);
+            (`rollover;`expiry);
+            (`obs;`settlPrice);
+            (`relativeContract;(1;20))
+            );
+    
+    last  gw(`getTicks;args;`callback;()!())
+    
+    tradeDate  sequence expirationDate daysRemain deltaInterest obs    instrumentID   contractID eventTimestamp                relativeContract obsMetric 
+    ------------------------------------------------------------------------------------------------------------------------------------------------------
+    2018.01.02 1        2018.02.13     30         -848827       176.73 BRENT.2018.APR BRENT      2018.01.02D00:00:00.000000000 1                settlPrice
+    2018.01.03 1        2018.02.13     29         -834296       181.24 BRENT.2018.APR BRENT      2018.01.03D00:00:00.000000000 1                settlPrice
+    2018.01.04 1        2018.02.13     28         -805712       179.16 BRENT.2018.APR BRENT      2018.01.04D00:00:00.000000000 1                settlPrice
+    2018.01.05 1        2018.02.13     27         -764240       185.22 BRENT.2018.APR BRENT      2018.01.05D00:00:00.000000000 1                settlPrice
+    2018.01.08 1        2018.02.13     26         -711662       184.08 BRENT.2018.APR BRENT      2018.01.08D00:00:00.000000000 1                settlPrice
+    2018.01.09 1        2018.02.13     25         -650240       186.24 BRENT.2018.APR BRENT      2018.01.09D00:00:00.000000000 1                settlPrice
+    ...
+    2018.02.07 1        2018.02.13     4          364879        179.09 BRENT.2018.APR BRENT      2018.02.07D00:00:00.000000000 1                settlPrice
+    2018.02.08 1        2018.02.13     3          463978        174.12 BRENT.2018.APR BRENT      2018.02.08D00:00:00.000000000 1                settlPrice
+    2018.02.09 1        2018.02.13     2          594224        177.81 BRENT.2018.APR BRENT      2018.02.09D00:00:00.000000000 1                settlPrice
+    2018.02.12 1        2018.02.13     1          766733        180.62 BRENT.2018.APR BRENT      2018.02.12D00:00:00.000000000 1                settlPrice
+    2018.02.13 1        2018.02.13     0          996851        178.2  BRENT.2018.APR BRENT      2018.02.13D00:00:00.000000000 1                settlPrice
+    2018.02.14 2        2018.03.27     29         -848827       181.72 BRENT.2018.MAY BRENT      2018.02.14D00:00:00.000000000 1                settlPrice
+    2018.02.15 2        2018.03.27     28         -834296       184.84 BRENT.2018.MAY BRENT      2018.02.15D00:00:00.000000000 1                settlPrice
+    2018.02.16 2        2018.03.27     27         -805712       182.61 BRENT.2018.MAY BRENT      2018.02.16D00:00:00.000000000 1                settlPrice
+    2018.02.19 2        2018.03.27     26         -764240       177.97 BRENT.2018.MAY BRENT      2018.02.19D00:00:00.000000000 1                settlPrice
+    2018.02.20 2        2018.03.27     25         -711662       173.66 BRENT.2018.MAY BRENT      2018.02.20D00:00:00.000000000 1                settlPrice
+    ...
+    2023.05.17 66       2023.05.30     8          -485721       149.43 NG.2024.NOV  NG         2023.05.17D00:00:00.000000000 20               settlPrice
+    2023.05.18 66       2023.05.30     7          -417128       153.75 NG.2024.NOV  NG         2023.05.18D00:00:00.000000000 20               settlPrice
+    2023.05.19 66       2023.05.30     6          -349902       154.5  NG.2024.NOV  NG         2023.05.19D00:00:00.000000000 20               settlPrice
+    2023.05.22 66       2023.05.30     5          -285946       155.06 NG.2024.NOV  NG         2023.05.22D00:00:00.000000000 20               settlPrice
+    2023.05.23 66       2023.05.30     4          -226701       154.14 NG.2024.NOV  NG         2023.05.23D00:00:00.000000000 20               settlPrice
+    2023.05.24 66       2023.05.30     3          -173099       149.85 NG.2024.NOV  NG         2023.05.24D00:00:00.000000000 20               settlPrice
+    2023.05.25 66       2023.05.30     2          -125570       152.84 NG.2024.NOV  NG         2023.05.25D00:00:00.000000000 20               settlPrice
+    2023.05.26 66       2023.05.30     1          -84071        149.13 NG.2024.NOV  NG         2023.05.26D00:00:00.000000000 20               settlPrice
+    2023.05.29 66       2023.05.30     0          -48154        145.25 NG.2024.NOV  NG         2023.05.29D00:00:00.000000000 20               settlPrice
+    2023.05.30 66       2023.05.30     0          -17035        140.57 NG.2024.NOV  NG         2023.05.30D00:00:00.000000000 20               settlPrice
+    
+
+## Continuous - rollover xDays before expiry
+
+Example rolling contracts `10` days before expiry - requesting back adjusted
+history of `settlPrice` for `1` and `20` front month continuous contracts
+(relative contracts):
+
+    
+    
+    args:(!). flip(
+            (`contract ;`BRENT`NG);
+            (`startTS;`timestamp$2018.01.01);
+            (`endTS;`timestamp$2023.12.10);
+            (`table;`FutQuoteDayStats);
+            (`futures;`continuous);
+            (`rollover;`daysBefore);
+            (`xDays;10);
+            (`obs;`settlPrice);
+            (`relativeContract;(1;20))
+            );
+    
+    tradeDate  sequence expirationDate daysRemain deltaInterest obs    instrumentID   contractID eventTimestamp                relativeContract obsMetric 
+    ------------------------------------------------------------------------------------------------------------------------------------------------------
+    ...
+    2018.01.23 1        2018.02.13     15         -50688        105.8  BRENT.2018.APR BRENT      2018.01.23D00:00:00.000000000 1                settlPrice
+    2018.01.24 1        2018.02.13     14         -17932        103.83 BRENT.2018.APR BRENT      2018.01.24D00:00:00.000000000 1                settlPrice
+    2018.01.25 1        2018.02.13     13         10861         104.15 BRENT.2018.APR BRENT      2018.01.25D00:00:00.000000000 1                settlPrice
+    2018.01.26 1        2018.02.13     12         36979         99.82  BRENT.2018.APR BRENT      2018.01.26D00:00:00.000000000 1                settlPrice
+    2018.01.29 1        2018.02.13     11         61858         97.44  BRENT.2018.APR BRENT      2018.01.29D00:00:00.000000000 1                settlPrice
+    2018.01.30 1        2018.02.13     10         87071         93.79  BRENT.2018.APR BRENT      2018.01.30D00:00:00.000000000 1                settlPrice
+    2018.01.31 2        2018.02.13     9          114345        89.27  BRENT.2018.MAY BRENT      2018.01.31D00:00:00.000000000 1                settlPrice
+    2018.02.01 2        2018.02.13     8          145623        88.79  BRENT.2018.MAY BRENT      2018.02.01D00:00:00.000000000 1                settlPrice
+    2018.02.02 2        2018.02.13     7          183169        93.98  BRENT.2018.MAY BRENT      2018.02.02D00:00:00.000000000 1                settlPrice
+    2018.02.05 2        2018.02.13     6          229737        103.66 BRENT.2018.MAY BRENT      2018.02.05D00:00:00.000000000 1                settlPrice
+    ...
+    
+
+## Continuous - rollover on openInterest
+
+Example rolling contracts on openInterest - requesting back adjusted history
+of `settlPrice` for `1` and `20` front month continuous contracts (relative
+contracts):
+
+    
+    
+    args:(!). flip(
+            (`contract ;`BRENT`NG);
+            (`startTS;`timestamp$2018.01.01);
+            (`endTS;`timestamp$2023.05.11);
+            (`table;`FutQuoteDayStats);
+            (`futures;`continuous);
+            (`rollover;`openInterest);
+            (`obs;`settlPrice);
+            (`relativeContract;(1;20))
+            );
+    
+

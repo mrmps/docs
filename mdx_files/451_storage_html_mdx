@@ -1,0 +1,333 @@
+https://code.kx.com/insights/enterprise/configuration/storage.html
+
+# Storage - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/configuration/storage.html
+
+# Storage
+
+_kdb Insights Enterprise_ uses persistent storage for a number of use-cases.
+There are two types of storage; `local` and `shared`.
+
+  * `local` storage is only required by a single pod
+  * `shared` storage will be accessed by multiple pods.
+
+These two types are configured globally by the application, and can be updated
+as required. It is also possible to override the storage configuration at a
+component level.
+
+    
+    
+    global:
+      persistence:
+        local:
+          storageClass: ""
+          storageSize: "20Gi"
+        shared:
+          storageClass: "rook-cephfs"
+          storageSize: "20Gi"
+    
+    kxi-controller:
+      persistence:
+        useLocal: true
+        storageClass: "standard"
+        storageSize: "30Gi"
+        accessMode: "ReadWriteOnce"
+    
+
+The `global.persistence.local` object defines the default storage for
+components requiring `local` access patterns.
+
+Variable | Type | Example  
+---|---|---  
+`global.persistence.local.storageClass` | `string` | `""`  
+`global.persistence.local.storageSize` | `string` | `"20Gi"`  
+  
+The `storageSize` parameter specifies the default size of the volume to be
+created. The `storageClass` defines what underlying storage type to use. _kdb
+Insights Enterprise_ defaults this to empty (`""`) in order to use the cluster
+default.
+
+[Storage classes](https://kubernetes.io/docs/concepts/storage/storage-
+classes/)
+
+The `global.persistence.shared` object defines `shared` storage defaults. The
+`storageSize` defines the default volume size. The `storageClass` parameter
+defines the storage class.
+
+Shared storage classes
+
+The `global.persistence.shared.storageClass` must be configured with a storage
+class which supports `ReadWriteMany` semantics. Storage access modes are
+described in the Kubernetes
+[docs](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-
+modes).
+
+## Overriding defaults
+
+The previous example showed how to override the persistence for a particular
+component. This reconfigures the `kxi-controller` component to use a custom
+storage configuration.
+
+    
+    
+    kxi-controller:
+      persistence:
+        useLocal: true
+        storageClass: "standard"
+        storageSize: "30Gi"
+        accessModes: "ReadWriteOnce"
+    
+
+Variable | Description  
+---|---  
+`kxi-controller.persistence.useLocal` | Override the global settings  
+`kxi-controller.persistence.storageClass` | Name of storage class to use  
+`kxi-controller.persistence.storageSize` | Size of volume to provision  
+`kxi-controller.persistence.accessModes` | Access mode  
+  
+## Package storage
+
+One special case is the storage for _kdb Insights Enterprise_ packages. This
+is part of the main chart and the configuration for modifying it is at the
+base level.
+
+The default configuration it uses is below. The available fields match
+previous sections.
+
+    
+    
+    global:
+    ..
+    packages:
+      useLocalValues: true
+      storageClass: "sharedfiles"
+      storageSize: 20Gi
+    
+
+## Assembly Storage
+
+_Assemblies_ require the use of persistent storage for persisting databases
+and stream logs.
+
+There are two sections within an _Assembly_ where these may be defined.
+
+  * the `mounts` object relates to database storage
+  * under `spec.elements.[*]` the `rtLogVolume` defines the stream log storage.
+
+As part of the base installation, the default storage configuration may be
+defined. These are used for any assembly that doesn't explicitly define their
+storage.
+
+    
+    
+    kxi-operator:
+      config:
+        mount:
+          storageClass: "rook-cephfs"
+          accessModes:
+          - ReadWriteMany
+        element:
+          # storageClass: "standard"
+          accessModes:
+          - ReadWriteOnce
+        rt:
+          volume:
+            # storageClass: "standard"
+            accessModes:
+            - ReadWriteOnce
+    
+
+Variable | Type | Example  
+---|---|---  
+`kxi-operator.config.mount.storageClass` | `string` | `"rook-cephfs"`  
+`kxi-operator.config.mount.accessModes` | `[]string` | `["ReadWriteMany"]`  
+`kxi-operator.config.element.storageClass` | `string` | `""`  
+`kxi-operator.config.element.accessModes` | `[]string` | `["ReadWriteOnce"]`  
+`kxi-operator.config.rt.volume.storageClass` | `string` | `""`  
+`kxi-operator.config.rt.volume.accessModes` | `[]string` | `["ReadWriteOnce"]`  
+  
+The `storageClass` defines what underlying storage type to use. If not set it
+will default to `""`, allowing the cluster default to be used. The
+`accessModes` defines what access modes to request for the created PVC.
+
+Access Modes
+
+Not all `accessModes` are permitted for each `storageClass`.
+
+### Mount
+
+`mounts` within an _Assembly_ are the Persistent Volumes used for database
+storage.
+
+Where an _Assembly_ is applied without defining `storageClass` and
+`accessModes`:
+
+    
+    
+    apiVersion: insights.kx.com/v1
+    kind: Assembly
+    metadata:
+      name: sdk-sample-assembly
+    spec:
+      ...
+      mounts:
+        hdb:
+          type: local
+          baseURI: file:///data/db/hdb
+          partition: date
+          dependency:
+          - idb
+      elements:
+        ...
+    
+
+The above `kxi-operator.config.mount` values will default the assembly storage
+as below
+
+    
+    
+    apiVersion: insights.kx.com/v1
+    kind: Assembly
+    metadata:
+      name: sdk-sample-assembly
+    spec:
+      ...
+      mounts:
+        hdb:
+          type: local
+          baseURI: file:///data/db/hdb
+          partition: date
+          dependency:
+          - idb
+          volume:
+            accessModes:
+            - ReadWriteMany
+            size: 20Gi
+            storageClass: rook-cephfs
+      elements:
+        ...
+    
+
+### Element
+
+The `spec.elements` object defines components of an assembly (databases,
+streams, pipelines). These components may subscribe to stream data and require
+persistent storage for the logs.
+
+The `kxi-operator.config.element` configuration object defines the default
+storage for this if it has not been provided as part of an assembly.
+
+    
+    
+    apiVersion: insights.kx.com/v1
+    kind: Assembly
+    metadata:
+      name: sdk-sample-assembly
+    spec:
+      ...
+      elements:
+        dap:
+          instances:
+            rdb:
+              size: 3
+              rtLogVolume:
+                size: 20Gi
+        sm:
+          size: 1
+          ...
+          rtLogVolume:
+            size: 20Gi
+    
+
+The above `kxi-operator.config.element` configuration will default the stream
+log storage as below.
+
+    
+    
+    apiVersion: insights.kx.com/v1
+    kind: Assembly
+    metadata:
+      name: sdk-sample-assembly
+    spec:
+      ...
+      elements:
+        dap:
+          instances:
+            rdb:
+              size: 3
+              rtLogVolume:
+                accessModes:
+                - ReadWriteOnce
+                size: 20Gi
+              ...
+        sm:
+          size: 1
+          rtLogVolume:
+            accessModes:
+            - ReadWriteOnce
+            size: 20Gi
+            ...
+    
+
+### RT Volume
+
+The `spec.elements.sequencer` object defines the RT Sequencer components
+within an assembly.
+
+The `kxi-operator.config.rt.volume` configuration object defines the default
+storage for a sequencer if it has not been provided as part of an assembly.
+
+    
+    
+    apiVersion: insights.kx.com/v1
+    kind: Assembly
+    metadata:
+      name: sdk-sample-assembly
+    spec:
+      ...
+      elements:
+        ...
+        sequencer:
+          south:
+            volume:
+              size: 40Gi
+          north:
+            external: true
+    
+
+The above `kxi-operator.config.rt.volume` configuration will default the RT
+Sequencer volume.
+
+    
+    
+    apiVersion: insights.kx.com/v1
+    kind: Assembly
+    metadata:
+      name: sdk-sample-assembly
+    spec:
+      ...
+      elements:
+        ...
+        sequencer:
+          north:
+            external: true
+            volume:
+              accessModes:
+              - ReadWriteOnce
+              size: 20Gi
+              ...
+            ...
+          south:
+            external: false
+            volume:
+              accessModes:
+              - ReadWriteOnce
+              size: 40Gi
+              ...
+            ...
+    
+
+[Access modes](https://kubernetes.io/docs/concepts/storage/persistent-
+volumes/#access-modes)
+

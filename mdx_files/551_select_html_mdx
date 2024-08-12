@@ -1,0 +1,222 @@
+https://code.kx.com/insights/core/sql/select.html
+
+# Select Statements - kdb products
+
+Original URL: https://code.kx.com/insights/core/sql/select.html
+
+# Select Statements
+
+We can combine SQL operations with the SELECT statement. The following
+operations are supported:
+
+operator | description  
+---|---  
+DISTINCT | Return only distinct (different) values  
+LIMIT | Select a limited number of records  
+AS | Give a table, or a column in a table, a temporary name  
+ORDER BY | Sort the result set in ascending or descending order  
+GROUP BY | Groups rows that have the same values into summary rows  
+JOIN | Combine rows from two or more tables  
+WHERE | Filters records  
+HAVING | Used in conjunction with GROUP BY aggregate functions  
+      
+    
+    select [distinct] ns from t (left|right|inner|cross)
+      join ..join q on f(t)=g(q)
+      where c
+      group by 1,g
+      having h
+      order by 1,o asc|desc
+      limit n
+    
+
+## Distinct
+
+Using `select distinct` returns only distinct (different) values.
+
+**Examples**
+
+## Limit
+
+Using `limit` can be used to select a limited number of records, partition-by-
+partition. This is useful on large tables to reduce the impact on performance.
+
+Warning
+
+Using `limit` with an `offset` is not yet available.
+
+**Examples**
+
+## As
+
+Using `as` can be used to give a table, or a column in a table, a temporary
+name.
+
+**Examples**
+
+  * Renaming the column: 
+    
+        .s.e"SELECT vendor as company FROM trips"
+    
+
+## Order by
+
+Using `order by` is used to sort the result set in ascending or descending
+order.
+
+This keyword sorts the records in ascending order by default. To sort the
+records in descending order, use the DESC keyword.
+
+**Examples**
+
+Expression types
+
+`order by` expressions may be column names, ordinal numbers of the output
+columns, or arbitrary expressions.
+
+## Group by
+
+Using `group by` groups rows that have the same values for one or more columns
+or expressions into summary rows.
+
+This statement is often used with aggregate functions.
+
+**Examples**
+
+Expression types
+
+`group by` expressions may be column names, ordinal numbers of the output
+columns, or arbitrary expressions.
+
+## Aggregates
+
+The following aggregates are supported:
+
+    
+    
+    sum         total
+    avg         last
+    count       max
+    count(*)    min
+    first       sum
+    
+
+**Examples**
+
+  * Using `sum`, `avg`, `count`, `min`, `max`:
+    
+        t:([] s:`AAPL`GOOG`BARC`VOD; p:13.0 12.1 4.0 5.4; a:1 2 3 4)
+    s)select avg(p), sum(a), min(s), max(s) from t
+    
+    p     a  s
+    -------------
+    8.625 10 AAPL
+    
+
+  * Using `distinct`:
+    
+        q:([] s:`AAPL`AAPL`GOOG`GOOG; p:4?10.0)
+    s)select count(distinct s) from q
+    
+    s
+    -
+    2
+    
+
+Aggregates and distinct
+
+`sum`, `avg`, `count`, `min`, `max` are all supported with `distinct`.
+
+## Join
+
+A `join` clause is used to combine rows from two or more tables, based on a
+related column between them.
+
+Join types supported include `left`, `right`, `inner`, and `cross`.
+
+Warning
+
+Joins may be nested, but `natural`, `using` and `lateral` are not yet
+implemented.
+
+### Left Join
+
+Returns all records from the left-hand table, and the matched records from the
+right-hand table.
+
+**Examples**
+
+No matching records
+
+Where there were no matches, records in the left-hand table are returned but
+joined fields are blank.
+
+### Right Join
+
+Returns all records from the right-hand table, and the matching records from
+the left-hand table.
+
+**Examples**
+
+### Inner Join
+
+Returns records that have matching values in both tables.
+
+**Examples**
+
+### Cross Join
+
+Using `cross join` returns a result set which is the number of rows in the
+first table multiplied by the number of rows in the second table, if no WHERE
+clause is used along with `cross join`. This kind of result is called as
+Cartesian Product.
+
+**Examples**
+
+  * Cross join two tables:
+    
+        cross_tab:.s.e"SELECT * FROM cash_credit CROSS JOIN vendors;"
+    
+
+Each row from the first table joins with each row of the second table such that:  table | number rows  
+---|---  
+cash_credit | x  
+vendors | y  
+cash_credit CROSS JOIN vendors | x*y  
+
+CTE/WITH SELECT
+
+SQL has support for common table expressions. These queries take the form:
+
+    
+    
+    with t1 as (select...), t2 as (select... t1) select... t2
+    
+
+The results are materialized unless they can be expressed as a union of
+operations on individual partitions.
+
+## Subquery
+
+Scalar subqueries and correlated subqueries are supported.
+
+The following operators support subquery arguments:
+
+    
+    
+    <     [not] in
+    >     [not] exists
+    =
+    
+
+## Combining queries
+
+The following operators are supported for combining queries:
+
+    
+    
+    union[all]
+    intersect[all]
+    except[all]
+    
+

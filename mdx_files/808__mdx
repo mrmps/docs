@@ -1,0 +1,99 @@
+https://code.kx.com/platform/deployment/lin_prerequisites/
+
+# Linux - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/deployment/lin_prerequisites/
+
+# Linux prerequisites
+
+## Required binaries
+
+The following packages are required on Linux to deploy and run the _KX Delta
+Platform_ and its components:
+
+KX Delta Platform | KX Analyst  
+---|---  
+bash | fontconfig  
+bzip2 | freetype  
+coreutils | libstdc++  
+gawk | libgcc  
+glibc | libpng  
+grep |   
+gzip |   
+hostname |   
+lsof |   
+procps |   
+rsync |   
+sed |   
+tar |   
+unzip |   
+util-linux |   
+which |   
+  
+To run the _KX Delta Platform_ with TLS enabled in kdb+, `openssl` is required
+to be installed on the host server.
+
+OpenSSL | RPM/PKG | Library  
+---|---|---  
+RHEL 7.0+ | openssl-1.0.2k-12.el7.x86_64   
+openssl-libs-1.0.2k-12.el7.x86_64 | libssl.so.1.0.2k  
+RHEL 8.0+ | openssl-1.1.1c-2.el8_1.1.x86_64  
+openssl-libs-1.1.1c-2.el8_1.1.x86_64 | libssl.so.1.1  
+UBUNTU 18+ | 1.1.0g-2ubuntu4.3 | libssl.so.1.1  
+UBUNTU 20+ | 1.1.1f-1ubuntu2 | libssl.so.1.1  
+  
+To be able to use LDAP authentication to _KX Control_ , `openldap` is required
+to be installed on the host server.
+
+OpenLDAP | RPM/PKG | Library  
+---|---|---  
+RHEL 7.0+ | openldap-2.4.44-15.el7_5.x86_64 | libldap-2.4.so.2.10.7  
+RHEL 8.0+ | openldap-2.4.46-11.el8_1.x86_64 | libldap-2.4.so.2.10.9  
+UBUNTU 18+ | 2.4.45+dfsg-1ubuntu1.2 | libldap_r-2.4.so.2.10.8  
+UBUNTU 20+ | 2.4.49+dfsg-2ubuntu1.2 | libldap_r-2.4.so.2.10.12  
+  
+## Third party software
+
+### Java runtime environment
+
+Supported versions:
+
+### PDF viewer
+
+_KX Dashboards_ provide the ability to convert a dashboard in a web browser to
+a PDF. In order to do this you need to have the following installed on your
+deploy host.
+
+  * Nodejs 8.11.1+
+  * Google Chrome 65.0.3325.181+
+
+## Host configuration
+
+Kdb+ licenses (`k4.lic`) are tied to the hostname of a machine and
+specifically the hostname in FQDN (`<HOSTNAME>.<DOMAINNAME>`) format. When run
+on a machine which is incorrectly configured you will get a `host` error when
+running the `q` binary.
+
+For more information on kdb+ license errors see
+[code.kx.com](https://code.kx.com/q/basics/errors/#license-errors)
+
+In order for kdb+ to run, the hostname in the license file must be present as
+an alias to a network interface in the `/etc/hosts` file on the box. The
+network interface aliased will be used for inter process communication so it
+must be one which is accessible by all hosts wishing to connect to the system.
+The format of the entry in `/etc/hosts` should be as follows:
+
+    
+    
+    <IP ADDRESS> <FQDN> <HOSTNAME>
+    
+
+For example if a host with IP address `10.190.1.232` is called `kdbdev` and is
+on the `firstderivatives.com` domain then the `/etc/hosts` file should look
+like this:
+
+    
+    
+    10.111.1.222 kdbdev.firstderivatives.com kdbdev
+    
+

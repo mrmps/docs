@@ -1,0 +1,83 @@
+https://code.kx.com/platform/workflows/
+
+# Workflows - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/workflows/
+
+# Workflows
+
+Workflows control the start order of process instances.
+
+A workflow is a list of tasks and connections between tasks.
+
+A task is a process instance scheduled to run. Each task starts only once all
+its parent tasks are running successfully.
+
+Tasks can also be set to require manual approval before continuing.
+
+When a process failure is detected, a workflow to take corrective action can
+be launched automatically.
+
+![Screenshot](../img/control/workflowsexample.png)
+
+## Create a workflow
+
+  1. From the _File_ menu, create a new workflow and assign it to a package.
+
+![Screenshot](../img/control/newworkflow.jpg)
+
+  2. A workflow must have at least one task: click ![Screenshot](../img/control/newtaskbutton.jpg)
+
+![Screenshot](../img/control/addnewtasktoworkflow.jpg)
+
+  3. ![Add connection](../img/control/addconnectionbutton.jpg) to link tasks.
+
+![Screenshot](../img/control/addworkflowconnection.jpg)
+
+Which displays as:
+
+![Screenshot](../img/control/workflowview.jpg)
+
+Existing tasks can also be added to the Workflow with the
+![Screenshot](../img/control/addtaskbutton.jpg)
+
+![Screenshot](../img/control/addexistingtask.jpg)
+
+To remove a task, left-click so it is highlighted in yellow, then click the
+![Screenshot](../img/control/removebutton.jpg)
+
+![Screenshot](../img/control/leftclickremove.jpg)
+
+  4. Save the workflow.
+
+  5. Once saved, the workflow can be started. 
+
+![Screenshot](../img/control/workflowstart.jpg)
+
+When starting a workflow, if there are existing tasks with the same port
+definitions these should be stopped to avoid port conflicts when running the
+workflow.
+
+Stop the workflow and restart if required. The status can be checked from the
+_Workflow Status_ tab:
+
+![Screenshot](../img/control/controlworkflowstatusview.png)
+
+Context menus (right click) help to manage your workflows.
+
+action | context  
+---|---  
+Add or create a task | workflow background  
+![Workflow Menu](../img/control/workflowmenu.png)  
+Change a task | task in the workflow editor  
+![Workflow Task Modify](../img/control/workflowtaskmenu.png)  
+Change a connection | connection in the workflow editor  
+![Workflow Task Modify](../img/control/workflowconnectionmenu.png)  
+  
+### Workflow history
+
+The _History_ tab shows the tasks over time, whether they are running,
+finished, launching, etc.
+
+![Workflow Task Modify](../img/control/workflowhistory.png)
+

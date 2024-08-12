@@ -1,0 +1,265 @@
+https://code.kx.com/insights/microservices/machine-learning/examples/models.html
+
+# Model Generation & Deployment - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/machine-learning/examples/models.html
+
+# Model generation and deployment
+
+The following example provides a sample workflow for:
+
+  1. Generation of a model to be used in a production environment
+  2. Persistence of this model to cloud storage for use in deployment
+  3. Deployment of the model and preprocessing steps to a production environment
+
+This is intended to provide a sample of such a workflow and is not intended to
+be fully descriptive, users are encouraged to follow the API documentation
+[here](../../../api/machine-learning/index.html) to get full use of the
+functionality.
+
+## Model Generation
+
+**1) Start the docker container as a development environment following the
+instructions[here](../quickstart/docker.html#development-environment).**
+
+Ensure that the image has been started such that it points explicitly to a
+cloud storage bucket, in the example below this is done using S3.
+
+Note
+
+For this example a user is expected to have write access to a pre generated
+AWS bucket at `s3://ml-aws-storage`.
+
+    
+    
+    docker run -it -p 5000:5000 \
+        -e "KDB_LICENSE_B64=$KDB_LICENSE_B64" \
+        -e "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID" \
+        -e "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" \
+        -e "AWS_REGION=$AWS_REGION" \
+        registry.dl.kx.com/kxi-ml:latest \
+        -aws s3://my-aws-storage -p 5000
+    
+
+**2) Retrieve a dataset for generation of a model**
+
+In this case we are using the Wisconsin Breast Cancer dataset to predict if a
+tumour is malignant or benign. This example follows broadly that outlined in
+the ml-notebooks
+[here](https://github.com/KxSystems/mlnotebooks/blob/master/notebooks/01%20Decision%20Trees.ipynb).
+
+    
+    
+    q)dataset :.p.import[`sklearn.datasets;`:load_breast_cancer][]
+    q)features:dataset[`:data]`
+    q)target  :dataset[`:target]`
+    
+
+**3) Split the data into a training and testing set to validate model
+performance**
+
+To validate that the model is performing appropriately we set aside a testing
+set which can be used to independently validate the performance of the model.
+This is done using the function `.ml.trainTestSplit` provided with the kdb
+Insights Machine Learning package. To ensure we are seeing enough samples in
+the training phase the test size is 10% of the original data.
+
+    
+    
+    q)data:.ml.trainTestSplit[features;target;0.1]
+    
+
+**4) Build and train a model**
+
+In this example we use embedPy to generate the models used. These could
+equally be created using functionality within the kdb Insights Machine
+Learning package however this example is intended to showcase the use of
+Python models in this regime
+
+    
+    
+    // Fit a Decision Tree Classifier
+    q)clf:.p.import[`sklearn.tree]`:DecisionTreeClassifier
+    q)clf:clf[`max_depth pykw 3]
+    q)clf[`:fit][data`xtrain;data`ytrain];
+    
+    // Fit a Random Forest Classifier
+    q)rf:.p.import[`sklearn.ensemble]`:RandomForestClassifier
+    q)rfkwargs:`class_weight`max_depth!(`balanced;80)
+    q)rf:rf[pykwargs rfkwargs]
+    q)rf[`:fit][data`xtrain;data`ytrain]
+    
+
+**5) Validate model performance**
+
+Calculate the accuracy of predictions for each of the models:
+
+    
+    
+    q)show .ml.accuracy[clf[`:predict][data`xtest]`;data`ytest];
+    q)show .ml.accuracy[rf[`:predict][data`xtest]`;data`ytest];
+    
+
+**6) Publish models to the Registry**
+
+Once you are happy with the performance of the models publish them to the
+Machine Learning Registry at `s3://my-aws-storage`. This follows the
+documentation outlined in the Registry section [here](../../../api/machine-
+learning/q/registry/index.html).
+
+    
+    
+    // Set the decision tree classifier to the 'Wisconsin' experiment
+    q).ml.registry.set.model[::;"Wisconsin";clf;"DecisionTree";"sklearn";::]
+    
+    // Set the random forest classifier to the 'Wisconsin' experiment
+    q).ml.registry.set.model[::;"Wisconsin";clf;"RandomForest";"sklearn";::]
+    
+
+## Model Docker Deployment
+
+**1) Generate a`spec.q` file defining deployment of the model generated
+above**
+
+    
+    
+    .qsp.run
+      .qsp.read.fromCallback[`publish]
+      .qsp.ml.registry.predict[
+        {select from x};
+        `yhat;
+        .qsp.use (!) . flip (
+          (`registry ; enlist[`aws]!enlist "s3://my-aws-storage");
+          (`model    ; "RandomForest");
+          (`version  ; 1 0)
+          )
+        ]
+      .qsp.write.toConsole[]
+    
+
+**2) Set up a Docker Compose file for the example**
+
+    
+    
+    # docker-compose.yaml
+    
+    version: "3.3"
+    services:
+      controller:
+        image: registry.dl.kx.com/kxi-sp-controller:0.11.0
+        ports:
+          - 6000:6000
+        environment:
+          - KDB_LICENSE_B64                        # Which kdb+ license to use, see note below
+        command: ["-p", "6000"]
+    
+      worker:
+        image: registry.dl.kx.com/kxi-ml:0.8.0
+        ports:
+          - 5000:5000
+        volumes:
+          - .:/app                                 # Bind in the spec.q file
+        environment:
+          - KXI_SP_SPEC=/app/spec.q                # Point to the bound spec.q file
+          - KXI_SP_PARENT_HOST=controller:6000     # Point to the parent Controller
+          - KDB_LICENSE_B64
+          - AWS_ACCESS_KEY_ID                     # Use AWS_ACCESS_KEY_ID defined in process
+          - AWS_SECRET_ACCESS_KEY                 # Use AWS_SECRET_ACCESS_KEY defined in process
+          - AWS_REGION                            # Use AWS_REGION defined in processor
+          - KXI_SP_CHECKPOINT_FREQ=0              # Set the checkpoint frequency to 0
+        command: ["-p", "5000"]
+    
+
+**3) Start the container and follow logs**
+
+    
+    
+    $ docker-compose up -d
+    $ docker-compose logs -f
+    
+
+**4) Connect to the q process running the pipeline and push data for
+prediction**
+
+    
+    
+    $ q p.q
+    q)h:hopen 5000
+    q)data  :.p.import[`sklearn.datasets;`:load_breast_cancer][]
+    q)feat  :data[`:data]`
+    q)fnames:`$ssr[;" ";"_"]each data[`:feature_names][`:tolist][]`
+    q)tab:flip fnames!flip feat
+    q)h(`publish;3?tab)
+    
+
+## Model Kubernetes Deployment
+
+**1) Generate a`spec.q` file defining deployment of the model generated
+above**
+
+    
+    
+    .qsp.run
+      .qsp.read.fromCallback[`publish]
+      .qsp.ml.registry.predict[
+        {select from x};
+        `yhat;
+        .qsp.use (!) . flip (
+          (`registry ; enlist[`aws]!enlist "s3://my-aws-storage");
+          (`model    ; "RandomForest");
+          (`version  ; 1 0)
+          )
+        ]
+      .qsp.write.toConsole[]
+    
+
+**2) Follow the kubernetes setup outlined[here](../quickstart/kube.html) to
+generate a Stream Processor Coordinator.**
+
+**3) Deploy the SP ML Worker image with the defined specification in step 1
+above.**
+
+    
+    
+    $ jobname=$(curl -X POST http://localhost:5000/pipeline/create -d \
+        "$(jq -n  --arg spec "$(cat spec.q)" \
+        '{
+            name     : "ml-example",
+            type     : "spec",
+            base     : "q-ml",
+            config   : { content: $spec },
+            settings : { minWorkers: "1", maxWorkers: "1" },
+            env      : { AWS_ACCESS_KEY_ID      : "'"$AWS_ACCESS_KEY_ID"'",
+                         AWS_SECRET_ACCESS_KEY  : "'"$AWS_SECRET_ACCESS_KEY"'",
+                         AWS_REGION             : "'"$AWS_REGION"'",
+                         KXI_SP_CHECKPOINT_FREQ : 0}
+        }' | jq -asR .)" | jq -r .id)
+    
+
+**4) Port-forward the SP worker**
+
+    
+    
+    $ kubectl port-forward <INSERT_WORKER> spwork 8080
+    
+
+**5) In a new process follow the logs of the worker process**
+
+    
+    
+    $ kubectl logs <INSERT_WORKER> spwork -f
+    
+
+**6) Start a q process and publish data to the SP ML Pipeline**
+
+    
+    
+    $ q p.q
+    q)h:hopen 7000
+    q)data  :.p.import[`sklearn.datasets;`:load_breast_cancer][]
+    q)feat  :data[`:data]`
+    q)fnames:`$ssr[;" ";"_"]each data[`:feature_names][`:tolist][]`
+    q)tab:flip fnames!flip feat
+    q)h(`publish;3?tab)
+    
+

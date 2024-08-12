@@ -1,0 +1,71 @@
+https://code.kx.com/platform/stream/gw_template/
+
+# Gateway - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/stream/gw_template/
+
+# DS_GW
+
+Process Template used to provide a single entry point for Real Time and
+Historic database queries. The Gateway process is also used to provide
+failover between backend databases. The gateway process, DS_GW, connects to a
+user defined list of server processes, and provides a single unified access
+point for clients to the entire server bank.
+
+It carries out necessary aggregations on data sources on multiple servers, and
+returns the aggregated result to its clients. The Gateway is capable of
+servicing requests arriving by either sync or deferred sync requests. If a
+sync request is received, the Gateway will carry out successive sync calls to
+the appropriate function.
+
+## Parameters
+
+The below table details the _GW_ template parameters.
+
+name | type | default value | description  
+---|---|---|---  
+messagingServer | Configuration | DS_MESSAGING_SERVER | Messaging server  
+collectFunct | Analytic | dxCollect | Specifies which analytic to use as the query collect function.  
+analyticMap | Configuration | DS_GW_AnalyticMap | Map between analytic on GW and analytic on server+agg function  
+pooled | Boolean | false | Boolean flag to indicate the preferred order in which servers will be accessed for async queries  
+syncDispatch | Analytic | dxSyncDispatch | Specifies sync dispatch function  
+asyncDispatch | Analytic | dxAsyncDispatch | Specifies async dispatch function  
+processConfig | Configuration | DS_GW_Servers | Servers used by GW  
+initialStateFunction | Analytic | dxEmptyFunctionNull | Sets the analytic to run on startup  
+Time | Integer | 0 | Frequency at which to poll and process subscription results  
+logQuery | Boolean | true | Boolean flag to indicate whether to log the query on execution server  
+queryParser | Analytic | true | Hook to `.z.ps` and `.z.pg`  
+subscriptionChannel | Symbol |  | Channel to subscribe to  
+subscriptionTableList | Symbol[] |  | List of tables to subscribe to  
+publishChannel | Symbol |  | Channel to publish on  
+publishTableList | Symbol[] |  | List of tables to publish to  
+realTimeMsgFunct | Analytic | dxEmptyFunction | Real-time messaging function  
+gwStringQuery | Boolean | false | Send gw queries to target databases as strings  
+  
+## Sync/Async calls
+
+The Gateway is capable of servicing either sync or deferred sync requests but
+not simultaneously.
+
+  * If a sync request is received, it will block the Gateway until it has been fully serviced.
+  * In contrast, if a deferred sync is used, the Gateway will not be blocked. It will distribute the query to its bank of servers as needed, and will return the aggregated result to the client once all servers have returned. Until the servers return, the Gateway is free to handle other incoming requests.
+
+## Socket Sharding
+
+  * The KX Delta Platform does not support socket sharding for target databases of gateway queries, i.e. queries using .ds.gw.query.
+  * If we have multiple target processes with the same host and port, i.e. processes which are sharded, when the gateway connects to the port the OS will pick one of the processes to connect to. The gateway has no control over which processes it will connect to, and so it could end up connecting to the same one multiple times. 
+  * If the target databases are running as instances of a service class on different ports, then the gateway can connect to each port. They will all join the same service class target and the gateway can send gateway queries to each of them. 
+
+## APIs
+
+### `.ds.gw.query`
+
+Used to query between processes
+
+**Parameter(s):**
+
+Name | Type | Description  
+---|---|---  
+dict | dictionary | Details of target process  
+query | symbol | Query for target process
+

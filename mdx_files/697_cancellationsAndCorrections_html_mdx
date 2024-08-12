@@ -1,0 +1,104 @@
+https://code.kx.com/insights/accelerators/fsi/cancellationsAndCorrections.html
+
+# Cancellations & Corrections - kdb products
+
+Original URL: https://code.kx.com/insights/accelerators/fsi/cancellationsAndCorrections.html
+
+# Cancellations and Corrections
+
+Cancellations and Corrections data are stored in the date partitioned _CanCor_
+table.
+
+The _getTicks_ API can be prompted to apply cancellation and correction data
+to an original transaction data table by passing in the boolean-type parameter
+`applyCanCor e.g.:
+
+    
+    
+        args: (!) . flip (
+            (`table;            `Trade                          );
+            (`startTS;          2023.07.28D09:00:00.000000000   );
+            (`endTS;            2023.07.28D10:00:00.000000000   );
+            (`idList;           `AMD                            );
+            (`applyCanCor;      1b                              )
+         );
+    
+        last gw(`getTicks;args;`callback;()!())
+    
+
+(where gw is a handle to the service gateway)
+
+To illustrate how the cancellations and corrections data is applied, consider
+these raw data subselections from the Trade and CanCor tables:
+
+**Trade**
+
+eventTimestamp | instrumentID | price | volume  
+---|---|---|---  
+2023.07.28D09:00:00.000000000 | AMD | 116.97 | 55919  
+2023.07.28D09:05:00.000000000 | AMD | 119 | 62883  
+2023.07.28D09:10:00.000000000 | AMD | 119.27 | 91811  
+2023.07.28D09:15:00.000000000 | AMD | 112.28 | 63351  
+2023.07.28D09:20:00.000000000 | AMD | 119.81 | 64018  
+2023.07.28D09:25:00.000000000 | AMD | 119.05 | 35807  
+2023.07.28D09:30:00.000000000 | AMD | 114.79 | 39626  
+2023.07.28D09:35:00.000000000 | AMD | 111.59 | 42477  
+2023.07.28D09:40:00.000000000 | AMD | 117.47 | 56430  
+2023.07.28D09:45:00.000000000 | AMD | 116.63 | 7099  
+2023.07.28D09:50:00.000000000 | AMD | 116.67 | 43449  
+2023.07.28D09:55:00.000000000 | AMD | 110.93 | 90812  
+2023.07.28D10:00:00.000000000 | AMD | 114.19 | 84985  
+  
+**CanCor**
+
+eventTimestamp | instrumentID | canCorType | origPrice | origVolume | newPrice | newVolume  
+---|---|---|---|---|---|---  
+2023.07.28D09:05:00.000000000 | AMD | Correction | 119 | 62883 | 112.15 | 61935  
+2023.07.28D09:15:00.000000000 | AMD | Correction | 112.28 | 63351 | 111.42 | 98573  
+2023.07.28D09:30:00.000000000 | AMD | Correction | 114.79 | 39626 | 113.95 | 36492  
+2023.07.28D09:50:00.000000000 | AMD | Cancellation | 116.67 | 43449 |  |   
+2023.07.28D09:55:00.000000000 | AMD | Cancellation | 110.93 | 90812 |  |   
+  
+There are three corrections. _getTicks_ overwrites the price and volume of the
+raw _Trade_ data using newPrice and newVolume in the _CanCor_ data and returns
+the amended data to the caller. There are two cancellations. _getTicks_
+removes the matching rows before returning the amended data to the caller.
+
+The returned result is:
+
+eventTimestamp | instrumentID | price | volume | sequenceNumber  
+---|---|---|---|---  
+2023.07.28D09:00:00.000000000 | AMD | 116.97 | 55919 | 1109  
+2023.07.28D09:05:00.000000000 | AMD | 112.15 | 61935 | 1110  
+2023.07.28D09:10:00.000000000 | AMD | 119.27 | 91811 | 1111  
+2023.07.28D09:15:00.000000000 | AMD | 111.42 | 98573 | 1112  
+2023.07.28D09:20:00.000000000 | AMD | 119.81 | 64018 | 1113  
+2023.07.28D09:25:00.000000000 | AMD | 119.05 | 35807 | 1114  
+2023.07.28D09:30:00.000000000 | AMD | 113.95 | 36492 | 1115  
+2023.07.28D09:35:00.000000000 | AMD | 111.59 | 42477 | 1116  
+2023.07.28D09:40:00.000000000 | AMD | 117.47 | 56430 | 1117  
+2023.07.28D09:45:00.000000000 | AMD | 116.63 | 7099 | 1118  
+2023.07.28D10:00:00.000000000 | AMD | 114.19 | 84985 | 1121  
+  
+To clarify, the two trades at 09:50 and 09:55 have been removed and the price
+and volume cell values for the three trades at 09:05, 09:15 and 09:30 have
+been updated.
+
+  * The columns to match _CanCor_ data to any type of transaction data are definied in config _.api.cfg.cancorSettings_ , which is defined in _api.config.q_ script. For example:
+
+table | canCorTable | columnsToMatchCancelsTo | columnsToMatchCorrectionsTo | columnsToCorrectWith  
+---|---|---|---|---  
+Trade | CanCor | `eventTimestamp`instrumentID`origPrice`origVolume | `eventTimestamp`instrumentID`origPrice`origVolume | `newPrice`newVolume  
+  
+  * The default match columns in the FX accelerator packages are `eventTimestamp, `instrumentID, `origPrice, `origVolume, however, they may be changed depending on user preference. If any of `origPrice and/or `origVolume are used to match with, they are matched to `price and/or `volume respectively.
+
+  * To match cancels, we find the rows with equal match column values with the _?_ (search) function and remove those rows from the aggregated DAP results.
+
+  * To match corrections, in addition to the columns to match on, we set the columns to correct in the config _.api.cfg.cancorSettings_. Altogether, we left join on the _CanCor_ data to the main transaction data using the match cols and overwrite the cols to correct. If any of `newPrice and/or `newVolume are used to correct, they overwrite `price and/or `volume respectively.
+
+  * The _CanCor_ data is selected in the DAPs alongside the main transaction data being queried (the table argument to getTicks) and only applied to that data in the aggregator. It is subject to the exact same `startTS/`endTS restraints as the main transaction data is. It is selected in the DAPs by the call of _.api.cancor.getCancor_ inside _getTicks_ and temporarily stored in the _args_ parameter.
+
+  * The _CanCor_ data is then extracted from the _args_ parameter in the aggregator by the call of _.api.join.extractRefTabs_ inside _.api.join.apis_. It is then applied to the main transaction data by the call of _.api.join.applyCanCor_ inside _.api.join.apis_.
+
+  * The _CanCor_ data is then dropped in the aggregator, as are all values in the _args_ parameter, as only data is returned from _.api.join.apis_. However, if a user wants to query _CanCor_ data directly, either _getTicks_ or _getData_ can be called in the gateway directly with `table=`CanCor.
+

@@ -1,0 +1,289 @@
+https://code.kx.com/insights/enterprise/cli/authentication.html
+
+# Authentication - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/cli/authentication.html
+
+# CLI Authentication
+
+To access and interact with _kdb Insights Enterprise_ , you need to
+authenticate first. This is done through the `kxi auth login` command.
+
+Authentication can be approached either through [user
+authentication](../security/managing-users.html) or [service account
+authentication](../security/managing-service-accounts.html).
+
+  * **User Authentication**: This approach is designed for user-specific access and involves user interaction for authentication. Users log in via a browser, accessing the [_kdb Insights Enterprise_ user interface](../user-interface/ui-overview.html).
+
+  * **Service Account Authentication**: service accounts are intended for application-specific access and do not require user interaction. This method is well-suited for programmatic, non-interactive tasks and command-line-based operations. It is commonly used for server-to-server communication.
+
+Authentication exceptions
+
+These commands are exempt from the authentication discussed in this section.
+
+  * The `install` and `backup` commands interact directly with the Kubernetes cluster. To use these commands, you need Kubernetes access; ask your system administrator to set this up.
+
+  * The `user` command also falls under a different authentication mechanism. It manages _kdb Insights Enterprise_ users and, therefore, requires an admin login. For more information see here.
+
+## Authenticating as a user
+
+To authenticate as a user, execute `kxi auth login`.
+
+  1. This command will automatically open a web browser
+  2. Complete the login process using your _kdb Insights Enterprise_ user credentials
+  3. After successfully logging in, close the browser tab and return to the command-line.
+
+For example, to authenticate and list assemblies:
+
+  1. Execute `kxi auth login` to authenticate:
+    
+        Authenticating with kdb Insights Enterprise
+    
+    Successfully authenticated with kdb Insights Enterprise
+    
+
+  2. List assemblies:
+    
+        ASSEMBLY NAME  RUNNING  READY
+    dfx-assembly   False    False
+    iot-assembly   False    False
+    
+
+### Authentication validity period
+
+After authenticating, the CLI caches a token on your local machine and re-uses
+it across future commands. By default, this token has a relatively short
+validity period (5 minutes by default). However, if you are actively using the
+CLI, the token will be automatically refreshed, ensuring seamless access.
+
+If you leave the CLI idle for an extended period, you will be prompted to
+login through the browser again. Provided the SSO session cached in the
+browser hasn't expired, you won't have to re-enter your credentials and it
+will automatically re-authenticate. This SSO session is 10 hours by default.
+After this, you will need to re-authenticate.
+
+You can check the token and session settings on your deployment at
+`https://${INSIGHTS_HOSTNAME}/auth/admin/master/console/#/${INSIGHTS_REALM}/realm-
+settings`
+
+[Managing users](../security/managing-users.html).
+
+### Non-local browser flow
+
+When authenticating with user credentials through the CLI without a local
+browser on the machine, the non-local browser flow provides a seamless and
+secure method of authentication. Follow these steps to authenticate using the
+`kxi auth login --force-code command`:
+
+  1. The command will prompt you with a URL. Open this URL in a remote web browser by either copying and pasting it into your preferred browser or manually navigating to it.
+  2. Complete the login process by entering your _kdb Insights Enterprise_ user credentials on the web page.
+  3. After successfully logging in, the browser will redirect to a Success page. Copy the provided authorization code from the page.
+  4. Return to the CLI prompt and paste the authorization code when prompted.
+
+    
+    
+    $ kxi auth login --force-code
+    Authenticating with kdb Insights Enterprise
+    To complete the authorization with Insights Enterprise, please open the following URL in your web browser:
+    
+    https://${INSIGHTS_HOSTNAME}/auth/realms/insights/protocol/openid-connect/auth?redirect_uri=urn%3Aietf%3Awg%3Aoauth%3A2.0%3Aoob&response_type=code&client_id=insights-app
+    
+    Enter the authorization code you received after visiting the provided URL:
+    
+
+## Authenticating as a service account
+
+Before authenticating as a service account, configure the CLI with your
+service account credentials. This ensures the CLI can seamlessly re-
+authenticate in the background without causing any disruptions.
+
+The recommended way to do this is to use [kxi configure](configuration.html)
+to setup your configuration file with the service account ID and secret.
+
+  1. Configure the CLI:
+    
+        ..
+    Service account ID []: test-publisher
+    Service account Secret (input hidden):
+    Re-enter to confirm (input hidden):
+    CLI successfully configured, configuration stored in ..
+    
+
+  2. Authenticate using the service account:
+    
+        kxi auth login --serviceaccount
+    
+    
+        Authenticating with kdb Insights Enterprise
+    
+    Successfully authenticated with kdb Insights Enterprise
+    
+
+You can use `environment variables` to specify service account credentials if
+necessary
+
+The following example shows how to do this:
+
+    
+        export KXI_SERVICEACCOUNT_ID=test-publisher
+    export KXI_SERVICEACCOUNT_SECRET=<SECRET>
+    kxi auth login --serviceaccount
+    
+    
+        Authenticating with kdb Insights Enterprise
+    
+    Successfully authenticated with kdb Insights Enterprise
+    
+
+  3. List the assemblies using a cached token for a request:
+    
+        ASSEMBLY NAME  RUNNING  READY
+    dfx-assembly   False    False
+    iot-assembly   False    False
+    
+
+[Managing service accounts](../security/managing-service-accounts.html).
+
+Unlike user authentication, service accounts cannot be automatically refreshed
+as they do not have a long-lived session. Hence the service account
+credentials should be configured, as shown above, to ensure re-authentication
+can be handled automatically.
+
+## Token caching
+
+During the authentication process, the tokens generated are cached and saved
+by default to the location `~/.insights/credentials`. This location can be
+updated by adding the `auth.cache_file` variable to the [configuration
+file](configuration.html).
+
+## Config profiles
+
+The `kxi auth` command can make use of [profiles](configuration.html#profiles)
+to allow you to authenticate with different profiles concurrently.
+
+Use the `--profile` command to authenticate for a specific profile.
+
+Supporting multiple profiles simplifies the process of querying different
+environments, providing a convenient way to interact with multiple deployments
+without needing to re-authenticate.
+
+The example below interacts with two different environments; `dev` and
+`canary`.
+
+In the example, both profiles have been configured using the `kxi configure`
+and used to deploy and list the assemblies:
+
+  1. Setup configuration profiles:
+    
+        [dev]
+    hostname = https://dev.kxi.example.com
+    auth.serviceaccount.id = <ID>
+    auth.serviceaccount.secret = <SECRET>
+    ..
+    
+    [canary]
+    hostname = https://canary.kxi.example.com
+    auth.serviceaccount.id = <ID>
+    auth.serviceaccount.secret = <SECRET>
+    ..
+    
+
+  2. Authenticate with each environment:
+    
+        kxi --profile dev auth login
+    kxi --profile canary auth login
+    
+
+  3. View running assemblies on dev:
+    
+        kxi --profile dev assembly list
+    
+    
+        ASSEMBLY NAME  RUNNING  READY
+    dfx-assembly   False    Flase
+    iot-assembly   False    False
+    
+
+  4. Deploy the sdk-sample-assembly using the dev profile:
+    
+        kxi --profile dev assembly deploy --filepath sdk-sample-assembly.yaml
+    
+    
+        Submitting assembly from sdk-sample-assembly.yaml
+    Custom assembly resource sdk-sample-assembly created!
+    
+
+  5. View running assemblies on dev again:
+    
+        kxi --profile dev assembly list
+    
+    
+        ASSEMBLY NAME       RUNNING  READY
+    dfx-assembly        False    False
+    iot-assembly        False    False
+    sdk-sample-assembly True     True
+    
+
+  6. View running assemblies on canary:
+    
+        kxi --profile canary assembly list
+    
+    
+        ASSEMBLY NAME   RUNNING  READY
+    dfx-assembly    False    False
+    iot-assembly    False    False
+    
+
+## Printing a token
+
+The CLI automatically caches and uses the auth tokens under the covers of its
+commands.
+
+If you require the raw token, you can obtain it using `kxi auth print-token`.
+
+If the cached token has expired, the CLI won't return it and will prompt you
+to re-authenticate.
+
+## Deprecated functionality
+
+The authentication approach described by this document supersedes previous
+implementations. As such previous features have been deprecated.
+
+The `kxi auth get-access-token` command retrieved and printed service account
+tokens on-demand. This has been marked as deprecated. If you need a token,
+please use `kxi auth login --serviceaccount` and `kxi auth print-token`
+instead.
+
+The `client.id` and `client.secret` config fields are being deprecated and
+replaced by `auth.serviceaccount.id` and `auth.serviceaccount.secret`.
+
+The `--client-id` and `--client-secret` options are deprecated from all CLI
+commands. Previously commands provided these options to authenticate as part
+of each command. This is no longer required.
+
+## User management authentication
+
+The `kxi user` command can be used to manage users, assign roles and reset
+credentials. This command uses a different method of authentication than that
+provided by the `kxi auth login` command.
+
+The credentials required are those of the admin user configured when you
+deployed the system, i.e. the user in the `Master` realm when you login to
+`https://${INSIGHTS_HOSTNAME}/auth`. These should be configured in your
+configuration file as `admin.username` and `admin.password`.
+
+    
+    
+    [dev]
+    hostname = https://dev.kxi.example.com
+    admin.username = <ADMIN_USERNAME>
+    admin.password = <ADMIN_PASSWORD>
+    ..
+    
+
+Authentication tokens not cached
+
+This command does not cache tokens and requests one each time it's called.
+This means it will not appear in `${HOME}/.insights/credentials` and will not
+be returned by the `kxi auth print-token` command.
+

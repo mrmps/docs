@@ -1,0 +1,81 @@
+https://code.kx.com/platform/qr_subreqs/
+
+# Sub-requests - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/qr_subreqs/
+
+# Sub-requests
+
+## Aggregations and sub-requests
+
+The screenshot below shows the instance parameters of the QP instance. The
+`aggregationFunc` parameter specifies the default analytic to call when
+collecting results. This is used for all simple requests or routed requests
+without a specific handler.
+
+![Screenshot](../img/qr/qpinstance.png)
+
+By setting the `clientEnabled` parameter to `true`, the QP can act as a client
+and generate sub-requests. During the aggregation step, it’s possible all the
+required data isn’t available. In this case, the process can issue a sub-
+request to retrieve the correct results.
+
+The aggregation function should invoke the `.qr.sub.sendRequest` API to
+generate the sub-request. This will initiate a new request via the QR and mark
+the old one as on-hold. When the child request completes, the result will be
+sent to the client for the original parent ID. The process should be invisible
+to the end-client.
+
+Sub-requests are supported for all request types and can trigger simple or
+routed requests. When triggering a routed request there are two options for
+how to choose the target. The default behavior is for the solution to choose
+the targets explicitly, overriding any routings configured in the QR. To use
+the routings, a `routing` key can be added to the `opts` parameter.
+
+#### APIs
+
+`.qr.sub.sendRequest` initiates a sub-request.
+
+tag | name | type | description  
+---|---|---|---  
+param | request | string|untyped | Request object to be executed  
+param | targets | symbol list | Name of databases or groups to target  
+param | opts | dict | Dictionary of optional parameters  
+  
+Specific targets:
+
+    
+    
+    .qr.sub.sendRequest[
+      (`dxGetRawQuotes; .z.d; `EURUSD); 
+      `ds_rdb`ds_hdb; 
+      ()!()]
+    
+
+Use routings:
+
+    
+    
+    .qr.sub.sendRequest[
+      (`dxGetRawQuotes; .z.d; `EURUSD); 
+      `; 
+      enlist[`routing]!enlist[1b]]
+    
+
+`.qr.sub.getParent` gets the parent request details.
+
+tag | name | type | description  
+---|---|---|---  
+return |  | dict | Parent request  
+      
+    
+    q).qr.sub.getParent[]
+    status   | `initialized
+    QR       | `ds_qr_a
+    notified | 0b
+    queryIDs | ,8
+    clientID | 91bfa660-e8ab-9b88-1d5d-186e4736e7f4
+    polled   | 0b
+    ..
+    
+

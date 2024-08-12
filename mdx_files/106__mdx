@@ -1,0 +1,184 @@
+https://code.kx.com/dashboards/treeview/
+
+# TreeView - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/treeview/
+
+# Treeview
+
+![Screenshot](../img/treeview/treeviewoverview.jpg)
+
+An interactive tree used for navigation, integrated with [view state
+parameters](../viewstateparameters/)
+
+## Basics
+
+![Screenshot](../img/treeview/treeviewbasics.png)
+
+_Name_
+
+    A name for the component provided by the user. 
+_Data Source_
+
+    The TreeView data source should include integer data columns for _Node Id_ and _Parent node_ , and a text label column. 
+     [Data sources](../datasources/)
+_Node ID_
+
+    The data source column of unique integer values for each folder and item in the TreeView. Node IDs are used to define which items are checked, opened or selected. _This is a required column_
+_Parent nodes_
+
+    A data source column which defines the TreeView layout. Start by defining which nodes are to be part of the top level directory; these are assigned a [null value](https://code.kx.com/q4m3/2_Basic_Data_Types_Atoms/) based on the kdb type used. Each node sharing a value will be part of same level; for example, the top level of an integer based hierarchy treeview must have a `Parent nodes` value of `0Ni`; the next level in the TreeView would use a `Parent node` value of `1i` etc. Nested items in a tree should all be assigned the same `Parent node` values. _This is a required column_.
+    For example, _Parent Nodes_ defined by `parentId` (null values are underlined, with an alternative date type hierarchy given in `parentId2`) in the following query:
+    
+    
+        ([]
+     id:(1;2;3;4;5;6;7;8;9;10;11;12;13;14;15;16;17;18;19;20;21;22;23;24;25;26;27;28;29;30;31;32;33;34;35;36;37;38;39;40;41;42;43;44;45;46;47;48;49;50;51;52;53;54;55;56;57;58;59;60;62);
+      parent:(0n;1;1;1;1;2;2;6;6;7;8;8;9;9;10;10;3;3;3;3;17;17;4;4;23;23;23;24;24;28;28;29;29;5;5;5;0n;37;37;37;37;37;37;37;37;37;37;0n;48;49;49;49;49;49;48;55;48;57;10;37;37);
+     level:(1 2 2 2 2 3 3 4 4 4 5 5 5 5 5 5 3 3 3 3 4 5 3 3 4 4 4 4 4 5 5 5 5 3 3 3 1 2 2 2 2 2 2 2 2 2 2 1 2 3 3 3 3 3 2 3 2 3 5 2 2);
+    
+    
+      name:(
+        "What would you like to show?";"Comparison";"Distribution";"Composition";"Relationship";"Over Time";"Among Items";"Many Periods";"Few Periods";"Few Categories";"Linear Data";"Cyclical Data";"Single or Few Category";"Multi Category";"Many Items";"Few Items";"Single Variable";"Two Variables";"Three Variables";"Four Variables";"Few Data Points";"Many Data Points";"Static";"Changing over Time";"Simple Share of Total";"Simple Share Grouped";"Accumulation or substraction to total";"Few Periods";"Many Periods";"Only Relative Differences Matter";"Relative and Absolute Differences Matter";"Only Relative Differences Matter";"Relative and Absolute Differences Matter";"Two Variable";"Three Variables";"Four Variables";"Visual by Components";"Canvas Chart";"Chart GL";"3D Charts";"Vega Charts";"Contour Charts";"Sunburst";"BiPartite Chart";"Graph";"Radial";"Treemap";"Features";"Interactive Features";"Pivot Queries";"Viewstates";"Zoom";"Hover";"Tooltips";"Regex";"Wildcard Columns";"Customisation";"Highlight Rules"; "Many Categories";"Financial Chart";"Sparklines Grid");
+    
+      icon:("fa fa-question-circle";"fa fa-exchange";"fa fa-sitemap";"fa fa-object-ungroup";"fa fa-link";"fa fa-clock-o";"fa fa-object-group";"fa fa-th";"fa fa-th-large";"fa fa-th-large";"fa fa-line-chart";"fa fa-pie-chart";"fa fa-bar-chart";"fa fa-line-chart";"fa fa-bar-chart";"fa fa-bar-chart";"fa fa-circle";"fa fa-ellipsis-h";"fa fa-area-chart";"fa fa-cubes";"fa fa-bar-chart";"fa fa-line-chart";"fa fa-bolt";"fa fa-clock-o";"fa fa-pie-chart";"fa fa-th";"fa fa-sitemap";"fa fa-th-large";"fa fa-th";"fa fa-bar-chart";"fa fa-bar-chart";"fa fa-area-chart";"fa fa-area-chart";"fa fa-ellipsis-h";"fa fa-circle";"fa fa-cubes";"fa fa-tachometer";"fa fa-bar-chart";"fa fa-ellipsis-h";"fa fa-cubes";"fa fa-line-chart";"fa fa-globe";"fa fa-sun-o";"fa fa-area-chart";"fa fa-sitemap";"fa fa-pie-chart";"fa fa-tree";"fa fa-hand-pointer-o";"fa fa-cogs";"fa fa-table";"fa fa-eye";"fa fa-search-plus";"fa fa-mouse-pointer";"fa fa-tag";"fa fa-asterisk";"fa fa-bar-chart";"fa fa-cog";"fa fa-lightbulb-o";"fa fa-table";"fa fa-usd"; "fa fa-table")
+    
+      )
+    
+
+    
+
+generates this layout:
+
+    
+
+![Screenshot](../img/treeview/parentnodeimage.jpg)
+
+_Text_
+
+    The data source column containing the label for each folder and item. _This is a required column_
+_Icon_
+
+    
+
+If an icon marker is to be used in place of the standard folder icon, then
+define the data source column containing the list of Fontawesome (`fa fa-
+image` or `fas fa-image` formats), 64-bit or image URL links.
+
+![Screenshot](../img/treeview/icontreeview.jpg)
+
+_Opened nodes_
+
+    Define which set of Nodes will be open on load.
+_Opened Nodes ID_
+
+    
+
+A [view state parameter](../viewstateparameters/) of Node IDs, type symbol,
+bound to expanded parent folders. Expanded nodes will display all child items.
+
+Default values
+
+Default _Opened Nodes ID_ values, if set, will be superseded by _Opened Nodes
+ID_ values assigned by the data source. If _Opened Nodes_ has no corresponding
+data source column, then default _Open Nodes ID_ values will be used if
+assigned.
+
+_Checked Nodes ID_
+
+    
+
+A [view state parameter](../viewstateparameters/) of Node IDs, type symbol,
+bound to all checked items in the tree - including parent folder node ID/s.
+
+Default values
+
+Default _Checked Nodes ID_ values, if set, will be superseded by _Checked
+Nodes_ values assigned by the data source.
+
+_Check Parent_
+
+    Parent node (box) is checked on load.
+_Selected Node ID_
+
+    
+
+A [view state parameter](../viewstateparameters/) of a single Node ID, type
+symbol, bound to an individually selected item, either a parent folder or
+child item.
+
+Selected vs Checked
+
+The _Selected Node ID_ is a single Node ID of the currently selected item in
+the tree view, which may or may not be checked - only one item can be selected
+at any one time (parent or child). Checked items are tracked by _Checked Nodes
+ID_.
+
+Default values
+
+Default _Selected Node ID_ value, if set, will be superseded by a value
+assigned by the data source.
+
+_Check on Selected_
+
+    Check (box) when selecting nodes.
+_Open on Selected_
+
+    Selecting the node name will expand child elements. 
+_Show Search_
+
+    Show/hide search input.
+    Entering a search string would display the matched node and all ancestors and child nodes of the matched node.
+
+![Screenshot](../img/treeview/treeview_search.png)
+
+_Template Text_
+
+    
+
+Formats tree labels
+
+Text-append example
+
+Interactive tree nodes with a `parentId` value of 1, precede node text with
+"Grand Prix Season:"
+
+`html {{#lt parentId 1}} Grand Prix Season: {{names}}{{/lt}}{{#gte parentId
+1}}{{names}}{{/gte}}`
+
+[Template](../template/)
+
+### Action
+
+[Actions](../action/)
+
+## Style, Margins and Format
+
+The treenode _Node Id_ must be referenced when applying CSS styles to icons in
+the treeview. For example, this is the CSS for the earlier Treeview using
+fontawesome icons:
+
+    
+    
+    [data-widgetid="xxxx-xxxx-xxxx-xxxx"] 
+        div.treeview-container .treenode-id-x.jstree-leaf 
+        > .jstree-anchor 
+        > i.jstree-icon.jstree-themeicon.fa.jstree-themeicon-custom 
+        {color: brown; }
+    
+
+where `x`in `.treenode-id-x.jstree-leaf` is the corresponding _Node Id_
+integer value, and `data-widgetid` is the TreeView component widget id.
+
+[Style](../style/#component-style)
+
+### Hide Checkboxes
+
+Property is disabled by default and hides checkboxes when enabled.
+
+Property is enabled by default and shows node `Text` value as a tooltip.
+
+### Tooltip Text Template
+
+Property allows to define tooltip template text. If not defined will default
+to the node `Text`.
+

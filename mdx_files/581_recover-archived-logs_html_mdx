@@ -1,0 +1,216 @@
+https://code.kx.com/insights/microservices/rt/examples/recover-archived-logs.html
+
+# Recovering archived logs - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/rt/examples/recover-archived-logs.html
+
+# Recovering archived log files from object storage
+
+In order to transport data, RT uses log files.
+
+  1. Publishers asynchronously write their messages to local log files.
+  2. The log files are automatically replicated to RT and then sequenced and merged.
+  3. The merged log files are replicated automatically to the subscribers' local log files.
+  4. Subscribers read the messages asynchronously from their local log files.
+
+These log files cannot be allowed to persist on the local file system
+indefinitely, otherwise the local file system would run out of disk space. RT
+allows you to configure your deployment to control the rate at which log files
+are archived to object store and truncated, see [here](../index.html#archiver)
+for details. The full details on how to configure your _kdb Insights
+Enterprise_ to enable archival can be found
+[here](../../../enterprise/database/configuration/assembly/stream.html)
+
+The motivation for the archival to object storage is to provide a backup of
+your data before the log file is truncated.
+
+This guide aims to illustrate how you can go about recovering the log files
+that have been archived. Once recovered, the guide will also show how the
+content of the log file can be replayed into a q session, to enable you to
+inspect the data.
+
+## Prerequisites
+
+  * QPacker: a packaging utility used to create an image, known as a QPK, that contains a set of q functions. Installation details for QPacker can be found [here](../../../core/qpacker/qpacker.html).
+  * rt.qpk: details for rt.qpk can be found [here](../sdks/rt-qpk.html)
+  * Docker Desktop needs to be running on your local system in advance of this step.
+  * A valid q license present in $HOME/.qp.licenses/kc.lic.
+
+## Finding the required archived log files
+
+Consider a running system with publishers and subscribers to RT. Over time,
+the RT log files, if archival is enabled, will be archived to object storage.
+
+A sample list of RT logs is below:
+
+    
+    
+    bash-4.4$ ls -al /s/out/OUT/
+    total 44
+    drwxr-sr-x 2 nobody nobody   4096 Jul 17 11:26 .
+    drwxr-sr-x 3 nobody nobody   4096 Jul 17 11:25 ..
+    -rw-r--r-T 1 nobody nobody      0 Jul 17 18:00 log.0.0
+    -rw-r--r-T 1 nobody nobody      0 Jul 17 18:40 log.0.1
+    -rw-r--r-- 1 nobody nobody  23750 Jul 17 19:01 log.0.2
+    -rw-r--r-- 1 nobody nobody      8 Jul 17 11:25 state.0
+    
+
+Sticky bit
+
+The application of the sticky bit to log files `log.0.0` and `log.0.1` is an
+indication that these log files have been truncated. If archival is configured
+the logs were archived before truncation.
+
+If you wish to recover and replay data for a particular time range you need to
+know which RT log file to recover. If you have archived hundreds of RT log
+files it would not be apparent which log file should be recovered. To help you
+identify the RT log file which contains the data you are interested in, RT
+provides an API `log-history` which will return the time of the first message
+that was added to each log file. This allows you to determine which log files
+you need to recover to inspect all the messages in your required time range.
+
+Details on this API are available [here](../rest/loghistory.html).
+
+## Recover archived log files
+
+At this point, we are assuming that you have a set of RT log files in S3 and
+you have used the `logHistory` API to track down the RT log files which you
+need to recover and replay.
+
+Use the [AWS CLI](https://docs.aws.amazon.com/cli/latest/reference/s3/cp.html)
+to copy the required log files onto your local file system.
+
+### Create a q script
+
+In order to replay the log files, you will need to build a QPack which
+includes the Q language interface (or rt.qpk). The rt.qpk provides a set of
+APIs to send and receive data from RT. There are other utility functions
+within the rt.qpk that may prove useful and full details on the rt.qpk can be
+found [here](../sdks/rt-qpk.html).
+
+Here, we will create a q script called `replay.q`. This script provides a set
+of functions that can be used to replay the data from a RT log file into
+memory. These functions provide a similar facility as the KX internal function
+`-11!` [streaming
+execute](https://code.kx.com/q/basics/internal/#-11-streaming-execute)
+
+    
+    
+    n:0;
+    
+    // @overview
+    // A callback function that will be executed whenever a message is replayed from the RT log file.
+    // @param msg  The payload replayed from RT.
+    // @param pos  The position of the payload in the RT stream.
+    // @return  {none}
+    callback:{[msg;pos]  // A callback function that will be executed whenever a message is replayed from the RT log file.
+      n+:1;
+      .debug.x:`msg`pos:(msg;pos);
+      }
+    
+    // @overview
+    // A function to replay a RT log file into memory.
+    // @param pth  The path to the RT log files to replay.
+    // @param fl   The RT log file to be replayed from.
+    // @param cb   The callback function to be applied against the payloads replayed from the RT log file.
+    // @return  {path}
+    replayFile:{[pth;fl;cb]
+      idx:"I"$1_"." vs fl; // obtain the x and y from "log.x.y"
+      pos:.rt.p.pos idx;  // obtain the start position in the file you wish to subscribe to
+      .rt.sub`stream`position`callback!(pth;pos;cb)  // subscribe to a file path where the file you want to replay is stored
+      }
+    
+
+### Build a QPK
+
+Now you can now create a QPK that will package up the `replay.q` script. A
+brief example is provided below:
+
+    
+    
+    $ ls -al
+    total 29552
+    drwxr-xr-x  2 user user     4096 Jun  9 14:56 .
+    drwxr-xr-x 14 user user     4096 May 29 15:59 ..
+    -rwxr-xr-x  1 user user      414 Jun  8 15:08 replay.q  ## created in the step prior
+    -rwxr-xr-x  1 user user      127 May 29 16:01 qp.json
+    -rw-r--r--  1 user user       58 May 29 15:59 qp_docker_include_file
+    -rw-r--r--  1 user user 30230736 Jun  8 11:41 rt.qpk
+    
+    $ cat qp_docker_include_file
+    RUN yum -y update && yum -y install procps net-tools lsof
+    
+    $ cat qp.json
+    {
+      "rt-replay": {
+        "entry": [ "replay.q" ],
+        "depends": [ "rt" ],   // this is where the rt.qpk is included in your QPK
+        "docker_base_image": [ "rockylinux/rockylinux:8" ]
+      }
+    }
+    
+    qp build  ## this will build a qpack called rt-replay, based on the contents of qp.json
+    
+
+Documentation on building QPKs
+
+Extensive details on how to build a QPK can be found
+[here](../../../core/qpacker/qpacker.html#building).
+
+## Starting the QPK
+
+You can now run the new QPK as follows:
+
+    
+    
+    $ qp run rt-replay
+    INFO  | License | Using kdb+ license file [/home/user/.qp.licenses/kc.lic]
+    INFO  | Run     | Target [rt-replay]
+    INFO: Parse kdb+ license [kc.lic] from KDB_LICENSE_B64 environment variable
+    KDB+ 4.0 Cloud Edition 2023.01.20 Copyright (C) 1993-2023 Kx Systems
+    l64/ 8()core 25377MB nobody a7599d8e10fa 172.17.0.3 EXPIRE 2024.01.13 user@kx.com KXMS #76655
+    
+    q)
+    
+
+## Replaying the data
+
+When running the `qp run` command above, a docker container is launched.
+
+Use the following docker command, [`docker
+cp`](https://docs.docker.com/engine/reference/commandline/cp/) to copy the log
+files from your local machine to the docker container launched.
+
+With the RT log files now available on the docker container, you can replay
+the log files. The example below is based on log files containing a 3 item
+list. The 2nd and 3rd items correspond to the table name and a list of values
+for that table. You can step through the content of the RT logs using the
+sample function calls shown:
+
+A sample replay function is provided which will track the number of messages
+replayed. It will also cache the last message received in an atom `.debug.x`
+
+    
+    
+    $ qp run rt-replay
+    INFO  | License | Using kdb+ license file [/home/user/.qp.licenses/kc.lic]
+    INFO  | Run     | Target [rt-replay]
+    INFO: Parse kdb+ license [kc.lic] from KDB_LICENSE_B64 environment variable
+    KDB+ 4.0 Cloud Edition 2023.01.20 Copyright (C) 1993-2023 Kx Systems
+    l64/ 8()core 25377MB nobody a7599d8e10fa 172.17.0.3 EXPIRE 2024.01.13 user@kx.com KXMS #76655
+    
+    q)
+    q)// the file to replay can be found below
+    q)\ls -al /tmp/rt/log.3.0
+    "-rw-r--r-- 1 1000 1000 37612676 Jul 20 15:03 log.3.0"
+    q)
+    q)replayFile["/tmp/rt/";"log.3.0";callback]
+    `:/tmp/rt/
+    q)n
+    32653
+    q).debug.x
+    msg| (`.b;`marketdata;(,2023.07.20D14:53:49.038765877;,2023.07.20D14:53:49.02..
+    pos| 52776595745637
+    q)
+    
+

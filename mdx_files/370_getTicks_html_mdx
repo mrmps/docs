@@ -1,0 +1,335 @@
+https://code.kx.com/insights/accelerators/fsi/getTicks.html
+
+# getTicks - kdb products
+
+Original URL: https://code.kx.com/insights/accelerators/fsi/getTicks.html
+
+# getTicks
+
+The getTicks API is used for raw data extraction and preprocessing. It is
+intended to run on a Data Access Process and retrieve records from a
+configured database table using a specified dictionary of arguments.
+
+The gw variable below is defined as an IPC connection to the Service Gateway.
+For example `:insights-qe-gateway:5050 would connect to the query environment
+gateway within an insights namespace.
+
+When issuing an IPC request, synchronous requests return a tuple where the
+first element is the response payload and the second is the response data. See
+the [asynchronous
+requests](https://code.kx.com/insights/1.4/api/database/query/get-
+data.html#asynchronous-requests) section for how to use the callback argument
+to get an asynchronous response. See the [extended
+options](https://code.kx.com/insights/1.4/api/database/query/get-
+data.html#extended-options) section for how to use the options like timeouts
+for your IPC call.
+
+## Arguments
+
+name | required | type | default | example | description  
+---|---|---|---|---|---  
+table | yes | symbol | N/A | `Trade | Name of table to retrieve data from.  
+startTS | yes | timestamp | -0Wp | .z.p-1D | Inclusive start time of period of interest. It is recommended that this field is always used to limit scope of data in the response and to maximize query efficiency.  
+endTS | yes | timestamp | 0Wp | .z.p | Exclusive end time of period of interest. It is recommended that this field is always used to limit scope of data in the response and to maximize query efficiency.  
+columns | no | symbol[] | ` | `instrumentID`price | Specify columns to return.  
+idList | no | symbol[] | ` | `A`B`C | List of identifiers to select.  
+idCol | no | symbol | configurable | `instrumentID | The identifier column to apply idList to  
+filter | no | list | () | ("<";`price;111) | See filter section for more info.  
+fill | no | symbol | () | `forward | Will fill the outbound result after aggregation. Using any fill will "rack" the data, giving rows for windows that did not happen. Options are `null`zero`forward`linear`linearStep  
+temporality | no | symbol | `continuous | `slice | Sets the range of data in view for each day within the query. Support two types of temporality: `continuous (default) which takes a continuous range of the data, and `slice which returns data within the startTS and endTS dates that is between the times defined in the slice argument.  
+slice | no | symbol | () | (0D12:00:00;0D13:00:00) | Sets the time range to grab between each date in the startTS and endTS range when using a temporality of slice.  
+sortCols | no | symbol[] | () | (`desc;`instrumentID) | Columns to sort (ascending) result data on.  
+applyCanCor | no | boolean | 0b | 1b | Apply cancellations and corrections data to table.  
+inputTZ | no | symbol | UTC | `America/New_York | Timezone of startTS and endTS.  
+outputTZ | no | symbol | UTC | `America/New_York | Timezone of output timestamp columns.  
+idMapping | no | boolean | 0b | 1b | Apply identifier mapping  
+filterRule | no | symbol | () | `myFilter | Name of the configured filter to apply to conditions column  
+timeCol | no | symbol | () | `exchTime | Use a time column that is not the default parition column.  
+orderbook | no | symbol | () | `plotOrderbookSnapshots | Orderbook specific functionality. More info in the Orderbook section of this doc  
+decPlaces | no | integer | () | 2 | Decimal places to round float columns to in results. For example, 3 will round to three decimal places.  
+ref | no | symbol[] | () | `Instrument | Join the results to a reference data table(s). The reference table(s) must have a foreign key relationship with the queried table, which should be defined in the schema yaml for the queried table.  
+refFilter | no | dict/string | () | "(enlist `Instrument)!enlist enlist[(>;`maturityDate;2050.01.01)]" | If joining to reference data, filters to apply on columns in the reference table(s). Must be a dictionary, or a string containing a dictionary with the reference tables as keys and filter triplets for the relevant table as values.  
+  
+## columns
+
+## idList
+
+List of identifiers to select.
+
+## idCol
+
+By specifying a different idCol, the idList applies to a different column
+
+## filter
+
+The `filter` argument is used for applying custom filtering to the query. The
+filters are applied in the order they are defined when selecting from the
+table. Filters can be specified as symbols, strings or a combination of both.
+
+function | parameters | example  
+---|---|---  
+in | Filters data that is not in the list of possible alternatives | ("in";"sym";("AAPL";"MSFT") keeps symbols that are either AAPL or MSFT  
+within | Keeps numeric data that is within the bounds of a range using inclusive limits. | ("within";"price";(100;200)) keeps prices that are greater than or equal to 100 but less than or equal to 200  
+< | Keeps numeric data that is less than a threshold | ("<";"price";100) keeps data that is less than 100  
+> | Keeps numeric data that is greater than a threshold | (">";"price";100) keeps data that is greater than 100  
+<= | Keeps numeric data that is less than or equal to a threshold | ("<=";"price";100) keeps data that is less than or equal to 100  
+>= | Keeps numeric data that is greater than or equal to a threshold | (">=";"price";100) keeps data that is greater than or equal to 100  
+= | Keeps data equal to another value | ("=";"sym";"AAPL") keeps only AAPL data  
+<> | Keeps data that is not equal to a value | ("<>";"sym";"AAPL") keeps all data that is not AAPL  
+like | Filters string data that matches a simple expression | ("like";"sym";"A*") matches any symbols that start with an A  
+  
+Some examples using `filter` are shown below;
+
+And using within;
+
+### Alernative Filter Syntax
+
+Filters can also be specified in a string format using the following syntax:
+
+Operator | Description | Example  
+---|---|---  
+`=` | equal | `instrumentID=BP.B`  
+  
+`product=Option`  
+`<>` | not equal | `eventType<>cancelled`  
+`*` | column value wildcard | `instrumentID=BP.*`  
+`\|` | or | `traderID=traderID1\|traderID2`  
+  
+`product=Forward\|Future\|Option`  
+  
+`broker<>bkrA\|brkB`  
+`;` | and | `assetClass=EQ;product=Future\|Share`  
+  
+`sourceData=ABC*;sourceData<>ABCD`  
+`>` | greater than | `price>0`  
+`<` | less than | `quantity<100000`  
+`>=` | greater than | `price>=0`  
+`<=` | less than | `quantity<=100000`  
+`[blank column value]` | null | `traderID<>;side<>`  
+Name | Column Filter Key | Condition | Column Filter Value  
+---|---|---|---  
+Example | assetClass | `=` | EQ  
+Description | Filter shall be on column "assetClass". | Column shall contain values equal (=) to the specified values. | Data shall be filtered on where assetClass is equal to "EQ". It will filter out rows where this condition is not true  
+  
+Some examples using `filter` in the string format are shown below;
+
+Can replicate within functionality using `>=` and `<=`;
+
+## fill
+
+The fill parameter can be used to specify how the to handle null values. It
+takes a single symbol which can be one of
+`null`zero`forward`linear`linearStep.
+
+  * null - Replace empty values with nulls.
+  * zero - Replace null values with a 0 value of the appropriate type.
+  * forward - Replace null values with the previous non-null value.
+  * linear - Linear interpolation according to time column of table. 
+  * linearStep - Linear interpolation according to row index. 
+
+The below example highlights the difference between how linear and linearStep
+fills work.
+
+time | price | linear | linearStep  
+---|---|---|---  
+0 | 0 | 0 | 0  
+5 |  | 2.5 | 3.33  
+10 |  | 5 | 6.66  
+20 | 10 | 10 | 10  
+  
+Example call using zero;
+
+## temporality/slice
+
+There are two types of temporality currently supported, and each determines
+the way the startTS and endTS arguments are interpreted. The default value is
+continuous and when specified getTicks return a continuous chunk of data
+between the specified startTS and endTS arguments.
+
+When a slice temporality is specified, the API returns data between the values
+specified in the slice argument, for each date within the startTS and endTS
+timestamp.
+
+For example, if you request data between 02:00 and 04:00 for a three day
+period using a time slice, then the following data would be returned:
+
+time | day 1 | day 2 | day3  
+---|---|---|---  
+00:00:00 | 1.10 | 2.20 | 3.30  
+01:00:00 | 1.11 | 2.21 | 3.31  
+**02:00:00** | **1.12** | **2.22** | **3.32**  
+**03:00:00** | **1.13** | **2.23** | **3.33**  
+04:00:00 | 1.14 | 2.24 | 3.34  
+  
+## sortCols
+
+Specifies the columns to sort before returning the response. You can specify
+either ascending (asc) or descending (desc) order.
+
+## applyCanCor
+
+## inputTZ/outputTZ
+
+Timezone of input (startTS and endTS) and the output.
+
+Note
+
+When using an inputTZ timezone that observes daylight savings time, the system
+cannot robustly handle attempts to select data specifically within the non-
+existant or repeated local hour.
+
+For example, on the night in March in New York where the clock skips forward
+from 1:59 to 03:00, attempting to select a data bucket that begins or ends
+within those time values may result in unexpected data returning. Our tests
+confirm that a work-around is using a startTS/endTS value that wholely
+surrounds the problematic local time range, that is a range at least as wide
+as startTS=01:59 to endTS=03:00.
+
+Similarly for example, on the night in November in New York where the clock
+repeats an hour going from 1:59 back to 01:00, attempting to select a data
+bucket that begins or ends within those time values may result in unexpected
+data returning. Our tests confirm that a work-around is using a startTS/endTS
+value that wholely surrounds the problematic local time range, that is a range
+at least as wide as startTS=00:59 to endTS=02:00.
+
+## filterRule
+
+If filter rules are configured, then the argument can be used to filter data
+based upon condition codes. This enables repeatable filters without extremely
+complex `filter` arguments.
+
+## idMapping
+
+If an IDMap is configured, then the `idMapping` parameter can be used to query
+by custom symbology.
+
+In the example below, the IDMap has been configured to map `a` to `AMD`
+
+## timeCol
+
+Use a time column that is not the default partition column.
+
+non partition column time query performance
+
+Note that more partitions may need to be scanned to satisfy the query, so a
+time buffer is added either side of the window provided. This can be
+configured (or turned off) to improve performance of alternative timeCol
+queries, see [timeCol time windowing](getTicksConfig.html#timecol-time-
+windowing)
+
+qREST
+
+    
+    
+    args: (!) . flip (
+        (`table;            `Trade);
+        (`startTS;          2023.08.15D00:00:00);
+        (`endTS;            2023.08.16D00:00:00);
+        (`idList;           `A);
+        (`columns;          `exchTime`price`volume);
+        (`timeCol;          `exchTime)
+        )
+    
+    eventTimestamp                exchTime                      price    volume
+    ---------------------------------------------------------------------------
+    2023.08.19D00:00:00.000000000 2023.08.15D00:00:00.000000000 10.29076 1500  
+    2023.08.19D03:00:00.000000000 2023.08.15D03:00:00.000000000 10.42448 1000  
+    2023.08.19D06:00:00.000000000 2023.08.15D06:00:00.000000000 10.20321 1700  
+    2023.08.19D09:00:00.000000000 2023.08.15D09:00:00.000000000 10.01974 1100  
+    2023.08.19D12:00:00.000000000 2023.08.15D12:00:00.000000000 10.01221 1000  
+    2023.08.19D15:00:00.000000000 2023.08.15D15:00:00.000000000 10.27259 1400  
+    2023.08.19D18:00:00.000000000 2023.08.15D18:00:00.000000000 10.60147 1400  
+    2023.08.19D21:00:00.000000000 2023.08.15D21:00:00.000000000 10.59386 1700
+    
+    
+    
+    INSIGHTS_TOKEN=`curl -s --header "Content-Type: application/x-www-form-urlencoded" \
+        -d "grant_type=client_credentials&client_id=$INSIGHTS_CLIENT_ID&client_secret=$INSIGHTS_CLIENT_SECRET" \
+        "${INSIGHTS_URL}/auth/realms/insights/protocol/openid-connect/token" | jq -cr ".access_token"`
+    
+    DATA=`curl -s -X POST "${INSIGHTS_URL}/servicegateway/fsi/getTicks" \
+        -H "Content-Type: application/json" \
+        -H "Accept: application/json" \
+        -H "Authorization: Bearer $INSIGHTS_TOKEN" \
+        -d "$(jq -n \
+            '{
+                table           : "Trade",
+                startTS         : "2023.08.15D00:00:00",
+                endTS           : "2023.08.16D00:00:00",
+                idList          : "A",
+                columns         : ["exchTime","price","volume"],
+                timeCol         : "exchTime"
+            }' | jq -cr .)"`
+    
+    echo $DATA | jq -cr '.payload'
+    [{"eventTimestamp":"2023-08-19T00:00:00.000000000","exchTime":"2023-08-15T00:00:00.000000000","price":10.29076,"volume":1500},
+    
+
+## Orderbook
+
+The ``orderbook` argument in getTicks is primarily used for orderbook-specific
+logic and is used to present data in the Realtime-Orderbook View
+
+Accepted inputs are ``plotOrderbookSnapshots`, ``instrumentNames` and
+``orderbookUpdatesRefData`.
+
+``plotOrderbookSnapshots` is used to more easily view OrderbookSnapshot data
+on a dashboard: \- Filters the OrderbookSnapshots table for the max row within
+the specified time range. \- Using that snapshotd data, the following values
+are calculated: \- Calculate values: \- bestAsk = min askPrice \- bestBid =
+max bidPrice \- maxSize = max (bidSize;askSize) \- spread = bestAsk - bestBid
+\- midPoint = (bestBid + bestAsk) / 2
+
+    
+    
+    args: (!) . flip (
+        (`table;            `OrderbookSnapshots);
+        (`startTS;          2024.01.17D12:30:00);
+        (`endTS;            2024.01.17D12:40:00);
+        (`idList;           `$"F:TFM\\G24");
+        (`orderbook;        `plotOrderbookSnapshots)
+        );
+    
+
+``instrumentNames` is used to enhance an instrument ID dropdown with a more
+readable instrument name.
+
+    
+    
+    args: (!) . flip (
+        (`table;            `OrderbookUpdates);
+        (`startTS;          2024.01.17D12:30:00);
+        (`endTS;            2024.01.17D12:40:00);
+        (`idList;           `$"F:TFM\\G24");
+        (`scope;            enlist[`assembly]!enlist[`$"fsi-app-ice-orderbook"]);
+        (`ref;              `Instrument);
+        (`orderbook;        `instrumentNames)
+        );
+    
+
+``orderbookUpdatesRefData` is used to enhance OrderbookUpdates data with a
+more readable instrument name instead of instrumentID
+
+    
+    
+    args: (!) . flip (
+        (`table;            `OrderbookUpdates);
+        (`startTS;          2024.01.17D12:30:00);
+        (`endTS;            2024.01.17D12:40:00);
+        (`idList;           `$"F:TFM\\G24");
+        (`scope;            enlist[`assembly]!enlist[`$"fsi-app-ice-orderbook"]);
+        (`ref;              `Instrument);
+        (`orderbook;        `orderbookUpdatesRefData)
+        );
+    
+
+Note
+
+When choosing `instrumentNames` or `orderbookUpdatesRefData` the `ref`
+argument must be used with a value of `Instrument` to be able to query the
+correct reference data.
+
+Relevant COREREF and CROSSREF reference data files must also be ingested in
+order for this to work correctly. If no reference data is found the original
+instrumentID field will be displayed as the instrument name
+

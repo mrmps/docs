@@ -1,0 +1,522 @@
+https://code.kx.com/insights/core/qlog/api/qlog.html
+
+# API reference - kdb products
+
+Original URL: https://code.kx.com/insights/core/qlog/api/qlog.html
+
+# API reference
+
+## .com_kx_log.configure
+
+_Configure the logging interface_
+
+The argument is a dictionary with entries as follows (all are optional and
+have defaults)
+
+`customFormatter`
+
+    
+
+Specifies a custom formatter for the logging interface (overrides
+`formatMode`). Must be a function taking a single dictionary parameter.
+Symbol, default: ```
+
+`formatMode`
+
+    
+
+Logging mode to use: JSON or text. Symbol, default: ``json`
+
+`jsonTime`
+
+    
+
+Timestamp name and type appended to JSON messages. Symbol list, default:
+``time`z`
+
+`logLevels`
+
+    
+
+Ordered list of log severity levels. Symbol list, default:
+``TRACE`DEBUG`INFO`WARN`ERROR`FATAL`
+
+`textTemplate`
+
+    
+
+Token-based template string for text mode. String, default: `""`
+
+Must be called before configuring any endpoints or creating any handlers
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+opts | dict | Config options  
+  
+**Example:** Text mode & non-default log levels
+
+    
+    
+     q).com_kx_log.configure[`formatMode`logLevels!(`text; `DEBUG`INFO`WARNING`ERROR)]
+     q).com_kx_log.init[`:fd://stdout; ()]
+     q).mon.log:.com_kx_log.new[`Monitor; ()]
+     q)key .mon.log
+     `debug`info`warning`error
+     q).mon.log.info["Test message"]
+     2020-12-11 14:48:48.239 [Monitor] INFO Test message
+    
+
+**Example:** Custom formatter
+
+    
+    
+     q).app.fmt:{[entry] :", " sv "=" sv' flip (string@key@; value)@\: .j.j each `time xcols update time:.z.t from entry }
+     q).com_kx_log.configure[enlist[`customFormatter]!enlist `.app.fmt]
+     q).com_kx_log.init[`:fd://stdout; ()]
+     q).mon.log:.com_kx_log.new[`Monitor; ()]
+     q).mon.log.info["Test message"]
+     time="15:24:08.959", component="Monitor", level="INFO", message="Test message"
+    
+
+**Example:** Text mode & updated template
+
+    
+    
+     q).com_kx_log.configure[`formatMode`textTemplate!(`text; "%P [%c] %l %m")]
+     q).com_kx_log.init[`:fd://stdout; ()]
+     q).mon.log:.com_kx_log.new[`Monitor; ()]
+     q).mon.log.info["Test message"]
+     2020-12-16D17:25:26.058811000 [Monitor] INFO Test message
+    
+
+**Example:** JSON time
+
+    
+    
+     q).com_kx_log.configure[enlist[`jsonTime]!enlist `timestamp`T]
+     q).com_kx_log.init[`:fd://stdout; ()]
+     q).mon.log:.com_kx_log.new[`Monitor; ()]
+     q).mon.log.info[("Test message %1"; 10)]
+     {"timestamp":"20:19:54.718","level":"INFO","component":"Monitor","message":"Test message 10"}
+    
+
+**Example:** Service details
+
+    
+    
+     q).com_kx_log.configure[enlist[`serviceDetails]!enlist `service`PID!(`rdb; .z.i)]
+    
+
+## .com_kx_log.endpointIDs
+
+_The endpoint IDs_
+
+Returns a list of endpoint IDs
+
+**Returns:**
+
+**Example:**
+
+    
+    
+     q).com_kx_init[`:fd://stdout; ()]
+     q).com_kx_log.endpointIDs[]
+     ,8c6b8b64-6815-6084-0a3e-178401251b68
+    
+
+## .com_kx_log.endpoints
+
+_Public data for all the endpoints_
+
+Returns a table of public data for the endpoints.
+
+**Returns:**
+
+Type | Description  
+---|---  
+table | Endpoints  
+  
+**Example:**
+
+    
+    
+     q).com_kx_init[`:fd://stdout; ()]
+     q).com_kx_log.endpoints[]
+     id                                   url          provider formatter metadata
+     -----------------------------------------------------------------------------
+     8c6b8b64-6815-6084-0a3e-178401251b68 :fd://stdout fd                 ()!()  
+    
+
+## .com_kx_log.getRoutings
+
+_Endpoint routings for a component and level_
+
+Returns the IDs of corresponding endpoints as GUIDs.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+level | symbol | Log level  
+component | symbol | Component name  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+guid[] | IDs  
+  
+**Example:**
+
+    
+    
+     q)stdout:`:fd://stdout
+     q)gcp:`url`metadata`provider!(`:https://logging.googleapis.com; ()!(); `gcp)
+     q)ids:.com_kx_log.init[(stdout; gcp); `ALL`ERROR]
+     q).com_kx_log.getRouting[`ERROR; `Monitor]
+     8c6b8b64-6815-6084-0a3e-178401251b68 5ae7962d-49f2-404d-5aec-f7c8abbae288
+    
+     q).com_kx_log.setRouting[`Monitor; ids!`ALL`FATAL]
+     q).com_kx_log.getRouting[`ERROR; `Monitor]
+     ,8c6b8b64-6815-6084-0a3e-178401251b68
+    
+
+## .com_kx_log.i.messager
+
+_Publish a log message_
+
+Documented for reference only. Not intended to be called directly
+
+This API generates the formatted log messages, checks the endpoint routing and
+publishes.
+
+When log components are created using `.com_kx_log.new`, the handlers returned
+are projections of this function with the `level` and `component` arguments
+fixed.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+level | symbol | Level  
+component | symbol | Component name  
+entry | string | dict | Log message  
+  
+**Example:**
+
+    
+    
+     .qlog.sd:.com_kx_log.new[`Discovery; ()];
+     res:get .qlog.sd.info;
+     res[0] ~ .com_kx_log.i.messager
+     /=> 1b
+     res[1 2]
+     /=> `INFO`Discovery
+    
+
+## .com_kx_log.init
+
+_Initialize the logging library_
+
+Initializes the logging library with endpoints and routing and returns as a
+GUID vector a list of endpoint IDs for routing and calls to `lclose`. and
+routing. It returns a set endpoint IDs to be used for routing and calls to
+`lclose`.
+
+Each endpoint in `eps` is a symbol or dictionary.
+
+The `lvls` vector specifies endpoint routing by level, i.e. which log levels
+to send to which endpoints. This allows the application to route priorities
+differently.
+
+  * `NONE` suppresses publication
+  * a null, or `ALL` routes all levels to all endpoints
+
+`.com_kx_log.new` to create log handlers for publishing
+
+The `eps` parameter provides a list of endpoints to setup. Each element of the
+list is a symbol or dict.
+
+The `levels` parameter dictates endpoint routing by level, i.e. which log
+levels to send to which endpoints. This allows the application to route
+priorities differently. Can be left blank to route to all by default. This is
+best illustrated with an example;
+
+  * Default ordered list of log levels; _TRACE_ , _DEBUG_ , _INFO_ , _WARN_ , _ERROR_ , _FATAL_
+  * Two endpoints with different levels - `stdout=ALL`, `gcp=ERROR`
+  * All log messages with _TRACE_ and above, would be written to stdout
+  * All messages with _ERROR_ and above, would be written to gcp.
+
+The example below has
+
+  * Default ordered list of log levels: `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`, `FATAL`
+  * Two endpoints with different levels: `stdout=ALL`, `gcp=ERROR`
+  * All log messages with `TRACE` and above to be written to stdout
+  * All log messages with `ERROR` and above to be written to gcp
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+eps | list | Endpoints  
+levels | symbol[] | Default level routing  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+guid[] | IDs  
+  
+**Example:**
+
+    
+    
+     stdout:`:fd://stdout;
+     gcp:`url`metadata`provider!(`:https://logging.googleapis.com; ()!(); `gcp);
+     0N!ids:.com_kx_log.init[(stdout; gcp); `ALL`ERROR];
+     /=> 893df855-e1c9-2f1e-36ad-c601521c3d2b 3375050d-b799-713f-6033-b19c387862f8
+    
+     // Create two sets of logging APIs
+     // Discovery component uses default log levels
+     .qlog.sd:.com_kx_log.new[`Discovery; ()];
+     // Monitor uses own routing
+     .qlog.mon:.com_kx_log.new[`Monitor; ids!`ALL`WARN];
+    
+
+## .com_kx_log.lclose
+
+_Remove a logger from the list of endpoints_
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+id | guid | Endpoint ID  
+  
+**Example:**
+
+    
+    
+     q)id:.com_kx_log.lopen[`:fd://stdout]
+     q).com_kx_log.lclose[id]
+    
+
+## .com_kx_log.lcloseAll
+
+_Remove all endpoints_
+
+**Example:**
+
+    
+    
+     q)ids:.com_kx_log.init[`:fd://stdout`:fd://file.log; ()]
+     q).com_kx_log.lcloseAll[]
+    
+
+## .com_kx_log.lopen
+
+_Initiate a logging endpoint_
+
+`ep` can be one of the following
+
+  * an endpoint URL as a symbol atom
+  * a dictionary with the URL, provider type and metadata
+
+Initializes the endpoint and returns its ID as a GUID atom.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+ep | symbol | dict | Logging endpoint  
+  
+**Returns:**
+
+**Example:** URL only
+
+    
+    
+     q).com_kx_log.lopen[`:fd://stdout]
+     8c6b8b64-6815-6084-0a3e-178401251b68 
+    
+
+**Example:** GCP with metadata
+
+    
+    
+     q)metadata:`logName`resource!("projects/[PROJECT_ID]/logs/[LOG_ID]"; .j.j `type`labels!("gce_instance"; ()!()));
+     q)dict:`url`provider`metadata!(`:https://logging.googleapis.com; `gcp; metadata);
+     q).com_kx_log.lopen[dict]
+     8c6b8b64-6815-6084-0a3e-178401251b68
+    
+
+**Example:** With custom formatter
+
+    
+    
+     q).app.fmt:{[entry; metadata] $[99h = type entry; .j.j entry; entry]}
+     q)dict:`url`formatter!(`:fd://stdout; `.app.fmt)
+     q).com_kx_log.lopen[dict]
+     8c6b8b64-6815-6084-0a3e-178401251b68
+    
+
+## .com_kx_log.msg
+
+Log publish API. Takes a log string or dictionary of message and metadata.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+entry | string | dict | Log entry  
+  
+**Example:** String
+
+    
+    
+     entry:string[.z.Z], " INFO - Initialisation complete";
+     .com_kx_log.msg[entry]
+    
+
+**Example:** Dictionary
+
+    
+    
+     dict:`message`severity`logName!("Initialisation complete"; "INFO"; "projects/[PROJECT_ID]/logs/[LOG_ID]");
+     .com_kx_log.msg[dict];
+    
+
+## .com_kx_log.new
+
+_Create log interface handlers for a new component_
+
+Call after `.com_kx_log.init`
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+component | symbol | Component name  
+routing | dict | Endpoint routing  
+routing.id | guid |   
+routing.level | symbol |   
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | Logging handlers  
+  
+**Example:** Discovery with default routing
+
+    
+    
+     q)ids:exec id from endpoints[]
+     q).qlog.sd:.com_kx_log.new[`Discovery; ()]
+     q)key .qlog.sd
+     `trace`debug`info`warn`error`fatal
+    
+
+**Example:** Monitor with custom routing
+
+    
+    
+     q)ids:exec id from endpoints[]
+     q).qlog.mon:.com_kx_log.new[`Monitor; ids!`ALL`WARN]
+    
+
+## .com_kx_log.setCorrelator
+
+_Set the log correlator_
+
+Where the function is called as a nullary, it generates a correlator, sets it
+and returns its ID as a string.
+
+Where the function is called as a unary, `corr` is the ID of a correlator
+(string or symbol atom), sets it and returns it as a string.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+id | string | guid | null | Correlator  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+string | Correlator  
+  
+**Example:** Generate correlator
+
+    
+    
+     q)0N!id:.com_kx_log.setCorrelator[]
+     "a4c18095-5d5e-5585-3f20-32d49b67b873"
+     q).mon.log.info "Test"
+     {"time":"2020-12-14T16:02:20.063794000z","corr":"a4c18095-5d5e-5585-3f20-32d49b67b873","level":"INFO","component":"Monitor","message":"Test"}
+    
+
+**Example:** Own correlator
+
+    
+    
+     q).com_kx_log.setCorrelator["app-123"]
+     "app-123"
+     q).mon.log.info "Test"
+     {"time":"2020-12-14T16:02:35.763427000z","corr":"app-123","level":"INFO","component":"Monitor","message":"Test"}
+    
+
+## .com_kx_log.setRouting
+
+_Configure log routing for a component_
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+component | symbol | Component name  
+dict | dict | Dictionary mapping endpoints to log levels  
+dict.id | guid |   
+dict.level | symbol |   
+  
+**Example:**
+
+    
+    
+     q)ids:exec id from endpoints[]
+     q).com_kx_log.setRouting[`Monitor; ids!`ALL`ERROR]
+    
+
+## .com_kx_log.setServiceDetails
+
+_Set the service details metadata_
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+args | dict | Service details  
+  
+**Example:**
+
+    
+    
+     q).com_kx_log.setServiceDetails[`service`PID!(`rdb; .z.i)]
+    
+
+## .com_kx_log.unsetCorrelator
+
+_Unset the log correlator_
+
+See `.com_kx_log.setCorrelator` for full example
+
+**Example:**
+
+    
+    
+     q).com_kx_log.unsetCorrelator[]
+    
+

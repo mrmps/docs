@@ -1,0 +1,265 @@
+https://code.kx.com/insights/enterprise/ingest/pipeline/troubleshooting.html
+
+# Troubleshooting - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/ingest/pipeline/troubleshooting.html
+
+# Troubleshooting pipelines
+
+## Pipeline Status
+
+The status of a pipeline will be the first indicator of where exactly in the
+application stack an issue is occurring. To view the status of a pipeline:
+
+  1. Go to the [Overview screen](../../user-interface/ui-overview.html#overview).
+  2. Look for the table under the header _Running Pipelines_.
+  3. In this table you will see a _Status_ column which gives the current status of each pipeline.
+
+The full list of possible pipeline statuses can be found
+[here](index.html#pipeline-status).
+
+Here are some examples of next steps you would take given a particular
+scenario surrounding a status:
+
+### Pipeline is stuck in the status **Creating**
+
+This usually implies that the [SP Controller](../../../microservices/stream-
+processor/index.html#architecture) is having issues starting. A common cause
+of this can be that the service is waiting for a PVC request to be fulfilled.
+We can check if this is the case by viewing the pipelines [Diagnostic
+Events](../../troubleshooting/diagnostics.html#diagnostic-events-and-
+application-logs), which will give a view of the system events that have been
+logged by the resources associated with the pipeline. If the pipeline is
+waiting on a PVC request to be fulfilled, you can expect a log message that
+looks something like the below:
+
+AWS specific
+
+It should be noted that the following event messages are specific to a kdb
+Insights Enterprise install running on AWS, other cloud providers will be
+different, and the messages themselves could also be subject to change by AWS.
+Please only refer to them as rough examples of what to look for.
+
+    
+    
+    "Waiting for a volume to be created either by the external provisioner 'ebs.csi.aws.com' or manually by the system administrator. If volume creation is delayed, please verify that the provisioner is running and correctly registered."
+    
+
+If there is a problem provisioning the volume, this event message will often
+be followed up with an error/warning message, such as the below:
+
+    
+    
+    "failed to provision volume with StorageClass \"gp3\": rpc error: code = Internal desc = Could not create volume \"pvc-fb493355-52a0-4917-b9b3-5a77935cbeb3\": could not create volume in EC2: InvalidParameterValue: Invalid integer value -8589934591\n\tstatus code: 400, request id: fc98bdb5-596e-425c-81f7-a8c1742f619e"
+    
+
+In a lot of cases, errors such as this indicate a resource issue on the
+Kubernetes cluster. There could be numerous causes for this with some examples
+being;
+
+  * The cluster has reached its PVC quota
+  * The pipeline is being scheduled to an availability zone without capacity or which is not available
+  * There are not enough CPU / memory resources remaining to support the workload
+
+You should contact your system administrator to help identify the exact cause
+and remedy it.
+
+![pvcPendingDiagnostics](images/troubleshooting/pvcPendingDiagnostics.png)
+
+Note
+
+This issue can also occur when the pipeline is in an 'Unresponsive' status.
+
+### Pipeline status is **Errored**
+
+This indicates that the pipeline pods were able to start successfully, but the
+pipeline itself ran into an error when it tried to run or while it was
+running. In this scenario, the first step would be to investigate the logs of
+the pipeline. Investigating a pipeline's logs is discussed further below.
+
+### Pipeline status is **Unresponsive**
+
+An unresponsive status indicates that the pipeline's SP Controller is not
+responding to HTTP requests. If you are seeing this status in your pipeline,
+click the [View Diagnostics](index.html#pipeline-status) button on the
+pipeline to investigate.
+
+The following can be a common cause of this status:
+
+#### Secret Not Found
+
+For readers such as [read.fromAmazonS3](../../../api/stream-
+processor/q/readers.html#qspreadfroms3), there is an option to specify a
+[Kubernetes secret](https://kubernetes.io/docs/concepts/configuration/secret/)
+when "Use Authentication" is set to true.
+
+![S3 config](images/ui/readers/s3-config-with-authentication.png)
+
+If the secret specified doesn't exist, the pipeline will go into an
+"Unresponsive" status. In such cases, if you click on "View Diagnostics" and
+go to the "Diagnostic Events" tab, you will see the following error:
+
+    
+    
+    MountVolume.SetUp failed for volume "nonexistentawscreds" : secret "nonexistentawscreds" not found
+    
+
+![Alt text](images/troubleshooting/secret-not-found.png)
+
+The error can be resolved by creating the missing secret. Contact your system
+administrator to create this.
+
+Once the missing secret has been created, the pipeline will pick it up, move
+out of the "Unresponsive" status, and progress as normal.
+
+Secret Name
+
+The secret name `nonexistentawscreds` is just an example to highlight that the
+secret didn't exist. Please choose a more appropriate name when naming your
+secrets! E.g. `awscreds`.
+
+### Pipeline is stuck in the status **Tearing down**
+
+When you teardown a pipeline, the pipeline will move into a `Tearing down`
+state. Normally the process of tearing down a pipeline is relatively quick,
+however sometimes it can take longer, particularly if the user has selected to
+clear the pipeline's checkpoints, which means deleting the PVC of the [SP
+Workers](../../../microservices/stream-processor/index.html#architecture)
+associated with the pipeline. Depending on the size of the worker PVCs, this
+may take a few minutes. Any longer and this may indicate that there's an
+issue.
+
+A typical cause of this can be that a PVC associated with the pipeline is
+stuck in a `Terminating` state. To investigate this issue further, please
+contact your system administrator responsible for managing your kdb Insights
+Enterprise install.
+
+## Pipeline Logs
+
+When a pipeline enters into an Errored state, the first point of action should
+be to review the logs to see what the error is and where exactly in the flow
+of the pipeline it has occurred.
+
+### Viewing the Application Logs
+
+To view the logs of a running pipeline:
+
+  1. Go to the kdb Insights Enterprise Overview screen. ![kdb Insights Enterprise Overview Screen](images/troubleshooting/OverviewScreen.png)
+
+  2. Click on the 'View Logs' icon of the pipeline you want to investigate. ![View Logs](images/troubleshooting/viewlogs.png)
+
+  3. A tab called 'Application Logs' will pop up, as seen below: ![Application Logs](images/troubleshooting/applogs.png)
+
+### Understanding the Logs
+
+It's one thing to know how to access the logs, but understanding their
+contents is the important bit! Let's dive deeper into some key characteristics
+of a pipeline's logs that can help with any investigation you might be
+undertaking:
+
+  * **Log Level Column** : The log level columns tells users the type of a log message. Let's run through each type:
+    * **INFO** : Normal/expected messages for the running of a pipeline. This log level is used to inform the user of significant events that occur throughout the progress of their pipeline. When debugging an issue, understanding the 'INFO' messages on the lead up to and after an error has occurred is important, as this gives context to where and when the error has occurred within the flow of your pipeline.
+    * **WARN** : This log level is used to inform the user that something has occurred that may impact the pipeline's ability to run successfully, either now or in the future. Messages of this type should be treated as a foreshadowing for potential future errors or unexpected behaviour.
+    * **ERROR** : This log level is used to inform the user that a significant error condition has been triggered or the application has ran into unexpected behaviour that has caused the pipeline's code to error. Typically error messages are indicative of a loss of application functionality or data (although that data is likely recoverable).
+    * **FATAL** : This log level indicates that a highly significant error has occurred which either has resulted or will result (if the pipeline continues) in the unrecoverable loss of data and/or functionality.
+    * **DEBUG** : This log level is used to relay important events throughout the running of a pipeline, but at a more granular and technical level than the 'INFO' log level. By default messages at this log level are not published, as they create noise and unnecessary bloat in the log files. See below for how to enable them.
+    * **TRACE** : This log level is used to capture and log data as it flows through the operators of a pipeline. Like the 'DEBUG' log level, 'TRACE' messages are not published by default, as they are intended for debugging purposes only, and would otherwise bloat the log files during normal operation. See below for how to enable.
+  * **Container Column** : The container column of the logs indicates which container the log message came from. For a pipeline, there are 2 types of containers you should be aware of:
+    * **spctl** : This is the container for the [SP Controller](../../../microservices/stream-processor/index.html#architecture), which is responsible for spinning up workers and generally managing the state of a pipeline as it progresses from setup to starting to running to finished. Each pipeline will have 1 and only 1 SP Controller. Typically an error in this container is indicative that there was an issue setting up or starting the SP Workers associated with the pipeline.
+    * **spwork** : This is the container for the [SP Worker](../../../microservices/stream-processor/index.html#architecture), which is responsible for actually running the operators you have configured for your pipeline. By default, a pipeline will have 1 SP Worker, but this can be increased in the [pipeline's settings](deploy.html#worker). An error in this container typically indicates that an operator in your pipeline has thrown an error. Heavily dependent on the error itself, but as a general tip the first steps when investigating an error in the SP worker are to review your pipeline configuration and the data being ingested.
+  * **Pod Column** : The pod column tells us which [Kubernetes pod](https://kubernetes.io/docs/concepts/workloads/pods/) the log message is from. Filtering on this column can be useful when you want to review the log messages for an individual SP worker.
+  * **Time Column** : Time the logged event occurred.
+  * **Component Column** : The component that the log message came from.
+  * **Message** : The log message itself.
+
+### Column Filters
+
+To filter one of the columns in the **Application Logs** do the following:
+
+  1. Go to the Application Logs.
+  2. Hover over the name of the column you would like to filter.
+  3. 3 Horizontal bars will appear to the right of the column name. Click on the horizontal bars.
+  4. A pop-up box will appear with a drop-down containing filter rules you can apply and a text box where you can enter the text you want to filter on. Select a rule and enter the text to filter on. As you type you'll notice a secondary dropdown and text box will pop-up along with AND/OR radio buttons. Use these if you wish to add an additional rule to your filtering, otherwise ignore.
+  5. The filter is applied in real-time as you type. You should now see that the log messages have been filtered based on the rule you applied. See an example in the image below. ![Log Filtering](images/troubleshooting/logfiltering.png)
+
+### How to Turn on Debug Logging
+
+To turn on debug or trace logging before a pipeline has been started do the
+following:
+
+  1. Go to the [Overview screen](../../user-interface/ui-overview.html#overview).
+  2. In the side panel on the left-side click on 'Pipelines'.
+  3. Click on the pipeline you're planning to start with debug or trace logging enabled.
+  4. Click on the 'Settings' tab.
+  5. Under the 'Runtime' section there will be a drop-down for 'Log Level'. Select 'Debug' to turn on debug logging or 'Trace' to turn on trace logging.
+  6. Click 'Save & Deploy' to run the pipeline with the new settings.
+  7. Go to the Application Logs. You will now see additional Debug or Trace (depending on which you enabled) logging along with regular log messages.
+
+To turn on debug or trace logging when a pipeline is already running do the
+following:
+
+  1. Go to the [Overview screen](../../user-interface/ui-overview.html#overview).
+  2. In the top right corner of the screen there is a settings widget. Click on it.
+  3. You will see a drop-down with the label 'Application Log Level'. Select 'Debug' to turn on debug logging or 'Trace' to turn on trace logging.
+  4. Go to the Application Logs. You will now see additional Debug or Trace (depending on which you enabled) logging along with regular log messages.
+
+### Important Expected Log Messages for a Healthy Pipeline
+
+When investigating an error in a pipeline, understanding the context of the
+log messages surrounding an error can be just as important as understanding
+the error itself. This is because the surrounding messages will provide
+information about where exactly in the flow of the pipeline the error
+occurred. To get a better grasp of this, let's walkthrough some key log
+messages that occur throughout the lifecycle of a healthy pipeline:
+
+#### SP Controller Expected Log Messages
+
+When a new pipeline is kicked off, the first thing that will be started is a
+new [SP Controller](../../../microservices/stream-
+processor/index.html#architecture), which will be assigned to the new pipeline
+for the duration that it is running. Here are some of the key log messages you
+can expect from the **SP Controller** :
+
+  1. **Spawning %n workers**
+     * The first major action the controller will take after loading its configuration settings is to begin spawning the [SP Workers](../../../microservices/stream-processor/index.html#architecture) that will run the pipeline. This log message tells you that this action has begun and tells you how many workers it plans on spawning (`%n` will be replaced by the number of workers being spawned).
+  2. **Spawned worker, name=%s1, addr=%s2**
+     * This log message let's us know that the controller has successfully made a request to the [Kubernetes Control Plane](https://kubernetes.io/docs/concepts/overview/components/#control-plane-components) to create a new worker. Here `%s1` will be replaced by the name of the pod for the new worker and `%s2` will be replaced by the host and port (i.e. address) of the worker process running within the worker pod. It should be noted that this log message does not necessarily indicate that the worker pod has started successfully, it simply informs us that the **Kubernetes Control Plane** has accepted the request for new resources to be created.
+  3. **Initializing worker %s, handle=%n**
+     * This log message signifies that a worker pod has successfully started and has sent a request to the register with the controller. The controller will respond by 'initializing' that worker by passing the details of the pipeline graph the worker will be expected to run. Here `%s` will be replaced by the name of the worker pod and `%n` will be replaced by the [TCP/IP](https://code.kx.com/q/basics/ipc) handle/socket connection that the controller has opened to this worker.
+  4. **Starting all registered workers**
+     * Once all workers have successfully registered and been initialized, the controller will send a message to each registered worker to begin running the pipeline graph they were sent during the initialization phase.
+  5. **All workers started**
+     * This log message indicates that all workers have successfully started their pipeline graph and the pipeline overall is now in a `Running` state.
+
+#### SP Worker Expected Log Messages
+
+The [SP Worker](../../../microservices/stream-
+processor/index.html#architecture) is started by the **SP Controller** , as
+discussed above, and is responsible for actually running the pipeline. Here
+are some of the key log messages you should expect from a SP Worker (remember
+that there can be more than 1 worker running depending on
+[configuration](deploy.html#worker)):
+
+  1. **Successfully connected to parent, addr=%s, handle=%n**
+     * The first action a worker will take is to connect to its parent process i.e. the controller. You should look for this log message to confirm that a worker was able to successfully connect to the controller. Once connected, the worker will send a message to the controller requesting to register with it. Here `%s` will be replaced by the host and port (i.e. address) of the controller process running within the controller pod and `%n` will be replaced by the [TCP/IP](https://code.kx.com/q/basics/ipc) handle/socket connection that the worker has opened to the controller.
+  2. **Initializing worker**
+     * As part of registration, the controller will send the worker the pipeline graph it will be expected to run. The worker will store this pipeline graph it receives in preparation for setting up and running the pipeline.
+  3. **Finished worker initialization**
+     * Indicates the initialization phase is complete and was successful.
+  4. **Setting up pipeline...**
+     * After initialization, the worker will enter into a setup phase, where it will use the pipeline graph it had previously stored to setup each operator in the pipeline.
+  5. **Finished pipeline setup**
+     * Indicates the setup phase is complete and was successful.
+  6. **Starting readers...**
+     * Signifies that all workers have now successfully completed registration with the controller, and the controller has therefore sent a message to each worker to start their pipeline readers (which equals starting the pipeline).
+  7. **Pipeline started successfully**
+     * Readers started successfully and the pipeline is now running.
+
+## Quick/Full Test
+
+Another useful tool that can help in an investigation of an Errored pipeline
+is the **Quick/Full Test** utility. This utility allows users to spin up a
+test version of a pipeline for debugging. This test pipeline will have data
+tracing enabled, meaning the data inputs and outputs of each pipeline node
+will be logged. You can read more about test deploys [here](test.html).
+

@@ -1,0 +1,40 @@
+https://code.kx.com/insights/accelerators/fsi/configuration.html
+
+# Configuration - kdb products
+
+Original URL: https://code.kx.com/insights/accelerators/fsi/configuration.html
+
+# Configuration in the FSI Accelerator
+
+In general any adjustable configuration has been condensed into a single
+configuration file for each assembly/package; in the cases where there is
+adjustable configuration relevant to that assembly. For the `fsi-lib` package,
+this is in the `fsi.config.q` file. In other assemblies/packages the
+equivalent file will be highlighted in the applicable section of
+documentation. Any adjustments to configuration should be made before
+deploying any assemblies.
+
+The steps to adjust configuration in the `fsi-lib` package are:
+
+  * unpack the `fsi-lib` package
+  * edit the `src/fsi.config.q` file and update the configuration/variables to the desired values
+  * re-package the `fsi-lib` package
+  * push the `fsi-lib` package
+  * bounce the aggregators and resource-coordinators
+
+The steps would be the same for the other packages in the FSI Accelerator.
+
+Commands to unpack and re-package a package can be found
+[here](customize.html#unpack-fsi-data-assembly).
+
+Commands to push a package and bounce aggregators/resource-coordinators can be
+found [here](deploy.html#push-the-packages).
+
+## Changing configuration via a custom package
+
+Alternatively, in many cases configuration can be adjusted by including
+variables in a custom package. Where this is possible it will be highlighted
+in the applicable section of documentation. Instructions to create and load a
+custom package can be found [here](customize.html#adding-custom-configuration-
+or-code).
+

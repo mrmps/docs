@@ -1,0 +1,243 @@
+https://code.kx.com/platform/quick_start/
+
+# Linux - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/quick_start/
+
+#  Quick start on Linux
+
+_KX Delta Platform_ package bundle provide a simple and rapid installation
+process to get up and running a basic development environment within minutes
+utilizing the full power of the Enterprise _KX Delta Platform_ framework. This
+guide aims to highlight how to start from the single package tgz; install it
+and be up and running with all the features of the KX Delta Platform available
+immediately. This is the simplest way to have a KX Delta Platform up and
+running; however, KX Delta Platform offers significant customization and
+configuration at installation time including specific package installation,
+port configuration and clustered installs. For information on these options,
+please refer to the deployment documentation available along with the KX Delta
+Platform bundle.
+
+## Prerequisites
+
+This guide covers the installation of the _KX Delta Platform_ on a Linux
+server.
+
+Alternatively [Quick Start Windows](../quick_start_win/)
+
+### Supported OSs
+
+  * Red Hat 7
+  * Red Hat 8
+  * Ubuntu 18.04 LTS
+  * Ubuntu 20.04 LTS
+
+### Required binaries
+
+As part of a server config there are a number of binaries which need to be
+present. In the vast majority of installs these will already be available. If
+not, the installer will exit giving you the opportunity to install the
+relevant package. Information on the specific package is detailed in the
+deploy documentation, can be easily found via an Internet search
+
+    
+    
+    package     associated binaries
+    ---------------------------------------------------------------------
+    bash        bash
+    bzip2       bzip2
+    coreutils   basename, cat, cp, date, echo, head, id, mkdir, mv, 
+                printf, readlink, rm, rmdir, sort, tail, touch, tr, uname
+    gawk        awk
+    glibc       ldconfig
+    grep        grep
+    gzip        gzip, gunzip
+    lsof        lsof
+    net-tools   domainname, hostname, ifconfig
+    procps      ps
+    rsync       rsync
+    sed         sec
+    tar         tar
+    unzip       unzip
+    util-linux  taskset
+    which       which
+    
+
+### Required third-party software
+
+### Required software and licenses
+
+  * The _KX Delta Platform_ `tgz` bundle
+  * A suitable KX Core license
+  * A _KX Delta Platform_ license
+
+Packages and licenses
+
+Packages and licenses are available to clients. Please contact
+[sales@kx.com](mailto:sales@kx.com) for details on how to retrieve these or if
+you would like to become a client, availability of a demo or trial.
+
+## Running the installation
+
+To run installation, `untar` the package and run the install script.
+
+    
+    
+    tar -zxf PlatformKx-4.6.0-Linux.tgz
+    cd PlatformKx-4.6.0-Linux
+    ./install.sh
+    
+
+This will kick off installation. By default there will be a few basic details
+to give the installer.
+
+### KX Delta Platform install directory
+
+KX Delta Platform install directory defaults to `$HOME/kxinstall`. Can be any
+valid directory.
+
+### Install type
+
+    
+    
+    +-----------------------------------------------------------+
+     [1] Single
+     [2] Control
+     [3] Web Server
+     [4] Daemon
+     [5] Control + Web Server
+    +-----------------------------------------------------------+
+     Select Node Type [1-5]: 1
+    
+    
+
+Type of installation. Offers the user the ability to install different
+configuration or node type. We shall select a basic single-node install.
+
+### Kdb+ basic config
+
+    
+    
+    Configuring Single Node Deploy:
+     Please enter free port to be used by Control [2001] :
+     Using port [2001] for Control
+     Number of [Licensed KDB+] [CPU cores] [Max: 10] : 10
+    
+
+By default _KX Control_ will require a free port to run on. The default is
+2001; any free port is acceptable. The user will also be prompted for how many
+cores to be made available to the environment.
+
+### Web tier config
+
+    
+    
+    +-----------------------------------------------------------+
+     [1] HTTP
+     [2] HTTPS
+    +-----------------------------------------------------------+
+     Select App Server Deploy Type [1-2] : 1
+    +-----------------------------------------------------------+
+     App Server HTTP port [8080] :
+    
+
+HTTP and HTTPS deployments available at deployment time. If using HTTPS,
+certificates will be required. Also necessary to provide an available port
+from which the _KX Delta Platform_ to be available through.
+
+### KX Stream config
+
+    
+    
+    +-----------------------------------------------------------+
+     Please enter starting value for deploy port range [3000] :
+     Using starting port [3000]
+    +-----------------------------------------------------------+
+     Encryption
+      Deploy with TLS/SSL Encryption Enabled [no] :
+    
+
+_KX Delta Platform_ requires a number of kdb+ processes for normal operation;
+query management, routing, service discovery. There are also a variety of
+frameworks available with _KX Stream_. We need to provide a start port for
+these processes to be allocated a free port
+
+### Licensing
+
+    
+    
+    +-----------------------------------------------------------+
+     Please enter location of a kx license file (k4.lic) [dir] : /home/kxuser/deploys
+    
+
+Provide the location of the available licenses.
+
+### Running deploy
+
+At this point the installation will be running through all the steps necessary
+to deploy the _KX Delta Platform_. In addition it will run a number of
+deployment checks & analysis of logs for issues before running the default
+workflows defined under the installation directory `${DELTA_HOME}/delta-
+bin/config/startup_workflows.txt`.
+
+    
+    
+    +-----------------------------------------------------------+
+     Running Deploy
+     Installing [12] Packages
+     [*************]
+    +-----------------------------------------------------------+
+     [Mon Nov 19 14:38:30 UTC 2018]
+    Installation complete.
+    +-----------------------------------------------------------+
+    ...
+    ...
+     Control:
+       [http://<host>:8080/control]
+     Dashboards:
+       [http://<host>:8080/dashboards/]
+     Analyst:
+       [http://<host>:8080/analyst]
+    +-----------------------------------------------------------+
+     Finished.
+    +-----------------------------------------------------------+
+     Running Post Startup Script [checkEnv.sh]
+    Install Directory [-i] set to [/home/kxuser/kxinstall]
+    ============================================================
+    ==                 checkEnv.sh [2.0]                     ==
+    ============================================================
+    ...
+    ...
+    Write Summary File [platform-info/asic01/summary.txt]
+    +----------------------------------------------------------+
+    +----------------------------------------------------------+
+    Finished [checkEnv.sh].
+    +-----------------------------------------------------------+
+    
+
+Congratulations, you’re ready to start building applications on top of the KX
+Delta Platform. [Build a data warehouse](../stream/dw_overview/) is a tutorial
+on how to build a powerful, scalable tick-capture application using the _KX
+Delta Platform_.
+
+## Start-up failure
+
+If the deploy fails to start up, the log files of the processes need to be
+checked to find and understand where the error is coming from.
+
+failure | log file location  
+---|---  
+Control | delta-data/DeltaControlData/logdir/DeltaControl.log  
+Daemon | delta-data/DeltaControlData/logdir/DeltaControlDaemon.log  
+AppServer | delta-bin/software/Tomcat_9_0_37/latest/logs/delta.log  
+Tomcat | delta-bin/software/Tomcat_9_0_37/latest/logs/catalina.out  
+  
+### Possible kdb+ errors during start-up
+
+Error | Explanation  
+---|---  
+host | The hostname reported by the OS does not match the hostname or hostname-pattern in the license. If you see `55.255.255.255` in the kdb+ banner, the machine almost certainly cannot resolve its hostname to an IP address, which will cause a _host_ error  
+k4.lic | `k4.lic` file not found, check contents of environment variables `QHOME` and `QLIC`  
+exp | License expiry date is prior to system date CPU  
+cpu | The license is for fewer CPUs than available
+

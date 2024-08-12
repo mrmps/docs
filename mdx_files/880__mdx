@@ -1,0 +1,86 @@
+https://code.kx.com/platform/embedpy/
+
+# EmbedPy - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/embedpy/
+
+# EmbedPy integration
+
+KX Delta Platform offers direct integration with embedPy through a KX Delta
+Platform asset package. It offers the full functionality available of the KX
+Fusion interface detailed at [code.kx.com](https://code.kx.com/q/ml/embedpy/)
+
+Currently all Linux flavours supported by the KX Delta Platform support
+embedPy integration; including Ubuntu 16/18 and Red Hat 6/7. The KX Delta
+Platform embedPy package is also available for Windows.
+
+The only requirement is the ability to update the `$QHOME` with the necessary
+libraries and Kdb+ script wrapper as part of the KX Delta Platform
+installation.
+
+## KX Delta Platform embedPy asset installation
+
+The EmbedPy KX Delta Platform asset is installed in the same way as all KX
+Delta Platform, KX Delta Platform assets and Solution packages are installed.
+Place the package in the relevant package directory and run through the
+installation script. Further details on KX Delta Platform and package
+deployment can be retrieved via the [Deployment
+guides](https://nexus.firstderivatives.com/nexus/content/repositories/KxDocs/DeploymentGuides/)
+
+## EmbedPy KX Analyst integration
+
+EmbedPy is fully integrated with the KX Analyst component of the KX Delta
+Platform.
+
+### Python simple code execution
+
+The EmbedPy integration allows execution of Python code within the KX Analyst
+IDE or from a script. In both the IDE and scripts prefix Python code with `p)`
+
+![Screenshot](../img/control/simpleembedpy.png)
+
+Q scripts can load and execute multiline Python code. Prefix the first line of
+the code with `p)` and indent subsequent lines of Python code according to the
+usual Python indentation rules.
+
+    
+    
+    $ cat embedPytest.q
+    a:1                   / q code
+    p)def add1(arg1):     # Python code
+        return arg1+1     # still Python code
+    
+
+![Screenshot](../img/control/loadscriptembedpy.png)
+
+Full scripts of Python code can be executed in q, using the `.p` file
+extension. The script is loaded as usual.
+
+### Converting Python data to q
+
+Given `obj`, an embedPy object representing Python data, we can get the
+underlying data as foreign or q.
+
+e.g.
+
+    
+    
+    q)x:.p.eval"(1,2,3)"
+    q)x
+    {[f;x]embedPy[f;x]}[foreign]enlist
+    q)x`.
+    foreign
+    q)x`
+    1 2 3
+    
+
+### Python dictionaries
+
+Python dictionaries convert to q dictionaries, and vice versa.
+
+![Screenshot](../img/control/dictionariesembedpy.png)
+
+### References
+
+For more details on using Python in q, see:
+

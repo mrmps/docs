@@ -1,0 +1,54 @@
+https://code.kx.com/insights/core/big-query/troubleshooting.html
+
+# Troubleshooting - kdb products
+
+Original URL: https://code.kx.com/insights/core/big-query/troubleshooting.html
+
+# Troubleshooting
+
+## Permissioning error using `.com_kx_bq.query`
+
+Example error
+
+    
+    
+    q).com_kx_bq.query "select * from `platform-293415.samplenames.names_2000`"
+    { "error": { "code": 403, "message": "Access Denied: Project cloudpak: User does not have bigquery.jobs.create permission in project cloudpak.", "errors": [ { "message": "Access Denied: Project cloudpak: User does not have big
+    
+
+Certain functions in the API make use of default values specified in
+
+`.com_kx_bq.query` in particular makes use of the default project ID, since
+this needs to be passed as part of [the
+URL](https://cloud.google.com/bigquery/docs/reference/rest/v2/jobs/query) for
+the underlying REST request.
+
+If you check the value of the default project ID, this will likely be set to
+the name of the project listed in the error.
+
+    
+    
+    q).com_kx_bq.cfg.default.projectId
+    "cloudpak"
+    
+
+This issue can be resolved by setting the default project ID to be the name of
+the project you are attempting to query. In the example error above, this
+would be
+
+    
+    
+    .com_kx_bq.cfg.default.projectId:"platform-293415"
+    
+
+If the application needs to be able to query multiple projects from a single
+process without using the default project ID, then the
+[`.com_kx_bq.run`](api.html#com_kx_bqrun) function can be used:
+
+    
+    
+    query:"select * from `platform-293415.samplenames.names_2000`";
+    resp:.com_kx_bq.run[`jobs.query;enlist[`projectId]!enlist "platform-293415";] .com_kx_bq.i.queries.createBody[query];
+    data:.com_kx_bq.i.parseDataFromQuery resp;
+    
+

@@ -1,0 +1,35 @@
+https://code.kx.com/insights/core/rest-server/appendix/queryworker.html
+
+# queryworker - kdb products
+
+Original URL: https://code.kx.com/insights/core/rest-server/appendix/queryworker.html
+
+# `queryworker`
+
+_Full definition of example REST server’s worker processes_
+
+This process should be started automatically by the REST server example
+
+Copy this into your present working directory when running the REST server.
+
+    
+    
+    \d .demo
+    h:-1i
+    lastresult:()
+    .z.pc:{if[x ~ h; exit 0];}
+    
+    if[not `server in key args:.Q.opt .z.x;
+      -2 "Server port required with -server <port>";
+      exit 1]
+    
+    h:hopen `$":localhost:", first args `server
+    
+    runQuery:{[dbpath;query]
+      system "l ",dbpath;
+      lastResult::value query;
+      .z.w (`.demo.done; 1b); }
+    
+    \d .
+    
+

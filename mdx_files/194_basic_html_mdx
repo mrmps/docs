@@ -1,0 +1,301 @@
+https://code.kx.com/insights/api/machine-learning/python/registry/examples/basic.html
+
+# Basic Python Examples - kdb products
+
+Original URL: https://code.kx.com/insights/api/machine-learning/python/registry/examples/basic.html
+
+# Registry Examples
+
+The purpose of this page is to provide example usage of the ML-Registry. For
+most users these examples will be the first entry point to the use of the ML-
+Registry and outline the function calls that are used across the interface
+when interacting with the Registry.
+
+## Basic Interactions
+
+After installing the relevant dependencies, we can explore the python model
+registry functionality by following the examples below:
+
+  * Start up a python session 
+
+  * Import the ml functionality 
+    
+        >>> from kxi import ml
+    >>> ml.init()
+    
+
+  * Generate a new Model Registry 
+    
+        >>> ml.registry.new.registry()
+    {'storage': 'local', 'folderPath': b'.', 'registryPath': b'./KX_ML_REGISTRY', 'modelStorePath': ':./KX_ML_REGISTRY/modelStore'}
+    
+
+  * Display the 'model_store' - the current models within the registry 
+    
+        >>> ml.registry.get.model_store()
+    Empty DataFrame
+    Columns: [registrationTime, experimentName, modelName, uniqueID, modelType, version, description]
+    Index: []
+    
+
+  * Add several models to the Registry 
+    
+        # Import PyKx to enable us to define q models
+    >>> from pykx as kx
+    
+    # Increment minor versions
+    >>> model_name = "basic-model"
+    >>> ml.registry.set.model(model=kx.q('{x}'),   model_name=model_name, model_type="q")
+    UUID('....')
+    >>> ml.registry.set.model(model=kx.q('{x+1}'), model_name=model_name, model_type="q")
+    UUID('....')
+    >>> ml.registry.set.model(model=kx.q('{x+2}'), model_name=model_name, model_type="q")
+    UUID('....')
+    
+    # Set major version and increment from '2.0'
+    >>> ml.registry.set.model(model=kx.q('{x+3}'), model_name=model_name, model_type="q", major=True)
+    UUID('....')
+    >>> ml.registry.set.model(model=kx.q('{x+4}'), model_name=model_name, model_type="q")
+    UUID('....')
+    
+    # Add another version of '1.x'
+    >>> ml.registry.set.model(model=kx.q('{x+5}'), model_name=model_name, model_type="q", major_version=1)
+    UUID('....')
+    
+
+  * Display the 'model_store' - the current models within the registry 
+    
+        >>> ml.registry.get.model_store()
+                   registrationTime experimentName       modelName  ... modelType version description
+    0 2022-01-01 12:00:00.000000000   b'undefined'  b'basic-model'  ...      b'q'  [1, 0]         b''
+    1 2022-01-01 12:00:00.000000000   b'undefined'  b'basic-model'  ...      b'q'  [1, 1]         b''
+    2 2022-01-01 12:00:00.000000000   b'undefined'  b'basic-model'  ...      b'q'  [1, 2]         b''
+    3 2022-01-01 12:00:00.000000000   b'undefined'  b'basic-model'  ...      b'q'  [2, 0]         b''
+    4 2022-01-01 12:00:00.000000000   b'undefined'  b'basic-model'  ...      b'q'  [2, 1]         b''
+    5 2022-01-01 12:00:00.000000000   b'undefined'  b'basic-model'  ...      b'q'  [1, 3]         b''
+    
+
+  * Add models associated with experiments 
+    
+        >>> model_name = "new-model"
+    
+    # Incrementing versions from '1.0'
+    >>> ml.registry.set.model(model=kx.q('{x}'),   model_name=model_name, model_type="q", experiment_name="test_experiment")
+    UUID('....')
+    >>> ml.registry.set.model(model=kx.q('{x+1}'), model_name=model_name, model_type="q", experiment_name="test_experiment", major=True)
+    UUID('....')
+    >>> ml.registry.set.model(model=kx.q('{x+2}'), model_name=model_name, model_type="q", experiment_name="test_experiment")
+    UUID('....')
+    
+
+  * Display the 'model_store' - the current models within the registry 
+    
+        >>> ml.registry.get.model_store()
+                   registrationTime      experimentName       modelName  ... modelType version description
+    0 2022-01-01 12:00:00.000000000        b'undefined'  b'basic-model'  ...      b'q'  [1, 0]         b''
+    1 2022-01-01 12:00:00.000000000        b'undefined'  b'basic-model'  ...      b'q'  [1, 1]         b''
+    2 2022-01-01 12:00:00.000000000        b'undefined'  b'basic-model'  ...      b'q'  [1, 2]         b''
+    3 2022-01-01 12:00:00.000000000        b'undefined'  b'basic-model'  ...      b'q'  [2, 0]         b''
+    4 2022-01-01 12:00:00.000000000        b'undefined'  b'basic-model'  ...      b'q'  [2, 1]         b''
+    5 2022-01-01 12:00:00.000000000        b'undefined'  b'basic-model'  ...      b'q'  [1, 3]         b''
+    6 2022-01-01 12:00:00.000000000  b'test_experiment'    b'new-model'  ...      b'q'  [1, 0]         b''
+    7 2022-01-01 12:00:00.000000000  b'test_experiment'    b'new-model'  ...      b'q'  [1, 1]         b''
+    8 2022-01-01 12:00:00.000000000  b'test_experiment'    b'new-model'  ...      b'q'  [1, 2]         b''
+    
+
+  * Retrieve models from the Registry 
+    
+        # Retrieve version 1.1 of the 'basic-model'
+    >>> ml.registry.get.model(model_name="basic-model", version=[1, 1])
+    {'modelInfo': {'registry': {....}, 'model': {....}, 'monitoring': {....}},
+     'model'    : pykx.Lambda(pykx.q('{x+1}'))
+    }
+    
+    # Retrieve the most up to date model associated with the 'testExperiment'
+    >>> ml.registry.get.model(experiment_name="test_experiment", model_name="new-model")
+    {'modelInfo': {'registry': {....}, 'model': {....}, 'monitoring': {....}},
+     'model'    : pykx.Lambda(pykx.q('{x+2}'))
+    }
+    
+    # Retrieve the last model added to the registry
+    >>> ml.registry.get.model()
+    {'modelInfo': {'registry': {....}, 'model': {....}, 'monitoring': {....}},
+     'model'    : pykx.Lambda(pykx.q('{x+2}'))
+    }
+    
+
+  * Delete models, experiments and the registry 
+    
+        # Delete the experiment from the registry
+    >>> ml.registry.delete.experiment(folder_path=".", experiment_name="test_experiment")
+    
+    # Display the 'model_store' - the current models within the registry following experiment deletion
+    >>> ml.registry.get.model_store()
+                   registrationTime experimentName       modelName  ... modelType version description
+    0 2022-01-01 12:00:00.000000000   b'undefined'  b'basic-model'  ...      b'q'  [1, 0]         b''
+    1 2022-01-01 12:00:00.000000000   b'undefined'  b'basic-model'  ...      b'q'  [1, 1]         b''
+    2 2022-01-01 12:00:00.000000000   b'undefined'  b'basic-model'  ...      b'q'  [1, 2]         b''
+    3 2022-01-01 12:00:00.000000000   b'undefined'  b'basic-model'  ...      b'q'  [2, 0]         b''
+    4 2022-01-01 12:00:00.000000000   b'undefined'  b'basic-model'  ...      b'q'  [2, 1]         b''
+    5 2022-01-01 12:00:00.000000000   b'undefined'  b'basic-model'  ...      b'q'  [1, 3]         b''
+    
+    # Delete version 1.3 of the 'basic-model'
+    >>> ml.registry.delete.model(model_name="basic-model", version=[1, 3])
+    pykx.Identity(pykx.q('::'))
+    
+    # Display the model_store following deletion of 1.3 of the 'basic-model'
+    >>> ml.registry.get.model_store()
+                   registrationTime experimentName       modelName  ... modelType version description
+    0 2022-01-01 12:00:00.000000000   b'undefined'  b'basic-model'  ...      b'q'  [1, 0]         b''
+    1 2022-01-01 12:00:00.000000000   b'undefined'  b'basic-model'  ...      b'q'  [1, 1]         b''
+    2 2022-01-01 12:00:00.000000000   b'undefined'  b'basic-model'  ...      b'q'  [1, 2]         b''
+    3 2022-01-01 12:00:00.000000000   b'undefined'  b'basic-model'  ...      b'q'  [2, 0]         b''
+    4 2022-01-01 12:00:00.000000000   b'undefined'  b'basic-model'  ...      b'q'  [2, 1]         b''
+    
+    # Delete all models associated with the 'basic-model'
+    >>> ml.registry.delete.model(model_name="basic-model")
+    pykx.Identity(pykx.q('::'))
+    
+    # Display the 'model_store' - the current models within the registry after 'basic-model' deletion
+    >>> ml.registry.get.model_store()
+    Empty DataFrame
+    Columns: [registrationTime, experimentName, modelName, uniqueID, modelType, version, description]
+    Index: []
+    
+    # Delete the registry
+    >>> ml.registry.delete.registry()
+    ./KX_ML_REGISTRY deleted.
+    
+
+## Externally generated model addition
+
+Not all models that a user may want to use within the registry will have been
+generated in the python session being used to add the model to the registry.
+In reality, they may not have been generated using python/PyKX at all. For
+example, in the case of Python objects/models saved as `pickled files`/`h5
+files` in the case of Keras models.
+
+As such, the `.ml.registry.set.model` functionality also allows users to take
+the following file types (with appropriate limitations) and add them to the
+registry such that they can be retrieved.
+
+Model Type | File Type | Qualifying Conditions  
+---|---|---  
+q | q-binary | Retrieved model must be a q projection, function or dictionary with a predict key  
+Python | pickled file | The file must be loadable using `joblib.load`  
+Sklearn | pickled file | The file must be loadable using `joblib.load` and contain a `predict` method i.e. is a `fit` scikit-learn model  
+Keras | HDF5 file | The file must be loadable using `keras.models.load_model` and contain a `predict` method i.e. is a `fit` Keras model  
+PyTorch | pickled file/jit | The file must be loadable using `torch.jit.load` or `torch.load`, invocation of the function on load is expected to return predictions as a tensor  
+  
+The following example invocations shows how q and sklearn models generated
+previously can be added to the registry:
+
+## Adding Python requirements with individually set models
+
+By default the addition of models to the registry as individual analytics
+includes:
+
+  1. Configuration outlined within `config/modelInfo.json`.
+  2. The model (Python/q) within a `model` folder.
+  3. A `metrics` folder for the storage of metrics associated with a model
+  4. A `parameters` folder for the storage parameter information associated with the model or associated data
+  5. A `code` folder which can be used to populate code that will be loaded on retrieval of a model.
+
+What is omitted from this are the Python requirements that are necessary for
+the running of the models, these can be added as part of the `config`
+parameter in the following ways.
+
+  1. Setting the value associated with the `requirements` key to `True` when in a virtualenv will `pip freeze` the current environment and save as a `requirements.txt` file.
+  2. Setting the value associated with the `requirements` key to a `str` which points to a file will copy that file as the `requirements.txt` file for that model, thus allowing users to point to a previously generated requirements file.
+  3. Setting the value associated with the `requirements` key to a list of `str` objects will populate a `requirements.txt` file for the model containing each of the strings as an independent requirement
+
+The following example shows how each of the above cases would be invoked:
+
+  * Freezing the current environment using pip freeze when in a virtualenv 
+    
+        >>> ml.registry.set.model(model=kx.q('{x}'), model_name="reqr_model", model_type="q", requirements=True)
+    UUID('....')
+    
+
+  * Pointing to an existing requirements file using relative or full path 
+    
+        >>> ml.registry.set.model(model=kx.q('{x+1}'), model_name="reqr_model", model_type="q", requirements="requirements.txt")
+    
+
+  * Adding a list of strings as the requirements 
+    
+        >>> requirements = ["numpy", "pandas", "scikit-learn"]
+    >>> ml.registry.set.model(model=kx.q('{x+2}'), model_name="reqr_model", model_type="q", requirements=requirements)
+    UUID('....')
+    
+
+## Associate metrics with a model
+
+Metric information can be persisted with a saved model to create a table
+within the model registry to which data associated with the model can be
+stored.
+
+The following shows how interactions with this functionality are facilitated:
+
+  * Set a model within the model registry 
+    
+        >>> ml.registry.set.model(experiment_name="test", model=kx.q('{x+1}'), model_name="metric_model", model_type="q");
+    UUID('....')
+    
+
+  * Log various metrics associated with a named model 
+    
+        >>> ml.registry.log.metric(model_name="metric_model" version=[1, 0], metric_name="func1", metric_value=2.4]
+    >>> ml.registry.log.metric(model_name="metric_model" version=[1, 0], metric_name="func1", metric_value=3]
+    >>> ml.registry.log.metric(model_name="metric_model" version=[1, 0], metric_name="func2", metric_value=10.2]
+    >>> ml.registry.log.metric(model_name="metric_model" version=[1, 0], metric_name="func3", metric_value=9]
+    >>> ml.registry.log.metric(model_name="metric_model" version=[1, 0], metric_name="func3", metric_value=11.2]
+    
+
+  * Retrieve all metrics associated with the model `metric_model`
+    
+        >>> ml.registry.get.metric(model_name="metric_model", version=[1, 0])
+                          timestamp metricName  metricValue
+    0 2022-01-01 00:00:00.000000000      func1          2.4
+    1 2022-01-01 00:00:00.000000000      func1          3.0
+    2 2022-01-01 00:00:00.000000000      func2         10.2
+    3 2022-01-01 00:00:00.000000000      func3          9.0
+    4 2022-01-01 00:00:00.000000000      func3         11.2
+    
+
+  * Retrieve metric information related to a single named model 
+    
+        >>> ml.registry.get.metric(model_name="metric_model", version=[1, 0], metric="func1")
+                          timestamp metricName  metricValue
+    0 2022-01-01 00:00:00.000000000      func1          2.4
+    1 2022-01-01 00:00:00.000000000      func1          3.0
+    
+
+## Associating parameters with a model
+
+Parameter information can be added to a saved model, this creates a json file
+within the models registry associated with a particular parameter.
+
+  * Set a model within the model registry 
+    
+        >>> ml.registry.set.model(model=kx.q('{x+2}'), model_name="param_model", model_type="q")
+    
+
+  * Set parameters associated with the model 
+    
+        >>> ml.registry.set.parameters(param_name="param_file", params={"param1":1, "param2":2}, model_name="param_model", version=[1, 0])
+    ':./KX_ML_REGISTRY/unnamedExperiments/param_model/1.0/params/param_file.json'
+    
+    >>> ml.registry.set.parameters(param_name="param_file2", params=["value1", "value2"], model_name="param_model", version=[1, 0])
+    ':./KX_ML_REGISTRY/unnamedExperiments/param_model/1.0/params/param_file2.json'
+    
+
+  * Retrieve saved parameters associated with a model 
+    
+        >>> ml.registry.get.parameters(model_name="param_model", version=[1, 0], param_name="param_file")
+    {'param1': 1.0, 'param2': 2.0}
+    
+    >>> ml.registry.get.parameters(model_name="param_model", version=[1, 0], param_name="param_file2")
+    [b'value1', b'value2']
+    
+

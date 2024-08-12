@@ -1,0 +1,65 @@
+https://code.kx.com/dashboards/apibasic/
+
+# Basics - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/apibasic/
+
+# Basics
+
+## Javascript
+
+    
+    
+    define(["css!./app.css"], function () {
+        function App(options) {
+            options.el.innerHTML = '<div class="basic"><div class="hello">Hello World</div></div>';
+        }
+        return App;
+    });
+    
+
+`App` is called with a number of parameters.
+
+Parameter | Description  
+---|---  
+el | A DOM element into which the component can be rendered  
+[api](../DataModelInterface.QuickBase.ComponentInterface/) | Component interface to interact with Dashboards view states, data sources, etc.  
+  
+## CSS
+
+Copy `app.css` from the Basic [project](../assets/projects.zip) into a `css`
+folder created in **www/modules/Basic**
+
+    
+    
+    .basic {
+        text-align: center;
+        font-size: 2em;
+    }
+    
+
+## Component Definition
+
+Open `components.json` in the **www** folder and add a component definition.
+
+    
+    
+     {
+        "id": 10001,
+        "componentName": "Basic",
+        "componentDescription": "Simple component",
+        "size": [400,600],
+        "appKey": "Basic/main",
+        "listViewThumb": "<i class=\"fa fa-fw fa-smile-o\" />"
+      },
+    
+
+parameters | definition  
+---|---  
+id | A unique identifier, required for legacy purposes  
+componentName | The name shown in the panel  
+componentDescription | The description shown in the panel  
+size | Define tile size, set to 400 x 600  
+appKey | The path given to RequireJS to load the component, relative to the **www/modules/** folder  
+listViewThumb | The icon displayed in the panel; can be any HTML element, e.g. `<svg>` or `<i>` using [Font Awesome](https://fontawesome.com/) classes
+

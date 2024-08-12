@@ -1,0 +1,281 @@
+https://code.kx.com/insights/core/install.html
+
+# Install kdb Insights Core - kdb products
+
+Original URL: https://code.kx.com/insights/core/install.html
+
+# Install kdb Insights Core
+
+This section covers the procedure to install kdb Insights Core.
+
+KX Nexus
+
+The KX Nexus repository will be sunsetted in the future. Nexus links on this
+page are provided as a temporary alternative to the KX Downloads Portal for
+existing users. The KX Downloads Portal is the preferred repository for all
+use cases and KX Nexus links will be removed once the KX Nexus repository is
+decommissioned.
+
+## Prerequisites
+
+### License
+
+A valid license is needed to run kdb Insights Core:
+
+  * If you signed up for our [free trial](../microservices/insights-freetrial.html), your license is detailed in the email that you received from KX.
+
+  * For a full commercial license, please contact [`licadmin@kx.com`](mailto:licadmin@kx.com).
+
+### System
+
+`kdbInsightsCore` requires openssl1.1-compatible libraries and libcurl at
+least version 7.31.
+
+## Contents
+
+If you signed up for our [free trial](../microservices/insights-
+freetrial.html), the email that you received from KX contains links to one of
+the following files:
+
+If you have a full commercial license, kdb Insights Core is delivered as a ZIP
+(`l64.zip`) inside a TGZ available through the [KX Downloads
+Portal](https://portal.dl.kx.com/assets/raw/kdbInsightsCore/).
+
+    
+    
+    └── dist
+        ├── l64.zip
+        ├── Dockerfile
+    └── kdb
+        ├── changelog.txt
+    
+
+Existing users can use the equivalent [Nexus location to download kdb Insights
+Core](https://nexus.dl.kx.com/#browse/browse:kx-insights-
+packages:kdbInsightsCore) until Nexus is removed in the future.
+
+### `libraries`
+
+The table below details the components included in kdb Insights Core:
+
+Library | q file | Automatically Loaded  
+---|---|---  
+kurl | kurl.q_ | YES*  
+objstor | objstor.q_ | YES*  
+qlog | qlog.q_ | YES*  
+kxsql | s.k_ | YES*  
+rest-server | rest.q_ | NO  
+big-query | bq.q_ | NO  
+  
+* libraries available when the appropriate license is used. Please contact KX for more information - [sales@kx.com](mailto:sales@kx.com).
+
+### License installation
+
+To install kdb Insights Core on Linux you need a license key. This is
+distributed as a `kx.lic`, `kc.lic` or `k4.lic` file that you can install as
+follows:
+
+    
+    
+    mkdir $HOME/qlic
+    export QLIC=$HOME/qlic
+    cp k[xc4].lic $QLIC/
+    
+
+If your `kc.lic` license has been delivered as a base64 encoded license
+string, it can be decoded, written to a file and installed as follows:
+
+    
+    
+    mkdir $HOME/qlic
+    export QLIC=$HOME/qlic
+    echo 'base64 encoded license string' | base64 -d > $QLIC/kc.lic
+    
+
+### Binary installation (Linux)
+
+kdb Insights Core comes as a zip file containing the `q` binary and kdb
+Insights Core libraries for Linux users.
+
+Here we assume you install kdb Insights Core directly on Linux under the
+folder `$HOME/q`.
+
+Open a command shell and `cd` to your downloads directory, then unzip the
+downloaded ZIP to produce a folder `q` in your install location.
+
+You may need to install openssl-libs and libcurl in order for `q` to run, but
+in some cases you may need to include distribution-specific versions of these
+libraries, which will be searched for in all of the standard library paths:
+
+  * `curl.so` at least version 7.31
+  * `crypto.so` which should be openssl1.1 compatible
+
+The q sessions opens with a banner like this.
+
+    
+    
+    KDB+ 4.0 Cloud Edition 2022.09.30 Copyright (C) 1993-2022 Kx Systems
+    l64/ 4(24)core 6118MB <REDACTED> <REDACTED> 127.0.1.1 EXPIRE 2023.02.18 <REDACTED> KOD KXCE <REDACTED>
+    
+    q)
+    
+
+## Native installers (Linux)
+
+NB Commercial license only, excludes Free Trial.
+
+kdb Insights Core comes with a simple native script installer for Linux-based
+operating systems which is available from the [KX Downloads
+Portal](https://portal.dl.kx.com/assets/raw/qce/), or from [KX
+Nexus](https://nexus.dl.kx.com/#browse/browse:kx-insights-packages:qce) until
+Nexus is removed in the future.
+
+Download the `qce-X.Y.Z-install.sh` to your target machine and install by
+running the script and providing the appropriate license as above.
+
+    
+    
+    $ sh qce-X.Y.Z-install.sh --license-file="$QLIC/kc.lic"
+    
+
+Confirm that kdb Insights Core can be run with the command qce and ensure the
+version is correct.
+
+    
+    
+    $ qce
+    KDB+ 4.0 Cloud Edition 2022.09.30 Copyright (C) 1993-2022 Kx Systems
+    l64/ 4(24)core 6118MB <REDACTED> <REDACTED> 127.0.1.1 EXPIRE 2023.02.18 <REDACTED> KOD KXCE <REDACTED>
+    
+
+To uninstall qce run the following:
+
+    
+    
+    $ qce --uninstall
+    uninstalling from [/home/user/.local/lib/qce-XXXXXXXXXXXXXX]
+    
+
+## kdb Insights Core images
+
+kdb Insights Core can also be run from a Docker container supporting any
+distribution with Docker installed including Linux, MacOS and Windows.
+
+This allows it to be:
+
+  * Run in Docker
+  * Run in Docker Compose
+  * Used as a base image for custom applications built on kdb Insights Core
+
+If you signed up for our [free trial](../microservices/insights-
+freetrial.html), you can use the pre-built kdb Insights Core Docker image as
+follows:
+
+    
+    
+    $ docker load < kdb-insights-core.tar
+    Loaded image: kdb-insights-core:X.Y.Z
+    $ docker images
+    REPOSITORY          TAG       IMAGE ID       CREATED       SIZE
+    kdb-insights-core   X.Y.Z     8129f56ea61a   3 hours ago   284MB
+    
+
+If you have downloaded kdb Insights Core from either the [KX Downloads
+Portal](https://portal.dl.kx.com/assets/raw/kdbInsightsCore/) or [KX
+Nexus](https://nexus.dl.kx.com/#browse/browse:kx-insights-packages:qce), a
+`Dockerfile` is provided to build the image:
+
+    
+    
+    $ cd kdbInsightsCore-X.Y.Z/dist/
+    $ docker build -t kdb-insights-core:X.Y.Z .
+    $ docker images
+    REPOSITORY          TAG       IMAGE ID       CREATED       SIZE
+    kdb-insights-core   X.Y.Z     8129f56ea61a   3 hours ago   284MB
+    
+
+### Run in Docker
+
+To run in Docker, mount in your license file from the `QLIC` dir as follows:
+
+    
+    
+    $ docker run --rm -it -v $QLIC:/tmp/qlic:ro kdb-insights-core:X.Y.Z
+    q)
+    
+
+Scripts and content can be passed into the container and loaded by kdb
+Insights Core.
+
+    
+    
+    $ mkdir code
+    $ echo 'show "Launching custom script called init.q"' > code/init.q
+    $ docker run --rm -it -v $QLIC:/tmp/qlic:ro\
+        -v $(pwd)/code:/opt/kx/code \
+        kdb-insights-core:X.Y.Z code/init.q
+    
+    
+    
+    KDB+ 4.0 Cloud Edition 2022.07.01 Copyright (C) 1993-2022 Kx Systems
+    l64/ 8(24)core 6118MB <REDACTED> <REDACTED> 127.0.1.1 EXPIRE 2023.02.18 <REDACTED> KOD KXCE <REDACTED>
+    
+    "Launching custom script called init.q"
+    q)
+    
+
+### Run with Docker Compose
+
+  1. Configure `docker-compose.yml`
+    
+        version: "3.7"
+    services:
+      registry:
+        image: kdb-insights-core:X.Y.Z
+        # Expose port 5000 locally
+        ports:
+          - 5000:5000
+        volumes:
+          - $QLIC:/tmp/qlic:ro
+          - ./code:/opt/kx/code
+        command: code/init.q -p 5000
+    
+
+  2. Run
+    
+        Creating network "kdb_default" with the default driver
+    Creating kdb_registry_1 ... done
+    Attaching to kdb_registry_1
+    registry_1  | "Launching custom script called init.q"
+    
+
+### Custom images
+
+  1. Use the kdb Insights Core image to build custom images with a Dockerfile.
+    
+        FROM kdb-insights-core:X.Y.Z
+    
+    WORKDIR /opt/kx
+    
+    COPY code /opt/kx/code
+    
+    ENTRYPOINT [ "/opt/kx/kdb/l64/q", "code/init.q" ]
+    
+
+  2. Build
+    
+        docker build -t custom-kdb-image:latest .
+    
+
+  3. Run
+    
+        docker run --rm -it -v $QLIC:/tmp/qlic:ro custom-kdb-image:latest
+    
+    
+        KDB+ 4.0 Cloud Edition 2022.07.01 Copyright (C) 1993-2022 Kx Systems
+    l64/ 8(24)core 6118MB <REDACTED> <REDACTED> 127.0.1.1 EXPIRE 2023.02.18 <REDACTED> KOD KXCE <REDACTED>
+    
+    "Launching custom script called init.q"
+    q)
+    
+

@@ -1,0 +1,817 @@
+https://code.kx.com/analyst/libraries/testing-quickcheck---state/
+
+# Quickcheck state - KX Analyst
+
+Original URL: https://code.kx.com/analyst/libraries/testing-quickcheck---state/
+
+# Quickcheck state
+
+## .qch.state.ty.cmd.label
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+<param> | dict |   
+<param>.label | symbol |   
+<param>.execF | fn |   
+<param>.argsF | fn |   
+<param>.precondition | fn |   
+<param>.postconditions | fn[] |   
+<param>.nextstate | fn |   
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol | a name for the command  
+  
+## .qch.state.ty.cmd.execF
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+<param> | dict |   
+<param>.label | symbol |   
+<param>.execF | fn |   
+<param>.argsF | fn |   
+<param>.precondition | fn |   
+<param>.postconditions | fn[] |   
+<param>.nextstate | fn |   
+  
+**Returns:**
+
+## .qch.state.ty.cmd.argsF
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+<param> | dict |   
+<param>.label | symbol |   
+<param>.execF | fn |   
+<param>.argsF | fn |   
+<param>.precondition | fn |   
+<param>.postconditions | fn[] |   
+<param>.nextstate | fn |   
+  
+**Returns:**
+
+## .qch.state.ty.cmd.precondition
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+<param> | dict |   
+<param>.label | symbol |   
+<param>.execF | fn |   
+<param>.argsF | fn |   
+<param>.precondition | fn |   
+<param>.postconditions | fn[] |   
+<param>.nextstate | fn |   
+  
+**Returns:**
+
+## .qch.state.ty.cmd.postconditions
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+<param> | dict |   
+<param>.label | symbol |   
+<param>.execF | fn |   
+<param>.argsF | fn |   
+<param>.precondition | fn |   
+<param>.postconditions | fn[] |   
+<param>.nextstate | fn |   
+  
+**Returns:**
+
+## .qch.state.ty.cmd.nextstate
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+<param> | dict |   
+<param>.label | symbol |   
+<param>.execF | fn |   
+<param>.argsF | fn |   
+<param>.precondition | fn |   
+<param>.postconditions | fn[] |   
+<param>.nextstate | fn |   
+  
+**Returns:**
+
+## .qch.state.ty.cmd.new
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+| (symbol; fn; fn; fn; fn[]; fn) | A tuple of:   
+a name for the command  
+  
+  
+  
+  
+  
+  
+## .qch.state.ty.link.cmd
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+<param> | dict |   
+<param>.cmd | dict |   
+<param>.cmd.label | symbol |   
+<param>.cmd.execF | fn |   
+<param>.cmd.argsF | fn |   
+<param>.cmd.precondition | fn |   
+<param>.cmd.postconditions | fn[] |   
+<param>.cmd.nextstate | fn |   
+<param>.args | any[] |   
+<param>.result | any |   
+<param>.laststate | any |   
+  
+**Returns:**
+
+Name | Type | Description  
+---|---|---  
+<returns> | dict |   
+<returns>.label | symbol |   
+<returns>.execF | fn |   
+<returns>.argsF | fn |   
+<returns>.precondition | fn |   
+<returns>.postconditions | fn[] |   
+<returns>.nextstate | fn |   
+  
+## .qch.state.ty.link.args
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+<param> | dict |   
+<param>.cmd | dict |   
+<param>.cmd.label | symbol |   
+<param>.cmd.execF | fn |   
+<param>.cmd.argsF | fn |   
+<param>.cmd.precondition | fn |   
+<param>.cmd.postconditions | fn[] |   
+<param>.cmd.nextstate | fn |   
+<param>.args | any[] |   
+<param>.result | any |   
+<param>.laststate | any |   
+  
+**Returns:**
+
+## .qch.state.ty.link.result
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+<param> | dict |   
+<param>.cmd | dict |   
+<param>.cmd.label | symbol |   
+<param>.cmd.execF | fn |   
+<param>.cmd.argsF | fn |   
+<param>.cmd.precondition | fn |   
+<param>.cmd.postconditions | fn[] |   
+<param>.cmd.nextstate | fn |   
+<param>.args | any[] |   
+<param>.result | any |   
+<param>.laststate | any |   
+  
+**Returns:**
+
+## .qch.state.ty.link.laststate
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+<param> | dict |   
+<param>.cmd | dict |   
+<param>.cmd.label | symbol |   
+<param>.cmd.execF | fn |   
+<param>.cmd.argsF | fn |   
+<param>.cmd.precondition | fn |   
+<param>.cmd.postconditions | fn[] |   
+<param>.cmd.nextstate | fn |   
+<param>.args | any[] |   
+<param>.result | any |   
+<param>.laststate | any |   
+  
+**Returns:**
+
+## .qch.state.ty.link.new
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+| (dict (label: symbol; execF: fn; argsF: fn; precondition: fn; postconditions: fn[]; nextstate: fn); any[]; any; any) | A tuple of:   
+  
+  
+  
+  
+  
+## .qch.state.ty.spec.setupF
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+<param> | dict |   
+<param>.setupF | fn |   
+<param>.currstateF | fn |   
+<param>.commands | dict[] |   
+<param>.commands.label | symbol |   
+<param>.commands.execF | fn |   
+<param>.commands.argsF | fn |   
+<param>.commands.precondition | fn |   
+<param>.commands.postconditions | fn[] |   
+<param>.commands.nextstate | fn |   
+<param>.pstop | float |   
+<param>.path | dict[] |   
+<param>.path.cmd | dict |   
+<param>.path.cmd.label | symbol |   
+<param>.path.cmd.execF | fn |   
+<param>.path.cmd.argsF | fn |   
+<param>.path.cmd.precondition | fn |   
+<param>.path.cmd.postconditions | fn[] |   
+<param>.path.cmd.nextstate | fn |   
+<param>.path.args | any[] |   
+<param>.path.result | any |   
+<param>.path.laststate | any |   
+<param>.currstate | any |   
+  
+**Returns:**
+
+## .qch.state.ty.spec.currstateF
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+<param> | dict |   
+<param>.setupF | fn |   
+<param>.currstateF | fn |   
+<param>.commands | dict[] |   
+<param>.commands.label | symbol |   
+<param>.commands.execF | fn |   
+<param>.commands.argsF | fn |   
+<param>.commands.precondition | fn |   
+<param>.commands.postconditions | fn[] |   
+<param>.commands.nextstate | fn |   
+<param>.pstop | float |   
+<param>.path | dict[] |   
+<param>.path.cmd | dict |   
+<param>.path.cmd.label | symbol |   
+<param>.path.cmd.execF | fn |   
+<param>.path.cmd.argsF | fn |   
+<param>.path.cmd.precondition | fn |   
+<param>.path.cmd.postconditions | fn[] |   
+<param>.path.cmd.nextstate | fn |   
+<param>.path.args | any[] |   
+<param>.path.result | any |   
+<param>.path.laststate | any |   
+<param>.currstate | any |   
+  
+**Returns:**
+
+## .qch.state.ty.spec.commands
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+<param> | dict |   
+<param>.setupF | fn |   
+<param>.currstateF | fn |   
+<param>.commands | dict[] |   
+<param>.commands.label | symbol |   
+<param>.commands.execF | fn |   
+<param>.commands.argsF | fn |   
+<param>.commands.precondition | fn |   
+<param>.commands.postconditions | fn[] |   
+<param>.commands.nextstate | fn |   
+<param>.pstop | float |   
+<param>.path | dict[] |   
+<param>.path.cmd | dict |   
+<param>.path.cmd.label | symbol |   
+<param>.path.cmd.execF | fn |   
+<param>.path.cmd.argsF | fn |   
+<param>.path.cmd.precondition | fn |   
+<param>.path.cmd.postconditions | fn[] |   
+<param>.path.cmd.nextstate | fn |   
+<param>.path.args | any[] |   
+<param>.path.result | any |   
+<param>.path.laststate | any |   
+<param>.currstate | any |   
+  
+**Returns:**
+
+Name | Type | Description  
+---|---|---  
+<returns> | dict[] |   
+<returns>.label | symbol |   
+<returns>.execF | fn |   
+<returns>.argsF | fn |   
+<returns>.precondition | fn |   
+<returns>.postconditions | fn[] |   
+<returns>.nextstate | fn |   
+  
+## .qch.state.ty.spec.pstop
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+<param> | dict |   
+<param>.setupF | fn |   
+<param>.currstateF | fn |   
+<param>.commands | dict[] |   
+<param>.commands.label | symbol |   
+<param>.commands.execF | fn |   
+<param>.commands.argsF | fn |   
+<param>.commands.precondition | fn |   
+<param>.commands.postconditions | fn[] |   
+<param>.commands.nextstate | fn |   
+<param>.pstop | float |   
+<param>.path | dict[] |   
+<param>.path.cmd | dict |   
+<param>.path.cmd.label | symbol |   
+<param>.path.cmd.execF | fn |   
+<param>.path.cmd.argsF | fn |   
+<param>.path.cmd.precondition | fn |   
+<param>.path.cmd.postconditions | fn[] |   
+<param>.path.cmd.nextstate | fn |   
+<param>.path.args | any[] |   
+<param>.path.result | any |   
+<param>.path.laststate | any |   
+<param>.currstate | any |   
+  
+**Returns:**
+
+Type | Description  
+---|---  
+float | between 0 and 1  
+  
+## .qch.state.ty.spec.with.path
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+<param> | dict[] |   
+<param>.cmd | dict |   
+<param>.cmd.label | symbol |   
+<param>.cmd.execF | fn |   
+<param>.cmd.argsF | fn |   
+<param>.cmd.precondition | fn |   
+<param>.cmd.postconditions | fn[] |   
+<param>.cmd.nextstate | fn |   
+<param>.args | any[] |   
+<param>.result | any |   
+<param>.laststate | any |   
+<param> | dict |   
+<param>.setupF | fn |   
+<param>.currstateF | fn |   
+<param>.commands | dict[] |   
+<param>.commands.label | symbol |   
+<param>.commands.execF | fn |   
+<param>.commands.argsF | fn |   
+<param>.commands.precondition | fn |   
+<param>.commands.postconditions | fn[] |   
+<param>.commands.nextstate | fn |   
+<param>.pstop | float |   
+<param>.path | dict[] |   
+<param>.path.cmd | dict |   
+<param>.path.cmd.label | symbol |   
+<param>.path.cmd.execF | fn |   
+<param>.path.cmd.argsF | fn |   
+<param>.path.cmd.precondition | fn |   
+<param>.path.cmd.postconditions | fn[] |   
+<param>.path.cmd.nextstate | fn |   
+<param>.path.args | any[] |   
+<param>.path.result | any |   
+<param>.path.laststate | any |   
+<param>.currstate | any |   
+  
+**Returns:**
+
+Name | Type | Description  
+---|---|---  
+<returns> | dict |   
+<returns>.setupF | fn |   
+<returns>.currstateF | fn |   
+<returns>.commands | dict[] |   
+<returns>.commands.label | symbol |   
+<returns>.commands.execF | fn |   
+<returns>.commands.argsF | fn |   
+<returns>.commands.precondition | fn |   
+<returns>.commands.postconditions | fn[] |   
+<returns>.commands.nextstate | fn |   
+<returns>.pstop | float |   
+<returns>.path | dict[] |   
+<returns>.path.cmd | dict |   
+<returns>.path.cmd.label | symbol |   
+<returns>.path.cmd.execF | fn |   
+<returns>.path.cmd.argsF | fn |   
+<returns>.path.cmd.precondition | fn |   
+<returns>.path.cmd.postconditions | fn[] |   
+<returns>.path.cmd.nextstate | fn |   
+<returns>.path.args | any[] |   
+<returns>.path.result | any |   
+<returns>.path.laststate | any |   
+<returns>.currstate | any |   
+  
+## .qch.state.ty.spec.with.currstate
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+| any |   
+<param> | dict |   
+<param>.setupF | fn |   
+<param>.currstateF | fn |   
+<param>.commands | dict[] |   
+<param>.commands.label | symbol |   
+<param>.commands.execF | fn |   
+<param>.commands.argsF | fn |   
+<param>.commands.precondition | fn |   
+<param>.commands.postconditions | fn[] |   
+<param>.commands.nextstate | fn |   
+<param>.pstop | float |   
+<param>.path | dict[] |   
+<param>.path.cmd | dict |   
+<param>.path.cmd.label | symbol |   
+<param>.path.cmd.execF | fn |   
+<param>.path.cmd.argsF | fn |   
+<param>.path.cmd.precondition | fn |   
+<param>.path.cmd.postconditions | fn[] |   
+<param>.path.cmd.nextstate | fn |   
+<param>.path.args | any[] |   
+<param>.path.result | any |   
+<param>.path.laststate | any |   
+<param>.currstate | any |   
+  
+**Returns:**
+
+Name | Type | Description  
+---|---|---  
+<returns> | dict |   
+<returns>.setupF | fn |   
+<returns>.currstateF | fn |   
+<returns>.commands | dict[] |   
+<returns>.commands.label | symbol |   
+<returns>.commands.execF | fn |   
+<returns>.commands.argsF | fn |   
+<returns>.commands.precondition | fn |   
+<returns>.commands.postconditions | fn[] |   
+<returns>.commands.nextstate | fn |   
+<returns>.pstop | float |   
+<returns>.path | dict[] |   
+<returns>.path.cmd | dict |   
+<returns>.path.cmd.label | symbol |   
+<returns>.path.cmd.execF | fn |   
+<returns>.path.cmd.argsF | fn |   
+<returns>.path.cmd.precondition | fn |   
+<returns>.path.cmd.postconditions | fn[] |   
+<returns>.path.cmd.nextstate | fn |   
+<returns>.path.args | any[] |   
+<returns>.path.result | any |   
+<returns>.path.laststate | any |   
+<returns>.currstate | any |   
+  
+## .qch.state.ty.spec.path
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+<param> | dict |   
+<param>.setupF | fn |   
+<param>.currstateF | fn |   
+<param>.commands | dict[] |   
+<param>.commands.label | symbol |   
+<param>.commands.execF | fn |   
+<param>.commands.argsF | fn |   
+<param>.commands.precondition | fn |   
+<param>.commands.postconditions | fn[] |   
+<param>.commands.nextstate | fn |   
+<param>.pstop | float |   
+<param>.path | dict[] |   
+<param>.path.cmd | dict |   
+<param>.path.cmd.label | symbol |   
+<param>.path.cmd.execF | fn |   
+<param>.path.cmd.argsF | fn |   
+<param>.path.cmd.precondition | fn |   
+<param>.path.cmd.postconditions | fn[] |   
+<param>.path.cmd.nextstate | fn |   
+<param>.path.args | any[] |   
+<param>.path.result | any |   
+<param>.path.laststate | any |   
+<param>.currstate | any |   
+  
+**Returns:**
+
+Name | Type | Description  
+---|---|---  
+<returns> | dict[] |   
+<returns>.cmd | dict |   
+<returns>.cmd.label | symbol |   
+<returns>.cmd.execF | fn |   
+<returns>.cmd.argsF | fn |   
+<returns>.cmd.precondition | fn |   
+<returns>.cmd.postconditions | fn[] |   
+<returns>.cmd.nextstate | fn |   
+<returns>.args | any[] |   
+<returns>.result | any |   
+<returns>.laststate | any |   
+  
+## .qch.state.ty.spec.currstate
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+<param> | dict |   
+<param>.setupF | fn |   
+<param>.currstateF | fn |   
+<param>.commands | dict[] |   
+<param>.commands.label | symbol |   
+<param>.commands.execF | fn |   
+<param>.commands.argsF | fn |   
+<param>.commands.precondition | fn |   
+<param>.commands.postconditions | fn[] |   
+<param>.commands.nextstate | fn |   
+<param>.pstop | float |   
+<param>.path | dict[] |   
+<param>.path.cmd | dict |   
+<param>.path.cmd.label | symbol |   
+<param>.path.cmd.execF | fn |   
+<param>.path.cmd.argsF | fn |   
+<param>.path.cmd.precondition | fn |   
+<param>.path.cmd.postconditions | fn[] |   
+<param>.path.cmd.nextstate | fn |   
+<param>.path.args | any[] |   
+<param>.path.result | any |   
+<param>.path.laststate | any |   
+<param>.currstate | any |   
+  
+**Returns:**
+
+## .qch.state.ty.spec.new
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+| (fn; fn; dict (label: symbol; execF: fn; argsF: fn; precondition: fn; postconditions: fn[]; nextstate: fn)[]; float; dict (cmd: dict (label: symbol; execF: fn; argsF: fn; precondition: fn; postconditions: fn[]; nextstate: fn); args: any[]; result: any; laststate: any)[]; any) | A tuple of:   
+  
+  
+  
+between 0 and 1  
+  
+  
+  
+## .qch.state.ty.result.length
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+<param> | dict |   
+<param>.length | long |   
+<param>.success | boolean |   
+<param>.error | any |   
+<param>.spec | dict |   
+<param>.spec.setupF | fn |   
+<param>.spec.currstateF | fn |   
+<param>.spec.commands | dict[] |   
+<param>.spec.commands.label | symbol |   
+<param>.spec.commands.execF | fn |   
+<param>.spec.commands.argsF | fn |   
+<param>.spec.commands.precondition | fn |   
+<param>.spec.commands.postconditions | fn[] |   
+<param>.spec.commands.nextstate | fn |   
+<param>.spec.pstop | float |   
+<param>.spec.path | dict[] |   
+<param>.spec.path.cmd | dict |   
+<param>.spec.path.cmd.label | symbol |   
+<param>.spec.path.cmd.execF | fn |   
+<param>.spec.path.cmd.argsF | fn |   
+<param>.spec.path.cmd.precondition | fn |   
+<param>.spec.path.cmd.postconditions | fn[] |   
+<param>.spec.path.cmd.nextstate | fn |   
+<param>.spec.path.args | any[] |   
+<param>.spec.path.result | any |   
+<param>.spec.path.laststate | any |   
+<param>.spec.currstate | any |   
+  
+**Returns:**
+
+## .qch.state.ty.result.success
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+<param> | dict |   
+<param>.length | long |   
+<param>.success | boolean |   
+<param>.error | any |   
+<param>.spec | dict |   
+<param>.spec.setupF | fn |   
+<param>.spec.currstateF | fn |   
+<param>.spec.commands | dict[] |   
+<param>.spec.commands.label | symbol |   
+<param>.spec.commands.execF | fn |   
+<param>.spec.commands.argsF | fn |   
+<param>.spec.commands.precondition | fn |   
+<param>.spec.commands.postconditions | fn[] |   
+<param>.spec.commands.nextstate | fn |   
+<param>.spec.pstop | float |   
+<param>.spec.path | dict[] |   
+<param>.spec.path.cmd | dict |   
+<param>.spec.path.cmd.label | symbol |   
+<param>.spec.path.cmd.execF | fn |   
+<param>.spec.path.cmd.argsF | fn |   
+<param>.spec.path.cmd.precondition | fn |   
+<param>.spec.path.cmd.postconditions | fn[] |   
+<param>.spec.path.cmd.nextstate | fn |   
+<param>.spec.path.args | any[] |   
+<param>.spec.path.result | any |   
+<param>.spec.path.laststate | any |   
+<param>.spec.currstate | any |   
+  
+**Returns:**
+
+## .qch.state.ty.result.error
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+<param> | dict |   
+<param>.length | long |   
+<param>.success | boolean |   
+<param>.error | any |   
+<param>.spec | dict |   
+<param>.spec.setupF | fn |   
+<param>.spec.currstateF | fn |   
+<param>.spec.commands | dict[] |   
+<param>.spec.commands.label | symbol |   
+<param>.spec.commands.execF | fn |   
+<param>.spec.commands.argsF | fn |   
+<param>.spec.commands.precondition | fn |   
+<param>.spec.commands.postconditions | fn[] |   
+<param>.spec.commands.nextstate | fn |   
+<param>.spec.pstop | float |   
+<param>.spec.path | dict[] |   
+<param>.spec.path.cmd | dict |   
+<param>.spec.path.cmd.label | symbol |   
+<param>.spec.path.cmd.execF | fn |   
+<param>.spec.path.cmd.argsF | fn |   
+<param>.spec.path.cmd.precondition | fn |   
+<param>.spec.path.cmd.postconditions | fn[] |   
+<param>.spec.path.cmd.nextstate | fn |   
+<param>.spec.path.args | any[] |   
+<param>.spec.path.result | any |   
+<param>.spec.path.laststate | any |   
+<param>.spec.currstate | any |   
+  
+**Returns:**
+
+## .qch.state.ty.result.spec
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+<param> | dict |   
+<param>.length | long |   
+<param>.success | boolean |   
+<param>.error | any |   
+<param>.spec | dict |   
+<param>.spec.setupF | fn |   
+<param>.spec.currstateF | fn |   
+<param>.spec.commands | dict[] |   
+<param>.spec.commands.label | symbol |   
+<param>.spec.commands.execF | fn |   
+<param>.spec.commands.argsF | fn |   
+<param>.spec.commands.precondition | fn |   
+<param>.spec.commands.postconditions | fn[] |   
+<param>.spec.commands.nextstate | fn |   
+<param>.spec.pstop | float |   
+<param>.spec.path | dict[] |   
+<param>.spec.path.cmd | dict |   
+<param>.spec.path.cmd.label | symbol |   
+<param>.spec.path.cmd.execF | fn |   
+<param>.spec.path.cmd.argsF | fn |   
+<param>.spec.path.cmd.precondition | fn |   
+<param>.spec.path.cmd.postconditions | fn[] |   
+<param>.spec.path.cmd.nextstate | fn |   
+<param>.spec.path.args | any[] |   
+<param>.spec.path.result | any |   
+<param>.spec.path.laststate | any |   
+<param>.spec.currstate | any |   
+  
+**Returns:**
+
+Name | Type | Description  
+---|---|---  
+<returns> | dict |   
+<returns>.setupF | fn |   
+<returns>.currstateF | fn |   
+<returns>.commands | dict[] |   
+<returns>.commands.label | symbol |   
+<returns>.commands.execF | fn |   
+<returns>.commands.argsF | fn |   
+<returns>.commands.precondition | fn |   
+<returns>.commands.postconditions | fn[] |   
+<returns>.commands.nextstate | fn |   
+<returns>.pstop | float |   
+<returns>.path | dict[] |   
+<returns>.path.cmd | dict |   
+<returns>.path.cmd.label | symbol |   
+<returns>.path.cmd.execF | fn |   
+<returns>.path.cmd.argsF | fn |   
+<returns>.path.cmd.precondition | fn |   
+<returns>.path.cmd.postconditions | fn[] |   
+<returns>.path.cmd.nextstate | fn |   
+<returns>.path.args | any[] |   
+<returns>.path.result | any |   
+<returns>.path.laststate | any |   
+<returns>.currstate | any |   
+  
+## .qch.state.ty.result.new
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+| (long; boolean; any; dict (setupF: fn; currstateF: fn; commands: dict (label: symbol; execF: fn; argsF: fn; precondition: fn; postconditions: fn[]; nextstate: fn)[]; pstop: float; path: dict (cmd: dict (label: symbol; execF: fn; argsF: fn; precondition: fn; postconditions: fn[]; nextstate: fn); args: any[]; result: any; laststate: any)[]; currstate: any)) | A tuple of:   
+  
+  
+  
+  
+  
+## .qch.state.check
+
+Perform the following 1) run initialization function 2) roll dice to see if we
+should continue 3) get subset of commands whose precondition is satisfied 4)
+select on of the commands at random 5) generate the argument for the command
+6) grab a snapshot of the state 7) execute the command on the generated
+arguments and store result 8) check postcondition of command on state
+snapshot, arguments, and return 9) if fail, fail, otherwise go to 2
+
+**Parameter:**
+
+**Returns:**
+
+## .qch.state.cmd
+
+Create a new command specification
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+args | (symbol; fn; fn; fn; fn[]; fn) | @see state.ks  
+  
+**Returns:**
+
+## .qch.state.quick
+
+## .qch.state.replay
+
+## .qch.state.spec
+
+Create a new API specification
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+args | any[] | @see state.ks -- the pstop is optional, and path is omitted  
+  
+**Returns:**
+
+## .qch.state.summary
+
+Summarize a state test
+
+**Parameter:**
+
+**Returns:**
+

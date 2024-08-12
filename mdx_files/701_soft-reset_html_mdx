@@ -1,0 +1,57 @@
+https://code.kx.com/insights/microservices/rt/soft-reset.html
+
+# Soft reset - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/rt/soft-reset.html
+
+# RT Soft Reset
+
+In _kdb Insights Enterprise_ when an instance of RT runs using a 3 node
+cluster, RT can continue to run if there are 2 of the 3 nodes running, however
+it is not ideal as there is now no additional resiliency and old messages
+cannot be archived unless all 3 nodes are running. If for some reason the 3rd
+node cannot come back up or if one of the remaining 2 nodes goes down,
+messages will eventually stop flowing.
+
+In these cases a soft reset can often allow the 3rd node to rejoin without
+losing any messages as a soft reset ensures RT retains the knowledge of what
+has been replicated/merged from a publisher.
+
+## Soft Reset Workflow
+
+The API to execute the soft reset can be configured, however the default
+behavior is listed below:
+
+  1. The sequencer service is stopped
+
+  2. A snapshot of the current state is saved:
+
+     * last input position from each input directory
+     * watermarks required for deduplication
+     * last output position
+  3. All state files (`/s/state`) are removed
+
+  4. The sequencers are restarted
+
+## Triggering a Soft Reset
+
+A user can call an API on the RT supervisor process running in their
+kubernetes cluster which will trigger a soft reset. This only needs to be
+performed on one of the nodes in the RT cluster, RT automatically manages the
+orchestration of the soft reset across the other nodes.
+
+Details on this API are available [here](rest/softreset.html).
+
+### Status
+
+The `reset-status` REST request can be called on any of the RT nodes in an RT
+cluster and provides the reset status of that node. This allows the user to
+identify whether the RT node is in the middle of a soft reset, or whether it
+is available for a hard or soft reset.
+
+Warning
+
+RT can only handle one reset request at a time. If the RT pod is in the middle
+of executing a reset command, it will return to a HTTP request with a status
+of 503 (unavailable).
+

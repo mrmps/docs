@@ -1,0 +1,295 @@
+https://code.kx.com/platform/api/permissions/
+
+# Permissions - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/api/permissions/
+
+# Permissions
+
+This module has been deprecated.
+
+Query permissions and logging are now managed through enhanced instance
+parameters.
+
+See the `.pm.sync.*`, `.pm.async.*` and `.pm.http.*` parameters in the _KX
+Control_ Enhanced Instance Configuration section."
+
+Control permissions are enforced through the `.z.p*` handlers in kdb+.
+Processes configured as permissioned will wrap the sync (`.z.pg`) and http
+(`.z.ph`) handlers by default and parse incoming expressions to check if users
+have permission to execute the query. Even with permissions disabled, the
+processes will log incoming queries to a `.pm.querylog` table. Async (`.z.ps`)
+permissions are disabled by default but can be explicitly enabled if required.
+
+## `.pl.disablepermissionsAsync`
+
+**Deprecated** :
+
+Disable permissions on async queries through `.z.ps` handler.
+
+**Example:**
+
+    
+    
+     .pl.disablepermissionsAsync[]
+    
+
+## `.pl.disablepermissions`
+
+**Deprecated** :
+
+Disables authentication in `.z.pw` handler and disables sync queries through
+`.z.pg` and `.z.ph`.
+
+**Example:**
+
+    
+    
+     .pl.disablepermissions[]
+    
+
+## `.pl.disablequerypermissions`
+
+**Deprecated** :
+
+Disable permissions on sync queries through `.z.pg` and `.z.ph` handlers.
+
+**Example:**
+
+    
+    
+     .pl.disablequerypermissions[]
+    
+
+## `.pl.enablepermissionsAsync`
+
+**Deprecated** :
+
+Enable permissions on async queries through `.z.ps` handler.
+
+**Example:**
+
+    
+    
+     .pl.enablepermissionsAsync[]
+    
+
+## `.pl.disablequeryloggingAsync`
+
+**Deprecated** :
+
+Disable query logging for async messages through `.z.ps` handler
+
+**Example:**
+
+    
+    
+     .pl.disablequeryloggingAsync[]
+    
+
+## `.pl.disablequerylogging`
+
+**Deprecated** :
+
+Disable query logging for `.z.ph` and `.z.pg` handlers
+
+**Example:**
+
+    
+    
+     .pl.disablequerylogging[]
+    
+
+## `.pl.disablequeryloghousekeeping`
+
+**Deprecated** :
+
+Disable housekeeping on `.pm.querylog` table
+
+Please use _KX Control_ housekeeping framework
+
+**Example:**
+
+    
+    
+     .pl.disablequeryloghousekeeping[]
+    
+
+## `.pl.dontlogtodisk`
+
+**Deprecated** :
+
+Disable query logging to disk
+
+**Example:**
+
+    
+    
+     .pl.dontlogtodisk[]
+    
+
+## `.pl.enablequeryloggingAsync`
+
+**Deprecated** :
+
+Enable query logging for async messages through `.z.ps` handler
+
+**Example:**
+
+    
+    
+     .pl.enablequeryloggingAsync[]
+    
+
+## `.pl.enablequerylogging`
+
+**Deprecated** :
+
+Enable query logging for `.z.ph` and `.z.pg` handlers
+
+**Example:**
+
+    
+    
+     .pl.enablequerylogging[]
+    
+
+## `.pl.enablequeryloghousekeeping`
+
+**Deprecated** :
+
+Enable housekeeping on `.pm.querylog` table. Adds a function to the internal
+timer. Takes an analytic as a parameter and calls this specified parameters.
+Analytic should take one parameter in dictionary format. The number of days to
+clear must be specified and will be added to the dictionary as a ndays key.
+
+Please use _KX Control_ housekeeping framework
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+start | time | Start time of housekeeping  
+freq | float | Interval number of hours to run at. Can be fractions and less than one.  
+ndays | int | Number of days to clear  
+action | symbol | Analytic name  
+dict | dict | Optional analytic parameters  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | True returned if function added successfully  
+  
+**Example:** Run daily at current hour to clear 1 day
+
+    
+    
+     .pl.enablequeryloghousekeeping[3600000 xbar .z.t; 24; 1; `queryLogClean; ()!()]
+    
+
+## `.pl.getlog`
+
+**Deprecated** :
+
+If query logging enabled, get the log file name
+
+**Returns:**
+
+Type | Description  
+---|---  
+symbol | Log file location  
+  
+**Example:**
+
+    
+    
+     .pl.getlog[]
+     /=> `:/home/user/install/logs/ds_ms_a.20170216T143748897.l
+    
+
+## `.pl.logtodisk`
+
+**Deprecated** :
+
+Enable query logging to disk. All queries logged to `.pm.querylog` will also
+be replicated to disk in a binary format. Appends will use the tickerplant
+convention of (`upd;`.pm.querylog (row)).
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+logDir | symbol | string | Relative path from current directory. Can be left blank to use DELTA_LOGDIR or FD_LOGDIR  
+fileName | symbol | File name. Can be left blank and will use instance name + timestamp  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol | Full path to file  
+  
+**Example:**
+
+    
+    
+     dir:"../querylogs";
+     file:.ex.getInstanceName[];
+     .pl.logtodisk[dir; file]
+     /=> `:/home/user/install/delta-bin/../querylogs/ds_ms_a
+    
+
+**Example:**
+
+    
+    
+     .pl.logtodisk[""; `]
+     /=> `:/home/user/install/logs/ds_ms_a.20170216T143748897.l
+    
+
+## `.pm.dolog`
+
+**Deprecated** :
+
+If a function is excluded from query logging, this will re-enable it
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | symbol | Function name  
+  
+**Example:**
+
+    
+    
+     .pm.dolog[`upd]
+    
+
+## `.pm.dontlog`
+
+**Deprecated** :
+
+Excludes a function from query logging. When an incoming request is parsed,
+the function name is checked against a list of excluded ones. If the function
+is listed, it won't be logged to `.pm.querylog`
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | symbol | Function name  
+  
+**Example:** Exclude upd messages
+
+    
+    
+     .pm.dontlog[`upd]
+    
+
+## Logging
+
+Set of APIs to manage query logging through the `.z.p*` callbacks. APIs can be
+used to control sync and async queries separately. By default all logging is
+in-memory in `.pm.querylog` but can be setup to log to disk as well.
+

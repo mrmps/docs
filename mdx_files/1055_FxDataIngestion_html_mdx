@@ -1,0 +1,96 @@
+https://code.kx.com/insights/accelerators/fsi/FxDataIngestion.html
+
+# Ingestion - kdb products
+
+Original URL: https://code.kx.com/insights/accelerators/fsi/FxDataIngestion.html
+
+# KX Flow Accelerator Data Ingestion
+
+The KX Flow Accelerator contains preconfigured pipelines for subscribing to
+real time feeds from the KX Flow product on Azure deployments of KDB Insights.
+
+### KX Flow Quote Pipelines
+
+Executable Streaming Prices (ESP) are ingested using the **fxQuote** and
+**fxClientQuote** pipelines. The fxQuote pipeline captures quote data streamed
+from each liquidity provider (Market Maker), while the fxClientQuote pipeline
+captures the client adjusted (using markups or otherwise) quote data streamed
+from a pool in KX Flow.
+
+Request for Stream (RFS) pricing is also available to be streamed from the KX
+Flow Platform to kdb Insights for all Fx products \- **fxQuoteRequest**
+pipeline subscribes to and stores the request which is made from the client
+out to the liquidity provider to request a streaming price. \-
+**fxQuoteReply** pipeline subscribes to and stores the pricing responses from
+the Liquidity Provider to the client. \- Similarly, **fxQuoteRequestLegs** and
+**fxQuoteReplyLegs** pipelines subscribe to the RFS Block pricing requests and
+pricing replies. KX Flow currently supports block trading using various Multi-
+Bank Portals.
+
+### KX Flow Order Pipelines
+
+  * **fxOrderRequest** pipeline subscribes and captures the request to place an order made from the client out to the liquidity provider.
+  * **fxOrderReport** pipeline subscribes and captures the execution report from the liquidity provider and the KX Flow generated client execution report.
+  * In a similar way to the quote pipelines, there are also **fxOrderRequestLegs** and **fxOrderReportLegs** for block trading executions.
+
+### Reference Data Pipelines
+
+The KX Flow Accelerator also contains pipelines that can be used to load
+reference data: \- **fxholidaycalendar** pipeline reads a csv file from an s3
+storage location and publishes the data to the `ExchangeHolidayCal` table. The
+pipeline was built expecting the following fields in the csv file
+
+    
+    
+    `srcSys` - a field to identify where the data originated from
+    
+    `exchangeID` - name of the exchange
+    
+    `date` - the holiday date
+    
+    `description` - a description of the holiday
+    
+    `isoCode` - country code of he exchange
+    
+
+  * **fxrefinstrument** pipeline reads a csv file from an s3 storage location and publishes the data to the `Instrument` table. The pipeline was built expecting the following fields in the csv file
+
+`instrumentID` \- identifier of the instrument
+
+`srcSys` \- a field to identify where the data originated from
+
+`assetClass` \- which category the asset is part of. For example Forex,
+Equities, Fixed Income etc.
+
+`description` \- description of the instrument or asset
+
+`unitsOfMeasure` \- a description usually describing the currency symbol. For
+example "$" or for CFD units "1 CFD = 1 share"
+
+`minorUnits` \- describing the number of decimal places for a currency. For
+example JPY is 0 (as Yen is always a whole number) or for USD minor units are
+2 (for 01-99 cents)
+
+`NOPGroup` \- similar to assetClass where we defined Forex for FX pairs and
+can specify Gold/Silver for the respective commodities
+
+`quoteCcy` \- base currency of the FX pair
+
+`spotDays` \- How many days from today the value of spot occurs. It is usually
+2 (T+2) but there are some exceptions like USD/CAD which is 1 (T+1)
+
+`tradeRollTime` \- the time at which the value date will roll
+
+`decimalPoints` \- defines where the pip value lies. For example if this is
+set to 4, the rate will look like x.xxxY where 1 denotes where the 1 pip value
+lies
+
+`spotPrecision` \- defines how many additional figures of precision are
+extended out after the decimal points for Spot requests. E.g. spotPrecision
+set to 0.1, the rate would be x.xxxxY
+
+`forwardPrecision` \- similar to spotPrecision but for Forward requests
+
+`crossAsset` \- This is the pair used to link the two assets within the pair
+to construct a cross price.
+

@@ -1,0 +1,47 @@
+https://code.kx.com/insights/accelerators/fsi/kx-flow-pricing-introduction.html
+
+# KX Flow Overview - kdb products
+
+Original URL: https://code.kx.com/insights/accelerators/fsi/kx-flow-pricing-introduction.html
+
+# KX Flow Accelerator Overview
+
+## Introduction
+
+The KX Flow Accelerator ingests FX price and order information from KX Flow
+and persists it in kdb Insights Enterprise. Price and order data can be
+streamed directly into custom Realtime streaming analytic pipelines, queried
+using SQL, or analyzed using enhanced Accelerator APIs via Python or any
+downstream application using REST.
+
+More information on KX Flow can be found on
+[kx.com](https://kx.com/solutions/liquidity-management/).
+
+The entire Accelerator can be configured and launched on an existing kdb IE
+installation in minutes. Quants, business users, and developers can get
+instant access to pricing data from their existing KX Flow instance, paired
+with the power and performance of kdb Insights Enterprise, all without a
+lengthy implementation project.
+
+kdb IE + KX Flow Pricing Accelerator can power use cases such as:
+
+  * **Pricing analytics** \- Gain insight into price and spread behaviour from your upstream liquidity provider feeds and constructed client pricing.
+  * **Post-trade analytics and TCA** – Gain fine grained access to price and order behaviour for execution traces and true cost analyzes.
+  * **Backtesting** – Providing faster backtesting runs, which means quicker algo development iteration.
+
+The Accelerator delivers a scalable, performant architecture including:
+
+  * Pipelines for ingesting streaming pricing for quote (maker) and client quote (constructed pricing): `fxquote` and `fxclientquote`
+  * Pipelines for ingesting request-for-stream (RFS) quote workflows: `fxquoterequest`, `fxquoterequestlegs`, and their corresponding `fxquotereply`, `fxquotereplylegs`.
+  * Pipelines for order workflows: `fxorderrequest`, `fxorderrequestlegs`, and their corresponding `fxorderreport`, `fxorderreportlegs`.
+  * Pipelines for reference data `fxrefinstrument` and `fxholidaycalendar`.
+  * Schemas to persist data for all of the above
+  * Query and analytic APIs via the [FSI Library](fsi-lib-overview.html) \- including [FX-specific](getTicksFX.html) price book returns appripriate for full amount and VWAP books.
+  * An example Insights View for displaying streaming data
+  * Example Jupyter notebooks, demonstrating Python and REST API access
+
+![KX Flow Pricing Accelerator Architecture](images/kdbie-accel-kx-flow-
+pricing.png)
+
+### Further detail
+

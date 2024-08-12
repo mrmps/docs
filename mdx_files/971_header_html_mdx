@@ -1,0 +1,99 @@
+https://code.kx.com/insights/api/database/api/header.html
+
+# Header - kdb products
+
+Original URL: https://code.kx.com/insights/api/database/api/header.html
+
+The Service Gateway header is a way to pass out-of-bound information as part
+of an API request/response. This is a dictionary whose keys are symbols, but
+whose values can be of arbitrary type. A client making an API request to the
+GW may optionally augment the request header. A DAP responding to a request is
+obligated to include a minimal response header, and may add additional fields
+as needed.
+
+A client can augment the header using the optional `opts` parameter in the API
+request (see the [q query API](../query/index.html) for details). On receiving
+a request, the gateway mechanically generates a header with default values. In
+some cases the client can override the default values (see table below). The
+client can also include additional header fields as needed, which can then be
+used by the DAP to execute the API. All fields included in the request header
+are returned to the caller in the response header, so these fields can also be
+used by the client process that issued the request on receipt of the results.
+All custom client fields must use the `app` prefix to avoid clashing with
+internal KXI header fields (existing and future).
+
+Below is a table of all defined header fields. This list is expected to grow
+as we implement additional features.
+
+name | type | overwritable | description | example  
+---|---|---|---|---  
+`client` | symbol | N | Host and port of client/GW responsible for the request. | ``:hostname:1234`  
+`protocol` | symbol | N | Protocol. `gw` if going through GW, `q` for internal q processes. | ``gw`  
+`corr` | guid | N | Correlator ID of the request. | `8c6b8b64-6815-6084-0a3e-178401251b68`  
+`logCorr` | string | Y | Log correlator -- used to trace request in logs. | `"myReq-1234"`  
+`api` | symbol | N | API name. | ``getData`  
+`rcSend` | timestamp | N | Time the RC issued resources. Used by Agg to determine most recent information. | `2021.06.14D08:17:00`  
+`numResp` | dictionary | N | Number of responses the Agg should receive for each label combination. | `0 1 2 3!2 3 1 2`  
+`agg` | symbol | N | Host and port of the Agg chosen to aggregate the DAP responses. | ``:hostname:1234`  
+`pvVer` | long | N | Purview version number. Can be used by the DAPs to verify the version the RC used when choosing it. A mismatch indicates that the purview changed between when the DAP was selected and when it received the request, which may cause an error in returning the correct data. | `1`  
+`refVintage` | long | N | Reference vintage. Can be used by the DAPs to verify the reference vintage (high watermark of the latest reference data update received by the DAP) the RC used when choosing it. A mismatch indicates that the reference vintage changed between when the DAP was selected and when it received the request, which may cause an error in returning the correct data. | `2`  
+`aggFn` | symbol | Y | Aggregation function to use. | ``myAggFn`  
+`timeout` | int or long | Y | Timeout in milliseconds (omit to use system default). | `10000`  
+`rcvTS` | timestamp | N | Time the GW received the request. | `2021.06.14D08:14:59`  
+`to` | timestamp | N | Time the request is set to expire (`rcvTS + timeout`). | `2021.06.14D08:17:09`  
+`ogRcID` | symbol | N | Host/port of RC that originally received this request. | `:rcHost:5050`  
+`numRP` | long | N | Number of label combinations in the request. | `4`  
+`retryCount` | long | N | Number of times this request has been retried. | `2`  
+`cast` | boolean | Y | Apply cast on the column names and values of a filter, i.e. accept strings instead of values that need to match the data types. | `1b`  
+`subLevel` | long | N | Deferred request depth. | `1`  
+`cb` | symbol | N | Callback for internal q requests. | ``myCallbackFn`  
+  
+DAPs (and Aggs) are required to return a response header in addition to the
+request payload (see the [q query API](../query/index.html) for details). The
+request header must contain, at minimum, the fields present in the request
+header and the fields labelled "required" in the following table. As with the
+request header, a client-defined DAP may return additional custom header
+fields using the `app` prefix to avoid clashing with internal KXI header
+fields (existing and future).
+
+name | required | type | description | example  
+---|---|---|---|---  
+`rc` | Y | short | [Return code](codes.html#return-code) | 0  
+`ac` | Y | short | [Application code](codes.html#application-code). | 0  
+`ai` | N | string | Application information, this may contain additional information in the event of an error. | "Request failed because ..."  
+`sendErr` | N | any | Presence of this key indicates to the RC that the process was not able to send its response to the intended recipient (DAP to Agg or Agg to GW). This triggers the RC to fail the request and alert the issuing GW of the failure. | ```  
+  
+When making receiving the response from an API call, you can use the response
+header to log information about the request. In particular, with the `rc` and
+`ac` codes, you can determine whether or not the response was successful and,
+in the event of a failure, details on the error. For example:
+
+    
+    
+    // @overview
+    // This callback function receives a response from executing an API on the Service Gateway.
+    // The first argument is a header object describing if the request succeeded or failed. The
+    // second argument is the response payload if the request was successful.
+    //
+    // @param hdr {dict}  Response header.
+    // @param pl  {table} Response payload.
+    callback:{[hdr;pl]
+        log.debug("Response received, logCorr=%s rc=%n ac=%n";;;). hdr`logCorr`rc`ac; / Log details
+    
+        // Identify failures and exit early.
+        if[hdr[`rc]<>0h;
+            log.error"Error executing",$[`ai in key hdr;" ",hdr`ai;""]; / AI may have additional info
+            ... / Failure logic
+            :()]; / Early exit, as the payload is no good
+    
+        // Happy path.
+        log.debug"Response successful";
+        ... / Do something with the payload
+        }
+    
+    neg[gwHandle](`myAPI;myArgs;`callback;enl[`logCorr]!enl"myLogCorrelator")
+    
+
+For details on generating response headers in custom aggregations, refer to
+the [custom API guide](../custom/index.html).
+

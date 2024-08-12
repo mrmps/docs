@@ -1,0 +1,72 @@
+https://code.kx.com/platform/stream/dw_tickerplant/
+
+# Tickerplant - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/stream/dw_tickerplant/
+
+# Tickerplant
+
+Now the schemas have been defined, the data warehouse can be built. The first
+component to be configured is the tickerplant (_TP_). A _TP_ is used to write
+all incoming records to a log file for data recovery purposes and act as a
+distribution process for publishing to other components. The _TP_ is very lean
+so that it can keep up with huge volumes and velocities of data.
+
+Create directories
+
+In the following sections, four directories will be used for on-disk data. If
+they are not present, make sure you create them.
+
+  1. `${DELTADATA_HOME}/KxWarehouseData/tplog`
+
+  2. `${DELTADATA_HOME}/KxWarehouseData/intraday`
+
+  3. `${DELTADATA_HOME}/KxWarehouseData/hdblog`
+
+  4. `${DELTADATA_HOME}/KxWarehouseData/filewatcher`
+
+`DELTADATA_HOME` directory is usually located `kxinstall/delta-data/`.
+
+To create a _TP_ service class:
+
+  * Right-click on the _Navigation panel_ in the `KxWarehouse` and select _New > Service Class_ from the context menu.
+
+[![Screenshot](../img/serviceclass/service_class_new.jpg)](../img/serviceclass/service_class_new.jpg
+"click to expand")
+
+  * A dialog will appear. See the details below.
+
+![Screenshot](../img/serviceclass/tp_name.jpg)
+
+  * Select the _Service Details_ tab and enter a description.
+
+![Screenshot](../img/serviceclass/tp_desc.jpg)
+
+Info box
+
+Since service classes are created at runtime when port is assigned, there is
+no need to configure port values at this time.
+
+  * Select the _Service Parameters_ sub tab so several service parameters can be modified.
+
+parameter | value  
+---|---  
+messagingServer | DS_MESSAGING_SERVER:DS  
+publishChannel | kxw_tp  
+subscriptionChannel |   
+subscriptionTableList |   
+logDirectory | ENV=DELTADATA_HOME=/KxWarehouseData/tplog  
+pubFreq | 0 (for non-batching mode)  
+intradayTables | monCPU, monMem, monDisk  
+intradayFreq | 60 (minutes)  
+  
+  * When you are done setting up the parameters, your _Service Parameters_ tab should look like this:
+
+[![Screenshot](../img/serviceclass/tp_params.jpg)](../img/serviceclass/tp_params.jpg
+"click to expand")
+
+  * Select the _Schemas_ subtab and add the `monCore` Group to the _Selected Schema Groups_ using the _Arrow_ button. Search the _Available Schema Groups_ list by entering the prefix into the search area above the list. This is useful when there are lots of groups in the list.
+
+[![Screenshot](../img/serviceclass/tp_schema.jpg)](../img/serviceclass/tp_schema.jpg
+"click to expand")
+

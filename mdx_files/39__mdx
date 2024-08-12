@@ -1,0 +1,518 @@
+https://code.kx.com/platform/api/queryrouter/
+
+# Query Router - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/api/queryrouter/
+
+# Query Router
+
+The _Query Router_ (_QR_) framework is designed to manage client requests and
+database availability by efficiently load-balancing queries across processes
+in a system. The aim of the framework is to queue and dispatch requests in a
+way that minimises wait times and contention for resources. For more
+information please see the _KX Control_ documentation.
+
+## Process Interaction
+
+Processes can interact with the QR in two ways; as a database or as a client.
+This can be configured by overwriting the INSTANCE_CONFIG setting for
+`.qr.db.enabled` and `.qr.client.enable`
+
+**Database**
+
+Processes will register with the _QR_ framework in order to service requests.
+End-clients can then send requests to extract data. As part of this mode, the
+process can also register additional data coverage information with the QR to
+assist with routing decisions. APIs also exist to take processes offline with
+the _QR_ to facilitate long-running operations without requests being routed
+to it.
+
+**Client**
+
+Processes can also register as an end-client in order to send requests to
+other processes via the QR without needing to maintain their own handles. The
+functionality is disabled by default but can be enabled as required. Sending
+requests involves targeting specific databases or groups. There are two modes
+of target
+
+  * Specifying a single (symbol) value will use that target or any configured routings on the request
+  * Specifying multiple (symbol list) values will send to multiple and override any routings
+
+Additionally, all databases of a specific group/s can be targeted during a
+request using the targetAll opts parameter. This expands the groups to the
+underlying databases, generating a sub-request for each of them.
+
+## `.qr.setQueryLogging`
+
+Sets query logging on or off for _QR_ queries. By default queries are logged
+to `.pm.querylog` but this can be disabled by setting mode to false.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+mode | boolean | Query logging flag  
+  
+**Example:** Enable query logging
+
+    
+    
+     .qr.setQueryLogging[1b]
+    
+
+## `.qr.client.addPollingSub`
+
+Setup a polling request in the QR framework. Results will be received
+asynchronously after each poll with no action required on the client. All
+parameters have the same behavior as for standard requests through
+`.qr.client.sendRequest` & `.qr.client.sendRequestExt`.
+
+Polling requests also support an additional parameter `updatesOnly` (boolean)
+in the `opts` dict. This supports managed requests where the results are only
+pushed from the framework if they have changed.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+request | string|untyped | Request object to be executed  
+target | symbol | Name of instance, connection or connection group to target  
+freq | int | Frequency of the polling (milliseconds)  
+callback | fn | Function or lambda to receive result callback. Can be any type once valence of function is one.  
+errCallback | fn | Function or lambda to receive error callbacks  
+opts | dict | Dictionary of optional parameters  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+long | Unique identifier for request  
+  
+**Example:** Poll every 10 seconds
+
+    
+    
+     processResult:{[result] ... }
+     processError:{[err] ... }
+     .qr.client.addPollingSub["select from dfxTrade"; `ds_rdb_fx; 10000; processResult; processError; ()!()]
+     /=> 1j
+    
+
+## `.qr.client.deregister`
+
+Disables QR client functionality.
+
+**Example:** Disable client
+
+    
+    
+     .qr.client.deregister[]
+    
+
+## `.qr.client.getTargets`
+
+Collect all targets available to the QR
+
+**Returns:**
+
+Type | Description  
+---|---  
+table | Table of targets  
+  
+## `.qr.client.isRegistered`
+
+Check if the process is registered as a client
+
+**Example:**
+
+    
+    
+     .qr.client.isRegistered[]
+    
+
+## `.qr.client.register1`
+
+Registers instance as a _QR_ client. This allows the process to query other
+processes. The callback parameter is a function or lambda with one parameter
+that gets called when the registration is complete.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+name | symbol | Name of client. If left blank, defaults to instance name  
+heartbeatF | int | Heartbeating frequency from client database to QR in seconds. If null, heartbeating is not enabled  
+callback | symbol | fn | Function or lambda called after registration  
+  
+**Example:** Enable client
+
+    
+    
+     callback:{[] qrAvailable::1b };
+     .qr.client.register1[`Client1; 10i; callback]
+    
+
+## `.qr.client.register`
+
+Registers instance as a _QR_ client. This allows the process to query other
+processes.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+name | symbol | Name of client. If left blank, defaults to instance name  
+heartbeatF | int | Heartbeating frequency from client database to QR in seconds. If null, heartbeating is not enabled  
+  
+**Example:** Enable client
+
+    
+    
+     .qr.client.register[`Client1; 10i]
+    
+
+## `.qr.client.removePollingSub`
+
+Unsubscribe from a polling request. The ID should correspond to the one
+returned from `.qr.client.addPollingSub`.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+runID | long | Polling request ID  
+  
+**Example:**
+
+    
+    
+     processResult:{[result] ... }
+     processError:{[err] ... }
+     0N!.qr.client.addPollingSub["select from dfxTrade"; `ds_rdb_fx; 10000; processResult; processError; ()!()]
+     /=> 1j
+     .qr.client.removePollingSub[1j]
+    
+
+## `.qr.client.removePollingSubs`
+
+Unsubscribe from multiple polling requests. The IDs should correspond to the
+ones returned from `.qr.client.addPollingSub`.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+runIDs | long[] | Polling request IDs  
+  
+**Example:**
+
+    
+    
+     processResult:{[result] ... }
+     processError:{[err] ... }
+     0N!.qr.client.addPollingSub["select from dfxTrade"; `ds_rdb_fx; 10000; processResult; processError; ()!()]
+     /=> 1j
+     0N!.qr.client.addPollingSub["select from dfxTrade"; `ds_rdb_fx; 10000; processResult; processError; ()!()]
+     /=> 2j
+     .qr.client.removePollingSubs[1 2j]
+    
+
+## `.qr.client.sendRequestExt`
+
+Send request to _QR_ framework for execution. Extra parameter for error
+callback. If not specified will behave as `.qr.sendRequest` and the default
+callback will receive the error.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+request | string|untyped | Request object to be executed  
+targets | symbol | symbol[] | One or more instances, connections or groups to target  
+callback | fn | Function or lambda to receive result callback. Can be any type once valence of function is 1.  
+errCallback | fn | Function or lambda to receive error callbacks  
+opts | dict | Dictionary of optional parameters  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+long | Unique identifier for request  
+  
+**Example:**
+
+    
+    
+     processResult:{[result] ... }
+     processError:{[err] ... }
+     .qr.client.sendRequestExt["select from dfxTrade"; `ds_rdb_fx; processResult; processError; ()!()]
+     /=> 1j
+    
+
+## `.qr.client.sendRequest`
+
+Send request to _QR_ framework for execution on specific target instances or
+connection groups. The callback parameter is a function or lambda to be
+triggered when the result is returned. Process must be registered as a client
+before calling.
+
+The `opts` parameter provides some additional parameters.
+
+name | type | Description  
+---|---|---  
+timeout | int | Override the default timeout for this request (in seconds)  
+clientTime | timestamp | Timestamp assigned by client when entering request. Used in QR timestamp logging  
+user | symbol | User to execute the request as  
+logCorr | string | Client assigned logging correlator  
+page | int | Number of rows to return (same behavior as _sublist_)  
+page | int[] | Two element list of start and number rows (same as `sublist`). If specified in this format, results will be returned in the _Control_ paged format  
+cache | boolean | Whether to cache paged results  
+sort | dict | Sort result as part of paging. Keys are the column names (from most to least important) and values are booleans where `1b` is ascending order.  
+qp | symbol[] | List of preferred QPs for the request  
+targetAll | boolean | Send request to all targets  
+noResult | boolean | Whether to send results back to the client  
+  
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+request | string|untyped | Request object to be executed  
+targets | symbol | symbol[] | One or more instances, connections or groups to target  
+callback | fn | Function or lambda to receive result callback. Can be any type once valence of function is 1.  
+opts | dict | Dictionary of additional parameters  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+long | Unique identifier for request  
+  
+**Example:**
+
+    
+    
+     processResult:{[myID; result] ... }
+     .qr.client.sendRequest["select from dfxTrade"; `ds_rdb_fx; processResult[id;]; ()!()]
+     /=> 1j
+    
+
+**Example:**
+
+    
+    
+     processResult:{[result] ... }
+     .qr.client.sendRequest[(`dfxGetDailyData; `$"EUR/USD"; .z.d-2; .z.d; ()!()); `ds_rdb_fx`ds_hdb_fx; processResult; ()!()]
+     /=> 2j
+    
+
+**Example:**
+
+    
+    
+     processResult:{[result] ... }
+     .qr.client.sendRequest[(`dfxGetDailyData; `$"EUR/USD"; .z.d-2; .z.d; ()!()); `ds_rdb_fx`ds_hdb_fx; processResult; `page`qp!(100;`fx_qp_a`fx_qp_b)]
+     /=> 3j
+    
+
+## `.qr.client.sendSyncRequest`
+
+Send sync request to _QR_ framework for execution.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+request | string|untyped | Request object to be executed{string  
+targets | symbol | symbol[] | One or more instances, connections or groups to target  
+opts | dict | Dictionary of optional parameters  
+callback | lambda|functional |   
+  
+## `.qr.client.setPreferredQRs`
+
+Publishes the list of preferred QRs. This influences the QR cluster to select
+a leader based on the preference list. The first available QR in the list will
+be selected.
+
+In sharded mode, the user must provide the QR shard in the second parameter.
+This corresponds to the QR service class name. Should be null in non-sharded.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+prefs | symbol[] | QR preference order  
+shard | symbol | Shard name  
+  
+**Example:** Non-sharded
+
+    
+    
+     procs:`kx_qr_a`kx_qr_b`kx_qr_c`kx_qr_d;
+     .qr.client.setPreferredQRs[procs; `];
+    
+
+**Example:** Sharded
+
+    
+    
+     procs:`kx_qr_a`kx_qr_b`kx_qr_c`kx_qr_d;
+     shard:`kx_qr;
+     .qr.client.setPreferredQRs[procs; shard];
+    
+
+## `.qr.client.subTargets`
+
+Subscribe to available QR target entities
+
+## `.qr.returnDeferredRequest`
+
+Returns the result of a deferred query back to the QP. When a query result has
+been deferred, this function is called to return the results when all required
+tasks have completed. Called using the original ID generated by the client
+code.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+clientID | long | Client ID generated when query was deferred. Must match input to `.qr.setDeferred`  
+success | boolean | Flag to indicate success of the tasks  
+result | untyped | Payload result from tasks  
+  
+**Example:** Return result from deferred request
+
+    
+    
+     .qr.returnDeferredRequest[10j; 1b; ([] time:.z.p; sym:`GOOG`IBM`FD; price:100f)]
+    
+
+## `.qr.setDeferred`
+
+Sets a query to execute as deferred. When a query is being executed on a
+database by the QP, by default it expects the result to be returned
+immediately. If the process wants to execute a query off-process, it needs to
+defer the result. This is done by the user-code of the query calling to
+`.qr.setDeferred`.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+clientID | long | Client generated ID to link client execution back to deferred query  
+  
+**Example:** Set Deferred
+
+    
+    
+     .qr.setDeferred[10j]
+    
+
+## `.qr.registerCoverage`
+
+Registers database coverage information with the _QR_. The coverage
+information is used for routing decisions. Can register coverage for an
+instance and/or connection group. Default coverage information are time
+intervals and symbols but a dictionary parameter allows users to specify more
+granular data. Type-checking is enforced but all tags are optional
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+target | symbol | Database or connection group to register  
+startDate | date | Start date of data  
+endDate | date | End date  
+startTime | time | Start time  
+endTime | time | End time  
+symList | symbol[] | List of symbols covered  
+dict | dict | Additional coverage information to be used in routings. Any keys and values allowed  
+  
+**Example:** Register time period and instruments
+
+    
+    
+     .qr.registerCoverage[`ds_hdb_fx; 2017.01.10; 2017.01.23; 00:00:00.0; 23:59:59.9; `$("EUR/USD";"USD/JPY"); ()!()];
+    
+
+**Example:** Register with custom parameters
+
+    
+    
+     .qr.registerCoverage[`ds_hdb_fx; 0Nd; 2017.01.23; 0Nt; 23:59:59.9; 0#`; `labels`clients!(`red`amber`green; `US`UK)];
+    
+
+## `.qr.registerProcessStatus`
+
+Updates the status of a database with the _QR_. Allows a registered database
+to enable or disable another process.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+process | symbol | Name of instance to update  
+available | boolean | Status to update to. Available for querying = 1b  
+  
+**Example:** Set instance as available
+
+    
+    
+     .qr.registerProcessStatus[`ds_gw_fx_eval; 1b]
+    
+
+## `.qr.registerStatus1`
+
+Updates the availability and leader status of this database with the _QR_.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+available | boolean | Status to update to. Available for querying = 1b  
+leader | boolean | Leader/follower status  
+  
+**Example:** Set instance as available and leader
+
+    
+    
+     .qr.registerStatus[1b; 1b]
+    
+
+## `.qr.registerStatus`
+
+Updates the availability of this database with the _QR_.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+available | boolean | Status to update to. Available for querying = 1b  
+  
+**Example:** Set instance as unavailable
+
+    
+    
+     .qr.registerStatus[0b]
+    
+
+## Client
+
+QR client APIs to register, deregister and send requests.
+
+## Deferred
+
+The following APIs are used when executing deferred database queries. Standard
+QR requests hitting a database from the QR are executed and results returned
+immediately. In some cases, the database process will want to defer the
+returning of results until a later stage. This could be to wait for incoming
+data or submit a request to another process. This is supported by using
+deferred request APIs.
+
+During execution of a request, the solution code should call `.qr.setDeferred`
+with a link ID. When the process is finished execution and wants to return
+results, the same link ID should be passed into `.qr.returnDeferredRequest`.
+
+## Registration
+
+QR database APIs to register availability and coverage information.
+

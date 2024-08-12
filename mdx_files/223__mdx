@@ -1,0 +1,111 @@
+https://code.kx.com/platform/stream/dw_schema/
+
+# Schemas - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/stream/dw_schema/
+
+# Schemas
+
+A schema defines the datasources to be captured, stored and used throughout
+the system. Schemas should be added to schema groups so they can be organized
+and easily assigned to processes.
+
+Add a schema group (`monCore`) and the following schemas:
+
+  * `monCPU` (CPU usage).
+  * `monMem` (memory usage).
+  * `monDisk` (disk usage).
+  * `monAvgLoad` (aggregated view of above statistics).
+
+## Create schema group
+
+  * Right-click on `KxWarehouse` Package and select _New > Schema Group_ from the context menu.
+
+[![Screenshot](../img/serviceclass/schema_group_new.jpg)](../img/serviceclass/schema_group_new.jpg
+"click to expand")
+
+  * A dialog will appear. Enter the name `monCore` and press the _Add_ button.
+
+[![Screenshot](../img/serviceclass/schema_group_name.jpg)](../img/serviceclass/schema_group_name.jpg
+"click to expand")
+
+  * The schema group editor will open with the schema group.
+
+  * For now, save the schema group by clicking on the _Save_ button on the right side of the editor.
+
+  * The schema group will appear in the tree.
+
+## Add schemas
+
+### monMem
+
+  * Right-click on the `monCore` schema group and select _New > Schema_ from the context menu
+
+[![Screenshot](../img/serviceclass/schema_new.jpg)](../img/serviceclass/schema_new.jpg
+"click to expand")
+
+  * A dialog will appear. Enter `monMem` and click the _Add_ button.
+
+[![Screenshot](../img/serviceclass/monMem_name.jpg)](../img/serviceclass/monMem_name.jpg
+"click to expand")
+
+  * A schema editor will open with the _Schema Details_ subtab displayed. Enter a description into the text field.
+
+[![Screenshot](../img/serviceclass/monMem_desc.jpg)](../img/serviceclass/monMem_desc.jpg
+"click to expand")
+
+  * Make the `monMem` part of the `monCore` schema group by adding it to the selected groups.
+
+[![Screenshot](../img/serviceclass/monMem_group.jpg)](../img/serviceclass/monMem_group.jpg
+"click to expand")
+
+  * Now provide the column definitions for the `monMem` table. Column names and ordering are important. Enter the following column names, types, descriptions, and attributes into the schema definition:
+
+[![Screenshot](../img/serviceclass/monMem_cols.jpg)](../img/serviceclass/monMem_cols.jpg
+"click to expand")
+
+Info box
+
+To apply a timestamp to the data, add an initial field of type timestamp as
+the first column in the table.
+
+  * Once the schema definition is complete, click _Save_
+
+### monCPU
+
+  * Follow the steps above to create the `monCPU` schema using the meta below.
+
+Column Name | Type  
+---|---  
+time | Timestamp  
+sym | Symbol  
+usage | Float  
+  
+### monDisk
+
+  * Now create the `monDisk` schema using the meta below.
+
+Column Name | Type  
+---|---  
+time | Timestamp  
+sym | Symbol  
+usage | Float  
+  
+### monAvgLoad
+
+  * Create and define the last schema and name it `monAvgLoad`.
+
+Column Name | Type  
+---|---  
+time | Timestamp  
+sym | Symbol  
+avgCPU | Float  
+avgMemV | Float  
+avgMemP | Float  
+avgDisk | Float  
+  
+  * The updated tree will look like:
+
+[![Screenshot](../img/serviceclass/schema_tree.jpg)](../img/serviceclass/schema_tree.jpg
+"click to expand")
+

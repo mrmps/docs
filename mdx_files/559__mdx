@@ -1,0 +1,103 @@
+https://code.kx.com/platform/stream/dw_intro/
+
+# Introduction - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/stream/dw_intro/
+
+# Introduction
+
+The following sections will explain how to build a basic data warehouse. It
+will walkthrough how to configure each of the components. The example use-case
+will be capturing system monitoring statistics at a server level which can be
+used to build out dashboards, alerts, ML models etc. A dummy feed will be
+configured to provide the feed data.
+
+## Why adopt the intraday model?
+
+While server _RAM_ is getting larger and cheaper, in practice there are still
+limitations for most systems. As daily data volumes increase, so do the
+challenges capturing and efficiently accessing this data. The length of time
+to perform _EOD_ (writing the data to disk from memory) also increases. This
+takes the _RDB_ offline for performing other operations.
+
+The _intraday writedown_ model addresses this by splitting the daily data
+across on-disk and in-memory, and introducing another process to handle the
+writedowns. The _LR_ handles the disk writing, freeing the databases up. It
+also creates an on-disk database for the current day's data. Data for the
+current day is split across on-disk and in-memory.
+
+### How it works
+
+  * The _TP_ receives streams of data and logs to disk for recovery purposes.
+  * The _LR_ periodically checks for inactive intraday log files. If found, it replays the log to create the intraday database, tells the _IHDB_ to reload and delete equivalent data from the _RDB_. 
+  * In this transaction, data is partitioned by `sym` column and sorted by time. It allows data in the _IHDB_ to be queried more efficiently, and saves time to write to the _HDB_ and add parted attribute at end of day (EOD). 
+  * When data is transient during writedown, the gateway (_GW_) and query router (_QR_) are taken offline so data can’t be queried.
+  * At _EOD_ , the _LR_ finishes replaying the remaining logs and moves all data to the _HDB_. It refreshes all databases, resetting the realtime and intraday databases and reloads the newest data to the _HDB_. By having the _LR_ do the writedown, the _RDB_ is free to accept client requests and perform other operations.
+
+Logging
+
+The _TP_ writes "interval" files for high volume tables and a "main" file for
+the rest. "Interval" files are replayed to the intraday DB and others remain
+in-memory in the _RDB_. The _TP_ maintains active interval and main files.
+
+## Building a data warehouse
+
+This document will provide instruction on building a basic data warehouse
+using intraday writedowns and service classes. It includes:
+
+  * A _package_ for the system to maintain modular organization (`KxWarehouse`).
+  * A _schema group_ (`monCore`) and four _schemas_ to organize and define the datasources to be captured, stored and used throughout the system.
+  * A _tickerplant_ to capture, log and distribute data to other processes in the system (`kxw_tp`).
+  * A _realtime database_ to store the most recent data in memory (`kxw_rdb`).
+  * An _intraday historical database_ to store "today's data" excluding what is stored in the _RDB_ (`kxw_ihdb`).
+  * A _historical database_ to store and manage access to data prior to today (`kxw_hdb`).
+  * A _log replay process_ that does the writedown to intraday _HDB_ and to the _HDB_ at end of day (`kxw_lr`).
+  * A _realtime engine_ (`mon_feed`) and _analytics_ to populate the realtime database (In a real system, data would be streaming into the system via one or more feedhandlers coded with _C_ , _JAVA_ , or _Python_). 
+  * Another _realtime engine_ (`mon_agg`) and _analytics_to perform data manipulations, in this case, aggregating the average of monitoring data on intervals.
+
+## Conventions
+
+As with any software, it's best practice to follow a consistent style. This
+document uses a combination of `kxw` and `mon` prefixes for the entities
+created. When creating your own entities and packages, it is advised to follow
+a similar convention.
+
+Some other notes;
+
+  * Use a consistent naming convention, e.g. camelCase, under_score
+  * Use a shared prefix to group entities
+  * Use group entities for better organisation
+  * Add comments and descriptions
+
+For general notes on coding style for _kdb+_ , there is a comprehensive
+document linked.
+
+[Coding style](https://code.kx.com/q/style/)
+
+## Build a package
+
+Packages are used to organize a system and make it more portable. When
+building systems to be shared across multiple environments, place all entities
+in a package. These packages can then be exported from _KX Control_ and
+deployed to other systems as we do at the end of this example.
+
+  * Click on the _Package_ radio button to switch to _Package_ view in the tree.
+
+[![Screenshot](../img/serviceclass/package_view.jpg)](../img/serviceclass/package_view.jpg
+"click to expand")
+
+  * In the tree, right-click on any entity and select _New > Package_ from the context menu.
+
+[![Screenshot](../img/serviceclass/package_new.jpg)](../img/serviceclass/package_new.jpg
+"click to expand")
+
+  * A dialog will appear. Enter `KxWarehouse` as the name of the package. Click _Add_.
+
+[![Screenshot](../img/serviceclass/package_name.jpg)](../img/serviceclass/package_name.jpg
+"click to expand")
+
+  * The package will appear in the tree.
+
+[![Screenshot](../img/serviceclass/package_tree.jpg)](../img/serviceclass/package_tree.jpg
+"click to expand")
+

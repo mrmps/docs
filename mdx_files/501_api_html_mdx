@@ -1,0 +1,713 @@
+https://code.kx.com/insights/core/big-query/api.html
+
+# API - kdb products
+
+Original URL: https://code.kx.com/insights/core/big-query/api.html
+
+# BigQuery API
+
+Google BigQuery
+
+Google BigQuery is a fully managed, serverless data warehouse that enables
+scalable analysis over petabytes of data.
+
+The KX BigQuery API lets you easily interact with the [REST
+API](https://cloud.google.com/bigquery/docs/reference/rest) Google exposes for
+BigQuery.
+
+The API provides:
+
+  * An easy-to-use kdb+ interface without needing to handcraft REST API calls
+  * Automatic conversion of BigQuery [TableSchemas](https://cloud.google.com/bigquery/docs/reference/rest/v2/tables#TableSchema) in kdb+ tables
+  * Dynamic support for all resources and methods exposed in the BigQuery API
+
+[Quick start](tutorial.html)
+
+## `.com_kx_bq.cfg.baseURL`
+
+The base URL for the API
+
+## `.com_kx_bq.cfg.default.datasetId`
+
+The default `datasetId` to use in the simple API
+
+## `.com_kx_bq.cfg.default.projectId`
+
+The default `projectId` to use in the simple API
+
+## `.com_kx_bq.cfg.default.tableId`
+
+This default `tableId` to use in the simple API
+
+## `.com_kx_bq.cfg.discoveryDocURL`
+
+The URL for discovery document to use for `.com_kx_bq.run`
+
+## `.com_kx_bq.cfg.kdbModeMap`
+
+_Map kdb+ datatypes to BigQuery modes_
+
+If the `signum` of the kdb+ type is
+
+  * -1, it’s negative, and the BigQuery mode is `NULLABLE` by default
+  * 1, it’s positive, and the data is an array which corresponds to the BigQuery mode `REPEATED`
+
+## `.com_kx_bq.cfg.kdbTypeMap`
+
+_Map kdb+ datatypes to BigQuery datatypes_
+
+## `.com_kx_bq.cfg.useDefaults`
+
+Boolean: whether requests will use defaults for omitted arguments.
+
+## `.com_kx_bq.datasets.get`
+
+_Get dataset details from BigQuery_
+
+    
+    
+    .com_kx_bq.datasets.get args
+    
+
+Where `args` is a dictionary of arguments for a `datasets.get` method, returns
+a dictionary of responses from BigQuery.
+
+List dataset details for the dataset `kx_bma_bigquery_ds` in the project
+`cloudpak`:
+
+    
+    
+    q).com_kx_bq.datasets.get `projectId`datasetId!("cloudpak"; "kx_bma_bigquery_ds")
+    kind            | "bigquery#dataset"
+    etag            | "ijYXKX/zJYLk6Anuf++t7Q=="
+    id              | "cloudpak:kx_bma_bigquery_ds"
+    selfLink        | "https://bigquery.googleapis.com/bigquery/v2/projects/cloud..
+    datasetReference| `datasetId`projectId!("kx_bma_bigquery_ds";"cloudpak")
+    access          | (`role`specialGroup!("WRITER";"projectWriters");`role`speci..
+    creationTime    | "1610712593842"
+    lastModifiedTime| "1610712593842"
+    location        | "US"
+    
+
+## `.com_kx_bq.datasets.insert`
+
+_Create a dataset in a BigQuery project_
+
+    
+    
+    .com_kx_bq.datasets.insert[args;datasetId]
+    
+
+Where
+
+  * `args` is a dictionary of arguments for the `datasets.insert` method (see `.com_kx_bq.disc.getParameters`datasets.insert`)
+  * `datasetId` (string) is the name of the new dataset
+
+returns the response from BigQuery as a dictionary.
+
+Create a dataset called `weather`:
+
+    
+    
+    q).com_kx_bq.datasets.insert[(enlist `projectId)!enlist "cloudpak"; "weather"]
+    kind            | "bigquery#dataset"
+    etag            | "IzXO40nvJoqo2YmhMJ0BkA=="
+    id              | "cloudpak:weather"
+    selfLink        | "https://bigquery.googleapis.com/bigquery/v2/projects/cloud..
+    datasetReference| `datasetId`projectId!("weather";"cloudpak")
+    access          | (`role`specialGroup!("WRITER";"projectWriters");`role`speci..
+    creationTime    | "1611230993939"
+    lastModifiedTime| "1611230993939"
+    location        | "US"
+    
+
+## `.com_kx_bq.datasets.list`
+
+_List datasets of a BigQuery project_
+
+    
+    
+    .com_kx_bq.datasets.list args
+    
+
+Where `args` is a dicionary of arguments required for the `datasets.list` (see
+`.com_kx_bq.disc.getParametersForMethod`datasets.list`) returns as a
+dictionary the response from BiqQuery.
+
+List the datasets in the project `cloudpak`:
+
+    
+    
+    q).com_kx_bq.datasets.list enlist[`projectId]!enlist "cloudpak"
+    kind    | "bigquery#datasetList"
+    etag    | "QBTuIlnauLLL29CnAng5dw=="
+    datasets| +`kind`id`datasetReference`location!(("bigquery#dataset";"bigquery#..
+    
+
+## `.com_kx_bq.disc.describeMethodsForResource`
+
+_Describe the available methods for a resource_
+
+    
+    
+    .com_kx_bq.disc.describeMethodsForResource resource
+    
+
+Where `resource` (symbol) is the name of a resource, returns a table of
+methods for it.
+
+Describe the methods for the `datasets` resource:
+
+    
+    
+    q).com_kx_bq.disc.describeMethodsForResource`datasets
+    method httpMethod parameters           request             response                description   ..
+    -------------------------------------------------------------------------------------------------..
+    update PUT        `projectId`datasetId (,`$ref)!,"Dataset" (,`$ref)!,"Dataset"     "Updates infor..
+    list   GET        ,`projectId          ::                  (,`$ref)!,"DatasetList" "Lists all dat..
+    patch  PATCH      `projectId`datasetId (,`$ref)!,"Dataset" (,`$ref)!,"Dataset"     "Updates infor..
+    delete DELETE     `projectId`datasetId ::                  ::                      "Deletes the d..
+    get    GET        `projectId`datasetId ::                  (,`$ref)!,"Dataset"     "Returns the d..
+    insert POST       ,`projectId          (,`$ref)!,"Dataset" (,`$ref)!,"Dataset"     "Creates a new..
+    
+
+## `.com_kx_bq.disc.getMethodsForResource`
+
+_Details of the available methods for a resource_
+
+    
+    
+    .com_kx_bq.disc.getMethodsForResource resource
+    
+
+Where `resource` (symbol) is the name of a resource, returns a dictionary of
+methods and their arguments.
+
+Get methods for the `tables` resource:
+
+    
+    
+    q).com_kx_bq.disc.getMethodsForResource`tables
+    getIamPolicy      | `id`parameters`parameterOrder`request`description`path`sc..
+    list              | `id`response`path`parameterOrder`httpMethod`scopes`parame..
+    testIamPermissions| `httpMethod`scopes`parameterOrder`flatPath`description`pa..
+    insert            | `request`httpMethod`path`id`response`description`scopes`p..
+    get               | `parameters`path`parameterOrder`httpMethod`id`response`sc..
+    patch             | `scopes`parameterOrder`description`httpMethod`path`respon..
+    setIamPolicy      | `response`parameterOrder`path`id`request`parameters`httpM..
+    update            | `scopes`id`description`request`parameters`httpMethod`resp..
+    delete            | `id`parameterOrder`httpMethod`description`path`scopes`par..
+    
+
+## `.com_kx_bq.disc.getParametersForMethod`
+
+_Details of parameters for a method_
+
+    
+    
+    .com_kx_bq.disc.getParametersForMethod method
+    
+
+Where `method` (symbol) is the name of a method, in the format
+`resource.method` returns a table of details of the parameters.
+
+    
+    
+    q).com_kx_bq.disc.getParametersForMethod`tables.insert
+    parameter type     location description                   required format
+    -------------------------------------------------------------------------
+    datasetId "string" "path"   "Dataset ID of the new table" 1        ::
+    projectId "string" "path"   "Project ID of the new table" 1        ::
+    
+
+## `.com_kx_bq.disc.listParametersForMethod`
+
+_List required parameters for a method_
+
+    
+    
+    .com_kx_bq.disc.listParametersForMethod method
+    
+
+Where `method` (symbol) is the name of a method in the format resource.method
+returns a symbol vector of required parameters.
+
+List parameters for `tables.insert`
+
+    
+    
+    q).com_kx_bq.disc.listParametersForMethod `tables.insert
+    `projectId`datasetId
+    
+
+## `.com_kx_bq.disc.listResources`
+
+_List the available resources_
+
+    
+    
+    .com_kx_bq.disc.listResources[]
+    
+
+Returns a symbol vector of available resources.
+
+    
+    
+    q).com_kx_bq.disc.listResources[]
+    `rowAccessPolicies`models`tabledata`datasets`tables`projects`routines`jobs
+    
+
+## `.com_kx_bq.fieldSchemaToKdb`
+
+_Apply a BigQuery Field Schema to a dataset to convert it into a kdb+ object_
+
+    
+    
+    .com_kx_bq.fieldSchemaToKdb[bqFieldSchema;rowObject]
+    
+
+Where
+
+  * `bqFieldSchema` (dict) is a [Schema object](https://cloud.google.com/bigquery/docs/reference/rest/v2/tables#TableFieldSchema) from BigQuery in kdb+
+  * `rowObject` (dict) is either a simple value mapping or a nested field mapping
+
+returns as a dictionary a kdb+ formatted schema object.
+
+    
+    
+    q)fs:`name`type`mode!("dob";"DATE";"NULLABLE")  / field schema
+    q)ro:(enlist`v)!enlist "1980-10-16"             / row object
+    q).com_kx_bq.fieldSchemaToKdb[fs;ro]
+    dob| 1980.10.16
+    
+
+## `.com_kx_bq.genBQFieldSchema`
+
+_TableFieldSchema from kdb+ table cell_
+
+    
+    
+    .com_kx_bq.genBQFieldSchema fieldDict
+    
+
+Where `fieldDict` is a table cell as a dictionary, returns a [TableFieldSchema
+object](https://cloud.google.com/bigquery/docs/reference/rest/v2/tables#TableFieldSchema)
+as a dictionary.
+
+    
+    
+    q)tab:([] a:1 2;b:3 4)
+    q)tab
+    a b
+    ---
+    1 3
+    2 4
+    q)enlist[`a]#first tab
+    a| 1
+    q).com_kx_bq.genBQFieldSchema enlist[`a]#first tab
+    name| ,"a"
+    type| "INT64"
+    mode| "NULLABLE"
+    
+
+## `.com_kx_bq.genBQSchema`
+
+_TableSchema from a kdb+ table_
+
+    
+    
+    .com_kx_bq.genBQSchema table
+    
+
+Where `table` is a kdb+ table, returns a [TableSchema
+object](https://cloud.google.com/bigquery/docs/reference/rest/v2/tables#TableSchema)
+as a dictionary. This is done by inspecting the first row of the table.
+
+    
+    
+    q)tab:([] a:1 2;b:3 4)
+    q)tab
+    a b
+    ---
+    1 3
+    2 4
+    q).com_kx_bq.genBQSchema tab
+    fields| +`name`type`mode!((,"a";,"b");("INT64";"INT64");("NULLABLE";"NULLABLE..
+    
+
+## `.com_kx_bq.i.applyDefaultArgs`
+
+_Append default arguments to an argument dictionary if enabled_
+
+    
+    
+    .com_kx_bq.i.applyDefaultArgs args
+    
+
+Where `args` is a dictionary of non-default parameters for a HTTP request
+returns it with default values inserted.
+
+`.com_kx_bq.cfg.useDefaults`
+
+## `.com_kx_bq.i.datasets.createInsertBody`
+
+_JSON-formatted body for`datasets.insert` API_
+
+    
+    
+    .com_kx_bq.i.datasets.createInsertBody[projectId;datasetId]
+    
+
+Where
+
+  * `projectId` (string) is the name of a project
+  * `datasetId` (string)is the name of a dataset to create
+
+returns the JSON-formatted body as a string.
+
+## `.com_kx_bq.i.getArgsFromURL`
+
+_Parse parameters from patterns in a URL_
+
+    
+    
+    .com_kx_bq.i.getArgsFromURL url
+    
+
+Where `url` (string) is a URL with parameters wrapped in braces returns a list
+of parameters as a symbol vector.
+
+## `.com_kx_bq.i.parseDataFromQuery`
+
+_Parse kdb data from a query_
+
+    
+    
+    .com_kx_bq.i.parseDataFromQuery respObj
+    
+
+Where `respObj` (dictionary) is a response from BigQuery, returns a table of
+results.
+
+`.com_kx_bq.query`
+
+## `.com_kx_bq.i.queries.createBody`
+
+_JSON-formatted body for queries API_
+
+    
+    
+    .com_kx_bq.i.queries.createBody query
+    
+
+Where `query` (string) is a SQL query to run on BigQuery, returns it as a JSON
+string.
+
+## `.com_kx_bq.i.replaceArgsInURL`
+
+_Replace embraced parameter patterns with values_
+
+    
+    
+    .com_kx_bq.i.replaceArgsInURL[url;args]
+    
+
+Where
+
+  * `url` (string) is a URL with parameters wrapped in braces
+  * `args` (dict) is a key-value mapping of arg name to value
+
+returns `url` with the parameters replaced.
+
+## `.com_kx_bq.i.tabledata.createInsertAllBody`
+
+_JSON-formatted body for`tabledata.insertAll` API_
+
+    
+    
+    .com_kx_bq.i.tabledata.createInsertAllBody tableData
+    
+
+Where `tableData` is a table of data to insert, returns it as a JSON string.
+
+## `.com_kx_bq.i.tables.createInsertBody`
+
+_JSON-formatted body for`tables.insert` API_
+
+    
+    
+    .com_kx_bq.i.tables.createInsertBody[projectId;datasetId;tableId;exampleKdbTab]
+    
+
+Where
+
+  * `projectId` (string)is the name of the project
+  * `datasetId` (string)is the name of the dataset to create
+  * `tableId` (string)is the name of table
+  * `exampleKdbTab` (table)is a table to generate BQ schema from
+
+returns a JSON string for the `tables.insert` API.
+
+## `.com_kx_bq.projects.list`
+
+_List projects in BigQuery_
+
+    
+    
+    .com_kx_bq.projects.list[]
+    
+
+Returns the response from BigQuery as a dictionary.
+
+    
+    
+    q).com_kx_bq.projects.list[]
+    kind      | "bigquery#projectList"
+    etag      | "8OYfddFNRY0RuH5h5jwhew=="
+    projects  | +`kind`id`numericId`projectReference`friendlyName!(,"bigquery#pro..
+    totalItems| 1f
+    
+
+## `.com_kx_bq.query`
+
+_Run query_
+
+Where `query` (string) is a SQL query to run on BigQuery, returns a table of
+results.
+
+    
+    
+    q).com_kx_bq.query "select * from `cloudpak.kx_bma_bigquery_ds.nested_table`"
+    id   first_name last_name dob        addresses                               ..
+    -----------------------------------------------------------------------------..
+    ,"2" "Jane"     "Doe"     1980.10.16 +`status`address`city`state`zip`numberOf..
+    ,"1" "John"     "Doe"     1968.01.22 +`status`address`city`state`zip`numberOf..
+    
+
+## `.com_kx_bq.queryRawResp`
+
+_Run query and return raw response_
+
+    
+    
+    .com_kx_bq.queryRawResp query
+    
+
+Where `query` (string) is a SQL query to run on BigQuery, returns response as
+a string.
+
+    
+    
+    q).com_kx_bq.queryRawResp "select * from `cloudpak.kx_bma_bigquery_ds.nested_table`"
+    kind               | "bigquery#queryResponse"
+    schema             | (,`fields)!,(`name`type`mode!("id";"STRING";"NULLABLE");..
+    jobReference       | `projectId`jobId`location!("cloudpak";"job_xtHZM84N-KOUf..
+    totalRows          | ,"2"
+    rows               | +(,`f)!,(+(,`v)!,(,"2";"Jane";"Doe";"1980-10-16";+(,`v)!..
+    totalBytesProcessed| ,"0"
+    jobComplete        | 1b
+    cacheHit           | 1b
+    
+
+## `.com_kx_bq.run`
+
+_Generic API to run any supported BigQuery method_
+
+    
+    
+    .com_kx_bq.run[func;args;body]
+    
+
+Where
+
+  * `func` (symbol) is name of the method to run in the format `resource.method`. [List of resources and their methods.](https://cloud.google.com/bigquery/docs/reference/rest/) The version is not required in the resource, e.g `datasets.list` is valid, not `v2.datasets.list`.
+  * `args` (dict) is dictionary of parameters for the request
+  * `body` (string) is JSON body for HTTP requests that require a body
+
+returns a dictionary of results from the request.
+
+    
+    
+    q).com_kx_bq.run[`tables.list;`projectId`datasetId!("cloudpak";"kx_bma_bigquery_ds");()]
+    kind      | "bigquery#tableList"
+    etag      | "XO0VOCRg48KNOqPXpRbrFw=="
+    tables    | +`kind`id`tableReference`type`creationTime!(("bigquery#table";"bi..
+    totalItems| 2f
+    
+
+## `.com_kx_bq.tabledata.insertAll`
+
+_Insert data into a BigQuery table_
+
+    
+    
+    .com_kx_bq.tabledata.insertAll[args;tabData]
+    
+
+Where
+
+  * `args` (dict) is arguments required for the `tabledata.insertAll` method (see `.com_kx_bq.disc.getParameters`tabledata.insertAll`)
+  * `tabData` (table) is data to insert
+
+returns the response from BigQuery as a dictionary.
+
+    
+    
+    q).com_kx_bq.query "select * from `cloudpak.kx_bma_bigquery_ds.simple_table`"
+    No rows returned from query
+    q)simple_table:([] longCol:1 2 3 4;dateCol:4#.z.d)
+    
+    q)simple_table
+    longCol dateCol
+    ------------------
+    1       2021.01.21
+    2       2021.01.21
+    3       2021.01.21
+    4       2021.01.21
+    
+    q)/ argument dictionary
+    q)ad:`projectId`datasetId`tableId!("cloudpak";"kx_bma_bigquery_ds";"simple_table")
+    q).com_kx_bq.tabledata.insertAll[ad; simple_table]
+    kind| "bigquery#tableDataInsertAllResponse"
+    
+    q).com_kx_bq.query "select * from `cloudpak.kx_bma_bigquery_ds.simple_table`"
+    longCol dateCol
+    ------------------
+    4       2021.01.21
+    1       2021.01.21
+    2       2021.01.21
+    3       2021.01.21
+    
+
+## `.com_kx_bq.tables.get`
+
+_Get table details from BigQuery_
+
+    
+    
+    .com_kx_bq.tables.get args
+    
+
+Where `args` is a dictionary of parameters for the `tables.get` method (see
+`.com_kx_bq.disc.getParameters`tables.get`) returns the response from BigQuery
+as a dictionary.
+
+The response doesn’t include data from the table.
+
+Request for details of `nested_table`:
+
+    
+    
+    q)/ parameters for nested_table
+    q)prms:`projectId`datasetId`tableId!("cloudpak";"kx_bma_bigquery_ds";"nested_table")
+    q).com_kx_bq.tables.get prms
+    kind            | "bigquery#table"
+    etag            | "3PBOd4/GmKp8mi/GRfjCRg=="
+    id              | "cloudpak:kx_bma_bigquery_ds.nested_table"
+    selfLink        | "https://bigquery.googleapis.com/bigquery/v2/projects/cloud..
+    tableReference  | `projectId`datasetId`tableId!("cloudpak";"kx_bma_bigquery_d..
+    schema          | (,`fields)!,(`name`type`mode!("id";"STRING";"NULLABLE");`na..
+    numBytes        | "244"
+    numLongTermBytes| ,"0"
+    numRows         | ,"2"
+    creationTime    | "1611058431773"
+    lastModifiedTime| "1611066081149"
+    type            | "TABLE"
+    location        | "US"
+    
+
+## `.com_kx_bq.tables.insert`
+
+_Create a BigQuery table_
+
+    
+    
+    .com_kx_bq.tables.insert[args;table]
+    
+
+Where
+
+  * `args` (dict) is arguments required for the `tables.insert` method (see `.com_kx_bq.disc.getParameters`tables.insert`)
+  * `table` (table) is a kdb+ table
+
+returns the BigQuery response as a dictionary.
+
+This does not upload the data in `table`; it creates a table in BigQuery with
+the same schema.
+
+    
+    
+    q)simple_table:([] longCol:`long$(); dateCol:`date$())
+    q)args:`projectId`datasetId`tableId!("cloudpak";"kx_bma_bigquery_ds";"simple_table")
+    q).com_kx_bq.tables.insert[args; simple_table]
+    kind            | "bigquery#table"
+    etag            | "ruJu2EDyJ2AihJhTwbX3kA=="
+    id              | "cloudpak:kx_bma_bigquery_ds.simple_table"
+    selfLink        | "https://bigquery.googleapis.com/bigquery/v2/projects/cloud..
+    tableReference  | `projectId`datasetId`tableId!("cloudpak";"kx_bma_bigquery_d..
+    schema          | (,`fields)!,+`name`type`mode!(("longCol";"dateCol");("INTEG..
+    numBytes        | ,"0"
+    numLongTermBytes| ,"0"
+    numRows         | ,"0"
+    creationTime    | "1611229907510"
+    lastModifiedTime| "1611229907560"
+    type            | "TABLE"
+    location        | "US"
+    
+
+To create a schema with nested columns, provide a table with at least one row
+that contains an example of the nested structure.
+
+    
+    
+    q)firstName:`John`Jane
+    q)lastName:`Doe`Doe
+    q)hobbies:(`skiing`running`cycling;`running`swimming)
+    
+    q)show hobbies:([] firstName;lastName;hobbies)
+    firstName lastName hobbies
+    ------------------------------------------
+    John      Doe      `skiing`running`cycling
+    Jane      Doe      `running`swimming
+    
+    q)args:`projectId`datasetId`tableId!("cloudpak";"kx_bma_bigquery_ds";"hobbies")
+    q).com_kx_bq.tables.insert[args; hobbies]
+    kind            | "bigquery#table"
+    etag            | "m0abliNQBx3fKfFk77MUKA=="
+    id              | "cloudpak:kx_bma_bigquery_ds.hobbies"
+    selfLink        | "https://bigquery.googleapis.com/bigquery/v2/projects/cloud..
+    tableReference  | `projectId`datasetId`tableId!("cloudpak";"kx_bma_bigquery_d..
+    schema          | (,`fields)!,+`name`type`mode!(("firstName";"lastName";"hobb..
+    numBytes        | ,"0"
+    numLongTermBytes| ,"0"
+    numRows         | ,"0"
+    creationTime    | "1611230179319"
+    lastModifiedTime| "1611230179364"
+    type            | "TABLE"
+    location        | "US"
+    
+
+## `.com_kx_bq.tables.list`
+
+_List available BigQuery tables_
+
+    
+    
+    .com_kx_bq.tables.list args
+    
+
+Where `args` is a dictionary of arguments required for the `tables.list`
+method (see `.com_kx_bq.disc.getParameters`tables.list`) returns the response
+from BigQuery as a dictionary.
+
+List tables in the project `cloudpak` and dataset `zkx_bma_bigquery_dsz`:
+
+    
+    
+    q).com_kx_bq.tables.list `projectId`datasetId!("cloudpak"; "kx_bma_bigquery_ds")
+    kind      | "bigquery#tableList"
+    etag      | "XO0VOCRg48KNOqPXpRbrFw=="
+    tables    | +`kind`id`tableReference`type`creationTime!(("bigquery#table";"bi..
+    totalItems| 2f
+    
+

@@ -1,0 +1,116 @@
+https://code.kx.com/insights/api/machine-learning/python/registry/cloud-integration.html
+
+# Cloud Integration - kdb products
+
+Original URL: https://code.kx.com/insights/api/machine-learning/python/registry/cloud-integration.html
+
+# Cloud Integration
+
+When using the `kxi.ml.registry` module users can store, retrieve and delete
+models from the following cloud provider storage solutions:
+
+  1. AWS S3 Buckets
+  2. Azure Blob Storage
+
+This interaction is facilitated through interactions with these vendors using
+REST calls.
+
+From a users perspective this is intended to be a lightweight API with users
+requiring minimal configuration to publish to a registry on-prem or within a
+cloud storage solution.
+
+Prior to running any of the function calls to publish/retrieve from the cloud,
+a user must generate a storage bucket to which artefacts will be published. At
+present this must be done external to the functionality provided by this
+interface i.e. if the bucket does not exist we will not generate it.
+
+Once the user has a storage bucket available they can run the following
+examples from any application running this library.
+
+The following sections outline how users can initialise this functionality and
+provides examples of function calls that are supported when using the registry
+in the context of a cloud vendor solution.
+
+## Required environment variables
+
+Interactions with the various cloud vendors require the definition of
+environment variables to authenticate REST calls to the vendors, the following
+outlines the required arguments for each of the supported vendors within the
+docker image used.
+
+Vendor | Environment variable  
+---|---  
+_AWS_ | `AWS_SECRET_ACCESS_KEY`  
+_AWS_ | `AWS_ACCESS_KEY_ID`  
+_AWS_ | `AWS_REGION`  
+_Azure_ | `AZURE_STORAGE_ACCOUNT`  
+_Azure_ | `AZURE_STORAGE_SHARED_KEY`  
+  
+## Interacting with cloud vendors
+
+Users can change the registry they wish to use within their Python process.
+This is facilitated through modification of the `folder_path` variable within
+the various `kxi.ml.registry` functions. For one off calls to a different
+registry, users can pass in a dictionary containing the vendor type and
+location to their desired function as the `folder_path` argument.
+
+For example of creating a registry within various cloud vendors:
+
+    
+    
+    # Import and initialise the library
+    >>> from kxpy import q
+    >>> from kxi import ml
+    >>> ml.init()
+    
+    # Add a new registry to the local "/tmp" directory
+    >>> ml.registry.new.registry('/tmp')
+    
+    # Add a new registry to a defined AWS s3 Bucket
+    >>> ml.registry.new.registry[{'aws': 's3://my-test-bucket'})
+    
+
+## Examples
+
+Once initialised following the instructions presented above a user can run the
+following examples
+
+  * Add items to cloud storage 
+    
+        >>> py_dict = {'aws': 's3://my-test-bucket'}
+    >>> ml.registry.new.registry(py_dict);
+    >>> ml.registry.new.experiment(py_dict, 'test');
+    >>> ml.registry.set.model(q('{x}'), 'mymodel', 'q', folder_path=py_dict, experiment_name='test')
+    
+
+  * Log ancillary information associated with a model 
+    
+        >>> ml.registry.log.metric('metric', 2.0, py_dict)
+    >>> ml.registry.set.parameters('paramfile', {'param1': 1, 'param2': 2}, folder_path=pydict, model_name='my_model', version=[1, 0])
+    
+
+  * Retrieve items from the registry 
+    
+        >>> ml.registry.get.model(py_dict, None, 'mymodel', [1, 0])
+    kxpy.k.Dictionary(q('
+    modelInfo| `registry`model`monitoring!(`description`modelInformation`experime..
+    model    | {x}
+    '))
+    >>> ml.registry.get.metric(py_dict, param='metric')
+    kxpy.k.Table(q('
+    timestamp                     metricName metricValue
+    ----------------------------------------------------
+    2021.04.29D12:24:23.117795000 metric     2
+    '))
+    >>> ml.registry.get.parameters('paramFile', py_dict)
+    kxpy.k.Dictionary(q('
+    param1| 1
+    param2| 2
+    '))
+    
+
+  * Delete the registry 
+    
+        q).ml.registry.delete.registry[::;::]
+    
+

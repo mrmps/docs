@@ -1,0 +1,281 @@
+https://code.kx.com/platform/api/analytics/
+
+# Analytics - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/api/analytics/
+
+# Analytics
+
+Set of APIs for interacting with the Analytics Library in Control.
+
+Analytics are q functions stored in _Control_ and deployed to running
+processes. Generally they're deployed via Analytic Groups in the process
+instance definition, however there are APIs provided to load analytics and
+groups manually. This can be done in bulk for a whole group
+(`.al.loadgroupfunctions`) or individually (`.al.getfunction(s)`). These will
+define the function locally with the same name as stored in Control.
+
+**Calling Anonymously**
+
+It's possible to call analytics without defining them by name on the process.
+Using `.al.callfunction` will call to _Control_ to get an analytic definition
+but instead of defining a function with that name, it will cache it in a
+temporary namespace (`.alf`). Any subsequent calls to the API for a function
+will get the definition from the cached version. This can be refreshed from
+Control by `.al.refreshfunction`. These are useful if it's not guaranteed the
+function will be defined on the process. There is an additional cost in
+calling to Control and the temporary namespace so it's advised not to use
+these in time-sensitive operations.
+
+**Note:** Most of these calls involve a synchronous call to DC so it's advised
+to only use them in the process start-up phase.
+
+**Instructions**
+
+Instructions are analogous to q scripts defined in _Control_. They are loaded
+into processes as a q script would be and hence exhibit the same behavior with
+regard to globals, contexts etc.
+
+## `.al.callfunction`
+
+Used to get the definition of an analytic from _Control_. The first time the
+API is called for an analytic, it will call to _Control_ to get the
+definition. This will be saved locally in the `.alf` namespace and for
+subsequent calls will pull the definition from there. Initially retrieves the
+analytic at the version the process is operating at.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+n | symbol | Analytic name  
+  
+**Example:**
+
+    
+    
+     .al.callfunction[`dxEODSaveAndDelete]
+     /=> {[dt]
+     /=>         .log.out[.z.h;"EOD function start ";(dt;.Q.w[]%1e6)];
+     /=>         .ds.rte.disableGatewayQueries[.ds.cfg.procName];
+     /=>         .ds.rte.disableGatewayQueries[.ds.cfg.hdbProcess];
+     /=> ...
+    
+
+## `.al.getLoadedAnalytics`
+
+Get the list of analytics loaded into this process
+
+**Returns:**
+
+Type | Description  
+---|---  
+symbol[] | Analytic list  
+  
+**Example:**
+
+    
+    
+     .al.getLoadedAnalytics[]
+     /=> `dxEODChainedTP`dxEODDeleteData`dxEODIntraday`dxEODMultiServer`dxEODReport`dxEODSaveAndDeleteHDBCreation
+    
+
+## `.al.getanalyticsbygroup`
+
+Get the list of analytics in a group. The results will be filtered to show
+only the analytics `deltacomponent` has select permission to. If
+`deltacomponent` is not an Administrator user the results may not return all
+analytics in the group.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+n | symbol | Analytic group name  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol[] | Analytic list  
+  
+**Example:**
+
+    
+    
+     .al.getanalyticsbygroup[`DxEOD]
+     /=> `dxEODChainedTP`dxEODDeleteData`dxEODIntraday`dxEODMultiServer`dxEODReport`dxEODSaveAndDeleteHDBCreation
+    
+
+## `.al.getfunction`
+
+Load a function from _Control_. Defines it in-memory with the same name.
+Retrieves the function at the version the process is operating at.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+n | symbol | Analytic name  
+  
+**Example:**
+
+    
+    
+     .al.getfunction[`dxEODSaveAndDelete]
+    
+
+## `.al.getfunctiondef`
+
+Load analytic definition from _Control_ as executable function. Retrieves the
+analytic at the version the process is operating at.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+n | symbol | Analytic name  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+fn | Function definition  
+  
+**Example:**
+
+    
+    
+     .al.getfunctiondef[`dxEODSaveAndDelete]
+     /=> {[dt]
+     /=>         .log.out[.z.h;"EOD function start ";(dt;.Q.w[]%1e6)];
+     /=>         .ds.rte.disableGatewayQueries[.ds.cfg.procName];
+     /=>         .ds.rte.disableGatewayQueries[.ds.cfg.hdbProcess];
+     /=> ...
+    
+
+## `.al.getfunctionsVer`
+
+Gets code and typ for a list of analytics/instructions at the version
+specified
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+names | symbol[] | Analytic/instruction names  
+ver | long | Version number  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+table | Table of analytic/instruction details  
+  
+**Example:**
+
+    
+    
+     .al.getfunctionsVer[`Func1`Func2; 1500]
+     /=> analytic code             typ
+     /=> -------------------------------------
+     /=> Func1    "{[]\n :1b;\n }" Analytic
+     /=> Func2    "{[]\n :0b;\n }" Instruction
+    
+
+## `.al.getfunctions`
+
+Loads multiple analytics from _Control_. Retrieves the analytics at the
+version the process is operating at.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+n | symbol | Analytic names  
+  
+**Example:**
+
+    
+    
+     .al.getfunctions[`dxEODSaveAndDelete`dxEmptyFunction]
+    
+
+## `.al.loadgroupfunctions`
+
+Load all analytics for a group. Retrieves the analytics at the version the
+process is operating at.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+s | symbol | Analytic group name  
+  
+**Example:**
+
+    
+    
+     .al.loadgroupfunctions[`DxEOD]
+    
+
+## `.al.loadinstructionVer`
+
+Load and execute an instruction at a specified version
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+n | symbol | Instruction name  
+ver | long | Version number  
+  
+**Example:**
+
+    
+    
+     .al.loadinstructionVer[`Investigations; 1500]
+    
+
+## `.al.loadinstruction`
+
+Load and execute an instruction. Retrieves the instruction at the version the
+process is operating at.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+n | symbol | Instruction name  
+  
+**Example:**
+
+    
+    
+     .al.loadinstruction[`Investigations]
+    
+
+## `.al.refreshfunction`
+
+Calls to _Control_ to refresh the definition of an analytic. Refreshes the
+cached version of it in the `.alf` namespace. Retrieves the analytic at the
+version the process is operating at.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+n | symbol | Analytic name  
+  
+**Example:**
+
+    
+    
+     .al.refreshfunction[`dxEODSaveAndDelete]
+     /=> {[dt]
+     /=>         .log.out[.z.h;"EOD function start ";(dt;.Q.w[]%1e6)];
+     /=>         .ds.rte.disableGatewayQueries[.ds.cfg.procName];
+     /=>         .ds.rte.disableGatewayQueries[.ds.cfg.hdbProcess];
+     /=> ...
+    
+

@@ -1,0 +1,86 @@
+https://code.kx.com/platform/deployment/instance_configuration/
+
+# Instance configuration - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/deployment/instance_configuration/
+
+# Instance config
+
+Process instances are configured via the `delta-bin/delta.instance.profile`
+which is written by the install script. The delta.instance.profile defines the
+Host, Port and Taskset values for each process instance contained within KX
+Delta Platform.
+
+The values given for Host, Port and Taskset can be defined in several ways.
+The options are detailed below.
+
+### Auto configuration
+
+The following install script options are used to automatically configure the
+process instances.
+
+Install Option  | Value Type | Default | Details  
+---|---|---|---  
+`auto-configure-instance-portstart` | Port | 3000 | This is the seed value for all process instances configured by the install script. Each instance will have a port which is an increment of this value i.e. 3000, 3001, 3003 etc.  
+`auto-configure-instance-hostname-a` | hostname | Install server hostname | The host name which all process instances ending in _a will be assigned. Delta Stream is shipped with 2 copies of all tasks, instances and workflows. This is to allow for a resilient (A/B) configuration across 2 servers.  
+`auto-configure-instance-hostname-b` | hostname | Install server hostname | The host name which all process instances ending in _b will be assigned. If deploying a and b on the same host then each instance in the pair will have different port values, if deployed on different hosts each instance will have the same port value.  
+`auto-configure-instance-taskset` | Taskset CPU list | NONE | Taskset CPU list which will be applied to all processes in the delta.instance.profile. The syntax is the same as that which would be used when specifying a CPU mask with the –c option (see man taskset).  
+  
+**Note** : A process with a blank/empty taskset will inherit the taskset from
+`KDB_CPU_AFFINITY` or `DCD_CPU_AFFINITY`, depending on whether it is a Control
+node, or a Daemon/Web node. For more details see [Core
+Affinity](../cpu_affinity/).
+
+### CSV File configuration
+
+A csv file containing configuration details for process instances can be used
+as an alternative to automatic configuration.
+
+The CSV file should be in the following format:
+
+    
+    
+    INSTANCE-NAME,HOST,PORT,TASKSET
+    
+
+For example if we wished to configure an instance called “ds_ms_a” to run on
+host kxplatform.firstderivatives.com”, listening on port “4000” and being
+bound to CPU cores “1-4” we would put the following in the instances CSV file.
+
+    
+    
+    ds_ms_a,kxplatform.firstderivatives.com,4000,1-4
+    
+
+The CSV file is passed into the install script using the -i command line
+option. e.g.
+
+    
+    
+    ./install.sh -i instances.csv -p install.config
+    
+
+Once the install completes you should see the following in the
+delta.instance.profile.
+
+    
+    
+    grep ds_ms_a ~/kxinstall/delta-bin/delta.instance.profile
+    export ds_ms_a_HOST="kxplatform.firstderivatives.com"
+    export ds_ms_a_PORT="4000"
+    export ds_ms_a_TASKSET="1-4"
+    
+
+Any instances which are not specified in the CSV file will have their Host,
+Port and Taskset options configured via the Auto Configuration settings above:
+
+    
+    
+    export ds_ms_a_HOST="kxplatform.firstderivatives.com"
+    export ds_ms_a_PORT="4000"
+    export ds_ms_a_TASKSET="1-4"
+    export dm_rte_bridge_a_HOST="kxplatform.firstderivatives.com"
+    export dm_rte_bridge_a_PORT="3000"
+    export dm_rte_bridge_a_TASKSET=""
+    
+

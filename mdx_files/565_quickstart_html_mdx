@@ -1,0 +1,521 @@
+https://code.kx.com/insights/core/kurl/quickstart.html
+
+# REST API | Quickstart | kdb Insights Core - kdb products
+
+Original URL: https://code.kx.com/insights/core/kurl/quickstart.html
+
+# REST client API quickstart
+
+_Communicate with other cloud services_
+
+Our examples load the Kurl library and use async and sync requests to query
+public datasets.
+
+## Blank Slate
+
+_A sample application that does nothing, simply loads the REST client_
+
+Create `client.q`
+
+Run `q` in the current directory and load `client.q`:
+
+## Quickstart with service accounts
+
+For running an application on a virtual machine in the cloud
+
+Two steps to using service accounts:
+
+  * Make a service account and list operations (roles or permissions)
+  * Launch VM instances and assign them service accounts (IAM roles)
+
+To run any of these examples, simply SSH into a VM (of the same vendor as the
+example) and follow along.
+
+### Finding public datasets in Google BigQuery using Async API
+
+_A sample application that demonstrates the power of Async API to list public
+datasets_
+
+Datasets are returned as alphabetically sorted ‘paged’ results, and page
+tokens are used to get the next pages of results.
+
+Create `listdata.q`.
+
+    
+    
+    // Find the utility_us public dataset.
+    // This makes several calls to get paged results of datasets,
+    // and stops when exact match is found
+    datasetID:"utility_us"
+    publicDatasetEndpoint:
+      "https://bigquery.googleapis.com/bigquery/v2/projects/bigquery-public-data/datasets"
+    
+    findDataset:{[datasetID;resp]
+      if[200 <> first resp; 'last resp];
+      listing:.j.k last resp;
+      datasets:`s#{x . `datasetReference`datasetId} each listing `datasets;
+      if[datasetID in datasets;
+        show "Found ",datasetID;
+        :(::);
+        ];
+      if[`nextPageToken in key listing;
+        show "Making subsequent listing starting with ",listing `nextPageToken;
+        nextQuery:publicDatasetEndpoint,"?pageToken=",listing `nextPageToken;
+        .kurl.async (nextQuery; `GET; ``callback!(::;.z.s[datasetID;]))
+        ]; }
+    
+    .kurl.async (publicDatasetEndpoint; `GET; ``callback!(::;findDataset[datasetID;]))
+    
+
+Run `q` in the current directory and load `listdata.q`:
+
+### SQL queries against Covid19 table in Google BigQuery
+
+_A sample application that uses SQL to query public Covid19 dataset hosted by
+Google’s BigQuery_
+
+Create `covid.q`.
+
+    
+    
+    // Select the first available projectID you have for Google Cloud
+    resp: .kurl.sync ("https://bigquery.googleapis.com/bigquery/v2/projects";`GET;::)
+    if[200 <> first resp; ' last resp]
+    projects:.j.k[last resp] `projects
+    if[0 = count projects;'"You need access to at least once project"]
+    projectID:first projects `id
+    -1 "Using bigquery for project: ", projectID;
+    
+    // Run an SQL query agaist a known dataset by name
+    // The full name of the table is bigquery-public-data.covid19_italy.national_trends
+    sql_table:"`bigquery-public-data.covid19_italy.national_trends`"
+    
+    query:"SELECT tests_performed, total_confirmed_cases",
+         " FROM ",sql_table,
+         " WHERE recovered > deaths"
+    
+    body:.j.j `useLegacySql`query!(0b; query)
+    headers:enlist["Content-Type"]!enlist "application/json"
+    
+    queryEndpoint:"https://bigquery.googleapis.com/bigquery/v2/projects/",
+      projectID,"/queries/"
+    
+    resp:.kurl.sync (queryEndpoint; `POST;`headers`body!(headers;body))
+    if[200 <> first resp; 'last resp]
+    
+    // Now convert the JSON into kdb+
+    mapIn:("INTEGER";"FLOAT";"STRING")!("J"$;"F"$;::)
+    obj:.j.k last resp
+    rowData:{x `v} each obj . `rows`f
+    typeData: obj . `schema`fields
+    tout:flip (`$typeData `name)! typeData[`type] {mapIn[x] @ y}' flip rowData
+    show 10#tout
+    -1 "...";
+    
+
+Run `q` in the current directory and load `covid.q`:
+
+### Upload non-kdb+ data to Azure Storage
+
+This example shows how to create non-Kdb+ files in object storage. Kdb+
+objects should be accessed using the objstor library instead of kurl.
+
+Create `storage.q`, replacing `<account>` with the lowercase name of your
+storage account.
+
+Run `q` in the current directory and load `storage.q`:
+
+    
+    
+    // Note, this particular example will not work against KX public buckets.
+    // Our public buckets are read only.
+    //
+    // For a private bucket,
+    // Use Storage Account with with the IAM role Storage Blob Data Owner
+    // See: https://docs.microsoft.com/en-us/azure/storage/common/storage-auth-aad-rbac-portal#azure-roles-for-blobs-and-queues
+    //
+    show "Creating a new container";
+    headers:enlist ["x-ms-version"]!enlist "2017-11-09";
+    opts:``headers!(::;headers);
+    resp:.kurl.sync ("https://<account>.blob.core.windows.net/kxcecontainer1?restype=container"; `PUT; opts);
+    
+    // Now, add a text file to the bucket
+    if[201 <> first resp; 'last resp];
+    show "Uploading hello.txt";
+    opts[`headers]:("x-ms-version";"x-ms-blob-type";"Content-Type")!("2017-11-09";"BlockBlob";"text/plain");
+    opts[`body]:"hello world";
+    resp:.kurl.sync ("https://<account>.blob.core.windows.net/kxcecontainer1/hello.txt"; `PUT; opts);
+    if[201 <> first resp; 'last resp];
+    
+
+#### Uploading large files
+
+For larger files, an upload in one single request may not be possible.
+
+You may upload a file in sequential blocks by using the (`Put Block` and
+`Append Block` APIs)[https://docs.microsoft.com/en-
+us/rest/api/storageservices/understanding-block-blobs--append-blobs--and-page-
+blobs]
+
+You may also upload a file in parallel using the same `Put Block` API with a
+BlockBlob.
+
+azcopy for databases
+
+Use `azcopy` to upload kdb+ databases. These examples demonstrate how to
+upload singular files easily.
+
+Append Block (single threaded)Put Block (multi threaded)
+
+    
+    
+    filePath:`:/tmp/example.file
+    
+    // Set fileSize and block sizes, produce ranges
+    fileSize:hcount filepath
+    blockSize:"j"$4e6 // 4Mb (Azure suppots 4Mib, 4Mb close enough)
+    ranges:"j"$fileSize&reverse each 1_,':[blockSize*til 1+ceiling fileSize%blockSize]
+    
+    // First, create the empty blob
+    headers:("x-ms-version";"Content-Type";"x-ms-blob-type")!("2019-02-02";"text/plain";"AppendBlob");
+    opts:`body`headers!("";headers);
+    resp:.kurl.sync ("https://<account>.blob.core.windows.net/mycontainer/myblob";`PUT; opts);
+    if[201i <> first resp; 'last resp];
+    
+    // Read into a file at an offset, given a length, and upload that block.
+    uploadBlock:{[filePath;range]
+        opts:`body`headers!(read1(filePath;range 0; range[1] - range 0);headers);
+        .kurl.sync ("https://<account>.blob.core.windows.net/mycontainer/myblob?comp=appendblock";`PUT; opts);
+        if[201i <> first resp;'last resp];
+        }
+    
+    // Upload each block one after another
+    uploadBlock[filePath;] each ranges;
+    
+    
+    
+    filePath:`:/tmp/example.file
+    
+    // Set fileSize and block sizes, produce ranges
+    fileSize:hcount filePath
+    blockSize:"j"$4e6 // 4Mb (Azure suppots 4Mib, 4Mb close enough)
+    ranges:"j"$fileSize&reverse each 1_,':[blockSize*til 1+ceiling fileSize%blockSize]
+    
+    // Create a block blob
+    headers:("x-ms-version";"Content-Type";"x-ms-blob-type")!("2019-02-02";"text/plain";"BlockBlob");
+    opts:`body`headers!("";headers);
+    resp:.kurl.sync ("https://benwstorage.blob.core.windows.net/mycontainer/myblob";`PUT; opts);
+    if[201i <> first resp; 'last resp];
+    
+    // Generate block IDs, these need to be equal-length distinct strings
+    //  these strings must also be valid base64 + uri encoded, but are otherwise arbitrary
+    blockIDs:{raze string x} each 0x0 vs/: til count ranges;
+    
+    // Upload all the blocks in parallel
+    uploadBlock:{[filePath; range; blockID]
+        opts:`body`headers!(read1 (filePath;range 0; range[1] - range 0);headers);
+        resp:.kurl.sync ("https://benwstorage.blob.core.windows.net/mycontainer/myblob?comp=block&blockid=",blockID;`PUT; opts);
+        if[201i <> first resp;'last resp];
+        }
+    .[uploadBlock[filePath;;];] peach flip (ranges;blockIDs);
+    
+    // Now create the blob by putting all then block IDs together in order
+    blockListHead:("<?xml version=\"1.0\" encoding=\"utf-8\"?>";"<BlockList>")
+    blockListMid:"  <Latest>",/:blockIDs,\:"</Latest>";
+    blockListTail:enlist "</BlockList>";
+    headers:("x-ms-version";"Content-Type")#headers;
+    opts:`body`headers!("\n" sv blockListHead,blockListMid,blockListTail;headers);
+    resp:.kurl.sync ("https://benwstorage.blob.core.windows.net/mycontainer/myblob?comp=blocklist";`PUT; opts);
+    if[201i <> first resp;'last resp];
+    
+
+### Upload a folder to Amazon S3
+
+This example shows how to create non-Kdb+ files in object storage. Kdb+
+objects should be accessed using the objstor library instead of kurl.
+
+Create `s3folder.q`, replacing `<bucket>` and `<region>` with the lowercase
+names of your S3 bucket and AWS Region.
+
+    
+    
+    bucket:"https://<bucket>.s3.<region>.amazonaws.com/";
+    
+    // Recursively list directories, returning only files
+    diR:{$[11h=type d:key x;raze .z.s each` sv/:x,/:d;d]};
+    // Stringify and drop colons
+    files:reverse diR `:upload;
+    
+    // Synchronously upload files one after another.
+    // @param bucket {string} HTTPS URL for bucket, must end in trailing slash
+    // @param hfile {symbol} Local file path
+    uploadFile:{[bucket;hfile]
+        filename:1 _ string hfile;
+        resp:.kurl.sync (bucket,filename; `PUT; ``file!(::;hfile));
+        // if not HTTP 200 OK, or 201 Created, its failed
+        if[not first[resp] in 200 201; 'last resp];
+        }[bucket;];
+    
+    uploadFile each files;
+    
+
+Create a folder of example empty files.
+
+    
+    
+    mkdir -p upload/2020.01.01/
+    touch upload/2020.01.01/hello1.txt
+    touch upload/2020.01.01/hello2.txt
+    touch upload/2020.01.01/hello3.txt
+    touch upload/2020.01.01/hello3.txt
+    
+
+Run `q` in the current directory and load `s3folder.q`:
+
+### Get and Put files into S3-Compatibile storage
+
+This example shows how to create and retrieve non-Kdb+ files from object
+storage. Kdb+ objects should be accessed using the objstor library instead of
+kurl.
+
+With s3-compatible storage set up, such as MinIO, kurl may be used to read
+files from storage.
+
+:fontawesome-solid-hands-point-right: [Setup for
+MinIO](../objstor/main.html#s3-compatible-object-storage)
+
+Setting up MinIO would have you export an endpoint, similar to:
+
+    
+    
+    export KX_S3_ENDPOINT=http://127.0.0.1:9000"
+    
+
+An example statement showing how one would read a CSV from a bucket hosted on
+s3
+
+    
+    
+    r: .kurl.sync ("http://127.0.0.1:9000/myBucket/hello.csv"; `GET; `service`region!("s3";"us-east-1"));
+    if[first resp <> 200; 'last resp];
+    
+    // Print the CSV file
+    \c 200 200
+    show last r;
+    
+
+To upload a CSV file from in-memory variable:
+
+    
+    
+    // Upload in-memory text
+    myCSV:"\n" sv csv 0: ([] x:til 50; y: 50?`8);
+    r: .kurl.sync ("http://127.0.0.1:9000/myBucket/world.csv"; `PUT; `body`service`region!(myCSV; "s3";"us-east-1"));
+    if[not first[resp] in 200 201; 'last resp];
+    
+
+To upload a CSV file from local disk:
+
+    
+    
+    r: .kurl.sync ("http://127.0.0.1:9000/myBucket/world.csv"; `PUT; `file`service`region!(`:path/to/myCSV.csv; "s3";"us-east-1"));
+    if[not first[resp] in 200 201; 'last resp];
+    
+
+### Create a namespace in AWS Cloud Map
+
+_Use AWS Cloud Map to create an HTTP namespace and wait for it to come online_
+
+Create `service.q`.
+
+    
+    
+    // Create a new namespace, this returns an operation ID
+    body:.j.j enlist[`Name]!enlist "kxceNamespace"
+    
+    headers:("Content-Type";"x-amz-target")!
+      ("application/x-amz-json-1.1";"Route53AutoNaming_v20170314.CreateHttpNamespace")
+    
+    URL:"https://servicediscovery.us-east-2.amazonaws.com"
+    resp:.kurl.sync (URL;`POST;`headers`body!(headers;body))
+    if[first resp <> 200; 'last resp]
+    
+    checkOperation:{[resp]
+      if[200 <> first resp; ' last resp];
+      j:.j.k last resp;
+      if["SUCCESS" ~ j . `Operation`Status; show "Namespace created"; .test.done:1b]; }
+    
+    getOperation:{[url;id]
+      show "Calling getOperation to see if namespace has been created...";
+      headers:("Content-Type";"x-amz-target")!
+        ("application/x-amz-json-1.1";"Route53AutoNaming_v20170314.GetOperation");
+      opts:`headers`body`callback!(headers;id; checkOperation);
+      .kurl.async (url;`POST;opts)
+      }[URL;]
+    
+    // The response of creating a namespace returns an input to GetOperation
+    .test.id:last resp
+    .test.done:0b
+    .z.ts:{ if[.test.done; system "t 0"; :(::)]; getOperation .test.id; }
+    \t 500
+    
+
+Run `q` in the current directory and load `service.q`:
+
+## Interactive OAuth2 login
+
+You can add applications as trusted clients within Google and Azure (Active
+Directory).
+
+You can bundle client secrets with your application, to enable Single Sign On
+workflows.
+
+The examples use an HTTP redirect URI for simplicity.
+
+To use HTTPS, you must include TLS certificates and ENV vars with your QPacker
+deployment.
+
+You will also need to open port 1234 for incoming requests so that you can use
+a browser window to log in.
+
+### Google People API
+
+_Use Google’s People API to list your contact groups_
+
+These are the groups you may or may not have in https://contacts.google.com/.
+
+[Complete list of Google’s OAuth2
+scopes](https://developers.google.com/identity/protocols/oauth2/scopes)
+
+Create client credentials: in the Google Cloud Console, open _API & Services >
+Credentials_ and create a new OAuth client ID.
+
+Pick the _web application_ type and give it a Redirect URI of
+`http://<hostname>:1234`, where `hostname` is the hostname/IPV4 of your VM or
+local machine.
+
+Enable the People API: under _API & Services > Library_ browse for the Google
+People API and install it. Wait a few minutes before proceeding to the step.
+
+Download the `client.json`, or copy the values presented by Google and
+uncomment the block.
+
+Replace `<hostname>` with your machine’s or instance’s public IPv4 address or
+hostname.
+
+Create `oauth2.q`.
+
+    
+    
+    // Read in downloaded JSON and parse it
+    client:.j.k "c"$read1`:/path/to/client.json
+    
+    // UNCOMMENT TO USE HARDCODED VALUES
+    //// Registered client application secrets
+    //client:`client_id`client_secret`auth_uri`token_uri`redirect_uris!(
+    //    "<Client ID>";
+    //    "<Client Secret>";
+    //    "https://accounts.google.com/o/oauth2/auth";
+    //    "https://oauth2.googleapis.com/token";
+    //    enlist "http://<hostname>:1234"
+    //    );
+    
+    callback:{[tenant; auth_response]
+      .test.resp:.kurl.sync
+        ("https://people.googleapis.com/v1/contactGroups";`GET;``tenant!(::;tenant));
+      show .test.resp; }
+    
+    uri:"https://www.googleapis.com/auth/contacts.readonly"
+    
+    .kurl.oauth2.startLoginFlow[
+      "*.googleapis.com"; // Google endpoint/s the login is valid for
+      client;
+      `scope`access_type`prompt`redirect_uri!
+        ("openid email ",uri;"offline";"consent";"http://<hostname>:1234");
+      callback]
+    
+
+Build and run, using port forward to allow login Run `q` in the current
+directory and load `oauth2.q`:
+
+### Microsoft Graph API
+
+You can use Azure Active Directory to register a trusted application secret
+that you may bundle with your deployment. Trusted applications can start
+interactive Single Sign On (SSO) workflows on behalf of users.
+
+This will allow you to create desktop applications, or enable developers to
+login from their workstations.
+
+[Azure Services compatible with Active
+Directory](https://docs.microsoft.com/en-us/azure/active-directory/managed-
+identities-azure-resources/services-support-managed-identities#azure-services-
+that-support-azure-ad-authentication)
+
+Notice Microsoft Graph is not under the Azure umbrella above, but is still
+supported by Active Directory.
+
+First, create a new Azure Active Directory and client secret.
+
+Using the Azure Portal, go to the Azure Active Directory service. In the
+_Manage_ section in Azure Active Directory find the _App Registrations_ menu.
+
+Create a new application and give it a Redirect URI of http://localhost:1234.
+
+After having created a new application, you may create a Client Secret under
+the _Certificates & Secrets_ menu.
+
+Go to the _API Permissions_ section of the App Registration, and ensure you
+have `User.Read` permission for Microsoft Graph. You may also need to _Grant
+admin consent_ , which will add a green checkmark.
+
+Next deploy the OAuth2 application as follows.
+
+  1. Create a new directory
+  2. Create `oauth2.q` as below, and fill in the application information:
+     * Replace  with the value for the new client secret you have made
+     * Replace _Application (client) ID_ and _Directory (tenant) ID_ using the values from the App Overview
+  3. Run `q` in the current directory and load `oauth2.q`: 
+  4. Open the browser as directed.
+
+Create `oauth2.q` as below, replacing
+
+    
+    
+    Secret Value              value for the new client secret you made
+    Application (client) ID   values from the App Overview
+    Directory (tenant) ID
+    hostname                  your machine's or instance's public IPv4 address or hostname
+    
+    
+    
+    // Registered client application secrets
+    client:`client_id`client_secret`auth_uri`token_uri`redirect_uris!(
+      "<Application (client) ID>";
+      "<Secret Value>";
+      "https://login.microsoftonline.com/<Directory (tenant) ID>/oauth2/v2.0/authorize";
+      "https://login.microsoftonline.com/<Directory (tenant) ID>/oauth2/v2.0/token";
+      enlist "http://localhost:1234" )
+    
+    callback:{[tenant; auth_response]
+      .test.resp:.kurl.sync
+        ("https://graph.microsoft.com/v1.0/me";`GET;``tenant!(::;tenant));
+      show .test.resp;
+      // Add here any further API calls you like!  You would need Outlook enabled
+      // or other Microsoft Apps to do anything more interesting.
+      }
+    
+    // Open web browser that you will login to, and invoke callback when done
+    optns:`scope`access_type`prompt`redirect_uri!
+      ("openid offline_access https://graph.microsoft.com/mail.read";
+       "offline";
+       "consent";
+       "http://localhost:1234")
+    
+    .kurl.oauth2.startLoginFlow["https://graph.microsoft.com"; client; optns; callback]
+    
+
+* * *
+
+[Kurl documentation](kurl.html)
+

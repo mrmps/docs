@@ -1,0 +1,518 @@
+https://code.kx.com/dashboards/DataModelInterface.QuickBase.ComponentInterface/
+
+# API Reference - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/DataModelInterface.QuickBase.ComponentInterface/
+
+# Interface: ComponentInterface
+
+## Table of contents
+
+### Methods
+
+## Methods
+
+### destroySettings
+
+▸ **destroySettings**(): `void`
+
+Remove entry for current component in .settings
+
+#### Returns
+
+`void`
+
+* * *
+
+### doActions
+
+▸ **doActions**(`actions`, `propertyPath`): `void`
+
+Execute the actions provided by the actions editor from PropertiesPanel
+
+#### Parameters
+
+Name | Type  
+---|---  
+`actions` | `any`  
+`propertyPath` | `any`  
+  
+#### Returns
+
+`void`
+
+* * *
+
+### exportData
+
+▸ **exportData**(`source`, `callback`, `options`, `exportParams`): `void`
+
+Export the full dataset from a datasource, using DeltaClient ExportApi.export
+
+#### Parameters
+
+Name | Type | Description  
+---|---|---  
+`source` | `Record`<`string`, `any`> |   
+`callback` | `Record`<`string`, `any`> | called with url to file  
+`options` | `Record`<`string`, `any`> | e.g. can include focus for pivot queries  
+`exportParams` | `Record`<`string`, `any`> | parameters used by the File Export Actions  
+  
+#### Returns
+
+`void`
+
+* * *
+
+### getDataSourceMap
+
+▸ **getDataSourceMap**(`viewStatePaths`, `dataSourcePaths`,
+`propertyViewStates`): `any`
+
+Get Data Source mapping
+
+#### Parameters
+
+Name | Type  
+---|---  
+`viewStatePaths` | `any`  
+`dataSourcePaths` | `any`  
+`propertyViewStates` | `any`  
+  
+#### Returns
+
+`any`
+
+* * *
+
+### getProperty
+
+▸ **getProperty**(`path`): `Record`<`string`, `any`>
+
+Returns property value for a given path: onSettingsChange will keep a
+component updated with changes to its properties (including changes to any
+underlying bound view states) so getProperty is normally not necessary,
+assuming the component keeps a store of the changes. However, if required, a
+component can retrieve the current value of a property using getProperty.
+
+#### Parameters
+
+Name | Type | Description  
+---|---|---  
+`path` | `string` | The path of the property.  
+  
+#### Returns
+
+`Record`<`string`, `any`>
+
+Value of the property. If the property is bound to a view state the value of
+the view state will be returned instead.
+
+* * *
+
+▸ **getPropertyMeta**(`path`): `Record`<`string`, `any`>
+
+Returns property information for a given path: If more information about a
+property is required, use getPropertyMeta.
+
+#### Parameters
+
+Name | Type | Description  
+---|---|---  
+`path` | `string` | The path of the property.  
+  
+#### Returns
+
+`Record`<`string`, `any`>
+
+Property information: An object containing information about the property and,
+if applicable, its underlying view state. The response differs depending on
+the value set in the property.
+
+Generic object properties are: path - path to the property type - type of the
+property, if it contains a data source or viewstate (data, viewstate or null)
+
+If the property is a simple property or if it is bound to a view state the
+object also contains: value - value of the property
+
+If the property is bound to a view state the object also contains:
+viewstateType - type of the underlying view state (symbol, int, etc)
+defaultValue - default value of the underlying view state
+
+* * *
+
+### getTemplateViewStates
+
+▸ **getTemplateViewStates**(`template`): `void`
+
+Extract view states from template and pass back their values
+
+#### Parameters
+
+Name | Type  
+---|---  
+`template` | `string`  
+  
+#### Returns
+
+`void`
+
+* * *
+
+### getViewState
+
+▸ **getViewState**(`viewState`): `string`
+
+Get the value of a given viewstate model
+
+#### Parameters
+
+#### Returns
+
+`string`
+
+The value of the model
+
+* * *
+
+### hideErrorMessage
+
+▸ **hideErrorMessage**(): `void`
+
+Hides the Dashboards error message on the component
+
+#### Returns
+
+`void`
+
+* * *
+
+### hideQueryStatus
+
+▸ **hideQueryStatus**(): `any`
+
+Hide query status
+
+#### Returns
+
+`any`
+
+* * *
+
+### isBuildMode
+
+▸ **isBuildMode**(): `boolean`
+
+Determines if the dashboard is in build mode
+
+#### Returns
+
+`boolean`
+
+True if in build mode
+
+* * *
+
+### isSelected
+
+▸ **isSelected**(): `boolean`
+
+Determines if the component is selected
+
+#### Returns
+
+`boolean`
+
+True if the component is selected
+
+* * *
+
+### loadApp
+
+▸ **loadApp**(`key`, `element`, `settings`, `options`, `callback`,
+`namespace`): `void`
+
+Load a given app using requireJS and pass it a new API interface
+
+#### Parameters
+
+Name | Type | Description  
+---|---|---  
+`key` | `string` |   
+`element` | `Record`<`string`, `any`> |   
+`settings` | `Record`<`string`, `any`> | either a Backbone model or an object containing the new app's settings  
+`options` | `Record`<`string`, `any`> | an object of options to pass to the app initialize function  
+`callback` | `any` | -  
+`namespace` | `any` | -  
+  
+#### Returns
+
+`void`
+
+appView
+
+* * *
+
+### loadSetting
+
+▸ **loadSetting**(`key`, `namespace`): `string`
+
+Load a setting from the .settings viewstate
+
+#### Parameters
+
+Name | Type  
+---|---  
+`key` | `string`  
+`namespace` | `any`  
+  
+#### Returns
+
+`string`
+
+Value
+
+* * *
+
+### navigate
+
+▸ **navigate**(`options`): `void`
+
+Navigate to a given dashboard/screen
+
+#### Parameters
+
+Name | Type | Description  
+---|---|---  
+`options` | `string` | `Record`<`string`, `any`> | Either a dashboard name or an object containing target dashboard, screen and/or viewstate parameters to pass  
+  
+#### Returns
+
+`void`
+
+* * *
+
+### page
+
+▸ **page**(`source`, `options`): `any`
+
+Page a given data source
+
+#### Parameters
+
+Name | Type  
+---|---  
+`source` | `Record`<`string`, `any`>  
+`options` | `any`  
+  
+#### Returns
+
+`any`
+
+* * *
+
+### saveSetting
+
+▸ **saveSetting**(`key`, `value`, `namespace`, `dashboardId`): `any`
+
+Save a setting to the .settings viewstate
+
+#### Parameters
+
+Name | Type  
+---|---  
+`key` | `string`  
+`value` | `string`  
+`namespace` | `any`  
+`dashboardId` | `string`  
+  
+#### Returns
+
+`any`
+
+* * *
+
+### setProperty
+
+▸ **setProperty**(`path`, `value`, `options?`): `void`
+
+Set the property at path to the given value: Most properties can optionally be
+bound to a view state by the user. If this is done, onSettingsChange will pass
+the value of the view state to the component, i.e. the component does not need
+to check if a property has been bound to a view state or not, it simply works
+off the value given by onSettingsChange. If the view state value is updated
+elsewhere in Dashboards, the new value will be passed to the component via
+onSettingsChange.
+
+To set the value of these view states, use setProperty.
+
+#### Parameters
+
+Name | Type | Description  
+---|---|---  
+`path` | `string` | The path of the property to set. If that property has been bound to a view state by the user, then the value of that view state will be set instead.  
+`value` | `any` | The value to set the property to.  
+`options?` | `any` | -  
+  
+#### Returns
+
+`void`
+
+* * *
+
+### setViewState
+
+▸ **setViewState**(`viewState`, `value`): `boolean`
+
+Set the value of the given viewstate model
+
+#### Parameters
+
+#### Returns
+
+`boolean`
+
+* * *
+
+### showErrorMessage
+
+▸ **showErrorMessage**(`errorObj`): `any`
+
+Show a Dashboards error message on the component
+
+#### Parameters
+
+Name | Type | Description  
+---|---|---  
+`errorObj` | `Record`<`string`, `any`> | An object containing the error information: Error (description of the error) & Type (One of 'Error', 'Warning', 'Info')  
+  
+#### Returns
+
+`any`
+
+* * *
+
+### showNotification
+
+▸ **showNotification**(`visualConfig?`, `soundConfig?`): `any`
+
+Show notification
+
+#### Parameters
+
+Name | Type  
+---|---  
+`visualConfig?` | `any`  
+`soundConfig?` | `any`  
+  
+#### Returns
+
+`any`
+
+* * *
+
+### showQueryStatus
+
+▸ **showQueryStatus**(`errorObj`): `any`
+
+Show Query Status
+
+#### Parameters
+
+#### Returns
+
+`any`
+
+* * *
+
+### subscribe
+
+▸ **subscribe**(`source`, `callback`, `raw?`, `pagingInfo?`): `void`
+
+Subscribe to a given source
+
+#### Parameters
+
+Name | Type | Description  
+---|---|---  
+`source` | [`DataModelInterface`](../DataModelInterface.QuickBase.DataModelInterface/) | The data source to subscribe to. A data source can be retrieved from onSettingsChange as follows (this example assumes it is a data property called Data in a category called Basics)  
+`callback` | (`meta`: [`ChangeSetInterface`](../DataModelInterface.QuickBase.ChangeSetInterface/), `data`: [`ChangeSetInterface`](../DataModelInterface.QuickBase.ChangeSetInterface/), `error`: [`ErrorInterface`](../DataModelInterface.ErrorInterface/)) => `void` | callback is a function that will be called when there is a data update.  
+`raw?` | `boolean` | -  
+`pagingInfo?` | [`PagingInfoInterface`](../DataModelInterface.PagingInfoInterface/) | -  
+  
+#### Returns
+
+`void`
+
+* * *
+
+### subscribeTemplateViewStates
+
+▸ **subscribeTemplateViewStates**(`template`, `callback`): `string`
+
+Extract view states from template and pass their values to callback
+
+#### Parameters
+
+Name | Type  
+---|---  
+`template` | `string`  
+`callback` | (`viewStates`: `object`) => `void`  
+  
+#### Returns
+
+`string`
+
+* * *
+
+### unsubscribe
+
+▸ **unsubscribe**(`source`): `void`
+
+Unsubscribe from a given source
+
+#### Parameters
+
+#### Returns
+
+`void`
+
+* * *
+
+### unsubscribeTemplateViewStates
+
+▸ **unsubscribeTemplateViewStates**(`subscriptionId`): `void`
+
+#### Parameters
+
+Name | Type  
+---|---  
+`subscriptionId` | `string`  
+  
+#### Returns
+
+`void`
+
+* * *
+
+### updateTable
+
+▸ **updateTable**(`source`, `options`, `successFunc`, `errorFunc`): `void`
+
+Updates the table in kdb
+
+#### Parameters
+
+Name | Type | Description  
+---|---|---  
+`source` | `string` |   
+`options` | `Record`<`string`, `any`> |   
+`successFunc` | `Function` | success callback  
+`errorFunc` | `Function` | error callback  
+  
+#### Returns
+
+`void`
+
+undefined
+

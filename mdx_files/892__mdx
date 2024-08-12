@@ -1,0 +1,224 @@
+https://code.kx.com/dashboards/dropdownlist/
+
+# Drop Down List - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/dropdownlist/
+
+# Drop Down List
+
+![Screenshot](../img/dropdown/dropdownlisthtmllight.jpg)  
+_A Drop Down List used with a Bubble Chart_
+
+## Set up
+
+  1. Define the [view state parameter](../viewstateparameters/) to map to the dropdown.
+
+  2. Use either a data source or item list to populate your dropdown.
+
+  3. Give your dropdown a label, check _Multi-select_ if required
+
+## Basics
+
+![Screenshot](../img/dropdown/dropdownlist.png)
+
+_Name_
+
+    A name for the component provided by the user. 
+_Data Source_
+
+    
+
+Create a [data source](../datasources/) with the content of the dropdown menu;
+using a data source will automatically populate the dropdown, just ensure the
+data source has values in the correct format and type to pass into the linked
+_Selected Value_ [View State Parameter](../viewstateparameters/). An optional
+text column can be included for value display names.
+
+![Screenshot](../img/dropdown/dropdowndatasource.jpg)  
+_A query for a Drop Down List data source_
+
+    
+
+A sample query to use is (if connecting to the sample data connection source
+`htmlevalcongroup` available in the sample demo dashboard set):
+
+    
+    
+    select distinct src from dfxQuote
+    
+
+_Selected Value_
+
+    
+
+The view state parameter populated by the dropdown selection.
+
+[Selected values](../viewstateparameters/#selected-values)
+
+_Label_
+
+    
+
+The label next to the dropdown
+
+![Screenshot](../img/dropdown/selectsectorhtmllight.jpg)
+
+_Accept Empty Values_
+
+    
+
+When checked, an available null value is added to the selection
+
+![Screenshot](../img/dropdown/nullvaluedropdown.jpg)  
+_A dropdown with an empty-value option_
+
+Null value must be part of available data
+
+When enabled, ensure the data column supplying the dropdown menu contains a
+null value. This will not add a null value if not already available.
+
+_Force Selected Value_
+
+    
+
+When checked, the dropdown will populate a _Selected Value_ [View State
+Parameter](../viewstateparameters/) with either the defined default or
+selected value. This ensures any associated queries dependent on the dropdown
+input will have a value assigned to the [View State
+Parameter](../viewstateparameters/).
+
+_Multi-select_
+
+    
+
+When checked, multiple selections can be made from the dropdown list and the
+selected items passed to the _Selected Value_ View State Parameter.
+
+![Screenshot](../img/dropdown/multiselectdropdown.jpg)
+
+_Show Search_
+
+    
+
+When checked, includes a search box for filtering results
+
+![Screenshot](../img/dropdown/searchdropdownhtmllight.jpg)
+
+_Advanced Search_
+
+    Supports wildcard searches, along with `AND`, `OR` and for excluding items from search using `-`, e.g. `EUR and GBP`, `EUR or GBP`, `EUR -*GBP`
+_Horizontal_
+
+    Horizontal alignment of items within the list
+_Vertical_
+
+    Vertical alignment of items within the list
+_Tooltip_
+
+    Text description to appear when user mouses over the dropdown 
+_Width_
+
+_Label Width_
+
+    
+
+Pixel width of menu and dropdown _Label_. If the _Label_ is wider than _Label
+Width_ , it will wrap.
+
+![Screenshot](../img/dropdown/labelwidthhtmllight.jpg)
+
+_Field Summary Threshold_
+
+    How many items will be shown in the input field before changing to summary; e.g. _3 of 20_ when value of `3` is set
+_Tooltip Summary Threshold_
+
+    How many items will be shown in the tooltip before changing to summary; e.g. _10 of 20_ when value of `10` is set
+_'Select All' Value_
+
+    
+
+This is the value assigned to the _Selected Value_ viewstate when all items
+are selected in the dropdown; in the absence of an all-select, each individual
+selected item will be listed in the _Selected Value_ viewstate. The default
+value is `all`.
+
+![Screenshot](../img/dropdown/selectallexample.jpg)
+
+Configuration
+
+The defined value will be used instead of the full list when all items are
+selected; i.e. your backend should expect `all` rather than the full list.
+This value can also be set as the default value if using a view state to
+ensure all items are selected on load.
+
+_Sort List by Selected_
+
+    When checked and the dropdown is expanded to show the items available for selection, the selected values will be displayed at the top of the list.
+
+## Data Source Mapping
+
+![Screenshot](../img/dropdown/datasourcemapping.jpg)
+
+When a _Data Source_ is used to populate the Drop Down List, the items of the
+_Data Source_ will automatically be assigned. For separate labels and values,
+use _Data Source Mapping_.
+
+_Value_
+
+    The column of the _Data Source_ corresponding to the values to be passed into the _Selected Value_ View State Parameter
+_Text_
+
+    The column of the _Data Source_ corresponding to the text to be displayed as the dropdown options
+
+## Grouping
+
+![Screenshot](../img/dropdown/grouping.jpg)
+
+_Use Group By_
+
+    If checked uses an extra level of nesting within the dropdown list
+_Group By_
+
+    determines which datasource column is used to group by
+
+## Items
+
+![Screenshot](../img/dropdown/itemsdropdownlist.jpg)
+
+If _Data Source_ is not used to populate a Drop Down List, individual values
+can be specified in the _Items_ menu.
+
+## Custom
+
+Customise dropdown selections with icons and icon colors
+
+![Screenshot](../img/dropdown/iconsdropdownlist.png)
+
+_Icon_
+
+    The column of the _Data Source_ corresponding to the values to be used as an Icon 
+_Icon Color_
+
+    
+
+The column of the _Data Source_ corresponding to the values to be used as the
+Icon color
+
+Configuration
+
+For Icon: We could set a font awesome class i.e. "fa fa-book" - this would set
+the icon to a font awesome book icon. For Icon Color: We could use a hex or
+string color i.e. "red" or "#ff0000" - this would set the icon color to red
+
+## Actions
+
+[Actions](../action/)
+
+## Style
+
+[Style](../style/#component-style) for common settings
+
+_Advanced CSS_
+
+     [Advanced CSS](../style/#advanced-css)
+

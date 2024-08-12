@@ -1,0 +1,136 @@
+https://code.kx.com/platform/release_421/
+
+# 4.2.1 - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/release_421/
+
+# Changes in 4.2.1
+
+## Release management/Git integration
+
+The ability to pull and push to SSH repositories has been added. The
+implication is that either all users share the common KX Delta Platform SSH
+key in ~/.ssh/id_rsa or the user provides a file path to their own key. SSH is
+currently not supported on Windows. It may be added in a subsequent release.
+
+You can also now specify the author name and email when committing. This helps
+the back end git implementation match up the expected user making the commit
+vs the commit showing up from an unmapped or unknown user.
+
+Updated information can be found in the [Release
+Management](../release_management/).
+
+## Improved web-app security
+
+On a secure (https) deployment, all web pages served now include _cache-
+control:no-cache_ and _pragma:no-cache_ HTTP headers.
+
+(Previously only pages under the ROOT application included these headers)
+
+## Permissions
+
+Added instance parameters to manage permission handlers and query logging.
+
+parameter | type | default | description  
+---|---|---|---  
+`.pm.async.enabled` | boolean | false | Enable permissions on async queries  
+`.pm.async.logEnabled` | boolean | false | Enable query logging of async queries  
+`.pm.sync.disabled` | boolean | false | Disable permissions on sync queries  
+`.pm.sync.logDisabled` | boolean | false |   
+  
+The following APIs have been deprecated as a result;
+
+  * `.pl.disablepermissions`
+  * `.pl.disablepermissionsAsync`
+  * `.pl.disablequerypermissions`
+  * `.pl.enablepermissionsAsync`
+  * `.pl.disablequerylogging`
+  * `.pl.disablequeryloggingAsync`
+  * `.pl.enablequerylogging`
+  * `.pl.enablequeryloggingAsync`
+
+## Url shortening
+
+Dashboard urls can now be shortened. To enable this go to the basics section
+of the dashboard design editor. There will be a checkbox, Enable "Share
+Dashboard".
+
+![Screenshot](../img/control/dashboardbasics.png)
+
+In the _Manage My Dashboards_ pop-up select the dashboard which sharing has
+been enabled for and click _view on web_.
+
+![Screenshot](../img/control/managedashboards.png)
+
+There will be a share button which will generate a short url for the
+dashboard.
+
+![Screenshot](../img/control/shorturl.png)
+
+## Kdb+ 3.6
+
+4.2.1 supports Kdb+ 3.6. The changes in this vesion of Kdb+ are outlined on
+_code.kx.com_ [here](https://code.kx.com/q/releases/ChangesIn3.6/).
+
+There are several areas in the 3.6 version of kdb which are not upwardly
+compatible. For details see _code.kx.com_
+[here](https://code.kx.com/q/releases/ChangesIn3.6/#nucs-not-upwardly-
+compatible).
+
+As noted in the not upwardly compatible concerns some file formats have
+changed in version 3.6. 3.6 can read all file formats 3.5 can. However,
+anywhere upserts to disk occur where files written in the old format are added
+to will require upgrade. Users must upgrade their own data.
+
+_KX Delta Platform_ tables which require this upgrade (local repo and action
+tracker tables), are upgraded automatically using a script. This upgrade
+script is available in the KDBPLUS_3_6_0 package. The script could be used to
+upgrade user's data. One area requiring upgrade could be data written to disk
+by the Log Recovery process.
+
+For more details on the KX Delta Platform upgrade procedure see the KX Delta
+Platform deployment guide. This will be on
+[nexus](https://nexus.firstderivatives.com/nexus) in the KxDocs, Deployment
+Guides section.
+
+## Miscellaneous
+
+When loading schemas to an instance from Control, the _.schema_ namespace will
+be populated with meta information. Two structures are maintained;
+
+    
+    
+     .schema.cols[`dxAlert]
+     /=> `time`sym`alertkey`triggered`source`tag1`tag2`description`data
+    
+     .schema.tab[`dxAlert]
+     /=> time sym alertkey triggered source tag1 tag2 description data
+     -------------------------------------------------------------
+    
+
+These are both populated whether the schemas are assigned via the Control UI
+or loaded via API calls.
+
+### Table housekeeping
+
+Framework added to perform housekeeping on in-memory tables to reduce their
+size and prevent memory bloating. Allows the user to specify when and how
+frequently to run, and what tables to run on. For each table, the number of
+hours to keep and row threshold can be specified.
+
+See the [Housekeeping](../housekeeping/#instancetables) section for more
+information.
+
+This functionality deprecates the following APIs;
+
+  * `.pl.disablequeryloghousekeeping`
+  * `.pl.enablequeryloghousekeeping`
+
+### Configuration
+
+The ability to subscribe to all overrides of a configuration parameter
+including newly added overrides has been added to processes.
+
+_Configuration_ section of the _KX Control Template API_ for details of how to
+subscribe from a process.
+

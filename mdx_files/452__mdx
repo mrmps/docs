@@ -1,0 +1,63 @@
+https://code.kx.com/platform/stream/reportgen_template/
+
+# Report generator - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/stream/reportgen_template/
+
+# DS_REPORT_GENERATOR
+
+The _report generator_ provides a framework for the automated generation of
+reports. It also facilitates user defined actions on the reports, including
+saving to disk (in csv or txt format), alert mechanisms and email
+functionality. The report generator connects to a remote process, runs a user
+defined analytic and executes a set of functions on the results.
+
+## Parameters
+
+The below table details the _Report Generator_ template parameters.
+
+name | type | default value | description  
+---|---|---|---  
+initialStateFunct | Analytic | dxEmptyFunctionNull | Specifies initial state tasks  
+replicationDirectory | Symbol |  | Directory to replicate report tables to  
+asyncDispatch | Analytic | dxAsyncDispatch | Sends report query async to processes  
+collectFunct | Analytic | dxCollect | Recieves results of report query  
+eodFunct | Analytic | dxEODReport | Saves tables to hdbProcess  
+hdbProcess | Instance |  | HDB to save tables to at EOD  
+messagingServer | Config | DS_MESSAGING_SERVER | Messaging server  
+subscriptionChannel | Symbol |  | Channel to subscribe to  
+subscriptionTableList | Symbol[] |  | List of tables to subscribe to  
+publishChannel | Symbol |  | Channel to publish on  
+publishTableList | Symbol[] |  | List of tables to publish to  
+qrEnabled | Boolean | true | Execute reports via QR framework  
+  
+## APIs
+
+### `.rpt.qrTrimName`
+
+Trims the target name when sending to the QR. The QR doesn't recognise the
+_instance._ prefix so remove this.
+
+**Parameter(s):**
+
+Name | Type | Description  
+---|---|---  
+name | symbol | Target  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol | Trimmed target  
+  
+**Example:**
+
+    
+    
+    .rpt.qrTrimName each `ds_hdb_fx_eval`instance.ds_gw_fx_eval
+    /=> 
+    `ds_hdb_fx_eval`ds_gw_fx_eval
+    
+
+**See Also:** [Reports](../reporting/)
+

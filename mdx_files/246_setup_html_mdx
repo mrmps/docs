@@ -1,0 +1,151 @@
+https://code.kx.com/insights/enterprise/ingest/examples/postgres/setup.html
+
+# Setup PostgreSQL - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/ingest/examples/postgres/setup.html
+
+# Installing a PostgreSQL database
+
+## Overview
+
+This guide walks through setting up a sample PostgreSQL database that can be
+used for testing purposes.
+
+## Guide
+
+This example uses scripts provided by
+[Bitnami](https://hub.docker.com/r/bitnami/postgresql/).
+
+DockerKubernetes
+
+The following `initdb.sql` is provided as an example to setup a database with
+mock data.
+
+    
+    
+    CREATE DATABASE finance;
+    
+    \c finance
+    
+    CREATE TABLE stocks (
+        id int,
+        sym varchar(10),
+        market varchar(10),
+        name varchar(255),
+        cap varchar(20)
+    );
+    
+    INSERT INTO stocks VALUES (1, 'AAPL', 'NASDAQ', 'Apple Inc.', '$2.47T');
+    INSERT INTO stocks VALUES (2, 'MSFT', 'NASDAQ', 'Microsoft', '$2.32T');
+    
+
+To launch the PostgreSQL database in Docker, add a PostgreSQL service to a
+`docker-compose.yaml`
+
+    
+    
+    version: "3.3"
+    services:
+      psql:
+        image: docker.io/bitnami/postgres:latest
+        ports:
+          - 5432:5432
+        environment:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: iamsecure
+        restart: always
+        volumes:
+          - ./initdb.sql:/docker-entrypoint-initdb.d/initdb.sql
+    
+
+Finally, run `docker-compose up` to launch the database.
+
+Being by installing a PostgreSQL database into the current Kubernetes cluster.
+
+    
+    
+    helm install postgresql bitnami/postgresql
+    
+
+This should result in a `postgresql` image being launched in the current
+Kubernetes context.
+
+    
+    
+    kubectl get pods | grep postgresql
+    
+    
+    
+    NAME                      READY   STATUS    RESTARTS   AGE
+    postgresql-postgresql-0   1/1     Running   0          4h16m
+    
+
+The PostgreSQL image will generate a random password. Extract the password
+from the cluster and store it in and environment variable called `PGPASSWORD`
+for later use.
+
+    
+    
+    export PGPASSWORD=$(kubectl get secret postgresql -o jsonpath="{.data.postgresql-password}" | base64 --decode)
+    
+
+**Adding mock data**
+
+Now that the database is running, add some mock data by interacting with a
+PostgreSQL client. Launch an interactive client by running the following.
+
+    
+    
+    kubectl run postgresql-client --rm --tty -i --restart='Never' \
+        --image docker.io/bitnami/postgresql:latest \
+        --env="PGPASSWORD=$PGPASSWORD" \
+        --command -- psql --host postgresql -U postgres -d postgres -p 5432
+    
+
+To add a mock `stocks` table with some mock data, run each of the following
+commands in the client shell from above.
+
+    
+    
+    CREATE DATABASE testdb;
+    CREATE USER testdbuser WITH PASSWORD 'testpass';
+    GRANT ALL PRIVILEGES ON DATABASE testdb TO testdbuser;
+    CREATE TABLE stocks (id int, sym varchar(10), market varchar(10), name varchar(255), cap varchar(20));
+    INSERT INTO stocks VALUES (1, 'AAPL', 'NASDAQ', 'Apple Inc.', '$2.47T');
+    INSERT INTO stocks VALUES (2, 'MSFT', 'NASDAQ', 'Microsoft', '$2.32T');
+    
+
+The end reult should have a table with the mock data added
+
+    
+    
+     id | sym  | market |    name    |  cap
+    ----+------+--------+------------+--------
+      1 | AAPL | NASDAQ | Apple Inc. | $2.47T
+      2 | MSFT | NASDAQ | Microsoft  | $2.32T
+    
+
+For next steps, see the guide on issuing a PostgreSQL query from the Stream
+Processor, continue to the [querying](query.html) guide.
+
+### Data examples
+
+Another example using car sample data follows:
+
+    
+    
+    CREATE TABLE cars (id int, Name varchar(250), "Miles_per_Gallon" smallint, "Cylinders" smallint, "Displacement" smallint, "Horsepower" smallint, "Weight_in_lbs" smallint NOT NULL, "Acceleration" smallint, "Year" date NOT NULL, "Origin" character varying(60));
+    INSERT INTO cars VALUES (1, 'chevrolet chevelle malibu', 18, 8, 307, 130, 3504, 12, '1970-01-01', 'USA');
+    INSERT INTO cars VALUES (2, 'volkswagen 1131 deluxe sedan', 26, 4, 97, 46, 1835, 21, '1970-01-01', 'Europe');
+    
+
+The final table data should be as follows:
+
+    
+    
+    id |             name             | Miles_per_Gallon | Cylinders | Displacement | Horsepower | Weight_in_lbs | Acceleration |    Year    | Origin
+    ----+------------------------------+------------------+-----------+--------------+------------+---------------+--------------+------------+--------
+      1 | chevrolet chevelle malibu    |               18 |         8 |          307 |        130 |          3504 |           12 | 1970-01-01 | USA
+      2 | volkswagen 1131 deluxe sedan |               26 |         4 |           97 |         46 |          1835 |           21 | 1970-01-01 | Europe
+    
+

@@ -1,0 +1,353 @@
+https://code.kx.com/dashboards/pivotgrid/
+
+# Pivot Grid - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/pivotgrid/
+
+# Pivot Grid
+
+![Screenshot](../img/pivotgrid/samplepivotgridhtmllight.jpg) _A Pivot Grid
+with user tools showing_
+
+Displays a Pivot/OLAP control data set
+
+## Set up
+
+  1. Define the data source, and ensure [pivot](../datasources/#pivot-query) query is selected.
+
+  2. Set [_Focus_] property to align with [Breadcrumbs](../breadcrumbs/) component. 
+
+  3. Configure breakdown and aggregate column formats.
+
+## Basics
+
+![Screenshot](../img/pivotgrid/pivotgridbasics.png)
+
+_Name_
+
+    A name for the component provided by the user. 
+_Data Source_
+
+    [Pivot Query](../datasources/#pivot-query): the source data for the grid.
+_Focus_
+
+    A [View State Parameter](../viewstateparameters/) Used for [linking components](../viewstateparameters/#linking-components).
+_Drilldown_
+
+    
+
+When checked, enables Drilldown.
+
+![Screenshot](../img/pivotgrid/drilldownhtmllight.jpg)  
+_Drilling down_
+
+_Show Tools_
+
+    
+
+Show user controls: Drilldown, filtering and download.
+
+![Screenshot](../img/pivotgrid/showtoolshtmllight.jpg)
+
+_Animate_
+
+    Offer smoothing animation on drilldown versus a 'hard' drilldown. 
+_Multiple Drilldown_
+
+    Supports multiple OLAP drilldown paths versus the default single drilldown.
+_Expand All_
+
+    
+
+All OLAP elements are expanded on Pivot Grid load.
+
+![Screenshot](../img/pivotgrid/multiplepivot.jpg) _Two expanded OLAP pivots_
+
+_Show Expanded Summary_
+
+    For a drilldown row, when checked include the parent summary values otherwise only show the child drilldown values
+
+![Screenshot](../img/pivotgrid/expandedSummary.jpg) _Expanded Parent Summary
+row_
+
+Sort
+
+    _Sort Column_ and _Sort Order_ define the default sort order, `ascending` or `descending`, for the selected data source column on load. 
+_Scroll Value_
+
+    A number representing the distance in pixels from the top of the pivot grid to the currently visible scroll position.
+_Use Cached Columns_
+
+    If checked, for new aggregated or breakdown columns it takes the column data from the column cache if present.
+_Show Cached Column_
+
+    Toggle property display for [Cached Columns](./#cached-columns).
+
+## Breakdown columns
+
+Appearance of columns from the [Pivot Query](../datasources/#pivot-query).
+
+![Screenshot](../img/pivotgrid/pivotbreakdownbasics.jpg)
+
+_Display Name_
+
+    A name for the column.
+_Tooltip_
+
+    Text description active on rollover of column header.
+_Min Width (px)_
+
+    _Min Width (px) is a protective fall back if _Width (relative)_ is unable to render columns correctly. 
+_Width (relative)_
+
+    
+
+Column width relative to total width of Pivot Grid. Scale relates to the
+values of each column; for example, a column of _Width (relative)_ of 20, in a
+Pivot Grid using column widths of 20, 10, 5, 1 will scale at a column width of
+55% (i.e. 20/(20+10+5+1)).
+
+Relative columns scale according to the browser size.
+
+_Text Align_
+
+    `center`, `left`, `right`
+_Sortable_
+
+    
+
+When checked, shows sort controls in column headers:
+
+![Screenshot](../img/pivotgrid/sortablecolumns.jpg)
+
+_Format_
+
+    ![Screenshot](../img/pivotgrid/sampleformats.jpg)  
+_Formatted columns_
+
+_Precision_ and _Hide Trailing Zeroes_
+
+    Number of decimal places used to display numeric, and whether to show trailing zeroes.
+_Currency Symbol_
+
+    Text representation of currency symbol in data column; select from `$`, `£` or `€`.
+
+![Screenshot](../img/pivotgrid/currencysymbol.jpg)  
+_Currency columns with prefixed symbols_
+
+_Date Format_ and _Time Format_
+
+    ![Screenshot](../img/pivotgrid/timecolumn.jpg)  
+_Timestamps with a DateTime format_
+
+_Percentage Color_
+
+    
+
+A color: where _Format_ is _Percentage_ , displays a mini bar in the range
+0-100%.
+
+![Screenshot](../img/pivotgrid/percentagehighlight.jpg)  
+_Percentage values with mini bars_
+
+View State Parameter
+
+_Percentage Color_ can be a View State Parameter: roll over the end of input
+bar until until the eye icon appears, click the icon to assign the view state.
+
+_Template_
+
+    Apply HTML customizations with Handlebar helpers; for example:
+    
+    
+    <font color="blue">{{column name}}</font>
+    
+
+    
+
+where `{{column name}}` is the reference name for the column from the data
+source.
+
+    
+
+[Templates](../template/)
+
+## Aggregate columns
+
+![Screenshot](../img/pivotgrid/pivotaggregate.png)
+
+Dependent columns from the [pivot query](../datasources/#pivot-query)
+
+_Data Field Name_
+
+    A _Data Source_ column. 
+_Display Name_
+
+    Column name.
+_Tooltip_
+
+    Rollover text description of header.
+_Min Width (px)_
+
+    _Min Width (px) is a protective fall back if _Width (relative)_ is unable to render columns correctly. 
+_Width (relative)_
+
+    Relative measure to total width of Pivot Grid. Scale is contigent on the values of each column; for example, a column of Width (relative) of 20, in a Pivot Grid using column widths of 20,10,5,1 will scale at a column width of 55% (i.e. 20/(20+10+5+1)) Columns will scale according to the viewable browser area.
+_Text Align_
+
+    Alignment of values inside Pivot Grid: left, center, right.
+_Sortable_
+
+    When checked, shows sort controls in column headers.
+_Format_
+
+    Formatting for the data in the column.
+_Precision_
+
+    Where data are numeric, the number of decimal places to display.
+_Hide Trailing Zeroes_
+
+    Removes trailing zeroes from displayed values.
+_Currency Symbol_
+
+    ![Screenshot](../img/pivotgrid/currencysymbol.jpg)  
+_Values with prefixed currency symbols_
+
+_Date Format_
+
+_Time Format_
+
+    
+
+A Date format and a Time format: where _Format_ is Date, Time, or DateTime the
+display format is combined from _Date Format_ and _Time Format_.
+
+![Screenshot](../img/pivotgrid/comboformat.jpg)
+![Screenshot](../img/pivotgrid/timecolumn.jpg)  
+_A DateTime column with both a Date Format and a Time Format_
+
+Highlighting negatives
+
+    
+
+When _Highlight Negative_ is checked, negative values will be shown in
+_Negative Color_.
+
+![Screenshot](../img/pivotgrid/negativecolourhtmllight.jpg) _Pivot Grid with
+negative numbers highlighted_
+
+Highlighting changes
+
+    When _Highlight Changes_ is checked, cells will highlight green (for higher than previous value) or red (for lower than previous value). Used for streaming or polling data; the persistence of the highlight is controlled by _Highlight Change Duration_.
+_Show arrows on Change_
+
+    When checked, up and down arrows will appear when value is greater or less than previous value. Used for streaming or polling data.
+Highlighting highs, lows and ranges
+
+    
+
+Checkboxes _Highlight Min Value_ , _Highlight Max Value_ , and _Range
+Highlight_ apply colors to highlight values:
+
+![Screenshot](../img/pivotgrid/minvaluecolor.jpg)
+![Screenshot](../img/pivotgrid/maxvaluecolor.jpg)
+![Screenshot](../img/pivotgrid/rangecolor.jpg)  
+_Columns with Min Value Color, Max Value Color, and Range Color applied_
+
+_Invert Range Color_
+
+    Flip range color usage; dark shade for high values, light shade for low values.
+_Percentage Color_
+
+    
+
+A color, used for mini-bars when _Format_ is Percentage.
+
+![Screenshot](../img/pivotgrid/percentagehighlight.jpg)
+
+Colors can be View State Parameters
+
+_Min Value Color_ , _Max Value Color_ , _Range Color_ , and _Percentage Color_
+can be [View State Parameters](../viewstateparameters/).
+
+_Footer_
+
+    
+
+Adds a column sub-total value for `weighted average`, `average`, `count`,
+`sum` or `none`.
+
+![Screenshot](../img/pivotgrid/pivotsum.jpg)
+
+_Footer Weight_
+
+    Applies a weighting to current column by selected data source variable. For this to be enabled, _Footer_ must be set to `weighted average`.
+
+## Selection and routing
+
+![Screenshot](../img/pivotgrid/pivotselectionrouting.jpg)
+
+With _Row Selection_ , values from the selected grid row or cell are mapped to
+a [View State Parameter](../viewstateparameters/).
+
+[Viewstate routing](../viewstateparameters/#view-state-routing)
+
+## Action
+
+[Actions](../action/)
+
+## Highlight rules
+
+[Highlight Rules](../highlightrules/)
+
+## File export
+
+[Export](../publish/#file-export)
+
+_Full Export Override_
+
+    Overrides the pivot query dataset with an alternative dataset.
+
+## Cached Columns
+
+_Cached Breakdown Columns_
+
+_Cached Aggregrate Columns_
+
+    A list of dependent and appearance columns that can be defined by the [pivot query](../datasources/#pivot-query) or an user. For dynamic pivot queries where the column data can change, the cached columns can be used to populate the breakdown and aggregrate column list.
+
+## Style
+
+[Style](../style/#component-style) for common settings
+
+_Even Row Background & Odd Row Background_
+
+    Background colors of the even and odd rows
+_Selected Row Background_
+
+    When Enable Row Selection is checked, the background color of the selected row
+_Expanded Summary Style_
+
+    When Enabled sets a background colour, underline and bold text for the expanded summary
+_Header Row Height_
+
+_Row Height_
+
+    ![Screenshot](../img/datagrid/rowheight.jpg)
+_Header Text Transformation_
+
+    Text transformation for column headers
+_Header Font Weight_
+
+    Font weight for column header
+_Font Family_
+
+    Font family for column headers and rows
+_Font size_
+
+    Font size for rows (css format), e.g. `18px`, `0.8em`, `80%`, `larger`
+
+### Advanced CSS
+
+[Advanced CSS](../style/#advanced-css)
+

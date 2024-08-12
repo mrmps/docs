@@ -1,0 +1,168 @@
+https://code.kx.com/insights/api/machine-learning/q/registry/cloud-integration.html
+
+# Cloud Integration - kdb products
+
+Original URL: https://code.kx.com/insights/api/machine-learning/q/registry/cloud-integration.html
+
+# Cloud Integration
+
+When operating within a docker container, interactions are permitted with the
+following cloud provider storage solutions:
+
+  1. AWS S3 Buckets
+  2. Azure Blob Storage
+
+Interactions with these vendors are facilitated using REST calls.
+
+From a users perspective, this is intended to be a very lightweight API with
+users requiring minimal configuration to publish to a registry on-prem or
+within a cloud storage solution.
+
+Prior to running any of the function calls to publish or retrieve information
+from the cloud, a user must generate a storage bucket to which artefacts will
+be published. At present, this must be done externally to the functionality
+provided by this interface i.e. if the bucket does not exist, we will not
+generate it.
+
+Once the user has a storage bucket available, they can make use of the
+following examples from any application running with this library.
+
+The following sections outline how users can initialise the functionality and
+make example function calls in the context of a cloud vendor solution.
+
+## Required environment variables
+
+Interactions with the various cloud vendors require the definition of
+environment variables to authenticate REST calls to the vendors. The following
+outlines the required arguments for each of the supported vendors within the
+docker image used.
+
+Vendor | Environment variable  
+---|---  
+_AWS_ | `AWS_SECRET_ACCESS_KEY`  
+_AWS_ | `AWS_ACCESS_KEY_ID`  
+_AWS_ | `AWS_REGION`  
+_Azure_ | `AZURE_STORAGE_ACCOUNT`  
+_Azure_ | `AZURE_STORAGE_SHARED_KEY`  
+  
+## Initialisation
+
+This library provides 2 methods to create/access a registry within the cloud:
+
+  1. Command line definition
+  2. Within a q process
+
+### Command line definition
+
+For users which only require access to a single registry, the relevant
+`bucket`/`blob` can be specified on initialisation of the library as detailed
+below:
+
+  * AWS 
+    
+        $ source qpbuild/.env
+    $ docker run -it -p 5000:5000 \
+      -e "KDB_LICENSE_B64=$KDB_LICENSE_B64" \
+      -e "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID" \
+      -e "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" \
+      -e "AWS_REGION=$AWS_REGION" \
+      registry.dl.kx.com/kxi-ml -aws s3://path-to-bucket -p 5000
+    
+
+  * Azure 
+    
+        $ source qpbuild/.env
+    $ docker run -it -p 5000:5000 \
+      -e "KDB_LICENSE_B64=$KDB_LICENSE_B64" \
+      -e "AZURE_STORAGE_ACCOUNT=$AZURE_STORAGE_ACCOUNT" \
+      -e "AZURE_STORAGE_SHARED_KEY=$AZURE_STORAGE_SHARED_KEY" \
+      registry.dl.kx.com/kxi-ml -azure ms://path-to-bucket -p 5000
+    
+
+### Within a q process
+
+For one-off calls to multiple registries, users can alter their chosen
+registry within their q process. To do so, they must pass in a dictionary
+containing the vendor type and location to their desired function as the
+`folderPath` argument. Alternatively, users can change the default location
+`.ml.registry.location` to their desired location in dictionary format.
+
+The following startup for a docker image would facilitate publishing both to
+`AWS`, `Azure` and interactions with a registry mounted between the `/tmp`
+directory within the container and `$(pwd)`
+
+    
+    
+    $ source qpbuild/.env
+    $ docker run -it -p 5000:5000 \
+      -e "KDB_LICENSE_B64=$KDB_LICENSE_B64" \
+      -e "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID" \
+      -e "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" \
+      -e "AWS_REGION=$AWS_REGION" \
+      -e "AZURE_STORAGE_ACCOUNT=$AZURE_STORAGE_ACCOUNT" \
+      -e "AZURE_STORAGE_SHARED_KEY=$AZURE_STORAGE_SHARED_KEY" \
+      -v "$(pwd)":/tmp \
+      registry.dl.kx.com/kxi-ml -p 5000
+    
+
+## Examples
+
+**Example 1:** Creating new registries with each of the above mentioned
+methods.
+
+    
+    
+    // Adding a new registry to the "/tmp" directory and mounted directory
+    .ml.registry.new.registry["/tmp";::]
+    
+    // Registry location dictionary
+    regLocation:enlist[`aws]!enlist"s3://ml-registry-test"
+    
+    // Once off call to cloud registry
+    q).ml.registry.new.registry[regLocation;::]
+    
+    // Change default registry location
+    q).ml.registry.location:regLocation
+    q).ml.registry.new.registry[::;::]
+    
+
+**Example 2:** Adding items to cloud storage.
+
+    
+    
+    q).ml.registry.new.registry[::;::];
+    q).ml.registry.new.experiment[::;"test";::];
+    q).ml.registry.set.model[::;"test";{x};"mymodel";"q";::]
+    
+
+**Example 3:** Log ancillary information associated with a model.
+
+    
+    
+    q).ml.registry.log.metric[::;::;::;::;`metric;2f]
+    q).ml.registry.set.parameters[::;::;"mymodel";1 0;"paramFile";`param1`param2!1 2]
+    
+
+**Example 4:** Retrieve items from the registry.
+
+    
+    
+    q).ml.registry.get.model[::;::;"mymodel";1 0]
+    modelInfo| `registry`model`monitoring!(`description`modelInformation`experime..
+    model    | {x}
+    q).ml.registry.get.metric[::;::;::;::;`metric]
+    timestamp                     metricName metricValue
+    ----------------------------------------------------
+    2021.04.29D12:24:23.117795000 metric     2
+    q).ml.registry.get.parameters[::;::;::;::;`paramFile]
+    param1| 1
+    param2| 2
+    
+
+**Example 4:** Delete the registry.
+
+    
+    
+    q).ml.registry.delete.registry[::;::]
+    
+

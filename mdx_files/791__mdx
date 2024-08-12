@@ -1,0 +1,116 @@
+https://code.kx.com/dashboards/accordion/
+
+# Accordion - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/accordion/
+
+# Accordion
+
+A panel with expandable sections
+
+The Accordion component is divided into sections. Each section can hold a
+single component - including a nested accordion - or a workspace like [Layout
+Panel](../layout/).
+
+![Screenshot](../img/accordion/accordionpanel.jpg)  
+_An Accordion panel with sections containing a Data Form and Data Grid_
+
+## Set up
+
+  1. Define how many sections you need.
+
+  2. Within each section, add a single component, [layout panel](../layout/), or [flex panel](../flexpanel/) for multiple components. 
+
+## Basics
+
+![Screenshot](../img/accordion/accordionbasics.png)
+
+_Name_
+
+    A name for the component provided by the user. 
+_Direction_
+
+    Switch between a Vertical and Horizontal accordion control. Can nest one Accordion component inside another. 
+
+![Screenshot](../img/accordion/horizontalvertical.jpg)
+
+_Scale on Resize_
+
+    Resize a child component when the accordion panel is resized, or wait until after accordion resize to resize child components. 
+
+## Sections
+
+_Title_
+
+    A name for the section 
+_Title Align_
+
+    Sets position of Title in section bar: `left`, `center` or `right`
+_Expanded_
+
+    
+
+When checked, the Accordion will load with the section expanded.
+
+Controlling the open and closing of accordion sections can be achieved by
+assigning a boolean [View State Parameter](../viewstateparameters/) to the
+_Expanded_ property. By setting the View State Parameter to True – on a click
+of a [Data Form](../dataform/) Submit button for example – users can determine
+when elements of the dashboard become visible.
+
+_Flex_
+
+    When enabled, the section will resize to accommodate its child component's dimensions where possible, for example resizing to accommodate a Dataform that can can take up different heights depending on the number of items and the width of the screen.
+    Some components, such as charts, do not specify dimensions themselves but rather fill their parent. In these cases a Flex section's dimensions is defined in pixels by _Min Size_ and _Max Size_. The _Weight_ and _Resizable_ properties below do not apply to Flex sections.
+_Weight_
+
+    
+
+This is a relative sizing measure to determine the viewable area for each
+section inside the Accordion.
+
+For example, two sections of _Weight_ `200` will each take up half of the
+viewable area (200/(200+200)). A section with _Weight_ of `400` and another of
+`200` will occupy 66% (400/(400+200)) of the viewable area.
+
+Section behavior on resize
+
+If Resizable is checked, the values of _Weight_ will change on interaction.
+
+_Resizeable_
+
+    
+
+If checked, the user will be able to adjust the section size
+
+![Screenshot](../img/accordion/manualadjustsectionhtmllight.jpg)  
+_Manually adjusting section size_
+
+_Hide Title_
+
+    When checked, suppresses the section title
+
+## Style, Format, Margins
+
+[Style](../style/#component-style) for common style settings
+
+_Advanced CSS_
+
+     [Advanced CSS](../style/#advanced-css)
+
+## Linking two sections
+
+Multiple sections in a single accordion can share a behavior if they use the
+same [View State Parameter](../viewstateparameters/) as their _Expanded_
+setting:
+
+![Screenshot](../img/accordion/singleaccordionlink.jpg)
+
+## Linking two accordions
+
+Two or more Accordions can be linked so an expansion or contraction in a
+section of one will be reflected in another.
+
+To do this, assign the same View State Parameter to the sections’ _Expanded_
+settings.
+

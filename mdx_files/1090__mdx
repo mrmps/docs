@@ -1,0 +1,1373 @@
+https://code.kx.com/developer/libraries/regular-expression-pcre2/
+
+# PCRE2 - KX Developer
+
+Original URL: https://code.kx.com/developer/libraries/regular-expression-pcre2/
+
+# PCRE2 regular expressions (`.pcre2`)
+
+An API for PCRE2 in q.
+
+## Compile
+
+`compile` takes two arguments: the pattern to use and options to apply. The
+pattern can be in the form of a character, string or symbol. It can also be a
+pattern dictionary of an already compiled pattern that you wish to clone.
+Options can be left as `::` and the defaults will be applied, or any desired
+option can be specified.
+
+`compile` returns a dictionary with four fields: **id** , **expr** , **exec**
+, **options**.
+
+  * **id** is a unique GUID created by the compile function and used to track if the pattern has been freed.
+    * **WARNING:** do not change this field as it will cause problems when trying to free the pattern.
+  * **expr** is the original string/symbol that the pattern came from. Changing this will not change the compiled pattern, it is simply a reminder of what the pattern is.
+  * **exec** is a pointer to the compiled pattern.
+    * **WARNING:** do not change this number as that will lead the functions to trying to access memory they shouldn't, resulting in undefined behavior.
+  * **options** is a dictionary of options that were/are to be used. Change at your own risk.
+
+Other than type errors and option errors there are also compile errors and JIT
+errors. Compile errors happen when there is a problem with compiling the
+pattern and JIT errors happen when there is a problem with applying JIT
+compiling to the pattern. JIT errors are prefixed with _jit_.
+
+### Basic compile
+
+Using `::` for options will use the default options. See the Options section
+for information regarding default options.
+
+    
+    
+    re: .pcre2.compile["[Cc]at"; ::]
+    
+    /=> id     | 5a580fb6-656b-5e69-d445-417ebfe71994
+    /=> expr   | "[Cc]at"
+    /=> exec   | 21788720
+    /=> options| `compile`jit`match`replace`useJIT`dfa`firstMatch`firstReplace`offset!(`utf;`complete;`noOptions;`noOptions;1b;0b;1b;1b;0)
+    
+
+### Adding compile options
+
+Options that are applied during compile include `use.jit`, `op.compile`,
+`op.jit`. All options can be added at the compile stage and they will be saved
+in the ``options` field of the pattern dictionary returned by compile. These
+options will automatically be applied when relevant in `match`, `imatch`,
+`replace` and `test` when the pattern dictionary is used. If options are given
+to `match`, `imatch`, `replace` or `test` then the corresponding fields in the
+options dictionary will be ignored, but not overwritten. For more information
+about options, please see the Options section.
+
+    
+    
+    re: .pcre2.compile["cat";]
+        .pcre2.op.compile[`caseless],
+        .pcre2.use.jit[0b],
+        .pcre2.use.replaceAll[]
+    
+    /=> id     | ddb87915-b672-2c32-a6cf-296061671e9d
+    /=> expr   | "cat"
+    /=> exec   | 21789088
+    /=> options| `compile`jit`match`replace`useJIT`dfa`firstMatch`firstReplace`offset!(`utf`caseless;`complete;`noOptions;`noOptions;0b;0b;1b;0b;0)
+    
+
+### Cloning
+
+By giving compile a pattern dictionary, you can clone the pattern and options
+inside. The pattern in the dictionary can be freed or not but it does not
+affect the cloning. The pattern string that gets compiled will be taken from
+the _expr_ field of the original pattern. The options will be the same as the
+ones from the original pattern, unless other options are specified for that
+options field. In this case the options specified will _overwrite_ the
+previous options rather than _adding_ them. The clone is compiled separately
+from the original pattern, so after compiling, both the clone and original
+will be usable, unless the original had already been freed. Either can be
+freed without affecting the other.
+
+    
+    
+    re: .pcre2.compile["cat";]
+        .pcre2.op.compile[`caseless],
+        .pcre2.use.jit[0b],
+        .pcre2.use.replaceAll[]
+    
+    /=> id     | a85ad6e4-f45e-cac5-267d-f040f4990312
+    /=> expr   | "cat"
+    /=> exec   | 13027792
+    /=> options| `compile`jit`match`replace`useJIT`dfa`firstMatch`firstReplace`offset!(`utf`caseless;`complete;`noOptions;`noOptions;0b;0b;1b;0b;0)
+    
+    
+    re2: .pcre2.compile[re;]
+        .pcre2.use.jit[],
+        .pcre2.op.match[`anchored]
+    
+    /=> id     | 9ff6dd37-f8b5-ce43-3cf1-01cfbafca89d
+    /=> expr   | "cat"
+    /=> exec   |  13027952
+    /=> options| `compile`jit`match`replace`useJIT`dfa`firstMatch`firstReplace`offset!(`utf`caseless;`complete;`anchored;`noOptions;1b;0b;1b;0b;0)
+    
+
+## Free
+
+`free` takes one argument: the pattern dictionary holding the pattern to be
+freed. It returns the pattern dictionary it was given after it's been freed.
+The _exec_ field will be a null value after being freed. If the pattern has
+already been freed, it will be returned as is.
+
+    
+    
+    re: .pcre2.compile["[Cc]at"; ::]
+    
+    /=> id     | 6e5e0302-9297-68ad-8f63-caa05160abf4
+    /=> expr   | "[Cc]at"
+    /=> exec   | 13027792
+    /=> options| `compile`jit`match`replace`useJIT`dfa`firstMatch`firstReplace`offset!(`utf;`complete;`noOptions;`noOptions;1b;0b;1b;1b;0)
+    
+    .pcre2.free re
+    
+    /=> id     | 6e5e0302-9297-68ad-8f63-caa05160abf4
+    /=> expr   | "[Cc]at"
+    /=> exec   | 0N
+    /=> options| `compile`jit`match`replace`useJIT`dfa`firstMatch`firstReplace`offset!(`utf;`complete;`noOptions;`noOptions;1b;0b;1b;1b;0)
+    
+
+## Match/imatch
+
+`match` and `imatch` both take three arguments: the pattern to use, the
+subject(s) to search, and the options to apply. The pattern can be a pattern
+dictionary with a pre-compiled pattern with options in it, or it could be a
+character/string/symbol that will be compiled and freed within the test
+function itself. The subject is either a string, symbol, enum or list of
+either or a compound string. Mixed lists with strings and symbols are also
+supported, but mixed lists involving enums are not.
+
+For a single subject, `match` returns a list of the matches in that subject.
+If there was a list of subjects, `match` returns a list where each element is
+a list of matches for each corresponding subject. The matches are returned as
+the same types the subjects. For example, if the subjects where strings, so
+are the matches.
+
+For a single subject, `imatch` returns a list of numbers which can be divided
+into pairs. Each pair is the start and end index of the match. Like `match`,
+for a list of subjects `imatch` returns a list where each element is a list of
+numbers that can be divided into pairs.
+
+If an error happens when trying to match a subject, that subject will not
+match anything. `match` also doesn't support empty matches, so if the pattern
+matches an empty match, then the whole subject will be skipped. Applying the
+match option `notEmpty` will allow `match` to skip any possible empty matches
+without failing out of the subject and instead all the non-empty matches found
+will be returned.
+
+### Basic match/imatch
+
+The `::` takes the place of the options argument and tells the function to use
+the options in the pattern dictionary, or if a dictionary isn't provided, the
+defaults.
+
+    
+    
+    // re is the pattern "[Cc]at" compiled with default options
+    .pcre2.match[re; "The cat is cute."; ::]
+    
+    /=> "cat"
+    
+    .pcre2.match["[Cc]at"; ("The cat is cute."; "There are two cats hiding under the bed."); ::]
+    
+    /=> "cat"
+    /=> "cat"
+    
+    // re is the pattern "[Cc]at" compiled with default options
+    .pcre2.imatch[re; "The cat is cute."; ::]
+    
+    /=> 4 7
+    
+    .pcre2.imatch["[Cc]at"; ("The cat is cute."; "There are two cats hiding under the bed."); ::]
+    
+    /=> 4 7
+    /=> 14 17
+    
+
+### Adding match/imatch options
+
+The options that are applied during `match` and `imatch` include `op.match`,
+`use.matchAll`, `use.offset`, `use.dfa`. If the pattern is not a pattern
+dictionary, then the standard compile options are also applied.
+
+Any options given to test will be used instead of the relevant options in the
+options dictionary. The options dictionary will not be overwritten. For more
+information about options, please see the Options section.
+
+> **WARNING:** JIT doesn't support applying the `anchored` match option. JIT
+> is also enabled by default, so if you want to apply the `anchored` match
+> option you may have to recompile with JIT disabled or make sure to disable
+> it when passing match an uncompiled pattern.
+>
+> **WARNING:** If a pattern is compiled outside the match function without JIT
+> then _do not_ change the `use.jit` option to true when using that pattern in
+> `match` or `imatch`. This will lead to undefined behavior.
+    
+    
+    .pcre2.match["[Cc]at"; ("The cat is cute."; "There are two cats hiding under the bed.");]
+        .pcre2.use.jit[0b],
+        .pcre2.use.offset[4],
+        .pcre2.op.match[`anchored]
+    
+    /=> ,"cat"
+    /=> ()
+    
+    .pcre2.imatch["[Cc]at";
+        ("There is an orange cat, a black cat and a calico cat all in the window."; "The cat is cute.");]
+            .pcre2.use.jit[0b],
+            .pcre2.use.offset[25 0],
+            .pcre2.use.matchAll[]
+    
+    /=> 32 35 49 52
+    /=> 4 7
+    
+
+### DFA matching
+
+DFA matching is an alternative matching algorithm that returns slightly
+different results in some cases. More information can be found in DFA
+
+## Replace (substitute)
+
+Replace takes four arguments: the pattern to use, the subject(s) to search,
+the replacement(s) to be inserted, and options to apply. The pattern can be a
+pattern dictionary with a pre-compiled pattern and options, or a
+character/string/symbol that will be compiled and freed within the test
+function itself. The subject is either a string, symbol, enum, or an enlisted
+string. Mixed lists with strings and symbols are also supported, but mixed
+lists involving enums are not. The replacements can be a character, string,
+symbol, or a list of strings or symbols. `replace` returns the subject(s) with
+the replacement(s) in place of whatever matched. The subject will be the same
+type and shape as it was when given to `replace`. If an error occurs while
+trying to replace a match found in a subject, then the subject will be
+returned as is. Other subjects may still have replacements done if they don't
+error. `replace` doesn't support patterns with a `\K` item in a look ahead
+which causes the pattern to end before it starts.
+
+### Basic replace
+
+    
+    
+    // re is the pattern "[Cc]at" compiled with default options
+    .pcre2.replace[re; "The cat is cute."; "kitty"; ::]
+    
+    /=> "The kitty is cute."
+    
+    .pcre2.replace["[Cc]at"; 
+        ("The cat is cute."; "There are two cats hiding under the bed."); 
+        "kitten"; ::]
+    
+    /=> "The kitten is cute."
+    /=> "There are two kittens hiding under the bed."
+    
+
+### Adding replace options
+
+Options that are applied during replace include `op.replace`,
+`use.replaceAll`, and `use.offset`. If the pattern is not a pattern
+dictionary, then the standard compile options are also applied. Any options
+given to replace will be used instead of the relevant options in the options
+dictionary. The options dictionary will not be overwritten. When replacing,
+JIT will not be used. There is also a `global` option in the replace options
+which replaces all matches found in a subject. This is equivalent to
+`use.replaceAll`. For more information about options, see the Options section.
+
+    
+    
+    .pcre2.replace["[Cc]at";
+        ("The cat is cute."; "There are two cats hiding under the bed.");
+        "kitten";]
+            .pcre2.use.offset[4],
+            .pcre2.op.replace[`anchored]
+    
+    /=> "The kitten is cute."
+    /=> "There are two cats hiding under the bed."
+    
+    .pcre2.replace["[Cc]at";
+        ("There is an orange cat, a black cat and a calico cat all in the window."; "The cat is cute.");
+        ("kitten"; "kitty");]
+            .pcre2.use.jit[0b],
+            .pcre2.use.offset[25 0],
+            .pcre2.use.replaceAll[]
+    
+    /=> "There is an orange cat, a black kitten and a calico kitten all in the window."
+    /=> "The kitty is cute."
+    
+    
+
+## Test
+
+`test` takes three arguments: the pattern to use, the subject(s) to search and
+options to apply. The pattern can be a pattern dictionary with a pre-compiled
+pattern with options, or a character/string/symbol that will be compiled and
+freed within the test function. The subject is either a string, symbol, enum
+or list of either or a compound string. Mixed lists with strings and symbols
+are supported. Mixed lists with enums are not supported.
+
+`test` returns a single boolean if only one subject is provided or a list of
+booleans if a list of subjects is provided. The booleans are true if a match
+is found in the corresponding subject.
+
+If an error occurs when trying to match a subject, that subject will be marked
+as false. `test` doesn't support empty matches, so if the pattern matches an
+empty match, the subject will return false. Applying the match option
+`notEmpty` will allow the test to skip any possible empty matches and look for
+non-empty matches.
+
+### Basic test
+
+    
+    
+    // re is the pattern "[Cc]at" compiled with default options
+    .pcre2.test[re; "The cat is cute."; ::]
+    
+    /=> 1b
+    
+    .pcre2.test["[Cc]at"; ("The cat is cute."; "There is a strange dog in the back yard."); ::]
+    
+    /=> 10b
+    
+
+### Adding test options
+
+Options that are applied during `test` include `op.match`, `use.offset`. If
+the pattern is not a pattern dictionary, then the standard compile options are
+also applied. Any options given to test will be used instead of the relevant
+options in the options dictionary. The options dictionary will not be
+overwritten. For more information about options, please see the Options
+section.
+
+> **WARNING:** JIT doesn't support applying the `anchored` match option. JIT
+> is also enabled by default, so if you want to apply the `anchored` match
+> option you may have to recompile with JIT disabled or make sure to disable
+> it when passing test a pattern in the form of a character/string/symbol.
+>
+> **WARNING:** If a pattern is compiled outside the match function without JIT
+> then **do not** change the `use.jit` option to true when using that pattern
+> in `match` or `imatch`. This will lead to undefined behavior.
+    
+    
+    .pcre2.test["[Cc]at"; ("The cat is cute."; "There are two cats hiding under the bed.")]
+        .pcre2.use.jit[0b],
+        .pcre2.use.offset[4],
+        .pcre2.op.match[`anchored]
+    
+    /=> 10b
+    
+
+## Options
+
+Options are something that the user can specify to get different behaviors out
+of the various PCRE2 functions. Most of the options only affect one function
+in particular. This section describes each option and how it is used.
+
+For each field in the options dictionary, there is an option function for the
+user to add options to that field. Each function returns a dictionary with a
+single key-value pair where the key is one of the fields in the option
+dictionary and the value is the options that the user chose. These singleton
+dictionaries can be joined together using `,` to build a dictionary of all the
+options the user desires. The order in which the options are joined doesn't
+matter as long as all the options are of different keys. If an option is
+joined with an option of the same field the one farthest to the left will
+overwrite the other, so make sure all desired options for one field are
+together in one function.
+
+When passing options to a function, the dictionary created does not have to be
+a full options dictionary with every option field in it. Any fields needed
+that are not specified by the user will be added in the function itself,
+either the options that are in the pattern dictionary also passed in or if
+that doesn't exist, the defaults.
+
+When a pattern dictionary is created by compile a full options dictionary
+comes with it. After its creation, this dictionary is never changed by any of
+the PCRE2 functions. When other options are passed to a function, those
+options take priority over the ones in the options dictionary, but they do not
+overwrite the dictionary. In order to change the options in the dictionary,
+the user will have to join new options to the dictionary itself. The
+dictionary should be on the right side of the join and the new options should
+be on the left in order to overwrite the dictionary.
+
+The option fields are split into two different groups: `use` and `op`. Each
+option is explained in detail below. Each option also specifies what its
+default state is and which PCRE2 function it affects.
+
+### Use option group
+
+In this group, there is five options. Four of them are booleans that flag
+whether or not to use/do something and the last one, offsets, specifies the
+start point of matching/replacing. For all of the boolean `use` options, if
+the function argument is left blank, then the value in the returned key-value
+pair is true. This default is NOT the the same as the default for the options
+dictionary. For example, in the options dictionary `dfa` defaults to false if
+not specified. However, the function `use.dfa` defaults to true when not given
+an argument.
+
+#### JIT
+
+**Default: on**
+
+JIT (just-in-time) compiling is a way to speed up the matching process. A JIT-
+compiled pattern is faster at regular matching than a normally compiled
+pattern, but there is overhead to JIT compile a pattern. JIT is most useful
+when it is expected that the pattern will be used multiple times, whether if
+it is to search for a particular word in a long subject or being used on
+multiple subjects. If the pattern is only going to be used once, then the
+overhead of JIT compiling will not be worth the speed gained from a JIT-
+compiled pattern.
+
+JIT compiled patterns are only used with regular match and imatch. They are
+NOT used with DFA matching or replace, so if you compile a pattern with the
+intent of using it for DFA matching or replacing it would be best to disable
+JIT compiling. This does not mean that a JIT-compiled pattern will cause an
+error if passed to the DFA matching or replace function. The regular compiled
+pattern still exists and will be used instead of the JIT compiled pattern in
+these cases. Test uses the regular matching function when looking for matches
+so giving the test function a JIT-compiled pattern is beneficial.
+
+There is a couple of things that JIT compiling does not support. First, a
+pattern will not JIT compile if it is in UTF mode and there is a `\C` (match
+single data unit) pattern item. The compile options set UTF mode by default,
+so if the pattern item `\C` is need, `utf` will have to be removed. Second,
+the match option `anchored` cannot be applied when matching with a JIT-
+compiled pattern. The `anchored` option will be skipped as if it was never
+specified. In order to get around this, the pattern will either have to be
+recompiled without JIT compiling enabled or recompiled with the compile
+`anchored` option (which does the same as the match `anchored` option).
+
+> **WARNING:** A pattern _must_ be JIT-compiled, if it is to use JIT when
+> matching. _Do not_ compile a pattern without JIT, then pass that patten to a
+> match or test function with the `use.jit` option set to true. This will lead
+> to undefined behavior.
+    
+    
+    .pcre2.test["[Cc]at"; "The cat is cute."]
+        .pcre2.use.jit[1b],
+        .pcre2.op.match[`anchored]
+    
+    /=> 1b
+    
+    .pcre2.test["[Cc]at"; "The cat is cute."]
+        .pcre2.use.jit[0b],
+        .pcre2.op.match[`anchored]
+    
+    /=> 0b
+    
+
+In the above example, when JIT compiling is enabled, the match option
+`anchored` isn't applied, and test returns true. It is also applied in
+_compile, match, imatch, replace,_ and _test_ when they are given an
+uncompiled pattern.
+
+#### DFA
+
+**Default: off, only applies to`match` and `imatch`**
+
+The difference in behavior between regular matching and DFA matching is that
+regular matching will only find one match at a particular offset whereas DFA
+can find multiple matches.
+
+Due to how the DFA algorithm works like a breadth-first search, the algorithm
+keeps track of all possible paths and checks at every step through the subject
+to see what paths could still possibly match. Once all paths have been
+exhausted, all the matches found are returned ordered from longest to
+shortest. Also, because of the fact that all possible paths are kept track of
+from the beginning, the algorithm never backtracks unless it encounters a
+look-around assertion.
+
+The examples below illustrate the difference between the regular matching
+algorithm and the DFA matching algorithm.
+
+    
+    
+    .pcre2.match["\\w.*(?=[ .])"; "Cats are cute."; ::]
+    
+    /=> "Cats are cute"
+    
+    .pcre2.match["\\w.*(?=[ .])"; "Cats are cute."] .pcre2.op.compile[`ungreedy]
+    
+    /=> "Cats"
+    
+    .pcre2.match["\\w.*(?=[ .])"; "Cats are cute."] .pcre2.op.compile[`ungreedy], .pcre2.use.matchAll[]
+    
+    /=> "Cats"
+    /=> "are"
+    /=> "cute"
+    
+    
+    
+    .pcre2.match["\\w.*(?=[ .])"; "Cats are cute."] .pcre2.use.dfa[]
+    
+    /=> "Cats are cute"
+    /=> "Cats are"
+    /=> "Cats"
+    
+    .pcre2.match["\\w.*(?=[ .])"; "Cats are cute."] .pcre2.use.dfa[], .pcre2.use.matchAll[]
+    
+    /=> "Cats are cute"
+    /=> "Cats are"
+    /=> "Cats"
+    /=> "are cute"
+    /=> "are"
+    /=> "cute"
+    
+
+Items not supported by the DFA matching algorithm:
+
+  * A pattern item being greedy or ungreedy is irrelevant.
+  * No substrings are captured by the DFA algorithm.
+  * Since no substrings are captured, back-references are not used or supported.
+  * `\K` is not supported due to the chance that it may be on some paths but not others.
+  * `\C` is not supported since the algorithm steps through the subject one character at a time, not one code unit at a time.
+  * Backtracking control verbs are not supported, with the exception of (*FAIL).
+  * Conditional expressions cannot have a back-reference as a condition and cannot test for a specific group recursion.
+
+Besides the unsupported features, DFA matching is also slower then regular
+matching and so should only be used when it is necessary to get multiple
+matches at the same index.
+
+#### Match all
+
+**Default: OFF, only applies to`match` and `imatch`**
+
+Returns all the matches found in a subject.
+
+    
+    
+    .pcre2.imatch["[Cc]at"; "There is an orange cat, a black cat and a calico cat all in the window."]
+        .pcre2.use.matchAll[0b]
+    
+    /=> 19 22
+    
+    .pcre2.imatch["[Cc]at"; "There is an orange cat, a black cat and a calico cat all in the window."]
+        .pcre2.use.matchAll[1b]
+    
+    /=> 19 22 32 35 49 52
+    
+
+#### Replace all
+
+**Default: off, only applies to`replace`**
+
+Replaces all the matches found in a subject.
+
+    
+    
+    .pcre2.replace["[Cc]at"; "There is an orange cat, a black cat and a calico cat all in the window."; "kitten"]
+        .pcre2.use.replaceAll[0b]
+    
+    /=> "There is an orange kitten, a black cat and a calico cat all in the window."
+    
+    .pcre2.replace["[Cc]at"; "There is an orange cat, a black cat and a calico cat all in the window."; "kitten"]
+        .pcre2.use.replaceAll[1b]
+    
+    /=> "There is an orange kitten, a black kitten and a calico kitten all in the window."
+    
+
+#### Offset
+
+**Default: 0, only applies to`match`, `imatch`, `test` and `replace`**
+
+The number in this option determines what index acts as the start of the
+subject and is where to start matching/replacing from. The default is 0
+because that is the starting index of a string. A single offset can be
+specified and it will be applied to every subject, or a list of offsets can be
+specified and each offset will be applied to its respective subject. If the
+list of offsets is not the same length as the list of subjects then a _length_
+error will be thrown. Negative offsets and offsets beyond the last index in
+the subject string will result in the subject string being skipped and no
+matches being found or replacements happening.
+
+    
+    
+    .pcre2.replace["[Cc]at"; ("The cat is cute."; "There are two cats hiding under the bed."); "kitten"]
+        .pcre2.use.offset[0]
+    
+    /=> "The kitten is cute."
+    /=> "There are two kittens hiding under the bed."
+    
+    .pcre2.replace["[Cc]at"; ("The cat is cute."; "There are two cats hiding under the bed."); "kitten"]
+        .pcre2.use.offset[10]
+    
+    /=> "The cat is cute."
+    /=> "There are two kittens hiding under the bed."
+    
+    .pcre2.replace["[Cc]at"; ("The cat is cute."; "There are two cats hiding under the bed."); "kitten"]
+        .pcre2.use.offset[4 20]
+    
+    /=> "The kitten is cute."
+    /=> "There are two cats hiding under the bed."
+    
+
+### Op option group
+
+The functions in the `op` group are PCRE2 options that can be given to
+different PCRE2 functions. The PCRE2 options are separated into different
+sections based on what function they affect. Each possible PCRE2 option is
+listed in its respective section along with a description of what it does.
+
+The functions work by taking a symbol or list of symbols, with the symbol
+being the name of the option. All the option names are listed in the option
+column of the tables in each section below. Each option also has a _C_ style
+equivalent which can be found in PCRE2 documentation. Giving an `op` option
+function this _C_ name (as a symbol) is also acceptable.
+
+One thing to note is that `onOptions` does not erase the effects of other
+options. It can't simply be added to a list of options and be expected to set
+the behavior back to default. It is only meant to be something to put in as a
+placeholder to indicate no options have been chosen. If there are unwanted
+options in a list then they will have to be overwritten or removed.
+
+Defaults are automatically added to every option and must be removed using
+`remove` if they are not wanted.
+
+#### Compile options
+
+**Default:`utf`, applies to `compile`, `match`, `imatch`, `replace`, and
+`test` when using an uncompiled pattern**
+
+option | alternative PCRE2 option | description  
+---|---|---  
+`noOptions` | `PCRE2_NO_OPTIONS` | No options will be selected.  
+`allowEmptyClass` | `PCRE2_ALLOW_EMPTY_CLASS` | A ']' immediately following a '[' is interpreted as ending the class instead of ']' being a character to match. Since there is nothing in the character class to match it never matches anything.  
+`altbsux` | `PCRE2_ALT_BSUX` | Allows alternative handling of three escape sequences. First, `\U` will match a 'U' character instead of causing a compile time error. Second, `\u` will match a code point if there are exactly four hexadecimal digits following it to define the code point. Otherwise it will match a 'u' character. Without this option set `\u` would normally cause a compile time error. Third, `\x` will match a code point if there are exactly two hexadecimal digits following it to define the code point. Otherwise `\x` will match an 'x' character. Without this option set a hexadecimal is always expected after `\x` and it has to have between zero to two digits.  
+`caseless` | `PCRE2_CASELESS` | Case is ignored in the pattern, meaning both uppercase and lowercase letters match pattern letters of either case.  
+`dollarEndOnly` | `PCRE2_DOLLAR_ENDONLY` | `$` metacharacter will not match immediately before a newline character at the end of a string, it will only match the very end of the string. This option is overwritten if the compile option `multiline` is set.  
+`dotAll` | `PCRE2_DOTALL` | The dot metacharacter will match a newline character.  
+`dupNames` | `PCRE2_DUPNAMES` | Capturing groups don't need to have unique names.  
+`extended` | `PCRE2_EXTENDED` | Most whitespace is ignored. Whitespace that is escaped or in a character class is handled as part of the pattern. Sequences that introduce various parenthesized subpatterns, such as `(?>`, and numerical quantifiers, like `{1,3}`, cannot have whitespace in them. Another feature is the ability to add comments by placing them between a `#` that's unescaped and outside a character class, and a literal newline character is ignored. Everything, inclusive, between these characters is ignored.  
+`firstLine` | `PCRE2_FIRSTLINE` | A pattern's start must be matched before or on the first newline encountered after the offset matching began at. The rest of the pattern can cross the newline.  
+`matchUnsetBackRef` | `PCRE2_MATCH_UNSET_BACKREF` | A back-reference to a group that is unset matches an empty string.  
+`multiline` | `PCRE2_MULTILINE` | In addition to their usual behavior, `^` and `$` metacharacters will match before and after, respectively, a newline character that is in a subject.  
+`neverUcp` | `PCRE2_NEVER_UCP` | Unicode properties are never used to to classify characters, even if the pattern starts with `(*UCP)`. Having this option and the `ucp` option both set at the same time causes an error.  
+`neverUtf` | `PCRE2_NEVER_UTF` | The pattern will never be regarded as a UTF string, even if it starts with `(*UTF)`. Having this option and the `utf` option both set at the same time causes an error.  
+`noAutoCapture` | `PCRE2_NO_AUTO_CAPTURE` | Groups that are not named are treated as non-capturing groups.  
+`noAutoPossess` | `PCRE2_NO_AUTO_POSSESS` | Disables an optimization which will make patterns automatically possessive in order to avoid backtracking in cases where it will never be successful.  
+`noDotStarAnchor` | `PCRE2_NO_DOTSTAR_ANCHOR` | Any optimization that is applied to a `.*` pattern sequence is disabled. Optimization is applied to a `.*` sequence if `dotAll` is set for it, `multiline` is not set, and the `.*` sequence is the first sequence of a pattern or a possible first sequence and all other possible first sequences are either also `.*`, `\A`, `\G` or `^`. The optimization is that the `.*` sequence is automatically anchored since it is guaranteed to match the first character.  
+`noStartOptimize` | `PCRE2_NO_START_OPTIMIZE` | Any optimization done before matching a pattern is disabled. An example of an optimization that might happen is if the pattern is unanchored then the match function will scan the subject for the starting code unit value. This means that anything before that code unit in that pattern, such as backtracking verbs, get skipped over and are not actually applied until the match function has already placed itself at a potential starting point. One obvious behavior change this causes is that when optimization is applied, then a pattern with `(*COMMIT)` at the start of it will match in the middle of a subject string because the offset to start at has already been found before the match is actually committed to. However, without start optimization the pattern won't be scanned and instead the first match will be checked for at the start of the pattern, so the match is committed right away and if the match isn't there then the match will fail.  
+`ucp` | `PCRE2_UCP` | Unicode properties are used to classify characters instead of ASCII. The affected characters are `\B`, `\b`, `\D`, `\d`, `\S`, `\s`, `\W`, `\w`, and some of the POSIX character classes.  
+`ungreedy` | `PCRE2_UNGREEDY` | Quantifiers are no longer greedy by default. They must be followed by a `?` in order to be turned greedy.  
+`utf` | `PCRE2_UTF` | Patterns and subjects will be treated as strings of UTF characters instead of strings of single code units. Having this option and the `neverUTF` option both set at the same time causes an error.  
+`neverBackslashC` | `PCRE2_NEVER_BACKSLASH_C` | The pattern will not compile if the escape character `\C` is present in it.  
+`altCircumflex` | `PCRE2_ALT_CIRCUMFLEX` | The `^` metacharacter will match after a terminating newline character.  
+`altVerbnames` | `PCRE2_ALT_VERBNAMES` | Backslash processing can be used in verb names, most notably, escaping a `)` will make it a part of the verb name instead of ending it.  
+`noUtfCheck` | `PCRE2_NO_UTF_CHECK` | Skips the check that makes sure the pattern is a valid UTF string. **WARNING** Passing in an invalid UTF string with this option set will cause undefined behavior (i.e. crashing, infinite looping).  
+`anchored` | `PCRE2_ANCHORED` | Will only match at the first matching position (start of subject + offset).  
+  
+Most of the options that affect the pattern behavior are compile options that
+have to be applied when the pattern is being compiled.
+
+    
+    
+    .pcre2.match["\\bc.*\\b"; "Cats can see in the dark better than humans can."; ::]
+    
+    /=> "can see in the dark better than humans can"
+    
+    .pcre2.match["\\bc.*\\b"; "Cats can see in the dark better than humans can."] .pcre2.op.compile[`caseless`ungreedy]
+    
+    /=> "Cats"
+    
+
+#### JIT options
+
+**Default is`complete` and applies to `compile`, `match`, `imatch`, `replace`,
+and `test` when using uncompiled patterns**
+
+option | alternative PCRE2 option | description  
+---|---|---  
+`jitComplete` | `PCRE2_JIT_COMPLETE` | Jit compiler creates code for complete matches.  
+  
+There is no `noOptions` option in the JIT options because an option has to be
+chosen. For each option, the JIT compiler creates a different piece of
+optimized code specific to the option. This means having more options will
+take longer to compile, so it is best to only compile the options that are
+needed.
+
+#### Match options
+
+**Default:`noOptions`, applies to `match`, `imatch` and `test`**
+
+option | alternative PCRE2 option | description  
+---|---|---  
+`noOptions` | `PCRE2_NO_OPTIONS` | No options will be selected.  
+`notBOL` | `PCRE2_NOTBOL` | The start of a subject is not a new line so the `^` metacharacter won't match before it. `\A` is unaffected.  
+`notEOL` | `PCRE2_NOTEOL` | The end of a subject is not the end of a line so the `$` character won't match it. If multiline mode isn't set, then it won't match a newline immediately before the end of the subject either. `\Z` and `\z` are unaffected.  
+`notEmpty` | `PCRE2_NOTEMPTY` | An empty match is not a valid match.  
+`notEmptyAtStart` | `PCRE2_NOTEMPTY_ATSTART` | An empty match is not valid if it is at the fist matching position (start of subject + offset).  
+`noUtfCheck` | `PCRE2_NO_UTF_CHECK` | Skips checking if the subject is a valid UTF string. **WARNING** : passing in an invalid subject when this is set will cause undefined behavior (i.e. crashing, infinte looping).  
+`anchored` | `PCRE2_ANCHORED` | Will only match at the first matching position (start of subject + offset).  
+  
+There is also an option specific to DFA matching.
+
+option | alternative PCRE2 option | description  
+---|---|---  
+`dfaShortest` | `PCRE2_DFA_SHORTEST` | Finds only the first match (which is also the shortest match) at a given matching position.  
+  
+The `anchored` option does not work if JIT compiling is enabled.
+
+    
+    
+    .pcre2.match["[Cc]at"; "The cat is cute."]
+        .pcre2.use.jit[0b]
+    
+    /=> "cat"
+    
+    .pcre2.match["[Cc]at"; "The cat is cute."]
+        .pcre2.use.jit[0b],
+        .pcre2.op.match[`anchored]
+    
+    /=> ()
+    
+
+#### Replace options
+
+**Default:`noOptions`, applies in `replace`**
+
+option | alternative PCRE2 option | description  
+---|---|---  
+`noOptions` | `PCRE2_NO_OPTIONS` | No options will be selected.  
+`notBOL` | `PCRE2_NOTBOL` | The start of a subject is not a new line so the `^` metacharacter won't match before it. `\A` is unaffected.  
+`notEOL` | `PCRE2_NOTEOL` | The end of a subject is not the end of a line so the `$` character won't match it. If multiline mode isn't set, then it won't match a newline immediately before the end of the subject either. `\Z` and `\z` are unaffected.  
+`notEmpty` | `PCRE2_NOTEMPTY` | An empty match is not a valid match.  
+`notEmptyAtStart` | `PCRE2_NOTEMPTY_ATSTART` | An empty match is not valid if it is at the fist matching position (start of subject + offset).  
+`global` | `PCRE2_SUBSTITUTE_GLOBAL` | Replaces all the matching substrings instead of just the first one.  
+`replaceExtended` | `PCRE2_SUBSTITUTE_EXTENDED` | This option adds a couple extra processing options that can be applied to the replacement string/symbol. First, the backslash is interpreted as an escape character, so `\n` is interpreted as a newline instead of the character `\` followed by the character `n` when making a replacement. It can also be used to escape non-alphanumeric characters that have special meaning in the sequence, such as `$`. There is also some case forcing escape sequences that become available to use. `\u` and `\l` force uppercase and lowercase respectively for the character immediately following the escape sequence. `\U` forces all characters following it to be uppercase and `\L` does the same except with lowercase. `\E` will end a case forcing sequence by either. Case forcing does get applied to characters in captured groups. Case forcing cannot be nested. Second, some more functionality is added to group substitution.   
+`${numOrName:+isSet:isNotSet}`  
+This sequence lets the user use capturing groups being set or not to determine
+what is put in the replacement string. `numOrName` is a capture groups number
+or name. If the capture group is set, then the string `isSet` is placed in the
+replacement string. If the capture group is not set, then the string
+`isNotSet` is put in the replacement string. If the user wishes to have a
+default string to use if the capture group isn't set, then
+`${numOrName:-default}` can be used.  
+`unsetEmpty` | `PCRE2_SUBSTITUTE_UNSET_EMPTY` | Causes unset capture groups to be treated as empty strings when inserted in the replacement string.  
+`unknownUnset` | `PCRE2_SUBSTITUTE_UNKNOWN_UNSET` | References to capture groups that do not exist in the pattern are treated as unset groups.  
+`noUtfCheck` | `PCRE2_NO_UTF_CHECK` | Skips checking if the subject is a valid UTF string. **WARNING** : passing in an invalid subject when this is set will cause undefined behavior (i.e. crashing, infinite looping).  
+`anchored` | `PCRE2_ANCHORED` | Will only match at the first matching position (start of subject + offset).  
+      
+    
+    .pcre2.replace["[Cc]at"; "The cat is cute."; "kitty"; ::]
+    
+    /=> "The kitty is cute."
+    
+    .pcre2.replace["[Cc]at"; "The cat is cute."; "kitty"]
+        .pcre2.op.replace[`anchored]
+    
+    /=> "The cat is cute."
+    
+
+#### Remove
+
+Remove removes options from a specified `op` option field in an options
+dictionary. It removes all duplicates and references to an option regardless
+of whether it was stored as a key or value. Remove takes the type of option to
+be removed (`compile`, `jit`, `match` or `replace`), the options to be
+removed, and the options dictionary to remove them from. The options
+dictionary does not have to be a complete dictionary will all option fields in
+it, it could be just the single key-value dictionary gotten from an option
+function. However, if the option type chosen is not present in the dictionary
+given to remove then there will be an error. Remove also errors if it is told
+to remove all options from a list.
+
+    
+    
+    .pcre2.op.compile[`dotAll`anchored`caseless`dotAll`PCRE2_UTF]
+    
+    /=> compile| utf dotAll anchored caseless dotAll PCRE2_UTF
+    
+    .pcre2.op.remove[`compile; `utf`dotAll] .pcre2.op.compile[`dotAll`anchored`caseless`dotAll`PCRE2_UTF]
+    
+    /=> compile| anchored caseless
+    
+
+## Currently unsupported PCRE2 functionality
+
+  * Errors are not returned from `match`, `replace` and `test`
+  * No information is returned if the match fails, including partial matches or info from backtracking verbs
+  * The substrings matched on regular matching are not returned
+  * Context cannot be specified (memory management especially)
+  * JIT stacks management is unavailable
+  * Character tables cannot be defined by user
+  * UTF-16 and UTF-32 are not supported
+  * The configure and info functions are not available
+  * Callouts are not supported
+
+## .pcre2.compile
+
+Compiled patterns should be used when a regular expression will be used
+multiple times. A pattern must be compiled to be evaluated so it can be
+compiled initially and reused for multiple matches.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+p | char | string | symbol | dict | The regex pattern as either a string or an existing dictionary to clone  
+o | dict | null | A list of the options to be applied  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | A dictionary containing the compiled pattern  
+  
+**Example:** Compile with default options
+
+    
+    
+     re: .pcre2.compile["[Cc]at"; ::]
+    
+     /=> id     | 5a580fb6-656b-5e69-d445-417ebfe71994
+     /=> expr   | "[Cc]at"
+     /=> exec   | 21788720
+     /=> options| `compile`jit`match`replace`useJIT`dfa`firstMatch`firstReplace`offset!(`utf;`complete;`noOptions;`noOptions;1b;0b;1b;1b;0)
+    
+
+**Example:** Compile with some options
+
+    
+    
+     re: .pcre2.compile["cat"]
+         .pcre2.op.compile[`caseless],
+         .pcre2.use.jit[0b],
+         .pcre2.use.replaceAll[]
+    
+     /=> id     | ddb87915-b672-2c32-a6cf-296061671e9d
+     /=> expr   | "cat"
+     /=> exec   | 21789088
+     /=> options| `compile`jit`match`replace`useJIT`dfa`firstMatch`firstReplace`offset!(`utf`caseless;`complete;`noOptions;`noOptions;0b;0b;1b;0b;0)
+    
+
+**Example:** Clone an existing pattern (re is from the above example)
+
+    
+    
+     re2: .pcre2.compile[re] 
+         .pcre2.use.jit[], 
+         .pcre2.op.match[`anchored]
+    
+     /=> id     | 9ff6dd37-f8b5-ce43-3cf1-01cfbafca89d
+     /=> expr   | "cat"
+     /=> exec   |  13027952
+     /=> options| `compile`jit`match`replace`useJIT`dfa`firstMatch`firstReplace`offset!(`utf`caseless;`complete;`anchored;`noOptions;1b;0b;1b;0b;0)
+    
+
+## .pcre2.escapeSpecialChars
+
+Escapes any characters that have special meanings in regexes
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+text | string |   
+  
+**Returns:**
+
+## .pcre2.free
+
+Frees a compiled pattern pointer that's in a pattern dictionary
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+p | dict | A dictionary containing the pattern pointer  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | The dictionary after the pattern has been freed  
+  
+**Example:** Free a pattern
+
+    
+    
+     .pcre2.free .pcre2.compile["[Cc]at"; ::]
+    
+     /=> id     | 6e5e0302-9297-68ad-8f63-caa05160abf4
+     /=> expr   | "[Cc]at"
+     /=> exec   | 0N
+     /=> options| `compile`jit`match`replace`useJIT`dfa`firstMatch`firstReplace`offset!(`utf;`complete;`noOptions;`noOptions;1b;0b;1b;1b;0)
+    
+
+## .pcre2.imatch
+
+Finds and returns the start and end indexes of a match
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+p | dict | string | A dictionary with the pattern and options or a string of a pattern to be used  
+s | string | symbol | string[] | symbol[] | enumerated symbol | The subjects to be searched, **mixed enumerated lists not supported**  
+o | dict | null | A list of the options to be applied  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+long[] | long[][] | A list where each element is a list of start and end indexes for a respective subject string  
+  
+**Example:** Match using defaults options
+
+    
+    
+     .pcre2.imatch["[Cc]at"; "The cat is cute."; ::];
+     /=> 4 7
+    
+
+**Example:** Match using some options
+
+    
+    
+     .pcre2.imatch["[Cc]at"; ("There is an orange cat, a black cat and a calico cat all in the window."; "The cat is cute.")]
+         .pcre2.use.jit[0b],
+         .pcre2.use.offset[25 0],
+         .pcre2.use.matchAll[]
+    
+     /=> 32 35 49 52
+     /=> 4 7
+    
+
+## .pcre2.match
+
+Finds and returns all the matches in all the subject strings
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+p | dict | string | a dictionary with the pattern and options or a string of a pattern to be used  
+s | string | symbol | string[] | symbol[] | enumerated symbol | the subjects to be searched, **mixed enumerated lists not supported**  
+o | dict | null | a list of the options to be applied  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+string | symbol | string[] | symbol[] | a list where each entry is a list of the matches for the subject string of the same index  
+  
+**Example:** Match using defaults options
+
+    
+    
+     .pcre2.match["[Cc]at"; "The cat is cute."; ::]
+     /=> "cat"
+    
+
+**Example:** Match using some options
+
+    
+    
+     .pcre2.match["[Cc]at"; ("The cat is cute."; "There are two cats hiding under the bed.")]
+         .pcre2.use.jit[0b],
+         .pcre2.use.offset[4], 
+         .pcre2.op.match[`anchored]
+    
+     /=> ,"cat"
+     /=> ()
+    
+
+## .pcre2.op.compile
+
+Puts the compile options chosen into a dictionary under key compileOp
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+o | symbol | symbol[] | Key(s) of the option(s) to be added  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | Holds compile options chosen  
+  
+**Example:** Add one compile option
+
+    
+    
+     .pcre2.op.compile `caseless
+    
+     /=> compile| utf caseless
+    
+
+**Example:** Add a list of compile options
+
+    
+    
+     .pcre2.op.compile `caseless`anchored
+    
+     /=> compile| utf caseless anchored
+    
+
+## .pcre2.op.jit
+
+Puts the jit options chosen into a dictionary under key compileOp
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+o | symbol | symbol[] | Key(s) of the option(s) to be added  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | Holds jit options chosen  
+  
+## .pcre2.op.match
+
+Puts the match options chosen into a dictionary under key compileOp
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+o | symbol | symbol[] | Key(s) of the option(s) to be added  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | Holds match options chosen  
+  
+**Example:** Add one match option
+
+    
+    
+     .pcre2.op.match `notEmpty
+    
+     /=> match| notEmpty
+    
+
+**Example:** Add a list of match options
+
+    
+    
+     .pcre2.op.match `notEmpty`anchored
+    
+     /=> match| notEmpty anchored
+    
+
+## .pcre2.op.remove
+
+Removes options from a chosen option field
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+t | symbol | Type of options to be removed  
+r | symbol | symbol[] | Options to be removed  
+o | dict | Options dictionary options are to be removed from  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | Option dictionary without removed options in it  
+  
+**Example:** Remove an option
+
+    
+    
+     .pcre2.op.remove[`compile; `caseless] .pcre2.op.compile[`caseless`ungreedy]
+    
+     /=> compile| utf ungreedy
+    
+
+**Example:** Remove a list of options
+
+    
+    
+     .pcre2.op.remove[`compile; `caseless`utf`dotAll] .pcre2.op.compile[`caseless`ungreedy`dotAll`anchored]
+    
+     /=> compile| ungreedy anchored
+    
+
+## .pcre2.op.replace
+
+Puts the replace options chosen into a dictionary under key compileOp
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+o | symbol | symbol[] | Key(s) of the option(s) to be added  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | Holds replace options chosen  
+  
+**Example:** Add one replace option
+
+    
+    
+     .pcre2.op.replace `anchored
+    
+     /=> replace| anchored
+    
+
+**Example:** Add a list of replace options
+
+    
+    
+     .pcre2.op.replace `anchored`notEmpty
+    
+     /=> replace| anchored notEmpty
+    
+
+## .pcre2.replace
+
+Replaces every match in every string with a given string
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+p | dict | string | A dictionary with the pattern and options or a string of a pattern to be used  
+s | string | symbol | string[] | symbol[] | enumerated symbol | The subjects to be searched and replaced, **mixed enumerated lists not supported**  
+r | char | string | symbol | string[] | symbol[] | A string or list of strings for each subject to replace what is matched  
+o | dict | null | A list of the options to be applied  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+string | symbol | string[] | symbol[] | The subject strings with the replacements substituted in  
+  
+**Example:** Replace using defaults options
+
+    
+    
+     .pcre2.replace["[Cc]at; "The cat is cute."; "kitty"; ::];
+     /=> "The kitty is cute."
+    
+
+**Example:** Replace using some options
+
+    
+    
+     .pcre2.replace["[Cc]at"; ("The cat is cute."; "There are two cats hiding under the bed."); "kitten"]
+         .pcre2.use.offset[4], 
+         .pcre2.op.replace[`anchored]
+     /=> "The kitten is cute."
+     /=> "There are two cats hiding under the bed."
+    
+
+## .pcre2.test
+
+Tests whether or not a pattern matches anything in a subject
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+p | dict | string | A dictionary with the pattern and options or a string of a pattern to be used  
+s | string | symbol | string[] | symbol[] | enumerated symbol | The subjects to be searched, **mixed enumerated lists not supported**  
+o | dict | null | A list of the options to be applied  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | boolean[] | A list the size of the subject list where an element is true if there is a match  
+  
+**Example:** Test using defaults options
+
+    
+    
+     .pcre2.test["[Cc]at"; "The cat is cute."; ::]
+     /=> 1b
+    
+
+**Example:** Test using some options
+
+    
+    
+     .pcre2.test["[Cc]at"; ("The cat is cute."; "There are two cats hiding under the bed.")]
+         .pcre2.use.jit[0b],
+         .pcre2.use.offset[4], 
+         .pcre2.op.match[`anchored]
+     /=> 10b
+    
+
+## .pcre2.use.dfa
+
+Puts the DFA boolean into a dictionary, null defaults to true
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+d | boolean | null | False to not do DFA matching  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | Holds the DFA matching flag  
+  
+**Example:** Turn DFA matching on
+
+    
+    
+     .pcre2.use.dfa[]
+    
+     /=> dfa| 1
+    
+
+**Example:** Turn DFA matching off
+
+    
+    
+     .pcre2.use.dfa[0b]
+    
+     /=> dfa| 0
+    
+
+## .pcre2.use.jit
+
+Puts the JIT boolean into a dictionary, null defaults to true
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+j | boolean | null | Set to false to disable JIT compiling  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | Holds the JIT flag  
+  
+**Example:** Turn JIT compile on
+
+    
+    
+     .pcre2.use.jit[]
+    
+     /=> useJIT| 1
+    
+
+**Example:** Turn JIT compile off
+
+    
+    
+     .pcre2.use.jit[0b]
+    
+     /=> useJIT| 0
+    
+
+## .pcre2.use.matchAll
+
+Puts the firstMatch boolean into a dictionary, null defaults to true
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+m | boolean | null | False to find only the first match  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | Holds the firstMatch flag  
+  
+**Example:** Turn match all on
+
+    
+    
+     .pcre2.use.matchAll[]
+    
+     /=> firstMatch| 0
+    
+
+**Example:** Turn match all off
+
+    
+    
+     .pcre2.use.matchAll[0b]
+    
+     /=> firstMatch| 1
+    
+
+## .pcre2.use.offset
+
+Puts the offset into a dictionary
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+o | long | long[] | False to not do DFA matching  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | Holds the offset  
+  
+**Example:** One offset value
+
+    
+    
+     .pcre2.use.offset[5]
+    
+     /=> offset| 5
+    
+
+**Example:** List of offset values
+
+    
+    
+     .pcre2.use.offset[5 12 0]
+    
+     /=> offset| 5 12 0
+    
+
+## .pcre2.use.replaceAll
+
+Puts the firstReplace boolean into a dictionary, null defaults to true
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+r | boolean | null | False to do only the first replace  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | Holds the firstReplace flag  
+  
+**Example:** Turn replace all on
+
+    
+    
+     .pcre2.use.replaceAll[]
+    
+     /=> firstReplace| 0
+    
+
+**Example:** Turn replace all off
+
+    
+    
+     .pcre2.use.replaceAll[0b]
+    
+     /=> firstReplace| 1
+    
+

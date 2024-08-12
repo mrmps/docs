@@ -1,0 +1,129 @@
+https://code.kx.com/platform/api/trapping/
+
+# Trapping - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/api/trapping/
+
+# Trapping
+
+This module contains functionality to perform different modes of protected
+evaluation. The mode can be switched at will and is useful when troubleshoot
+issues. The default mode is normal _protected evaluation_. If an issue is
+encountered, the mode can be switched to _print a stack trace_ or _enter debug
+mode_. The latter should only be used if running a process interactively
+(usually in development).
+
+The `.trp.execute` API can be used in place of normal `@` or `.` protected
+evaluation. It takes a statement to execute and an error handler. Depending on
+the trap mode, the execution of the statement will differ.
+
+  * `trap` executes a normal protected eval using `value` on the statement
+  * `debug` executes the statement with no protection, allowing the process to throw the exception and enter debug mode
+  * `trace` uses the `.Q.trp` function to print a stack trace
+
+Internal frameworks use `.trp.execute` so switching the mode can provide
+further information on errors thrown by the Control.
+
+## `.trp.execute`
+
+Used to run protected evaluation. Trap mode set by `.trp.setMode`.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+statement | untyped | Executable statement  
+catch | function|default | Error handler or default value to apply  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+untyped | Depends what function or catch returns  
+  
+**Example:**
+
+    
+    
+     .trp.setMode[`trap]
+     f:{1*x}
+     .trp.execute[(`f; 10); { -2"Error executing: ",x; 0N}]
+     /=> 10
+     .trp.execute[(`f; `e); { -2"Error executing: ",x; 0N}]
+     /=> Error executing: type
+     /=> 0N
+    
+
+**Example:**
+
+    
+    
+     .trp.setMode[`debug]
+     f:{1*x}
+     .trp.execute[(`f; `e); { -2"Error executing: ",x; 0N}]
+     /=> 'type
+     /=>   [2]  f:{1*x}
+     /=>            ^
+     q))(.z.ex; .z.ey)
+     /=> *
+     /=> (1;`e)
+    
+
+**Example:**
+
+    
+    
+     .trp.setMode[`trace]
+     .trp.execute[(`f; `e); { -2"Error executing: ",x; 0N}]
+     /=> <->2017.06.19D11:51:36.863 ### Trap         ### warn.. ### (31261): Error during execution, printing stack trace ###
+     /=>   [3]  f:{1*x}
+     /=>            ^
+     /=>   [2]  (.Q.trp)
+     /=>
+     /=>   [1]  (.trp.i.executeTrace)
+     /=>
+     /=>   [0]  .trp.execute[(`f; `e); { -2"Error executing: ",x; 0N}]
+     /=>        ^
+     /=> 
+     /=> Error executing: type
+     /=> 0N
+    
+
+## `.trp.setErrorTrap`
+
+Sets the error trap mode `\e`
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+mode | int | Error mode  
+  
+**Example:**
+
+    
+    
+     .trp.setErrorTrap[1i]
+    
+
+## `.trp.setMode`
+
+Sets the error trapping mode. Supported modes are;
+
+  * `trap` \- evaluate statement and call error handler if signal thrown
+  * `debug` \- evaluate and enter debug mode if signal produced
+  * `trace` \- evaluate and print stack trace
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+mode | symbol | Sets the trap mode  
+  
+**Example:**
+
+    
+    
+     .trp.setMode[`trap]
+    
+

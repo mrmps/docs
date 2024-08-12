@@ -1,0 +1,143 @@
+https://code.kx.com/analyst/known-issues/
+
+# Known issues - KX Analyst
+
+Original URL: https://code.kx.com/analyst/known-issues/
+
+# Known issues
+
+## KX Analyst listens on all network interfaces (using `\p`)
+
+By default, Analyst uses `\p port` to set the process port if not already set.
+If only listening on localhost is desired, either:
+
+  * set the port before loading Analyst (`\p localhost:port`),
+  * set the environment variable `ANALYST_PORT="localhost:port"`, or
+  * update the Analyst config at `<install>/config/config.{profile,bat}` setting `ANALYST_PORT="localhost:port"`
+
+## stdout/err redirection for large messages can block process
+
+Large stdout/err messages can fill the redirection buffer causing the process
+to block. Signalling `SIGINT` on the process will cause it to resume. The size
+of the buffer depends on the operating system in use. In *nix and macOS, this
+corresponds to the maximum pipe size, and is variable on Windows.
+
+To disable stdout/err redirection you may define the environment variable
+`ANALYST_NOUSE_REDIR=true`
+
+## Error `'snd. OS reports: Resource temporarily unavailable` serving Analyst
+
+Prior to v3.5/v3.6 2018.10.03, starting kdb+ with TLS enabled to serve content
+over HTTPS could result in a `'snd` error. This is fixed in v3.5 and v3.6 as
+of that date, and is not an issue when not using TLS.
+
+## `-U` user/password file checks unsupported
+
+Analyst will use `.z.ac` under the hood to perform authentication over HTTP
+and WebSockets. `-U` is ignored by this handler, for this reason `-U` password
+file checks are unsupported.
+
+## Multiple concurrent users
+
+Multiple users can attach to the same q process as long as they all
+authenticate against it. Messages (stdout, stderr, and scripted visuals) are
+broadcast to all Analyst sessions.
+
+## Suspended q processes
+
+If a q process is in suspended mode, i.e., within the q debugger with a prompt
+like q)), then all requests to the process are suspended until execution
+resumes as normal. This means that use of Analyst will also be suspended while
+in this mode.
+
+## Background processes with basic auth
+
+Analyst authentication requires user to input a username and password. If
+authentication is desired when starting q as a background process, it is
+advised to write custom authentication handling so that username and password
+can be configured however desired, and load `launcher.q_` as usual, with
+`ANALYST_USE_AUTH="no"`. See the Analyst `README.md` for more information on
+usage of `.z.*`.
+
+## Closing a websocket to a Analyst process stops stdout/err messages
+
+If a websocket connection is attached to the q process running Analyst and
+that socket is subsequently closed, stdout/err will stop appearing in Analyst.
+The q process will continue to show stdout/err from the command line. To re-
+enable stdout/err in the IDE refresh the page.
+
+## Cloning repositories requires both the private and public key to be present
+
+When cloning a git repository into Analyst over ssh using a key file, Analyst
+requires both the private _and_ public key to be present. The keys must be in
+the same location and have the same file name with appropriate extensions
+(`.pub` for the public key).
+
+**Example:**
+
+Cloning over ssh using the default key location of `~/.ssh/id_rsa` requires
+that both a public key and private key file be present under `~/.ssh`. This
+means that both files `id_rsa` and `id_rsa.pub` should be in the `~/.ssh`
+directory.
+
+![git clone](../img/git-clone-key.png)
+
+    
+    
+    // This must be true for clone to succeed.
+    path: hsym "S"$getenv[`HOME],"/.ssh";
+    all `id_rsa`id_rsa.pub in key path;
+    /=> 1b
+    
+
+If the public key is not present, the following error will be printed.
+
+    
+    
+    Failed to connect to remote: Failed to authenticate SSH session: Unable to open public key file
+    
+
+## Authentication error with Safari
+
+Safari is not currently supported
+
+We recommend using Chrome or Firefox for the best experience with KX Analyst.
+
+Safari is not a currently supported web browser for KX Analyst due to a known
+[issue with Safari](https://bugs.webkit.org/show_bug.cgi?id=80362) which
+prevents KX Analyst from creating an authenticated WebSocket connection. Users
+trying to use Safari with authentication enabled will see the following
+message immediately after entering their username and password:
+
+![safari](../img/safari-disconnected.png)
+
+To use authentication with KX Analyst, switch to a supported browser. Disable
+authentication in your configuration file to continue using Safari with KX
+Analyst.
+
+## Switching `ANALYST_USE_AUTH` between yes and no on IE does not clear
+username
+
+If Analyst is started with `ANALYST_USE_AUTH` set to `yes` and a session is
+created in Internet Explorer, switching `ANALYST_USE_AUTH` to `no` will
+continue to remember the previous username. To clear the username from
+Internet Explorer, follow the instructions at
+<https://support.microsoft.com/en-ca/help/17438/windows-internet-explorer-
+view-delete-browsing-history#ie=ie-11>
+
+Deleting the browser cache will reset Analyst
+
+Clearing the browser's cache will clear the username from Internet Explorer
+but it will also delete all workspace settings including scratchpads and
+unsaved changes. Before clearing your browser's cache, ensure that all unsaved
+content is either saved or backed up.
+
+## Error cloning repositories on Windows 10 version 1903 or newer
+
+Microsoft has updated their Cryptography API in Windows 10 version 1903, and
+users on this version or newer will see a `Failed to connect to remote: failed
+to start SSH session:` error when trying to clone Git repositories over SSH.
+Cloning over HTTP/HTTPS is not affected.
+
+We are investigating a fix and will be releasing a patch as soon as possible.
+

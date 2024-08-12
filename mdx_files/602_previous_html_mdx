@@ -1,0 +1,3908 @@
+https://code.kx.com/insights/microservices/release-notes/previous.html
+
+# Previous - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/release-notes/previous.html
+
+# kdb Insights Microservices - Previous Release Notes
+
+This page outlines release notes from past releases. For the most recent
+release, refer to the [latest release](latest.html) page.
+
+## 1.9.4
+
+#### Release Date
+
+2024-06-11
+
+###  Fixes
+
+Expand to see the full detail of resolved issues here
+
+**Security**
+
+  * Multiple CVEs have been resolved as part of this patch. 
+
+**Cloud Readers**
+
+  * When administering a pipeline, a cloud reader node (s3, ms, and gs) could prompt you that there were unsaved changes even when no changes have been made. 
+
+  * The Azure reader file watcher was returning an error that one or more files did not exist despite the file(s) being present. 
+
+**Reliable Transport**
+
+  * RT's replicator was emitting an `Invalid publishing directory, was it deleted by mistake? Please enrol a different client and restart the SDK with the new client` error after recovering from a power outage of a q publisher server. This has been resolved to handle the recovery cleanly after such an outage. 
+
+**Database**
+
+  * For a new system with an empty database, queries would not work after the first end-of-day data writedown if no data had been ingested yet. 
+
+### Artifacts
+
+KX Nexus
+
+The KX Nexus repository will be sunsetted in the future. Nexus links on this
+page are provided as a temporary alternative to the KX Downloads Portal for
+existing users. The KX Downloads Portal is the preferred repository for all
+use cases and KX Nexus links will be removed once the KX Nexus repository is
+decommissioned.
+
+#### Stream Processor
+
+microservice |  Nexus Docker | Downloads Portal Docker  
+---|---|---  
+Controller | registry.dl.kx.com/kxi-sp-controller:1.9.4 | portal.dl.kx.com/kxi-sp-controller:1.9.4  
+Worker | registry.dl.kx.com/kxi-sp-worker:1.9.4 | portal.dl.kx.com/kxi-sp-worker:1.9.4  
+Coordinator | registry.dl.kx.com/kxi-sp-coordinator:1.9.4 | portal.dl.kx.com/kxi-sp-coordinator:1.9.4  
+Worker-Python | registry.dl.kx.com/kxi-sp-python:1.9.4 | portal.dl.kx.com/kxi-sp-python:1.9.4  
+Worker-ML | registry.dl.kx.com/kxi-ml:1.9.4 | portal.dl.kx.com/kxi-ml:1.9.4  
+  
+#### Database
+
+microservice |  Nexus Docker | Downloads Portal Docker  
+---|---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.9.4 | portal.dl.kx.com/kxi-da:1.9.4  
+Single container | registry.dl.kx.com/kxi-da-single:1.9.4 | portal.dl.kx.com/kxi-da-single:1.9.4  
+Storage Manager | registry.dl.kx.com/kxi-sm-single:1.9.4 | portal.dl.kx.com/kxi-sm-single:1.9.4  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.9.4 | portal.dl.kx.com/kxi-sg-gw:1.9.4  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.9.4 | portal.dl.kx.com/kxi-sg-rc:1.9.4  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.9.4 | portal.dl.kx.com/kxi-sg-agg:1.9.4  
+Rollback | registry.dl.kx.com/kxi-db-rollback:1.9.4 | portal.dl.kx.com/kxi-db-rollback:1.9.4  
+  
+#### Reliable Transport
+
+microservice |  Nexus Docker | Downloads Portal Docker | Helm Chart  
+---|---|---|---  
+Reliable Transport | registry.dl.kx.com/kxi-rt:1.9.1 | portal.dl.kx.com/kxi-rt:1.9.1 | [kxi-rt-1.9.1.tgz](https://portal.dl.kx.com/assets/helm/kxi-rt/kxi-rt-1.9.1.tgz)  
+  
+#### Miscellaneous
+
+## 1.9.3
+
+#### Release Date
+
+2024-05-21
+
+###  Fixes
+
+Expand to see the full detail of resolved issues here
+
+**Service Gateway**
+
+  * The`KXI_RC_LABEL_SELECTOR` field was not being correctly honored, causing Kubernetes discovery to become non-functional. This has been resolved. Refer to [Gateway](../../enterprise/database/query/resilience.html#gateway) for details on this field. 
+
+**Stream Processor**
+
+  * The SP Kafka writer did not support configuration options when connecting to a Kafka broker. An `options` parameter has been added to the q & Python APIs to allow the client to specify advanced configuration, for example, authentication or TLS. See the Writers documentation for [q](../../api/stream-processor/q/writers.html#qspwritetokafka) and [Python](../../api/stream-processor/python/writers.html#to_kafka) for details. 
+
+### Artifacts
+
+KX Nexus
+
+The KX Nexus repository will be sunsetted in the future. Nexus links on this
+page are provided as a temporary alternative to the KX Downloads Portal for
+existing users. The KX Downloads Portal is the preferred repository for all
+use cases and KX Nexus links will be removed once the KX Nexus repository is
+decommissioned.
+
+#### Stream Processor
+
+microservice |  Nexus Docker | Downloads Portal Docker  
+---|---|---  
+Controller | registry.dl.kx.com/kxi-sp-controller:1.9.3 | portal.dl.kx.com/kxi-sp-controller:1.9.3  
+Worker | registry.dl.kx.com/kxi-sp-worker:1.9.3 | portal.dl.kx.com/kxi-sp-worker:1.9.3  
+Coordinator | registry.dl.kx.com/kxi-sp-coordinator:1.9.3 | portal.dl.kx.com/kxi-sp-coordinator:1.9.3  
+Worker-Python | registry.dl.kx.com/kxi-sp-python:1.9.3 | portal.dl.kx.com/kxi-sp-python:1.9.3  
+Worker-ML | registry.dl.kx.com/kxi-ml:1.9.3 | portal.dl.kx.com/kxi-ml:1.9.3  
+  
+#### Database
+
+microservice |  Nexus Docker | Downloads Portal Docker  
+---|---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.9.3 | portal.dl.kx.com/kxi-da:1.9.3  
+Single container | registry.dl.kx.com/kxi-da-single:1.9.3 | portal.dl.kx.com/kxi-da-single:1.9.3  
+Storage Manager | registry.dl.kx.com/kxi-sm-single:1.9.3 | portal.dl.kx.com/kxi-sm-single:1.9.3  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.9.3 | portal.dl.kx.com/kxi-sg-gw:1.9.3  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.9.3 | portal.dl.kx.com/kxi-sg-rc:1.9.3  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.9.3 | portal.dl.kx.com/kxi-sg-agg:1.9.3  
+Rollback | registry.dl.kx.com/kxi-db-rollback:1.9.3 | portal.dl.kx.com/kxi-db-rollback:1.9.3  
+  
+#### Reliable Transport
+
+microservice |  Nexus Docker | Downloads Portal Docker | Helm Chart  
+---|---|---|---  
+Reliable Transport | registry.dl.kx.com/kxi-rt:1.9.1 | portal.dl.kx.com/kxi-rt:1.9.1 | [kxi-rt-1.9.1.tgz](https://portal.dl.kx.com/assets/helm/kxi-rt/kxi-rt-1.9.1.tgz)  
+  
+#### Miscellaneous
+
+## 1.9.2
+
+#### Release Date
+
+2024-05-07
+
+###  Fixes
+
+Expand to see the full detail of resolved issues here
+
+**Reliable Transport**
+
+  * The RT client was failing to recognize a new log file, putting downstream subscribers into a hung state. This has been resolved. 
+
+### Artifacts
+
+KX Nexus
+
+The KX Nexus repository will be sunsetted in the future. Nexus links on this
+page are provided as a temporary alternative to the KX Downloads Portal for
+existing users. The KX Downloads Portal is the preferred repository for all
+use cases and KX Nexus links will be removed once the KX Nexus repository is
+decommissioned.
+
+#### Stream Processor
+
+microservice |  Nexus Docker | Downloads Portal Docker  
+---|---|---  
+Controller | registry.dl.kx.com/kxi-sp-controller:1.9.2 | portal.dl.kx.com/kxi-sp-controller:1.9.2  
+Worker | registry.dl.kx.com/kxi-sp-worker:1.9.2 | portal.dl.kx.com/kxi-sp-worker:1.9.2  
+Coordinator | registry.dl.kx.com/kxi-sp-coordinator:1.9.2 | portal.dl.kx.com/kxi-sp-coordinator:1.9.2  
+Worker-Python | registry.dl.kx.com/kxi-sp-python:1.9.2 | portal.dl.kx.com/kxi-sp-python:1.9.2  
+Worker-ML | registry.dl.kx.com/kxi-ml:1.9.2 | portal.dl.kx.com/kxi-ml:1.9.2  
+  
+#### Database
+
+microservice |  Nexus Docker | Downloads Portal Docker  
+---|---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.9.2 | portal.dl.kx.com/kxi-da:1.9.2  
+Single container | registry.dl.kx.com/kxi-da-single:1.9.2 | portal.dl.kx.com/kxi-da-single:1.9.2  
+Storage Manager | registry.dl.kx.com/kxi-sm-single:1.9.2 | portal.dl.kx.com/kxi-sm-single:1.9.2  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.9.2 | portal.dl.kx.com/kxi-sg-gw:1.9.2  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.9.2 | portal.dl.kx.com/kxi-sg-rc:1.9.2  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.9.2 | portal.dl.kx.com/kxi-sg-agg:1.9.2  
+Rollback | registry.dl.kx.com/kxi-db-rollback:1.9.2 | portal.dl.kx.com/kxi-db-rollback:1.9.2  
+  
+#### Reliable Transport
+
+microservice |  Nexus Docker | Downloads Portal Docker | Helm Chart  
+---|---|---|---  
+Reliable Transport | registry.dl.kx.com/kxi-rt:1.9.1 | portal.dl.kx.com/kxi-rt:1.9.1 | [kxi-rt-1.9.1.tgz](https://portal.dl.kx.com/assets/helm/kxi-rt/kxi-rt-1.9.1.tgz)  
+  
+#### Miscellaneous
+
+## 1.9.1
+
+#### Release Date
+
+2024-04-30
+
+###  Improvements
+
+  * The `fromParquet` Reader is now supported for AWS-based deployments. For more information, refer to [Readers](../../api/stream-processor/q/readers.html#qspreadfromparquet). 
+
+###  Fixes
+
+Expand to see the full detail of resolved issues here
+
+**Database**
+
+  * Client requests using compressed IPC messages are now properly serviced. Previously, if the first request from a client was using compressed IPC, that and any future requests would fail. 
+
+**Reliable Transport**
+
+  * If using the RT Helm chart, RT pods now use Kubernetes liveness probes to automatically bounce pods if unresponsive. This resolves a known issue in 1.9.0 in which RT pods were required to be manually restarted if an upgrade erroneously left them in a non-ready state. 
+
+### Artifacts
+
+KX Nexus
+
+The KX Nexus repository will be sunsetted in the future. Nexus links on this
+page are provided as a temporary alternative to the KX Downloads Portal for
+existing users. The KX Downloads Portal is the preferred repository for all
+use cases and KX Nexus links will be removed once the KX Nexus repository is
+decommissioned.
+
+#### Stream Processor
+
+microservice |  Nexus Docker | Downloads Portal Docker  
+---|---|---  
+Controller | registry.dl.kx.com/kxi-sp-controller:1.9.1 | portal.dl.kx.com/kxi-sp-controller:1.9.1  
+Worker | registry.dl.kx.com/kxi-sp-worker:1.9.1 | portal.dl.kx.com/kxi-sp-worker:1.9.1  
+Coordinator | registry.dl.kx.com/kxi-sp-coordinator:1.9.1 | portal.dl.kx.com/kxi-sp-coordinator:1.9.1  
+Worker-Python | registry.dl.kx.com/kxi-sp-python:1.9.1 | portal.dl.kx.com/kxi-sp-python:1.9.1  
+Worker-ML | registry.dl.kx.com/kxi-ml:1.9.1 | portal.dl.kx.com/kxi-ml:1.9.1  
+  
+#### Database
+
+microservice |  Nexus Docker | Downloads Portal Docker  
+---|---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.9.1 | portal.dl.kx.com/kxi-da:1.9.1  
+Single container | registry.dl.kx.com/kxi-da-single:1.9.1 | portal.dl.kx.com/kxi-da-single:1.9.1  
+Storage Manager | registry.dl.kx.com/kxi-sm-single:1.9.1 | portal.dl.kx.com/kxi-sm-single:1.9.1  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.9.1 | portal.dl.kx.com/kxi-sg-gw:1.9.1  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.9.1 | portal.dl.kx.com/kxi-sg-rc:1.9.1  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.9.1 | portal.dl.kx.com/kxi-sg-agg:1.9.1  
+Rollback | registry.dl.kx.com/kxi-db-rollback:1.9.1 | portal.dl.kx.com/kxi-db-rollback:1.9.1  
+  
+#### Reliable Transport
+
+microservice |  Nexus Docker | Downloads Portal Docker | Helm Chart  
+---|---|---|---  
+Reliable Transport | registry.dl.kx.com/kxi-rt:1.9.1 | portal.dl.kx.com/kxi-rt:1.9.1 | [kxi-rt-1.9.1.tgz](https://portal.dl.kx.com/assets/helm/kxi-rt/kxi-rt-1.9.1.tgz)  
+  
+#### Miscellaneous
+
+## 1.9.0
+
+#### Release Date
+
+2024-03-26
+
+###  New Features
+
+  * **SQL Enhancements**
+
+SQL in kdb Insights Enterprise now includes support for ORDER BY and LIMIT
+clauses, in addition to other functions. Changes to how SQL statements are
+parsed also significantly improves SQL query performance in this release.
+Query performance, on average, is up to 3x faster than before. Refer to [SQL
+2](https://code.kx.com/insights/1.9/api/database/query/sql2.html) for more
+information on the new SQL implementation and its current [Known
+Limitations](https://code.kx.com/insights/1.9/api/database/query/sql2.html#known-
+limitations).
+
+  * **Snapshots & Majority Archival for Reliable Transport**
+
+Reliable Transport now supports taking snapshots allowing for majority
+archival of logs files. Previously, all nodes needed to be healthy before RT
+logs could be archived.
+
+  * **Configurable Connections for Reliable Transport**
+
+Reliable Transport now supports subscribers and publishers setting customized
+parameters when they register with their respective sequencer cluster. This
+gives you greater configurability in how you deploy and orchestrate components
+of RT. See [rt.qpk](https://code.kx.com/insights/1.9/microservices/rt/sdks/rt-
+qpk.html) for more details.
+
+###  Improvements
+
+  * **Batch Delete**
+
+Batch delete now enables you to delete from all tiers of your HDB. Previously,
+this was only possible for the tier with the most recent HDB data. See
+[Database
+Delete](https://code.kx.com/insights/1.9/microservices/database/storage/delete.html)
+for details on how to perform a delete.
+
+  * **Python Cloud Readers**
+
+Python cloud readers now support polling for new matches to a glob pattern
+with the `watch` parameter. See
+[Readers](https://code.kx.com/insights/1.9/api/stream-
+processor/python/readers.html) for details.
+
+  * **Upgrade to Insights Core 4.1.1**
+
+_kdb Insights_ images have been upgraded to run Insights Core 4.1.1, which
+runs kdb+ 4.1 2024.03.12.
+
+  * **Upgrade to RockyLinux 9**
+
+_kdb Insights_ images have been upgraded to run on Rocky Linux version 9 as
+their base operating system. This addresses security vulnerabilities present
+in version 8.
+
+###  Fixes
+
+Expand to see the full detail of resolved issues here
+
+**Database**
+
+  * If EOD failed while in the middle of an HDB transaction, the aborted transaction was not properly cleaned up after the failure and could result in data inconsistency after reconnection. 
+
+  * The EOD process was not performing a garbage collection after a batch ingest. 
+
+  * Data was unqueryable after a batch ingest if no additional streaming data was loaded after the initial batch ingest. 
+
+**Reliable Transport**
+
+  * In deployments with a one-node RT configuration, RT has been updated to roll its log file after a restart. This prevents data flow from being paused.The RT log file rolls from log.x.y to log.x.y+1. 
+
+**Stream Processor**
+
+  * Previously, when using Python, 'sp.decode.csv' did not support reading columns as strings. This has been updated to enhance flexibility when reading table columns. It now accepts an empty string "" in lieu of a schema to read in all table columns as strings. 
+
+  * Sidecar containers no longer log at a `TRACE` level by default and now adhere to the log level that is set by the user. 
+
+  * The SP controller now adheres to the log level set by the user. 
+
+  * The CSV decoder did not support decoding csvs which had line-returns (i.e. \n’s) embedded in strings. This functionality can now be turned on/off with a new optional parameter called `newlines`. See [.qsp.decode.csv](https://code.kx.com/insights/1.9/api/stream-processor/q/decoders.html#qspdecodecsv) for details. 
+
+  * Previously, when running a large import from a static source (file, Azure, AWS, GCP), there was no indication of progress in the logs. Now, periodic info is included in the SP logs while processing, indicating on-going progress of the import. 
+
+  * The SP’s status APIs now return `TEARING_DOWN` rather than `NOTEXIST` when a pipeline has PVCs that are still in a terminating state. 
+
+**Security**
+
+  * Various CVEs have been remediated as part of this release.
+
+## Upgrade notes
+
+  * The default image repository used for new 1.9 installations will be the [KX Downloads Portal](https://portal.dl.kx.com). The credentials to access this are stored in a docker config json secret named `kxi-image-pull-secret`. If you are upgrading from an earlier version that used the [KX Nexus](https://registry.dl.kx.com) image repository with an exiting secret `kxi-nexus-pull-secret`, this existing repository and secret will be used.
+
+  * After executing an upgrade, if an RT pod does not appear as ‘Ready’, the pod should be deleted/killed so that it is restarted. 
+
+  * During an upgrade, the RT pods attempt to delete a Kubernetes configmap. Since there were 3 RT pods, only one of the pods will be successful in deleting the config map. This means that the other pods will receive ERRORs back indicating that their delete attempt failed. These `Failed to delete snapshot: tmp` errors are benign and will be set to WARN messages in future. 
+
+  * **Query Labels Style**
+
+`KXI_ALLOW_OLD_LABEL_STYLE` now defaults to "false". It must be explicitly set
+to "true" in the RC to allow the "old label style". For example, in a system
+with labels `region`, and `class`:
+
+## Known Issues
+
+Expand to see the list of known issues here
+
+**Pipelines**
+
+  * When deploying a pipeline that writes to a table that does not exist, no error will be thrown. 
+
+## Deprecation
+
+  * `prtnEndCB` and `reloadCB` callback functions are being deprecated in 1.9.0 and may be removed from future releases. 
+
+  * RT `maxLogSize` is no longer used in configuration and will be ignored from older configurations. RT will now utilize all disk available to it. 
+
+### Artifacts
+
+KX Nexus
+
+The KX Nexus repository will be sunsetted in the future. Nexus links on this
+page are provided as a temporary alternative to the KX Downloads Portal for
+existing users. The KX Downloads Portal is the preferred repository for all
+use cases and KX Nexus links will be removed once the KX Nexus repository is
+decommissioned.
+
+#### Stream Processor
+
+microservice |  Nexus Docker | Downloads Portal Docker  
+---|---|---  
+Controller | registry.dl.kx.com/kxi-sp-controller:1.9.0 | portal.dl.kx.com/kxi-sp-controller:1.9.0  
+Worker | registry.dl.kx.com/kxi-sp-worker:1.9.0 | portal.dl.kx.com/kxi-sp-worker:1.9.0  
+Coordinator | registry.dl.kx.com/kxi-sp-coordinator:1.9.0 | portal.dl.kx.com/kxi-sp-coordinator:1.9.0  
+Worker-Python | registry.dl.kx.com/kxi-sp-python:1.9.0 | portal.dl.kx.com/kxi-sp-python:1.9.0  
+Worker-ML | registry.dl.kx.com/kxi-ml:1.9.0 | portal.dl.kx.com/kxi-ml:1.9.0  
+  
+#### Database
+
+microservice |  Nexus Docker | Downloads Portal Docker  
+---|---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.9.0 | portal.dl.kx.com/kxi-da:1.9.0  
+Single container | registry.dl.kx.com/kxi-da-single:1.9.0 | portal.dl.kx.com/kxi-da-single:1.9.0  
+Storage Manager | registry.dl.kx.com/kxi-sm-single:1.9.0 | portal.dl.kx.com/kxi-sm-single:1.9.0  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.9.0 | portal.dl.kx.com/kxi-sg-gw:1.9.0  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.9.0 | portal.dl.kx.com/kxi-sg-rc:1.9.0  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.9.0 | portal.dl.kx.com/kxi-sg-agg:1.9.0  
+Rollback | registry.dl.kx.com/kxi-db-rollback:1.9.0 | portal.dl.kx.com/kxi-db-rollback:1.9.0  
+  
+#### Reliable Transport
+
+microservice |  Nexus Docker | Downloads Portal Docker | Helm Chart  
+---|---|---|---  
+Reliable Transport | registry.dl.kx.com/kxi-rt:1.9.0 | portal.dl.kx.com/kxi-rt:1.9.0 | [kxi-rt-1.9.0.tgz](https://portal.dl.kx.com/assets/helm/kxi-rt/kxi-rt-1.9.0.tgz)  
+  
+#### Miscellaneous
+
+## 1.8.5
+
+#### Release Date
+
+2024-03-21
+
+###  Fixes
+
+Expand to see the full detail of resolved issues here
+
+**Database**
+
+  * Fixed an issue where compressed IPC messages from a client could be mistaken for an aggregator. 
+
+  * Fixed an issue where concurrent async messages from a single client could result in a `badmsg` error when responses were over 5Mb. 
+
+### Artifacts
+
+#### Stream Processor
+
+Microservice |  Docker  
+---|---  
+Controller | registry.dl.kx.com/kxi-sp-controller:1.8.3  
+Worker | registry.dl.kx.com/kxi-sp-worker:1.8.3  
+Coordinator | registry.dl.kx.com/kxi-sp-coordinator:1.8.3  
+Worker-Python | registry.dl.kx.com/kxi-sp-python:1.8.3  
+Worker-ML | registry.dl.kx.com/kxi-ml:1.8.3  
+  
+#### Database
+
+Microservice |  Docker  
+---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.8.4  
+Single container | registry.dl.kx.com/kxi-da-single:1.8.4  
+Storage Manager | registry.dl.kx.com/kxi-sm-single:1.8.4  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.8.4  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.8.4  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.8.4  
+  
+#### Reliable Transport
+
+#### Miscellaneous
+
+## 1.8.4
+
+#### Release Date
+
+2024-03-06
+
+###  Fixes
+
+Expand to see the full detail of resolved issues here
+
+**Database**
+
+  * An issue has been resolved in which the Service Gateway (SG) was unable to connect to any Stream Processer (SP) workers. This was exhibited in deployments of the SG and SP microservices together in Kubernetes, with logs indicating 'Error getting initial services sampledomain.com/role=worker,sampledomain.com/pipeline' and 'Error watching for resources: sampledomain.com/role=worker,sampledomain.com/pipeline'. 
+
+### Artifacts
+
+#### Stream Processor
+
+Microservice |  Docker  
+---|---  
+Controller | registry.dl.kx.com/kxi-sp-controller:1.8.3  
+Worker | registry.dl.kx.com/kxi-sp-worker:1.8.3  
+Coordinator | registry.dl.kx.com/kxi-sp-coordinator:1.8.3  
+Worker-Python | registry.dl.kx.com/kxi-sp-python:1.8.3  
+Worker-ML | registry.dl.kx.com/kxi-ml:1.8.3  
+  
+#### Database
+
+Microservice |  Docker  
+---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.8.3  
+Single container | registry.dl.kx.com/kxi-da-single:1.8.3  
+Storage Manager | registry.dl.kx.com/kxi-sm-single:1.8.3  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.8.3  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.8.3  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.8.3  
+  
+#### Reliable Transport
+
+#### Miscellaneous
+
+## 1.8.3
+
+#### Release Date
+
+2024-02-06
+
+###  Improvements
+
+### Artifacts
+
+#### Stream Processor
+
+Microservice |  Docker  
+---|---  
+Controller | registry.dl.kx.com/kxi-sp-controller:1.8.3  
+Worker | registry.dl.kx.com/kxi-sp-worker:1.8.3  
+Coordinator | registry.dl.kx.com/kxi-sp-coordinator:1.8.3  
+Worker-Python | registry.dl.kx.com/kxi-sp-python:1.8.3  
+Worker-ML | registry.dl.kx.com/kxi-ml:1.8.3  
+  
+#### Database
+
+Microservice |  Docker  
+---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.8.2  
+Single container | registry.dl.kx.com/kxi-da-single:1.8.2  
+Storage Manager | registry.dl.kx.com/kxi-sm-single:1.8.2  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.8.2  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.8.2  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.8.2  
+  
+#### Reliable Transport
+
+#### Miscellaneous
+
+## 1.8.2
+
+#### Release Date
+
+2024-01-23
+
+###  Fixes
+
+Expand to see the full detail of resolved issues here
+
+**Database**
+
+  * An issue has been resolved in relation to Batch Ingest. Previously, some data in the Historical Database (HDB) was persisted to disk but it was unqueryable. This has been fixed, and all data ingested into the HDB is now queryable. 
+
+### Artifacts
+
+#### Stream Processor
+
+Microservice |  Docker  
+---|---  
+Controller | registry.dl.kx.com/kxi-sp-controller:1.8.1  
+Worker | registry.dl.kx.com/kxi-sp-worker:1.8.1  
+Coordinator | registry.dl.kx.com/kxi-sp-coordinator:1.8.1  
+Worker-Python | registry.dl.kx.com/kxi-sp-python:1.8.1  
+Worker-ML | registry.dl.kx.com/kxi-ml:1.8.1  
+  
+#### Database
+
+Microservice |  Docker  
+---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.8.2  
+Single container | registry.dl.kx.com/kxi-da-single:1.8.2  
+Storage Manager | registry.dl.kx.com/kxi-sm-single:1.8.2  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.8.2  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.8.2  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.8.2  
+  
+#### Reliable Transport
+
+#### Miscellaneous
+
+## 1.8.1
+
+#### Release Date
+
+2024-01-16
+
+###  Improvements
+
+  * **Stream Processor CSV Decoder Improvements**
+
+The Python CSV decoder now supports the `first` header option. This should be
+used when only the first batch of your dataset contains a header in the CSV
+file. See [Decoders](https://code.kx.com/insights/1.8/api/stream-
+processor/q/decoders.html#qspdecodecsv) for information on the CSV decoder
+configuration.
+
+###  Fixes
+
+Expand to see the full detail of resolved issues here
+
+**Stream Processor**
+
+  * Stream Processor Beta features configuration has been fixed. When deploying the SP Helm chart, setting `betaFeatures: true` wasn't correctly enabling Beta features. 
+
+  * Previously, the CSV decoder could drop messages when paired with a file reader (Amazon S3, Google Storage, Azure Storage) where chunking was enabled and the CSV decoder header was set to `always`. This issue has been resolved. See [Decoders](https://code.kx.com/insights/1.8/api/stream-processor/q/decoders.html#qspdecodecsv) for information on the CSV decoder configuration. 
+
+  * SP Cloud Readers no longer error when there are no files matching the expected pattern. Previously, a cloud reader using glob pattern matching would prevent the pipeline from starting if no files matched. In particular, this would occur when trying to use the file watcher feature and no files matched as of the pipeline starting. 
+
+  * The delimiter select field in the Stream Processor CSV node has been updated to allow any delimiter to be used. Previously, there was a restriction on the number of characters that could be submitted, preventing entry of `\t` or any other delimiter. 
+
+  * Resolved the problem of all window nodes triggering their jobs at the same time, despite their configuration settings. This would occur in setups with pipelines with multiple window nodes, or separate pipelines that read and write to same RT stream. See [Windows](https://code.kx.com/insights/1.8/api/stream-processor/q/windows.html) for more details. 
+
+**Security**
+
+  * Various CVEs were remediated as part of this release.
+
+### Artifacts
+
+#### Stream Processor
+
+microservice |  Docker  
+---|---  
+Controller | registry.dl.kx.com/kxi-sp-controller:1.8.1  
+Worker | registry.dl.kx.com/kxi-sp-worker:1.8.1  
+Coordinator | registry.dl.kx.com/kxi-sp-coordinator:1.8.1  
+Worker-Python | registry.dl.kx.com/kxi-sp-python:1.8.1  
+Worker-ML | registry.dl.kx.com/kxi-ml:1.8.1  
+  
+#### Database
+
+microservice |  Docker  
+---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.8.0  
+Single container | registry.dl.kx.com/kxi-da-single:1.8.0  
+Storage Manager | registry.dl.kx.com/kxi-sm-single:1.8.0  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.8.0  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.8.0  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.8.0  
+  
+#### Reliable Transport
+
+#### Miscellaneous
+
+## 1.8.0
+
+#### Release Date
+
+2023-12-11
+
+###  New Features
+
+  * **Streaming via WebSocket**
+
+You can now stream from a pipeline to a client application via WebSocket. This
+supports the ability to stream both snapshots as well as real-time data. See
+[here](https://code.kx.com/insights/1.8/microservices/extras/tutorials/web-
+sockets.html) for a tutorial on using this feature.
+
+  * **Azure and GCP Parquet Reader Support**
+
+The _kdb Insights_ Parquet Reader functionality has been extended to support
+Azure and GCP object storage. Users can now read, decode, and watch Parquet
+files stored on Azure and GCP, as well as AWS. These enhancements are
+available in the [q API](https://code.kx.com/insights/1.8/api/stream-
+processor/q/readers.html#from_parquet) and the [Python
+API](https://code.kx.com/insights/1.8/api/stream-
+processor/python/readers.html#from_parquet).
+
+  * **HTTP Publishing**
+
+_kdb Insights_ has introduced a REST interface to publish data over HTTP. This
+expands the interoperability of _kdb Insights_ for ingesting data. Note that
+file size is limited to 10MB per publish. See [Upload via
+HTTP](https://code.kx.com/insights/1.8/enterprise/ingest/pipeline/operators/readers.html#upload)
+for more details.
+
+  * **Python Interface to Reliable Transport**
+
+A new Python interface allows you to publish data to Reliable Transport from
+your own Python application in Docker, or on Linux or Windows. See
+[here](https://code.kx.com/insights/1.8/microservices/rt/sdks/python-sdk.html)
+for details.
+
+  * **New Database Preview API**
+
+You can now query a sample of your data from the database to understand your
+data/schema, construct more complex queries, or build visuals on the full data
+set. See
+[here](https://code.kx.com/insights/1.8/api/database/query/preview.html) for
+details.
+
+  * **Nested Filters in Queries**
+
+You can now express a complex filter in a getData query using nested filters.
+See [here](https://code.kx.com/insights/1.8/api/database/query/get-
+data.html#supported-nested-filter-functions) for details.
+
+###  Improvements
+
+  * **Autoscaling Service Gateways**
+
+The Service Gateway and Aggregator can now autoscale if CPU exceeds your
+configured threshold. The default is to trigger scaling when CPU exceeds 80%
+for 5 seconds, with a default stabilization period of 300 seconds. All of this
+is configurable in your values file. See
+[here](https://code.kx.com/insights/1.8/enterprise/configuration/database.html)
+for details.
+
+  * **Stream Processor File Watcher**
+
+Cloud file readers in the Stream Processor now support watching for new files.
+You can now provide a pattern expression to search for file names. When
+watching is enabled, the file reader will poll for new files that match the
+expression. For full details on file watching, see the [Amazon S3
+reader](https://code.kx.com/insights/1.8/api/stream-
+processor/q/readers.html#qspreadfromamazons3), the [Azure Blob storage
+reader](https://code.kx.com/insights/1.8/api/stream-
+processor/q/readers.html#qspreadfromazureblob) and the [Google Cloud storage
+reader](https://code.kx.com/insights/1.8/api/stream-
+processor/q/readers.html#qspreadfromgooglestorage).
+
+###  Fixes
+
+Expand to see the full detail of resolved issues here
+
+**Database**
+
+  * Improved startup performance of HDB DAPs when loading late data from IDB tier mount. 
+
+  * Storage Manager resiliency improvements have been made to improve how SM cleans up aborted transactions after a failure event. 
+
+  * Improved failure recovery for object storage in Storage Manager. This resolves a case where EOI would not complete and would report `SM Flushing filesystem with [directory]` errors. 
+
+**Reliable Transport**
+
+  * Logging for LEADER/FOLLOWER updates have been changed to DEBUG level to reduce log noise. 
+
+**Stream Processor**
+
+  * Previously, it was possible that `FINISHED` SP pipelines using multiple partitioned workers could spawn extra zombie workers. This has been resolved. 
+
+  * Pipeline quick tests no longer fail if they contained a kdb Insights Stream or kdb Insights Database reader or writer. 
+
+  * Previously it was not possible to maintain state of any object that contained a kdb guid type. This is now fixed. However, if a rollback to an earlier version is required after an upgrade, a rollback step should be run so that on-disk checkpoints can be converted to a format compatible with earlier versions. 
+
+  * Fixed a bug where the csv decoder, with option `header=first`, and paired with an unbounded streaming reader, was incorrectly dropping the first record in every stream batch. 
+
+  * Fixed a determinism gap when reading objects from cloud storage using a glob pattern. In a recovery scenario, it was possible to receive duplicate data. 
+
+  * Fixed a bug where unpopulated column of type 0h (i.e. list) was not getting filled in with blank entries correctly. 
+
+  * If a pipeline is deployed as part of an assembly, `.qsp.write.toDatabase` now defaults to writing to that assembly. This means the assembly name can be omitted when calling `.qsp.write.toDatabase`, for example, `.qsp.write.toDatabase[`trade; .qsp.use``directWrite!(::;1b)]`. 
+
+  * Fixed a bug where in a single path pipeline, the existence of more than one emitter resulted in that same number of combine nodes being added. 
+
+**File Watchers**
+
+  * When using the file/cloud readers in a non-file watching scenario, files that were not getting chunked did not have their state checkpointed. This meant that during a recovery scenario, duplicate data would be generated for those files. 
+
+  * An issue has been resolved that could cause the file watcher to lose data at the boundaries when chunking was set to `auto`. 
+
+**Security**
+
+  * Various CVEs were remediated as part of this release.
+
+### Artifacts
+
+#### Stream Processor
+
+microservice |  Docker  
+---|---  
+Controller | registry.dl.kx.com/kxi-sp-controller:1.8.0  
+Worker | registry.dl.kx.com/kxi-sp-worker:1.8.0  
+Coordinator | registry.dl.kx.com/kxi-sp-coordinator:1.8.0  
+Worker-Python | registry.dl.kx.com/kxi-sp-python:1.8.0  
+Worker-ML | registry.dl.kx.com/kxi-ml:1.8.0  
+  
+#### Database
+
+microservice |  Docker  
+---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.8.0  
+Single container | registry.dl.kx.com/kxi-da-single:1.8.0  
+Storage Manager | registry.dl.kx.com/kxi-sm-single:1.8.0  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.8.0  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.8.0  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.8.0  
+  
+#### Reliable Transport
+
+#### Miscellaneous
+
+## 1.7.6
+
+#### Release Date
+
+2024-03-18
+
+###  Fixes
+
+Expand to see the full detail of resolved issues here
+
+**Database**
+
+  * Fixed an issue where compressed IPC messages from a client could be mistaken for an aggregator. 
+
+  * Fixed an issue where concurrent async messages from a single client could result in a `badmsg` error when responses were over 5Mb. 
+
+### Artifacts
+
+#### Service Discovery
+
+#### Stream Processor
+
+microservice |  Docker  
+---|---  
+Controller | registry.dl.kx.com/kxi-sp-controller:1.7.5  
+Worker | registry.dl.kx.com/kxi-sp-worker:1.7.5  
+Coordinator | registry.dl.kx.com/kxi-sp-coordinator:1.7.5  
+Worker-Python | registry.dl.kx.com/kxi-sp-python:1.7.5  
+Worker-ML | registry.dl.kx.com/kxi-ml:1.7.5  
+  
+#### Database
+
+microservice |  Docker  
+---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.7.6  
+Single container | registry.dl.kx.com/kxi-da-single:1.7.6  
+Storage Manager | registry.dl.kx.com/kxi-sm-single:1.7.6  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.7.6  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.7.6  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.7.6  
+  
+#### Machine Learning
+
+#### Reliable Transport
+
+#### Miscellaneous
+
+## 1.7.5
+
+#### Release Date
+
+2024-03-12
+
+###  Fixes
+
+Expand to see the full detail of resolved issues here
+
+**Database**
+
+  * Making concurrent, asynchronous IPC requests to the Service Gateway from a single client handle could potentially throw `badmsg` and not return the response. This has been resolved. 
+
+### Artifacts
+
+#### Service Discovery
+
+#### Stream Processor
+
+microservice |  Docker  
+---|---  
+Controller | registry.dl.kx.com/kxi-sp-controller:1.7.5  
+Worker | registry.dl.kx.com/kxi-sp-worker:1.7.5  
+Coordinator | registry.dl.kx.com/kxi-sp-coordinator:1.7.5  
+Worker-Python | registry.dl.kx.com/kxi-sp-python:1.7.5  
+Worker-ML | registry.dl.kx.com/kxi-ml:1.7.5  
+  
+#### Database
+
+microservice |  Docker  
+---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.7.5  
+Single container | registry.dl.kx.com/kxi-da-single:1.7.5  
+Storage Manager | registry.dl.kx.com/kxi-sm-single:1.7.5  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.7.5  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.7.5  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.7.5  
+  
+#### Machine Learning
+
+#### Reliable Transport
+
+#### Miscellaneous
+
+## 1.7.4
+
+#### Release Date
+
+2024-01-04
+
+###  Fixes
+
+Expand to see the full detail of resolved issues here
+
+**Database**
+
+  * Improved failure recovery for object storage in Storage Manager. This resolves a case where EOI would not complete and would report `SM Flushing filesystem with [directory]` errors. 
+
+  * Resolved a bug in which EOIs were not completing, and `NoSuchKey` errors were occurring after moving data to object storage. 
+
+  * Improvements have been made to the refresh token logic for AWS deployments. Previously, token refresh logic was erroneous if the session was not requesting object storage bucket data. The refresh rotated every 30 minutes instead of at the session expiry time. Session expiry time is configured with EC2 instance metadata, or by `KX_KURL_AWS_TOKEN_DURATION` when using Amazon STS. 
+
+**Security**
+
+  * Various CVEs have been remediated as part of this release.
+
+### Artifacts
+
+#### Service Discovery
+
+#### Stream Processor
+
+microservice |  Docker  
+---|---  
+Controller | registry.dl.kx.com/kxi-sp-controller:1.7.5  
+Worker | registry.dl.kx.com/kxi-sp-worker:1.7.4  
+Coordinator | registry.dl.kx.com/kxi-sp-coordinator:1.7.5  
+Worker-Python | registry.dl.kx.com/kxi-sp-python:1.7.5  
+Worker-ML | registry.dl.kx.com/kxi-ml:1.7.5  
+  
+#### Database
+
+microservice |  Docker  
+---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.7.4  
+Single container | registry.dl.kx.com/kxi-da-single:1.7.4  
+Storage Manager | registry.dl.kx.com/kxi-sm-single:1.7.4  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.7.4  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.7.4  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.7.4  
+  
+#### Machine Learning
+
+#### Reliable Transport
+
+#### Miscellaneous
+
+## 1.7.3
+
+#### Release Date
+
+2023-11-01
+
+###  Fixes
+
+Expand to see the full detail of resolved issues here
+
+**Database**
+
+  * Optimizations made to the `getData` API to improve query performance when the `prtnCol` is sorted. 
+
+**Security**
+
+  * Various CVEs have been remediated as part of this release.
+
+### Artifacts
+
+#### Service Discovery
+
+#### Stream Processor
+
+microservice |  Docker  
+---|---  
+Controller | registry.dl.kx.com/kxi-sp-controller:1.7.4  
+Worker | registry.dl.kx.com/kxi-sp-worker:1.7.4  
+Coordinator | registry.dl.kx.com/kxi-sp-coordinator:1.7.4  
+Worker-Python | registry.dl.kx.com/kxi-sp-python:1.7.4  
+Worker-ML | registry.dl.kx.com/kxi-ml:1.7.4  
+  
+#### Database
+
+microservice |  Docker  
+---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.7.3  
+Single container | registry.dl.kx.com/kxi-da-single:1.7.3  
+Storage Manager | registry.dl.kx.com/kxi-sm-single:1.7.3  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.7.3  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.7.3  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.7.3  
+  
+#### Machine Learning
+
+#### Reliable Transport
+
+#### Miscellaneous
+
+## 1.7.2
+
+### Release Date
+
+2023-10-03
+
+###  Improvements
+
+  * **SQL Queries**
+
+    * SQL queries will now use less memory if late data is enabled and you are querying data for the current day. 
+
+###  Fixes
+
+Expand to see the full detail of resolved issues here
+
+**Database**
+
+  * Resolved an issue where data for dates modified after the retention period was not getting moved from the first to the secondary HDB tier. 
+
+  * Improved the startup time for HDB DAPs, allowing for faster availability of processes that serve queries. 
+
+**Stream Processor**
+
+  * The Apply Schema transform node now works with NULLs in string types. 
+
+### Artifacts
+
+#### Service Discovery
+
+#### Stream Processor
+
+microservice |  Docker  
+---|---  
+Controller | registry.dl.kx.com/kxi-sp-controller:1.7.2  
+Worker | registry.dl.kx.com/kxi-sp-worker:1.7.2  
+Coordinator | registry.dl.kx.com/kxi-sp-coordinator:1.7.2  
+Worker-Python | registry.dl.kx.com/kxi-sp-python:1.7.2  
+Worker-ML | registry.dl.kx.com/kxi-ml:1.7.2  
+  
+#### Database
+
+microservice |  Docker  
+---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.7.2  
+Single container | registry.dl.kx.com/kxi-da-single:1.7.2  
+Storage Manager | registry.dl.kx.com/kxi-sm-single:1.7.2  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.7.2  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.7.2  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.7.2  
+  
+#### Machine Learning
+
+#### Reliable Transport
+
+#### Miscellaneous
+
+## 1.7.1
+
+### Release Date
+
+2023-09-19
+
+###  Fixes
+
+Expand to see the full detail of resolved issues here
+
+**Database**
+
+  * Resolved an issue with the Storage Manager not rolling back aborted transactions if an EOD failed. 
+
+  * Deleting data from the HDB using a `filter` option now correctly performs the delete. Previously, this returned an error claiming that the column(s) being filtered didn’t exist. 
+
+  * EOIs are no longer delayed after an EOI recovery event. Previously, it was possible for EOIs to become held up if the process was terminated then subsequently recovered. The EOIs would still complete successfully, but with a delay. 
+
+**Security**
+
+  * Resolved CVE-2023-37920 Certifi's removal of e-Tugra root certificate, by upgrading the spaCy dependency. 
+
+**Stream Processor**
+
+  * Attempts to horizontally scale pipelines using the direct write feature will now explicitly error since this is not currently supported. 
+
+### Artifacts
+
+#### Service Discovery
+
+#### Stream Processor
+
+microservice |  Docker  
+---|---  
+Controller | registry.dl.kx.com/kxi-sp-controller:1.7.1  
+Worker | registry.dl.kx.com/kxi-sp-worker:1.7.1  
+Coordinator | registry.dl.kx.com/kxi-sp-coordinator:1.7.1  
+Worker-Python | registry.dl.kx.com/kxi-sp-python:1.7.1  
+Worker-ML | registry.dl.kx.com/kxi-ml:1.7.1  
+  
+#### Database
+
+microservice |  Docker  
+---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.7.1  
+Single container | registry.dl.kx.com/kxi-da-single:1.7.1  
+Storage Manager | registry.dl.kx.com/kxi-sm-single:1.7.1  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.7.1  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.7.1  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.7.1  
+  
+#### Machine Learning
+
+#### Reliable Transport
+
+#### Miscellaneous
+
+## 1.7.0
+
+### Release Date
+
+2023-08-25
+
+###  New Features
+
+#### kdb Insights Database
+
+  * **End-of-day writedown memory controls**
+
+The Storage Manager (SM) process now supports restricting memory consumption
+for data writedown, giving the opportunity for cost savings. Reducing the RAM
+allocated to SM may cause EOD to run longer than if RAM was unrestricted.
+
+For guidance on tuning your RAM setup, see [Performance best
+practices](https://code.kx.com/insights/1.7/enterprise/database/best-
+practices/performance.html) and the recommended system sizes for Azure
+}{:target="_blank"[here](https://code.kx.com/insights/1.7/enterprise/azure-
+marketplace/azure-user-node-pool-sizing-guidance.html).
+
+  * **Deleting data from the HDB**
+
+The ability to perform targeted deletion of data from the HDB has been added.
+This lets you clean up unncessary or incorrect data without having to remove
+an entire partition where there may be data you need to maintain. There are a
+variety of ways to specify the data you wish to delete. See [Database
+delete](https://code.kx.com/insights/1.7/microservices/database/storage/delete.html)
+for further details.
+
+  * **New Authorization Options**
+
+Authorization capabilities have been extended to enable linking out to other
+authorization providers or to write your own. You can now set up a sidecar
+that offers either an HTTP or IPC interface for authorization to the Service
+Gateway of the database. See [Custom HTTP
+Authorization](https://code.kx.com/insights/1.7/microservices/database/configuration/advanced/custom-
+auth-http.html) for more details.
+
+  * **Backfill a new column with derived data**
+
+When adding a new column to your schema, you can now define a custom function
+that will backfill the new column with derived data.
+
+  * **Publishing derived data from custom APIs**
+
+Custom APIs that generate derived data can now stream and/or persist their
+output.
+
+  * **Appending data on batch ingest**
+
+When ingesting data using the direct write feature, you now have the option to
+append data rather than replace it. More details are available for the
+[q](https://code.kx.com/insights/1.7/api/stream-
+processor/q/writers.html#qspwritetodatabase) and
+[Python](https://code.kx.com/insights/1.7/api/stream-
+processor/python/writers.html#overwrite) APIs.
+
+https://kxl.atlassian.net/browse/KXI-33719
+
+and https://code.kx.com/draft/insights/1.8/api/stream-
+processor/q/writers.html#qspwritetodatabase
+
+#### Reliable Transport
+
+  * **Flexible subscriptions to data streams**
+
+RT supports the option to control at what point in a data stream you wish to
+subscribe. This new feature adds the ability for a subscriber(s) to subscribe
+to new data only. This is useful for subscriber(s) who do not need to receive
+historical data and just need to begin receiving data from the latest point
+onward. The API exposes information about what data is available to
+subscribers. This is available for use when subscribing using the
+[C](https://code.kx.com/insights/1.7/microservices/rt/sdks/c-sdk.html#subscribing-
+to-data) and [q](https://code.kx.com/insights/1.7/microservices/rt/sdks/rt-
+qpk.html#subscribing-from-the-latest-message) interface.
+
+  * **C Subscriber Support in Reliable Transport**
+
+The C language interface for RT is now able to subscribe to the data on an RT
+stream if the subscriber is inside the cluster. See
+[here](https://code.kx.com/insights/1.7/microservices/rt/sdks/getting-started-
+sdks.html#subscribing-to-data) for more details. A new subscriber is now able
+to subscribe from the last message added to the stream as well as from the
+earliest message the stream holds.
+
+###  Improvements
+
+#### kdb Insights Database
+
+  * **End-of-day writedown performance improvements**
+
+The Storage Manager (SM) process has been optimized to significantly improve
+its performance - up to 50-70% reduction in EOD duration. This improved EOD
+performance can reduce the memory allocated or the time taken for writedown,
+depending on your workloads and configuration.
+
+For guidance and best practices on how to configure your schema and system to
+take advantage of these optimizations, review [Performance best
+practices](https://code.kx.com/insights/1.7/enterprise/database/best-
+practices/performance.html) and the recommended system sizes for Azure
+[here](https://code.kx.com/insights/1.7/enterprise/azure-marketplace/azure-
+user-node-pool-sizing-guidance.html).
+
+#### Stream Processor
+
+  * **Readers**
+
+    * When using cloud and file readers, you can now use filename pattern matching to ingest multiple files using a single reader. This expands the ability for you to build up ingest workloads that pull in multiple files. For example, using an S3 reader, you could read all CSV files in all folders within a bucket using the pattern: 
+        
+                s3://path/to/bucket/**/*.csv
+        
+
+    * When using cloud and file readers you can now use a file watcher which is usually paired with filename pattern matching described above. The reader will continually watch for new files matching the file path(s) provided. See here for details on:
+
+Not to be used with the `Write Direct to HDB` option
+
+The Watcher options **should not** be used when also choosing the `Write
+Direct to HDB` option in the [Database
+Writer](https://code.kx.com/insights/1.7/enterprise/ingest/pipeline/operators/writers.html#kdb-
+insights-database) in the UI, or the
+[q](https://code.kx.com/insights/1.7/api/stream-
+processor/q/writers.html#qspwritetokdb) or
+[Python](https://code.kx.com/insights/1.7/api/stream-
+processor/python/writers.html#kxi.sp.write.to_kdb) APIs.
+
+###  Fixes
+
+Expand to see the full detail of resolved issues here
+
+kdb Insights Database
+
+  * Fixed an issue where schema type conversions from strings to GUIDs would fail and cause a type error. 
+
+  * Fixed an issue on certain NFS-based system (namely Lustre) where the ‘current’ database pointer could get converted to a directory resulting in an unexpected error. 
+
+    
+    
+    EISDIR: /data/idb/current.new -> /data/idb/current
+    
+
+  * An error has been fixed that would occur when updating an object storage tier that used an inventory file after a data migration. 
+
+  * Fixed an issue when querying with [`.kxi.getData`](https://code.kx.com/insights/1.7/api/database/query/get-data.html) using a groupBy operation on a foreign key column where the name of the foreign key column would be thrown and the query would fail to complete. 
+
+  * A new warning has been added to the Resource Coordinator if no Aggregators connect to it. After a wait period, if an Aggregator continues not to connect, this will be escalated to an error to indicate that the system is not ready for queries. 
+
+  * When the kdb Insights Database was configured with an object storage tier but an inventory file was not provided, the Storage Manager would error on startup with invalid object storage URI error. This has been changed to not attempt to create an inventory file if no configuration is explicitly provided. 
+
+  * Resolved an issue when attempting to migrate HDB data to Azure Blob Storage. Previously, this would fail with a signature error. 
+
+  * Fixed a potential race condition between NFS replication and DAP reload signals. It was previously possible that a DAP may reload before NFS replicated data which could result in data gaps. A new sequencing mechanism has been added to ensure DAPs do not reload until replication is complete. 
+
+  * Values in a symbol column will now be properly available immediately after a batch ingest. Previously, these would be missing until the next EOI. 
+
+  * Renaming a sort column no longer errors. 
+
+### Artifacts
+
+#### Service Discovery
+
+#### Stream Processor
+
+microservice |  Docker  
+---|---  
+Controller | registry.dl.kx.com/kxi-sp-controller:1.7.0  
+Worker | registry.dl.kx.com/kxi-sp-worker:1.7.0  
+Coordinator | registry.dl.kx.com/kxi-sp-coordinator:1.7.0  
+Worker-Python | registry.dl.kx.com/kxi-sp-python:1.7.0  
+Worker-ML | registry.dl.kx.com/kxi-ml:1.7.0  
+  
+#### Database
+
+microservice |  Docker  
+---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.7.0  
+Single container | registry.dl.kx.com/kxi-da-single:1.7.0  
+Storage Manager | registry.dl.kx.com/kxi-sm-single:1.7.0  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.7.0  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.7.0  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.7.0  
+  
+#### Machine Learning
+
+#### Reliable Transport
+
+#### Miscellaneous
+
+## 1.6.4
+
+#### Release Date
+
+2023-11-28
+
+kdb Insights Core Version
+
+This version of kdb Insights Microservices runs kdb Insights Core 4.0.5.
+
+###  Fixes
+
+Expand to see the full detail of resolved issues here
+
+**Database**
+
+  * Improved failure recovery for object storage in Storage Manager. This resolves a case where EOI would not complete and would report `SM Flushing filesystem with [directory]` errors. 
+
+  * Resolved a bug in which EOIs were not completing, and `NoSuchKey` errors were occurring after moving data to object storage. 
+
+  * Improvements have been made to the refresh token logic for AWS deployments. Previously, token refresh logic was erroneous if the session was not requesting object storage bucket data. The refresh rotated every 30 minutes instead of at the session expiry time. Session expiry time is configured with EC2 instance metadata, or by `KX_KURL_AWS_TOKEN_DURATION` when using Amazon STS. 
+
+  * Added a fix for the GCP system command expiry timer being discarded/ignored, which resulted in tokens not refreshing at all using `gcloud auth`. 
+
+**Security**
+
+  * Various CVEs were remediated as part of this release.
+
+### Artifacts
+
+Highlights denote artifacts which have been updated as part of this patch
+release. All other artifacts are unchanged from the previous major or minor
+release.
+
+#### Service Discovery
+
+#### Stream Processor
+
+microservice |  Docker  
+---|---  
+Controller | registry.dl.kx.com/kxi-sp-controller:1.6.4  
+Worker | registry.dl.kx.com/kxi-sp-worker:1.6.4  
+Coordinator | registry.dl.kx.com/kxi-sp-coordinator:1.6.4  
+Worker-Python | registry.dl.kx.com/kxi-sp-python:1.6.4  
+Worker-ML | registry.dl.kx.com/kxi-ml:1.6.4  
+  
+#### Data Access
+
+microservice |  Docker  
+---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.6.4  
+Single container | registry.dl.kx.com/kxi-da-single:1.6.4  
+  
+#### Storage Manager
+
+microservice |  Docker  
+---|---  
+Storage Manager | registry.dl.kx.com/kxi-sm-single:1.6.4  
+  
+#### Service Gateway
+
+microservice |  Docker  
+---|---  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.6.4  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.6.4  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.6.4  
+  
+#### Machine Learning
+
+#### Reliable Transport
+
+#### Miscellaneous
+
+## 1.6.3
+
+#### Release Date
+
+2023-09-22
+
+###  Fixes
+
+Expand to see the full detail of resolved issues here
+
+**Database**
+
+  * Fixed an issue that could occur on certain NFS-based systems (namely Lustre) where the ‘current’ database pointer could get converted to a directory resulting in an unexpected error. 
+
+### Artifacts
+
+Highlights denote artifacts which have been updated as part of this patch
+release. All other artifacts are unchanged from the previous major or minor
+release.
+
+#### Service Discovery
+
+#### Stream Processor
+
+microservice |  Docker  
+---|---  
+Controller | registry.dl.kx.com/kxi-sp-controller:1.6.1  
+Worker | registry.dl.kx.com/kxi-sp-worker:1.6.1  
+Coordinator | registry.dl.kx.com/kxi-sp-coordinator:1.6.1  
+Worker-Python | registry.dl.kx.com/kxi-sp-python:1.6.1  
+Worker-ML | registry.dl.kx.com/kxi-ml:1.6.1  
+  
+#### Data Access
+
+microservice |  Docker  
+---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.6.3  
+Single container | registry.dl.kx.com/kxi-da-single:1.6.3  
+  
+#### Storage Manager
+
+microservice |  Docker  
+---|---  
+Storage Manager | registry.dl.kx.com/kxi-sm-single:1.6.4  
+  
+#### Service Gateway
+
+microservice |  Docker  
+---|---  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.6.3  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.6.3  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.6.3  
+  
+#### Machine Learning
+
+#### Reliable Transport
+
+#### Miscellaneous
+
+## 1.6.2
+
+### Release Date
+
+2023-07-25
+
+###  Fixes
+
+Expand to see the full detail of resolved issues here
+
+**Database**
+
+  * Fixed an issue where renaming columns in the schema UI would incorrectly delete the underlying column and create a new one with null data. Column renames in the UI now correctly preserve the column’s data. 
+
+  * Fixed a potential race condition between NFS replication and DAP reload signals. It was previously possible that a DAP may reload before NFS replicated data, which could result in data gaps. A new sequencing mechanism has been added to ensure DAPs do not reload until replication is complete. 
+
+  * Fixed an issue where converting a column from a `string` to a `symbol` would throw a `type` error. 
+
+  * An error has been fixed that would occur when updating an object storage tier that used an inventory file after a data migration. 
+
+  * A new warning has been added to the Resource Coordinator if no Aggregators connect to it. After a wait period, if an Aggregator continues not to connect, this will be escalated to an error to indicate that the system is not ready for queries. 
+
+  * REST queries could have input parameters converted to the wrong type when multiple type options were possible. REST APIs were converting to the maximum possible type instead of using the correct default type. 
+
+### Artifacts
+
+Highlights denote artifacts which have been updated as part of this patch
+release. All other artifacts are unchanged from the previous major or minor
+release.
+
+#### Service Discovery
+
+#### Stream Processor
+
+microservice |  Docker  
+---|---  
+Controller | registry.dl.kx.com/kxi-sp-controller:1.6.1  
+Worker | registry.dl.kx.com/kxi-sp-worker:1.6.1  
+Coordinator | registry.dl.kx.com/kxi-sp-coordinator:1.6.1  
+Worker-Python | registry.dl.kx.com/kxi-sp-python:1.6.1  
+Worker-ML | registry.dl.kx.com/kxi-ml:1.6.1  
+  
+#### Data Access
+
+microservice |  Docker  
+---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.6.3  
+Single container | registry.dl.kx.com/kxi-da-single:1.6.3  
+  
+#### Storage Manager
+
+microservice |  Docker  
+---|---  
+Storage Manager | registry.dl.kx.com/kxi-sm-single:1.6.3  
+  
+#### Service Gateway
+
+microservice |  Docker  
+---|---  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.6.3  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.6.3  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.6.3  
+  
+#### Machine Learning
+
+#### Reliable Transport
+
+#### Miscellaneous
+
+## 1.6.1
+
+### Release Date
+
+2023-07-03
+
+###  Fixes
+
+Expand to see the full detail of resolved issues here
+
+**Reliable Transport**
+
+  * RT logs are now properly written to a directory defined by the user. Previously, the user's selection was not honoured. 
+
+### Artifacts
+
+Highlights denote artifacts which have been updated as part of this patch
+release. All other artifacts are unchanged from the previous major or minor
+release.
+
+#### Service Discovery
+
+#### Stream Processor
+
+microservice |  Docker  
+---|---  
+Controller | registry.dl.kx.com/kxi-sp-controller:1.6.1  
+Worker | registry.dl.kx.com/kxi-sp-worker:1.6.1  
+Coordinator | registry.dl.kx.com/kxi-sp-coordinator:1.6.1  
+Worker-Python | registry.dl.kx.com/kxi-sp-python:1.6.1  
+Worker-ML | registry.dl.kx.com/kxi-ml:1.6.1  
+  
+#### Data Access
+
+microservice |  Docker  
+---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.6.2  
+Single container | registry.dl.kx.com/kxi-da-single:1.6.2  
+  
+#### Storage Manager
+
+microservice |  Docker  
+---|---  
+Storage Manager | registry.dl.kx.com/kxi-sm-single:1.6.2  
+  
+#### Service Gateway
+
+microservice |  Docker  
+---|---  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.6.2  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.6.2  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.6.2  
+  
+#### Machine Learning
+
+#### Reliable Transport
+
+#### Miscellaneous
+
+## 1.6.0
+
+### Release Date
+
+2023-06-20
+
+###  New Features
+
+#### Database
+
+  * A custom authentication function is available for the kdb Insights Database to restrict user access using role-based access control using a q function. See [custom IPC authentication](https://code.kx.com/insights/1.6/microservices/database/configuration/advanced/custom-auth-ipc.html) for details. 
+
+  * The kdb Insights Database now supports a [kdb+ tick](https://github.com/kxsystems/kdb-tick) interface as well as a new [custom bus](https://code.kx.com/insights/1.6/microservices/database/configuration/assembly/stream.html#custom-protocol) interface. 
+
+#### Reliable Transport
+
+Reliable Transport now supports a one-node as well as a three-node cluster:
+
+  * In a three-node cluster, RT can offer fault tolerance and high availability (HA).
+  * In a one-node cluster, fault tolerance is still present, however it is not highly available. This configuration saves resources and therefore costs for workload use cases that do not need to be highly available. If the 1 RT node were to go down, the publisher would continue writing to its local RT log file. Once the RT node has restarted, it would then retrieve any data that is present on the publisher node that it has not yet received.
+
+See [here](https://code.kx.com/insights/1.6/microservices/rt/index.html#rt-
+architecture) for more details on the RT architecture.
+
+### Improvements
+
+#### Database
+
+  * The kdb Insights Database now validates that primary keys for a partitioned table include the partition column. Previously, setting a primary key on a partitioned table that was not the partition column would error when queried. 
+
+  * Query timeout messages now indicate a reason for the timeout. Previously, query timeouts gave no reason, or said “timed out for unspecified reasons”. See [queueing timeouts](https://code.kx.com/insights/1.6/enterprise/database/query/queueing.html#timeouts) for more details. 
+
+  * Greater stability through the use of Kubernetes discovery between the Service Gateway and database processes. 
+
+###  Fixes
+
+Expand to see the full detail of resolved issues here
+
+**Security**
+
+  * Various CVEs were remediated as part of this release.
+
+### Artifacts
+
+Highlights denote artifacts which have been updated as part of this patch
+release. All other artifacts are unchanged from the previous major or minor
+release.
+
+#### Service Discovery
+
+#### Stream Processor
+
+microservice |  Docker  
+---|---  
+Controller | registry.dl.kx.com/kxi-sp-controller:1.6.0  
+Worker | registry.dl.kx.com/kxi-sp-worker:1.6.0  
+Coordinator | registry.dl.kx.com/kxi-sp-coordinator:1.6.0  
+Worker-Python | registry.dl.kx.com/kxi-sp-python:1.6.0  
+Worker-ML | registry.dl.kx.com/kxi-ml:1.6.0  
+  
+#### Data Access
+
+microservice |  Docker  
+---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.6.0  
+Single container | registry.dl.kx.com/kxi-da-single:1.6.0  
+  
+#### Storage Manager
+
+microservice |  Docker  
+---|---  
+Storage Manager | registry.dl.kx.com/kxi-sm-single:1.6.0  
+  
+#### Service Gateway
+
+microservice |  Docker  
+---|---  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.6.0  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.6.0  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.6.0  
+  
+#### Machine Learning
+
+#### Reliable Transport
+
+#### Miscellaneous
+
+## 1.5.6
+
+#### Release Date
+
+2023-09-22
+
+###  Fixes
+
+Expand to see the full detail of resolved issues here
+
+**Database**
+
+  * Fixed an issue that could occur on certain NFS-based systems (namely Lustre) where the ‘current’ database pointer could get converted to a directory resulting in an unexpected error. 
+
+#### Service Discovery
+
+#### Stream Processor
+
+microservice |  Docker  
+---|---  
+Controller | registry.dl.kx.com/kxi-sp-controller:1.5.3  
+Worker | registry.dl.kx.com/kxi-sp-worker:1.5.3  
+Coordinator | registry.dl.kx.com/kxi-sp-coordinator:1.5.3  
+Worker-Python | registry.dl.kx.com/kxi-sp-python:1.5.3  
+Worker-ML | registry.dl.kx.com/kxi-ml:1.5.3  
+  
+#### Data Access
+
+microservice |  Docker  
+---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.5.4  
+Single container | registry.dl.kx.com/kxi-da-single:1.5.4  
+  
+#### Storage Manager
+
+microservice |  Docker  
+---|---  
+Storage Manager | registry.dl.kx.com/kxi-sm:1.5.5  
+End of Interval (EOI) | registry.dl.kx.com/kxi-sm-eoi:1.5.5  
+End of Day (EOD) | registry.dl.kx.com/kxi-sm-eod:1.5.5  
+Database Migration (DBM) | registry.dl.kx.com/kxi-sm-dbm:1.5.5  
+Single Container | registry.dl.kx.com/kxi-sm-single:1.5.5  
+  
+#### Service Gateway
+
+microservice |  Docker  
+---|---  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.5.4  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.5.4  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.5.4  
+  
+#### Machine Learning
+
+#### Reliable Transport
+
+#### Miscellaneous
+
+## 1.5.5
+
+#### Release Date
+
+2023-07-11
+
+###  Fixes
+
+Expand to see the full detail of resolved issues here
+
+**Database**
+
+  * Resolved an error that occurred when updating the inventory file for an object storage tier after data migration had completed.
+
+### Artifacts
+
+Highlights denote artifacts which have been updated as part of this patch
+release. All other artifacts are unchanged from the previous major or minor
+release.
+
+#### Service Discovery
+
+#### Stream Processor
+
+microservice |  Docker  
+---|---  
+Controller | registry.dl.kx.com/kxi-sp-controller:1.5.3  
+Worker | registry.dl.kx.com/kxi-sp-worker:1.5.3  
+Coordinator | registry.dl.kx.com/kxi-sp-coordinator:1.5.3  
+Worker-Python | registry.dl.kx.com/kxi-sp-python:1.5.3  
+Worker-ML | registry.dl.kx.com/kxi-ml:1.5.3  
+  
+#### Data Access
+
+microservice |  Docker  
+---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.5.4  
+Single container | registry.dl.kx.com/kxi-da-single:1.5.4  
+  
+#### Storage Manager
+
+microservice |  Docker  
+---|---  
+Storage Manager | registry.dl.kx.com/kxi-sm:1.5.4  
+End of Interval (EOI) | registry.dl.kx.com/kxi-sm-eoi:1.5.4  
+End of Day (EOD) | registry.dl.kx.com/kxi-sm-eod:1.5.4  
+Database Migration (DBM) | registry.dl.kx.com/kxi-sm-dbm:1.5.4  
+Single Container | registry.dl.kx.com/kxi-sm-single:1.5.4  
+  
+#### Service Gateway
+
+microservice |  Docker  
+---|---  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.5.4  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.5.4  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.5.4  
+  
+#### Machine Learning
+
+#### Reliable Transport
+
+#### Miscellaneous
+
+## 1.5.4
+
+#### Release Date
+
+2023-06-19
+
+###  Improvements
+
+#### Database
+
+  * [Batch ingest](https://code.kx.com/insights/1.5/enterprise/database/storage/batch-ingest.html) is now supported in environments that use a TP shim instead of the Reliable Transport (RT) microservice. To use this change, a modification to the tables defined in your tickerplant and RT client shim is required. See [upgrade considerations](https://code.kx.com/insights/1.5/enterprise/database/upgrading.html#batch-ingest-in-15) for more details. 
+
+###  Fixes
+
+Expand to see the full detail of resolved issues here
+
+**Security**
+
+  * Various CVEs have been remediated as part of this release.
+
+### Artifacts
+
+Highlights denote artifacts which have been updated as part of this patch
+release. All other artifacts are unchanged from the previous major or minor
+release.
+
+#### Service Discovery
+
+#### Stream Processor
+
+microservice |  Docker  
+---|---  
+Controller | registry.dl.kx.com/kxi-sp-controller:1.5.3  
+Worker | registry.dl.kx.com/kxi-sp-worker:1.5.3  
+Coordinator | registry.dl.kx.com/kxi-sp-coordinator:1.5.3  
+Worker-Python | registry.dl.kx.com/kxi-sp-python:1.5.3  
+Worker-ML | registry.dl.kx.com/kxi-ml:1.5.3  
+  
+#### Data Access
+
+microservice |  Docker  
+---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.5.3  
+Single container | registry.dl.kx.com/kxi-da-single:1.5.3  
+  
+#### Storage Manager
+
+microservice |  Docker  
+---|---  
+Storage Manager | registry.dl.kx.com/kxi-sm:1.5.3  
+End of Interval (EOI) | registry.dl.kx.com/kxi-sm-eoi:1.5.3  
+End of Day (EOD) | registry.dl.kx.com/kxi-sm-eod:1.5.3  
+Database Migration (DBM) | registry.dl.kx.com/kxi-sm-dbm:1.5.3  
+Single Container | registry.dl.kx.com/kxi-sm-single:1.5.3  
+  
+#### Service Gateway
+
+microservice |  Docker  
+---|---  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.5.3  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.5.3  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.5.3  
+  
+#### Machine Learning
+
+#### Reliable Transport
+
+#### Miscellaneous
+
+## 1.5.3
+
+#### Release Date
+
+2023-06-09
+
+###  Improvements
+
+  * Resiliency improvements have been made to ensure the kdb Insights Database can recover from multiple days without end-of-day processing having completed. Previously, if more than 2 EODs were missed, it was possible to get a `misaligned` error on recovery. 
+
+  * The kdb Insights Database can now work with or without an inventory file provided for an object storage tier. Using an inventory file for your object storage tier is still the recommended configuration, as this leverages caching and greatly improves performance when querying object storage data. 
+
+### Artifacts
+
+Highlights denote artifacts which have been updated as part of this patch
+release. All other artifacts are unchanged from the previous major or minor
+release.
+
+#### Service Discovery
+
+#### Stream Processor
+
+microservice |  Docker  
+---|---  
+Controller | registry.dl.kx.com/kxi-sp-controller:1.5.2  
+Worker | registry.dl.kx.com/kxi-sp-worker:1.5.2  
+Coordinator | registry.dl.kx.com/kxi-sp-coordinator:1.5.2  
+Worker-Python | registry.dl.kx.com/kxi-sp-python:1.5.2  
+Worker-ML | registry.dl.kx.com/kxi-ml:1.5.2  
+  
+#### Data Access
+
+microservice |  Docker  
+---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.5.3  
+Single container | registry.dl.kx.com/kxi-da-single:1.5.3  
+  
+#### Storage Manager
+
+microservice |  Docker  
+---|---  
+Storage Manager | registry.dl.kx.com/kxi-sm:1.5.3  
+End of Interval (EOI) | registry.dl.kx.com/kxi-sm-eoi:1.5.3  
+End of Day (EOD) | registry.dl.kx.com/kxi-sm-eod:1.5.3  
+Database Migration (DBM) | registry.dl.kx.com/kxi-sm-dbm:1.5.3  
+Single Container | registry.dl.kx.com/kxi-sm-single:1.5.3  
+  
+#### Service Gateway
+
+microservice |  Docker  
+---|---  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.5.3  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.5.3  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.5.3  
+  
+#### Machine Learning
+
+#### Reliable Transport
+
+#### Miscellaneous
+
+## 1.5.2
+
+#### Release Date
+
+2023-05-31
+
+###  Improvements
+
+  * The `getData` API can now perform aggregations on foreign key columns. 
+
+###  Fixes
+
+Expand to see the full detail of resolved issues here
+
+**Stream Processor**
+
+  * Pipelines can be now be safely torn down without checkpoints having been cleared. Previously, if a teardown was followed by a restart, it is possible the pipeline would never run. 
+
+### Artifacts
+
+Highlights denote artifacts which have been updated as part of this patch
+release. All other artifacts are unchanged from the previous major or minor
+release.
+
+#### Service Discovery
+
+#### Stream Processor
+
+microservice |  Docker  
+---|---  
+Controller | registry.dl.kx.com/kxi-sp-controller:1.5.2  
+Worker | registry.dl.kx.com/kxi-sp-worker:1.5.2  
+Coordinator | registry.dl.kx.com/kxi-sp-coordinator:1.5.2  
+Worker-Python | registry.dl.kx.com/kxi-sp-python:1.5.2  
+Worker-ML | registry.dl.kx.com/kxi-ml:1.5.2  
+  
+#### Data Access
+
+microservice |  Docker  
+---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.5.2  
+Single container | registry.dl.kx.com/kxi-da-single:1.5.2  
+  
+#### Storage Manager
+
+microservice |  Docker  
+---|---  
+Storage Manager | registry.dl.kx.com/kxi-sm:1.5.2  
+End of Interval (EOI) | registry.dl.kx.com/kxi-sm-eoi:1.5.2  
+End of Day (EOD) | registry.dl.kx.com/kxi-sm-eod:1.5.2  
+Database Migration (DBM) | registry.dl.kx.com/kxi-sm-dbm:1.5.2  
+Single Container | registry.dl.kx.com/kxi-sm-single:1.5.2  
+  
+#### Service Gateway
+
+microservice |  Docker  
+---|---  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.5.2  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.5.2  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.5.2  
+  
+#### Machine Learning
+
+#### Reliable Transport
+
+#### Miscellaneous
+
+## 1.5.1
+
+#### Release Date
+
+2023-05-19
+
+###  Improvements
+
+#### kdb Insights Database
+
+  * SQL queries that filter by time but do not explicitly select the time column are now supported. 
+
+  * Query timeout messages now indicate a reason for the timeout. Previously, query timeouts would give no reason or say “timed out for unspecified reasons”. See [queueing timeouts](https://code.kx.com/insights/1.5/enterprise/database/query/queueing.html#timeouts) for more details. 
+
+###  Fixes
+
+Expand to see the full detail of resolved issues here
+
+**kdb Insights Database**
+
+  * Databases without object storage tiers will no longer error and restart to resume normal operations after a schema conversion is performed. 
+
+  * New validation has been added to ensure that the snap value set in the EOD schedule of an assembly is always a time value. Previously, some examples showed usage of this field with a timestamp which was incorrectly ignored. 
+
+  * Sidecar containers are no longer automatically registering to object storage IAM service accounts where available. With large deployments, this could result in causing authentication backoffs for more mission critical processes. 
+
+  * The `kxi_da_request_time` metric has been changed to use a histogram type to reduce metric output. This was previously a summary type. 
+
+  * A new connection heartbeat has been added from DAPs to RC to improve connection stability when an RC restarts and is scheduled with a new IP. 
+
+### Artifacts
+
+Highlights denote artifacts which have been updated as part of this patch
+release. All other artifacts are unchanged from the previous major or minor
+release.
+
+#### Service Discovery
+
+#### Stream Processor
+
+microservice |  Docker  
+---|---  
+Controller | registry.dl.kx.com/kxi-sp-controller:1.5.1  
+Worker | registry.dl.kx.com/kxi-sp-worker:1.5.1  
+Coordinator | registry.dl.kx.com/kxi-sp-coordinator:1.5.1  
+Worker-Python | registry.dl.kx.com/kxi-sp-python:1.5.1  
+Worker-ML | registry.dl.kx.com/kxi-ml:1.5.1  
+  
+#### Data Access
+
+microservice |  Docker  
+---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.5.1  
+Single container | registry.dl.kx.com/kxi-da-single:1.5.1  
+  
+#### Storage Manager
+
+microservice |  Docker  
+---|---  
+Storage Manager | registry.dl.kx.com/kxi-sm:1.5.1  
+End of Interval (EOI) | registry.dl.kx.com/kxi-sm-eoi:1.5.1  
+End of Day (EOD) | registry.dl.kx.com/kxi-sm-eod:1.5.1  
+Database Migration (DBM) | registry.dl.kx.com/kxi-sm-dbm:1.5.1  
+Single Container | registry.dl.kx.com/kxi-sm-single:1.5.1  
+  
+#### Service Gateway
+
+microservice |  Docker  
+---|---  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.5.1  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.5.1  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.5.1  
+  
+#### Machine Learning
+
+#### Reliable Transport
+
+#### Miscellaneous
+
+## 1.5.0
+
+### Release Date
+
+2023-05-09
+
+###  [NEW] New Features
+
+#### kdb Insights Database
+
+  * The kdb Insights Database now supports a REST interface for loading historical datasets into an existing database. You can now perform a historical batch ingest using a simple REST API. For more details, see [batch ingestion](https://code.kx.com/insights/1.5/enterprise/database/storage/batch-ingest.html).
+
+  * To protect against reserved word and column name conflicts, the way labels are passed to a query has changed. Labels should now be specified either as a dictionary, or with the prefix `label_`. The old label style is still supported in 1.5, but is deprecated and will be disabled by default in 1.6. See [upgrade considerations on labels](https://code.kx.com/insights/1.5/enterprise/database/upgrading.html#labels-in-15) for more details. 
+
+  * [Distinct](https://code.kx.com/q/ref/distinct/) has been added to the available aggregations in [`getData`](https://code.kx.com/insights/1.5/api/database/query/get-data.html#supported-aggregations) for database queries. 
+
+#### Stream Processor
+
+  * The Stream Processor Python API can now leverage automatic schema conversion using a new function [`kxi.sp.transform.schema`](https://code.kx.com/insights/1.5/api/stream-processor/python/transform.html#schema). 
+
+  * Users can now use the Kafka Schema Registry in Python using [`kxi.sp.read.from_kafka`](https://code.kx.com/insights/1.5/api/stream-processor/python/readers.html#from_kafka). 
+
+  * String manipulation utilities have been added to the Stream Processor Python and q APIs, allowing users to selectively convert the string data to upper or lowercase representations for the purpose of data cleansing. 
+
+  * Pipeline deployments now support pipeline replicas, providing enhanced resilience to deployed pipelines. Users can now choose to run their pipeline with replicas for high availability in the Stream Processor. This replaces the previous use of pipeline groups. 
+
+#### Reliable Transport
+
+  * Reliable Transport now offers subscribers the ability to use dynamic client-side filtering, enabling users to control what parts of the data feed their subscribers need to receive. This can greatly improve ingestion performance by eliminating the need for subscribers to handle discarding of unnecessary data. See [`Filtering`](https://code.kx.com/insights/1.5/microservices/rt/sdks/rt-qpk.html#filtering) for more information.
+
+  * RT has introduced `logHistory`, a new API to assist in analysis and debugging. The API returns metadata about the RT log file history for logs that are no longer available. This includes:
+
+    * The log file name.
+    * The time of the first message added to that log file.
+    * The position of the first message added to that log file. See [`Log File Meta Data`](https://code.kx.com/insights/1.5/microservices/rt/index.html#log-file-meta-data) for more information.
+
+###  Improvements
+
+#### kdb Insights Database
+
+  * [Batch ingest](https://code.kx.com/insights/1.5/enterprise/database/storage/batch-ingest.html) now supports ingesting tables that have no symbols. Additionally, extra validation has been added to verify symbol integrity.
+
+  * [Batch ingest](https://code.kx.com/insights/1.5/enterprise/database/storage/batch-ingest.html) now supports sorting of columns. 
+
+  * The kdb Insights Database gateway now supports returning responses that are greater than 2GB for IPC requests. See [routing configuration](https://code.kx.com/insights/1.5/enterprise/database/configuration/routing.html) for more details. 
+
+  * Database schemas in the UI can now be modified for assemblies that have been stopped. See [schema modification](https://code.kx.com/insights/1.5/enterprise/database/configuration/ui/schema.html#modifications).
+
+  * Requests that supply a log correlator (logCorr) will now see that correlator in the Service Gateway logs. Previously a random correlator was used in the Service Gateway logs. 
+
+###  Fixes
+
+Expand to see the full detail of resolved issues here
+
+**kdb Insights Database**
+
+  * Migrating tiers to object storage could fail with the eventual error `SMDBM Migration discontinued due to failure` if multiple threads were used. 
+
+  * New validation has been added to prevent accidentally adding a object storage tier to a database that does not already have one. This would previously error at EOD with a file not found error. 
+
+  * Schema conversions are now more robust on network based file systems (ex. Rook Ceph). Previously, this could result in a `EXDEV. OS Reports: Invalid cross-device link error` in the Storage Manager. 
+
+  * Changes to disk sort columns in a schema that would be incompatible with the current disk sort will now error with a clear message at deploy time. Previously, this would error with a `u-fail` error either at an EOI or EOD. 
+
+  * Batch ingest can now gracefully handle scenarios where there is no data provided in the session. Previously, this would result in the following error: `Error reporting to licensing server: Value must be a long`, leaving the ingest pipeline stuck in a `RUNNING` state. 
+
+  * When removing a symbol column from a table, the SM should be able to properly handle its removal as well as the sym file. 
+
+  * If an in-memory sort is applied to a column in a schema, it is now sorted on arrival in the RDB. Previously, if data arrived out of order with this set, an `s-fail` error would be thrown. 
+
+  * In the Storage Manager metrics, the `kxi_sm_hdb_date_records` metric no longer reports an empty value at startup, which resulted in false alerts about the HDB being offline. 
+
+  * The Storage Manager now double buffers its state table in order to protect against corruption. 
+
+  * The `kxi_sg_pending` metric would previously be decremented twice when a connection closed, resulting in negative pending values. 
+
+  * The Service Gateways were creating duplicate connections to Resource Coordinators while they were waiting to come online. This was resulting in a large number of redundant connections being opened between the services. In large deployments, this could result in `conn` errors in the Resource Coordinator. 
+
+  * RDBs and HDBs that require a dependency on the IDB will now error at startup if one is not specified as part of the [mount](https://code.kx.com/insights/1.5/enterprise/database/configuration/assembly/database.html#mounts) configuration. 
+
+**Stream Processor**
+
+  * The presence of a UTF-8 byte-order mark at the beginning of CSV files will now be automatically removed from data when acted on by the Stream Processor CSV decoder. 
+
+  * Window nodes in the Stream Processor can now accept dictionaries as input batches. Previously, incoming dictionaries would be merged with input batch in the buffer, instead of appending to a buffered list of dictionaries. 
+
+  * The Python `write.to_database` API previously converted assembly names to booleans. This is now resolved, and also fully supports the direct write functionality. 
+
+  * The default `onFinish` functions for the apply node have been updated to have the correct parameters and examples of flushing a buffer. 
+
+  * When using directWrite functionality in `.qsp.write.toDatabase`, table names as strings are now supported. Previously, this had to be a symbol. 
+
+  * Security vulnerabilities patched in the Stream Processor for the following CVEs: CVE-2022-41910, CVE-2022-41902, CVE-2022-41900, CVE-2022-41880. 
+
+### Artifacts
+
+Highlights denote artifacts which have been updated as part of this patch
+release. All other artifacts are unchanged from the previous major or minor
+release.
+
+#### Service Discovery
+
+#### Stream Processor
+
+microservice |  Docker  
+---|---  
+Controller | registry.dl.kx.com/kxi-sp-controller:1.5.0  
+Worker | registry.dl.kx.com/kxi-sp-worker:1.5.0  
+Coordinator | registry.dl.kx.com/kxi-sp-coordinator:1.5.0  
+Worker-Python | registry.dl.kx.com/kxi-sp-python:1.5.0  
+Worker-ML | registry.dl.kx.com/kxi-ml:1.5.0  
+  
+#### Data Access
+
+microservice |  Docker  
+---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.5.0  
+Single container | registry.dl.kx.com/kxi-da-single:1.5.0  
+  
+#### Storage Manager
+
+microservice |  Docker  
+---|---  
+Storage Manager | registry.dl.kx.com/kxi-sm:1.5.0  
+End of Interval (EOI) | registry.dl.kx.com/kxi-sm-eoi:1.5.0  
+End of Day (EOD) | registry.dl.kx.com/kxi-sm-eod:1.5.0  
+Database Migration (DBM) | registry.dl.kx.com/kxi-sm-dbm:1.5.0  
+Single Container | registry.dl.kx.com/kxi-sm-single:1.5.0  
+  
+#### Service Gateway
+
+microservice |  Docker  
+---|---  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.5.0  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.5.0  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.5.0  
+  
+#### User Interface
+
+#### Machine Learning
+
+#### Reliable Transport
+
+#### Miscellaneous
+
+## 1.4.4
+
+kdb Insights Microservices 1.4.4 release.
+
+### Release Date
+
+2023-04-26
+
+### New Features
+
+#### kdb Insights Database
+
+[IMPROVEMENT]: SQL queries that filter by time but do not explicitly select
+the time column are now supported.
+
+### Fixes
+
+#### Stream Processor
+
+[FIX]: Window nodes in the Stream Processor can now accept dictionaries as
+input batches. Previously, incoming dictionaries would be merged with the
+input batch in the buffer, instead of appending to a buffered list of
+dictionaries.
+
+### Artifacts
+
+Highlights denote artifacts which have been updated as part of this patch
+release. All other artifacts are unchanged from the previous major or minor
+release.
+
+#### Service Discovery
+
+#### Stream Processor
+
+#### Data Access
+
+microservice |  Docker  
+---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.4.5  
+Single container | registry.dl.kx.com/kxi-da-single:1.4.5  
+  
+#### Storage Manager
+
+microservice |  Docker  
+---|---  
+Storage Manager | registry.dl.kx.com/kxi-sm:1.4.5  
+End of Interval (EOI) | registry.dl.kx.com/kxi-sm-eoi:1.4.5  
+End of Day (EOD) | registry.dl.kx.com/kxi-sm-eod:1.4.5  
+Database Migration (DBM) | registry.dl.kx.com/kxi-sm-dbm:1.4.5  
+Single Container | registry.dl.kx.com/kxi-sm-single:1.4.5  
+  
+#### Service Gateway
+
+microservice |  Docker  
+---|---  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.4.3  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.4.3  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.4.3  
+  
+#### User Interface
+
+#### Machine Learning
+
+#### Reliable Transport
+
+#### Miscellaneous
+
+### Known Issues
+
+KXI Sidecar
+
+  * Users should disable `kurl` auto register within the kxi-sidecar container. Multiple registrations from component and sidecar could cause throttling. 
+
+Setting the below environment variable within the container spec will disable
+the auto register.
+
+```yaml env: \- name: KX_KURL_DISABLE_AUTO_REGISTER value: "1"
+
+## 1.4.3
+
+kdb Insights Microservices 1.4.3 release.
+
+### Release Date
+
+2023-04-20
+
+### New Features
+
+#### kdb Insights Database
+
+[IMPROVEMENT]: The kdb Insights Database now supports a REST interface for
+loading historical datasets into an existing database. You can now perform a
+historical batch ingest using a simple REST API. For more details, see [batch
+ingestion](https://code.kx.com/insights/1.4/enterprise/database/storage/batch-
+ingest.html).
+
+### Fixes
+
+#### Stream Processor
+
+[FIX]: Security vulnerabilities patched in the Stream Processor for the
+following CVEs: CVE-2022-41910, CVE-2022-41902, CVE-2022-41900, CVE-2022-41880
+
+#### kdb Insights Database
+
+[FIX]: Migrating tiers to object storage could fail with the eventual error
+`SMDBM Migration discontinued due to failure` if multiple threads were used.
+
+[FIX]: If an SM client cannot connect to SM after a number of retries, it will
+now restart the pod to try to automatically recover. This resolves connection
+issues in DAPs when there are network connectivity issues.
+
+[FIX]: The Service Gateway was creating duplicate connections to Resource
+Coordinators while they were waiting to come online. This was resulting in a
+large number of redundant connections being opened between the services. In
+large deployments, this could result in connection errors in the Resource
+Coordinator.
+
+### Artifacts
+
+Highlights denote artifacts which have been updated as part of this patch
+release. All other artifacts are unchanged from the previous major or minor
+release.
+
+#### Service Discovery
+
+#### Stream Processor
+
+microservice |  Docker  
+---|---  
+Controller | registry.dl.kx.com/kxi-sp-controller:1.4.4  
+Worker | registry.dl.kx.com/kxi-sp-worker:1.4.4  
+Coordinator | registry.dl.kx.com/kxi-sp-coordinator:1.4.4  
+Worker-Python | registry.dl.kx.com/kxi-sp-python:1.4.4  
+Worker-ML | registry.dl.kx.com/kxi-ml:1.4.4  
+  
+#### Data Access
+
+microservice |  Docker  
+---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.4.4  
+Single container | registry.dl.kx.com/kxi-da-single:1.4.4  
+  
+#### Storage Manager
+
+microservice |  Docker  
+---|---  
+Storage Manager | registry.dl.kx.com/kxi-sm:1.4.4  
+End of Interval (EOI) | registry.dl.kx.com/kxi-sm-eoi:1.4.4  
+End of Day (EOD) | registry.dl.kx.com/kxi-sm-eod:1.4.4  
+Database Migration (DBM) | registry.dl.kx.com/kxi-sm-dbm:1.4.4  
+Single Container | registry.dl.kx.com/kxi-sm-single:1.4.4  
+  
+#### Service Gateway
+
+microservice |  Docker  
+---|---  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.4.4  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.4.4  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.4.4  
+  
+#### User interface
+
+#### Machine Learning
+
+#### Reliable Transport
+
+#### Miscellaneous
+
+### Known Issues
+
+KXI Sidecar
+
+  * Users should disable `kurl` auto register within the kxi-sidecar container. Multiple registrations from component and sidecar could cause throttling. 
+
+Setting the below environment variable within the container spec will disable
+the auto register.
+
+```yaml env: \- name: KX_KURL_DISABLE_AUTO_REGISTER value: "1"
+
+## 1.4.2
+
+kdb Insights Microservices 1.4.2 release.
+
+### Release Date
+
+2023-04-04
+
+### Fixes
+
+#### Service Gateway
+
+[FIX]: Fixed remote code injection vulnerability in Snake YAML CVE-2022-1471.
+
+#### Stream Processor
+
+[FIX]: Stream Processor file reader nodes (Azure, S3, File and Google storage)
+when attempting to read multiple files would only process the first file
+presented.
+
+[FIX]: Stream Processor Azure file reader was failing when attempting to read
+a file with chunking enabled, resulting in limitations on the files that could
+be read.
+
+[FIX]: Heartbeat logs were previously logged as INFO logs, they are now set to
+TRACE to reduce log output.
+
+#### Storage Manager
+
+[FIX]: Requests to object storage (Azure Storage, AWS S3, Google Cloud
+Storage) will now backoff and retry if they get a throttle request from the
+vendor. Jitter will be introduced to the retry to ensure that replicated
+processes do not all retry at the same time.
+
+### Artifacts
+
+Highlights denote artifacts which have been updated as part of this patch
+release. All other artifacts are unchanged from the previous major or minor
+release.
+
+#### Service Discovery
+
+#### Stream Processor
+
+#### Data Access
+
+microservice |  Docker  
+---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.4.3  
+Single container | registry.dl.kx.com/kxi-da-single:1.4.3  
+  
+#### Storage Manager
+
+microservice |  Docker  
+---|---  
+Storage Manager | registry.dl.kx.com/kxi-sm:1.4.3  
+End of Interval (EOI) | registry.dl.kx.com/kxi-sm-eoi:1.4.3  
+End of Day (EOD) | registry.dl.kx.com/kxi-sm-eod:1.4.3  
+Database Migration (DBM) | registry.dl.kx.com/kxi-sm-dbm:1.4.3  
+Single Container | registry.dl.kx.com/kxi-sm-single:1.4.3  
+  
+#### Service Gateway
+
+microservice |  Docker  
+---|---  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.4.3  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.4.3  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.4.3  
+  
+#### User interface
+
+#### Machine Learning
+
+#### Reliable Transport
+
+#### Miscellaneous
+
+### Known Issues
+
+### 1.4.1
+
+### Release Date
+
+2023-03-14
+
+### Fixes
+
+#### Storage Manager
+
+  * If end-of-day processing is interrupted and remains incomplete until the next EOD period, this prevents further EODs from completing and requires manual recovery. This issue has been resolved. 
+
+### Artifacts
+
+Highlights denote artifacts which have been updated as part of this patch
+release. All other artifacts are unchanged from the previous major or minor
+release.
+
+#### Service Discovery
+
+#### Stream Processor
+
+#### Data Access
+
+microservice |  Docker  
+---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.4.0  
+Single container | registry.dl.kx.com/kxi-da-single:1.4.0  
+  
+#### Storage Manager
+
+microservice |  Docker  
+---|---  
+Storage Manager | registry.dl.kx.com/kxi-sm:1.4.1  
+End of Interval (EOI) | registry.dl.kx.com/kxi-sm-eoi:1.4.1  
+End of Day (EOD) | registry.dl.kx.com/kxi-sm-eod:1.4.1  
+Database Migration (DBM) | registry.dl.kx.com/kxi-sm-dbm:1.4.1  
+Single Container | registry.dl.kx.com/kxi-sm-single:1.4.1  
+  
+#### Service Gateway
+
+microservice |  Docker  
+---|---  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.4.0  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.4.0  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.4.0  
+  
+#### User interface
+
+#### Machine Learning
+
+#### Reliable Transport
+
+#### Miscellaneous
+
+## 1.4.0
+
+kdb Insights Microservices 1.4.0 release.
+
+### Release Date
+
+2023-01-31
+
+### New Features
+
+#### Reliable Transport
+
+A [Reliable
+Transport](https://code.kx.com/insights/1.4/microservices/rt/index.html)
+Microservice is now available.
+
+### Changes
+
+### Known Issues
+
+### Upgrade considerations
+
+#### Discovery Service
+
+Spring Boot has been updated to version 3.0.0, this upgrade changes how
+profiles are activated within the application.yaml. If using a
+`spring.profiles.active` it should be updated to `spring.config.active.on-
+profile`. A working configuration is documented within the Service Discovery
+Microservice
+[documentation](https://code.kx.com/insights/1.4/microservices/service-
+discovery/running-discovery.html#multi-node-docker-compose).
+
+Full details on the Spring profiles change
+[here](https://spring.io/blog/2020/08/14/config-file-processing-in-spring-
+boot-2-4#profile-activation)
+
+### Artifacts
+
+#### Service Discovery
+
+#### Stream Processor
+
+#### Data Access
+
+microservice |  Docker  
+---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.2.0  
+Single container | registry.dl.kx.com/kxi-da-single:1.2.0  
+  
+#### Storage Manager
+
+microservice |  Docker  
+---|---  
+Storage Manager | registry.dl.kx.com/kxi-sm:1.2.0  
+End of Interval (EOI) | registry.dl.kx.com/kxi-sm-eoi:1.2.0  
+End of Day (EOD) | registry.dl.kx.com/kxi-sm-eod:1.2.0  
+Database Migration (DBM) | registry.dl.kx.com/kxi-sm-dbm:1.2.0  
+Single Container | registry.dl.kx.com/kxi-sm-single:1.2.0  
+  
+#### Service Gateway
+
+microservice |  Docker  
+---|---  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.2.0  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.2.0  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.2.0  
+  
+#### User interface
+
+#### Machine Learning
+
+#### Reliable Transport
+
+microservice |  Docker | Kubernetes  
+---|---|---  
+RT |  |   
+  
+#### Miscellaneous
+
+## 1.3.6
+
+kdb Insights 1.3.6 release.
+
+### Release Date
+
+2023-04-06
+
+### Fixes
+
+#### Storage Manager
+
+  * Migrating tiers to object storage could fail with the eventual error `SMDBM Migration discontinued due to failure` if multiple threads were used. This has been resolved. 
+
+### Artifacts
+
+Highlights denote artifacts which have been updated as part of this patch
+release. All other artifacts are unchanged from the previous major or minor
+release.
+
+#### Service Discovery
+
+#### Stream Processor
+
+#### Data Access
+
+microservice |  Docker  
+---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.3.9  
+Single container | registry.dl.kx.com/kxi-da-single:1.3.9  
+  
+#### Storage Manager
+
+microservice |  Docker  
+---|---  
+Storage Manager | registry.dl.kx.com/kxi-sm:1.3.10  
+End of Interval (EOI) | registry.dl.kx.com/kxi-sm-eoi:1.3.10  
+End of Day (EOD) | registry.dl.kx.com/kxi-sm-eod:1.3.10  
+Database Migration (DBM) | registry.dl.kx.com/kxi-sm-dbm:1.3.10  
+Single Container | registry.dl.kx.com/kxi-sm-single:1.3.10  
+  
+#### Service Gateway
+
+microservice |  Docker  
+---|---  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.3.3  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.3.3  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.3.3  
+  
+#### User interface
+
+#### Machine Learning
+
+#### Miscellaneous
+
+## 1.3.5
+
+kdb Insights 1.3.5 release.
+
+### Release Date
+
+2023-03-16
+
+### Fixes
+
+#### Storage Manager and Data Access
+
+  * Storage Manager and Data Access processes now retry, with exponential backoff, when object storage authentication fails. Previously, rate limiting of authentication token refreshes on large kdb Insights deployments could cause access failure, and subsequent processing issues. For more detail, see the release notes for [Core 4.0.2](https://code.kx.com/insights/1.5/core/release-notes/latest.html#kdb-insights-core-402)
+
+### Artifacts
+
+Highlights denote artifacts which have been updated as part of this patch
+release. All other artifacts are unchanged from the previous major or minor
+release.
+
+#### Service Discovery
+
+#### Stream Processor
+
+#### Data Access
+
+microservice |  Docker  
+---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.3.9  
+Single container | registry.dl.kx.com/kxi-da-single:1.3.9  
+  
+#### Storage Manager
+
+microservice |  Docker  
+---|---  
+Storage Manager | registry.dl.kx.com/kxi-sm:1.3.9  
+End of Interval (EOI) | registry.dl.kx.com/kxi-sm-eoi:1.3.9  
+End of Day (EOD) | registry.dl.kx.com/kxi-sm-eod:1.3.9  
+Database Migration (DBM) | registry.dl.kx.com/kxi-sm-dbm:1.3.9  
+Single Container | registry.dl.kx.com/kxi-sm-single:1.3.9  
+  
+#### Service Gateway
+
+microservice |  Docker  
+---|---  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.3.3  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.3.3  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.3.3  
+  
+#### User interface
+
+#### Machine Learning
+
+#### Miscellaneous
+
+## 1.3.3
+
+kdb Insights 1.3.3 release.
+
+### Release Date
+
+2023-03-07
+
+### Fixes
+
+#### Storage Manager
+
+  * If end-of-day processing is interrupted and remains incomplete until the next EOD period, this prevents further EODs from completing and requires manual recovery. This issue has been resolved. 
+
+### Artifacts
+
+Highlights denote artifacts which have been updated as part of this patch
+release. All other artifacts are unchanged from the previous major or minor
+release.
+
+#### Service Discovery
+
+#### Stream Processor
+
+#### Data Access
+
+microservice |  Docker  
+---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.3.3  
+Single container | registry.dl.kx.com/kxi-da-single:1.3.3  
+  
+#### Storage Manager
+
+microservice |  Docker  
+---|---  
+Storage Manager | registry.dl.kx.com/kxi-sm:1.3.8  
+End of Interval (EOI) | registry.dl.kx.com/kxi-sm-eoi:1.3.8  
+End of Day (EOD) | registry.dl.kx.com/kxi-sm-eod:1.3.8  
+Database Migration (DBM) | registry.dl.kx.com/kxi-sm-dbm:1.3.8  
+Single Container | registry.dl.kx.com/kxi-sm-single:1.3.8  
+  
+#### Service Gateway
+
+microservice |  Docker  
+---|---  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.3.3  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.3.3  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.3.3  
+  
+#### User interface
+
+#### Machine Learning
+
+#### Miscellaneous
+
+## 1.3.3
+
+kdb Insights 1.3.3 release.
+
+### Release Date
+
+2023-03-01
+
+### Fixes
+
+#### Storage Manager
+
+  * A limitation to the number of objects that could be present in an object storage tier has been fixed. This could cause EOD data migration to object storage tiers to fail in SM version 1.3.6. 
+
+### Artifacts
+
+Highlights denote artifacts which have been updated as part of this patch
+release. All other artifacts are unchanged from the previous major or minor
+release.
+
+#### Service Discovery
+
+#### Stream Processor
+
+#### Data Access
+
+microservice |  Docker  
+---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.3.3  
+Single container | registry.dl.kx.com/kxi-da-single:1.3.3  
+  
+#### Storage Manager
+
+microservice |  Docker  
+---|---  
+Storage Manager | registry.dl.kx.com/kxi-sm:1.3.7  
+End of Interval (EOI) | registry.dl.kx.com/kxi-sm-eoi:1.3.7  
+End of Day (EOD) | registry.dl.kx.com/kxi-sm-eod:1.3.7  
+Database Migration (DBM) | registry.dl.kx.com/kxi-sm-dbm:1.3.7  
+Single Container | registry.dl.kx.com/kxi-sm-single:1.3.7  
+  
+#### Service Gateway
+
+microservice |  Docker  
+---|---  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.3.3  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.3.3  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.3.3  
+  
+#### User interface
+
+#### Machine Learning
+
+#### Miscellaneous
+
+## 1.3.2
+
+kdb Insights 1.3.2 release.
+
+### Release Date
+
+2023-02-21
+
+### Fixes
+
+#### Storage Manager
+
+  * Object storage copy limits (2GB) no longer block SM from migrating large columns to an object storage tier. 
+
+  * Column additions to splayed tables could sometimes fail when attempting to update the schema. This has been fixed. 
+
+### Artifacts
+
+Highlights denote artifacts which have been updated as part of this patch
+release. All other artifacts are unchanged from the previous major or minor
+release.
+
+#### Service Discovery
+
+#### Stream Processor
+
+#### Data Access
+
+microservice |  Docker  
+---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.3.3  
+Single container | registry.dl.kx.com/kxi-da-single:1.3.3  
+  
+#### Storage Manager
+
+microservice |  Docker  
+---|---  
+Storage Manager | registry.dl.kx.com/kxi-sm:1.3.6  
+End of Interval (EOI) | registry.dl.kx.com/kxi-sm-eoi:1.3.6  
+End of Day (EOD) | registry.dl.kx.com/kxi-sm-eod:1.3.6  
+Database Migration (DBM) | registry.dl.kx.com/kxi-sm-dbm:1.3.6  
+Single Container | registry.dl.kx.com/kxi-sm-single:1.3.6  
+  
+#### Service Gateway
+
+microservice |  Docker  
+---|---  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.3.3  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.3.3  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.3.3  
+  
+#### User interface
+
+#### Machine Learning
+
+#### Miscellaneous
+
+## 1.3.1
+
+kdb Insights Microservices 1.3.1 release.
+
+### Release Date
+
+2022-12-06
+
+### New Features
+
+#### Storage Manager
+
+  * SM now supports writing its own inventory file, under the tier settings. Inventory files can speed load times for databases - you can read more [here](https://code.kx.com/insights/1.3/core/objstor/main.html#hdb-load-times). 
+    
+              - name: s3
+            mount: hb
+            store: s3://kxi-sm-test/bucketroot/db
+            inventory:
+              enabled: true
+              location: s3://kxi-sm-test/bucketroot/inventory.tgz
+    
+
+The DA should be configured to set `KX_OBJSTR_INVENTORY_FILE` as an env var to
+a path relative to the root of the bucket. For example
+`bucketroot/inventory.tgz`.
+
+#### DA/Aggregator
+
+  * The garbage collection in the [DAP](https://code.kx.com/insights/1.3/microservices/data-access/configuration_dap.html#environment-variables) and [Aggregator](https://code.kx.com/insights/1.3/microservices/data-access/configuration_sg.html#environment-variables) processes has been moved to a staggered timer for improved query throughput. The default is 10 minutes, and is configurable through the `KXI_GC_FREQ` environment variables on each service. Previously, the garbage collection ran after each query. 
+
+### Fixes
+
+#### Storage Manager
+
+#### Data Access
+
+  * An upgrade issue where DAs could register with SM before all tables were ready has been fixed. This could result in `Error executing listener for event discovery`
+
+### Artifacts
+
+Highlights denote artifacts which have been updated as part of this patch
+release. All other artifacts are unchanged from the previous major or minor
+release.
+
+#### Service Discovery
+
+#### Stream Processor
+
+#### Data Access
+
+microservice |  Docker  
+---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.3.3  
+Single container | registry.dl.kx.com/kxi-da-single:1.3.3  
+  
+#### Storage Manager
+
+microservice |  Docker  
+---|---  
+Storage Manager | registry.dl.kx.com/kxi-sm:1.3.3  
+End of Interval (EOI) | registry.dl.kx.com/kxi-sm-eoi:1.3.3  
+End of Day (EOD) | registry.dl.kx.com/kxi-sm-eod:1.3.3  
+Database Migration (DBM) | registry.dl.kx.com/kxi-sm-dbm:1.3.3  
+Single Container | registry.dl.kx.com/kxi-sm-single:1.3.3  
+  
+#### Service Gateway
+
+microservice |  Docker  
+---|---  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.3.3  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.3.3  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.3.3  
+  
+#### User interface
+
+#### Machine Learning
+
+#### Miscellaneous
+
+## 1.3.0
+
+kdb Insights Microservices 1.3.0 release.
+
+### Release Date
+
+2022-11-22
+
+### Storage Manager
+
+[FIX] Multiple issues due to connections not being re-established if they
+dropped and tty being enabled in some scenarios causing debug prompts.
+
+[FIX] An issue where the storage manager exhausted all available connections
+when registering DA clients that were repeatedly failing.
+
+### Service Gateway
+
+[FIX] A problem where the gateway would not respond to a query if it died
+during query processing due to an out of memory error. The gateway will now
+issue timeouts for queries that have exceeded their original timeout by more
+than 5 seconds.
+
+### Metrics
+
+[FIX] An issue where enabling metrics for the .z.ps handler caused the `0`
+handle to not return results.
+
+### Known Issues
+
+### Artifacts
+
+Highlights denote artifacts which have been updated as part of this patch
+release. All other artifacts are unchanged from the previous major or minor
+release.
+
+#### Service Discovery
+
+#### Stream Processor
+
+#### Data Access
+
+microservice |  Docker  
+---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.3.1  
+Single container | registry.dl.kx.com/kxi-da-single:1.3.1  
+  
+#### Storage Manager
+
+microservice |  Docker  
+---|---  
+Storage Manager | registry.dl.kx.com/kxi-sm:1.3.1  
+End of Interval (EOI) | registry.dl.kx.com/kxi-sm-eoi:1.3.1  
+End of Day (EOD) | registry.dl.kx.com/kxi-sm-eod:1.3.1  
+Database Migration (DBM) | registry.dl.kx.com/kxi-sm-dbm:1.3.1  
+Single Container | registry.dl.kx.com/kxi-sm-single:1.3.1  
+  
+#### Service Gateway
+
+microservice |  Docker  
+---|---  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.3.1  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.3.1  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.3.1  
+  
+#### User interface
+
+#### Machine Learning
+
+#### Miscellaneous
+
+## 1.2.1
+
+kdb Insights Microservices 1.2.1 release.
+
+### Release Date
+
+2022-10-20
+
+### Storage Manager
+
+[FIX] An upgrade issue affecting migrations from kdb Insights Microservices
+1.1 using object storage tiers has been fixed.
+
+[FIX] A problem where underlying system calls could cause Storage Manager to
+hang during EOI or EOD has been resolved.
+
+[FIX] Discovery issues with DAPs when Storage Manager was used in sm-single
+mode have been resolved.
+
+[FIX] Storage Manager now retries if it's unable to initially reach the
+Reliable Transport.
+
+### Licensing
+
+[FIX] Airgap licensing problems due to lack of support for regional AWS STS
+endpoints have been resolved.
+
+### Known Issues
+
+Service GatewayStream ProcessorMetrics
+
+  * If you request too much data in a single getData(), the request will fail. To overcome this issue you should request less data per getData() call. The error message returned will look like the example below: 
+
+    
+    
+       {"header":{"http":"json","corr":"6dd8f0c5-1895-49c9-a87a-636a834af370","logCorr":"6dd8f0c5-1895-49c9-a87a-636a834af370","client":":10.0.10.76:5050","api":".kxi.getData","protocol":"gw","numRP":1,"ogRcID":"10.0.10.100:5060","to":"2022-04-07T11:41:35.717000000","retryCount":0,"rc":42,"ac":10,"ai":"Agg died"},"payload":[]}
+    
+
+  * `.qsp.read.fromDatabase` cannot be run in a pipeline to query a kdb Insights database. The following example code can be used as a workaround to query data (ex. reference data to be used within a pipeline).
+
+    
+    
+    onResponse:{[hdr;data]
+        if[0 <> hdr`ac;
+            .sp.log.error ("Query failed host=%s, api=%s, code=%n, error=%s";hdr`gw; hdr`api; hdr`ac; hdr`ai)];
+        publish data
+        }
+    .qsp.onStart {
+        h:hopen hsym `$"sg-gateway-host:5050";
+        res: neg[h] (`.kxi.getData; (enlist `table)!(enlist `instruments); `onResponse; (0#`)!());
+        }
+    .qsp.run .qsp.read.fromCallback[`publish] .qsp.write.toConsole[]
+    
+
+  * If metrics reporting is enabled within a microservice, along with the handler for `.z.ps`, services calling through the `.z.ps` with `0(f;x)` will throw a `type` error due to a failure in the handler to return correctly. The workaround, if metrics reporting is enabled, is to disable the `.z.ps` event handler in the metrics configuration for all microservices.
+
+    
+    
+    "metrics": {
+        "enabled": "true",
+        "frequency": 5,
+        "handler": {
+            "pc": true,
+            "pg": true,
+            "ph": true,
+            "po": true,
+            "pp": true,
+            "ps": false,
+            "ts": true,
+            "wc": true,
+            "wo": true,
+            "ws": true
+        }
+    }
+    
+
+### Upgrade considerations
+
+  * If using a `kdb+ tick` tickerplant, the schema for database signals has changed to the following, which must be updated in the tick `sym.q`
+
+    
+    
+    (`$"_prtnEnd") set ([] time:"n"$(); sym:`$(); signal:`$(); endTS:"p"$(); opts:())
+    (`$"_reload") set ([] time:"n"$(); sym:`$(); mount:`$(); params:(); asm:`$())
+    
+
+### Artifacts
+
+Highlights denote artifacts which have been updated as part of this patch
+release. All other artifacts are unchanged from the previous major or minor
+release.
+
+#### Service Discovery
+
+#### Stream Processor
+
+#### Data Access
+
+microservice |  Docker  
+---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.2.1  
+Single container | registry.dl.kx.com/kxi-da-single:1.2.1  
+  
+#### Storage Manager
+
+microservice |  Docker  
+---|---  
+Storage Manager | registry.dl.kx.com/kxi-sm:1.2.1  
+End of Interval (EOI) | registry.dl.kx.com/kxi-sm-eoi:1.2.1  
+End of Day (EOD) | registry.dl.kx.com/kxi-sm-eod:1.2.1  
+Database Migration (DBM) | registry.dl.kx.com/kxi-sm-dbm:1.2.1  
+Single Container | registry.dl.kx.com/kxi-sm-single:1.2.1  
+  
+#### Service Gateway
+
+microservice |  Docker  
+---|---  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.2.1  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.2.1  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.2.1  
+  
+#### User interface
+
+#### Machine Learning
+
+#### Miscellaneous
+
+## 1.2.0
+
+KX Insights Microservices 1.2.0 release.
+
+### Release Date
+
+2022-09-02
+
+### Changes
+
+#### Storage Manager & Data Access
+
+[NEW] Ability for Data Access tiers (RDB, IDB, HDB) to share compute resources
+by using `mountList` within Assembly configuration rather than `mountName`.
+
+#### Stream Processor
+
+[NEW] MQTT QoS 0 Reader has been added.
+
+### Known Issues
+
+Service GatewayStream ProcessorMetrics
+
+  * If you request too much data in a single getData(), the request will fail. To overcome this issue you should request less data per getData() call. The error message returned will look like the example below 
+
+    
+    
+       {"header":{"http":"json","corr":"6dd8f0c5-1895-49c9-a87a-636a834af370","logCorr":"6dd8f0c5-1895-49c9-a87a-636a834af370","client":":10.0.10.76:5050","api":".kxi.getData","protocol":"gw","numRP":1,"ogRcID":"10.0.10.100:5060","to":"2022-04-07T11:41:35.717000000","retryCount":0,"rc":42,"ac":10,"ai":"Agg died"},"payload":[]}
+    
+
+  * `.qsp.read.fromDatabase` cannot be run in a pipeline to query an Insights database. The following example code can be used as a workaround to query data (ex. reference data to be used within a pipeline).
+
+    
+    
+    onResponse:{[hdr;data]
+    if[0 <> hdr`ac;
+        .sp.log.error ("Query failed host=%s, api=%s, code=%n, error=%s";hdr`gw; hdr`api; hdr`ac; hdr`ai)];
+    publish data
+    }
+    .qsp.onStart {
+        h:hopen hsym `$.spenv.getReleaseName[],"-sg-gateway:5050";
+        res: neg[h] (`.kxi.getData; (enlist `table)!(enlist `instruments); `onResponse; ()!());
+    }
+    .qsp.run .qsp.read.fromCallback[`publish] .qsp.write.toConsole[]
+    
+
+  * If metrics reporting is enabled within a microservice, along with the handler for `.z.ps`, services calling through the `.z.ps` with `0(f;x)` will throw a `type` error due to a failure in the handler to return correctly. The workaround if metrics reporting is enabled is to disable the `.z.ps` event handler in the metrics configuration for all microservices.
+
+    
+    
+    "metrics": {
+        "enabled": "true",
+        "frequency": 5,
+        "handler": {
+            "pc": true,
+            "pg": true,
+            "ph": true,
+            "po": true,
+            "pp": true,
+            "ps": false,
+            "ts": true,
+            "wc": true,
+            "wo": true,
+            "ws": true
+        }
+    }
+    
+
+### Upgrade considerations
+
+  * If using a `kdb+ tick` tickerplant, the schema for database signals has changed to the following, which must be updated in the tick `sym.q`
+
+    
+    
+    (`$"_prtnEnd") set ([] time:"n"$(); sym:`$(); signal:`$(); endTS:"p"$(); opts:());
+    (`$"_reload") set ([] time:"n"$(); sym:`$(); mount:`$(); params:(); asm:`$())
+    
+
+### Artifacts
+
+#### Service Discovery
+
+#### Stream Processor
+
+#### Data Access
+
+microservice |  Docker  
+---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.2.0  
+Single container | registry.dl.kx.com/kxi-da-single:1.2.0  
+  
+#### Storage Manager
+
+microservice |  Docker  
+---|---  
+Storage Manager | registry.dl.kx.com/kxi-sm:1.2.0  
+End of Interval (EOI) | registry.dl.kx.com/kxi-sm-eoi:1.2.0  
+End of Day (EOD) | registry.dl.kx.com/kxi-sm-eod:1.2.0  
+Database Migration (DBM) | registry.dl.kx.com/kxi-sm-dbm:1.2.0  
+Single Container | registry.dl.kx.com/kxi-sm-single:1.2.0  
+  
+#### Service Gateway
+
+microservice |  Docker  
+---|---  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.2.0  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.2.0  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.2.0  
+  
+#### User interface
+
+#### Machine Learning
+
+#### Miscellaneous
+
+## 1.1.3
+
+KX Insights Microservices 1.1.3 release.
+
+### Release Date
+
+2022-08-17
+
+### Changes
+
+#### Storage Manager & Data Access
+
+[FIX] Fix for Alpine vulnerability CVE-2022-37434
+
+#### Stream Processor
+
+[FIX] Fix for Alpine vulnerability CVE-2022-37434
+
+#### Service Discovery
+
+[FIX] Fix for Alpine vulnerabilities CVE-2022-37434 and CVE-2022-32207
+
+#### Sidecar
+
+[FIX] Fix for Alpine vulnerabilities CVE-2022-37434
+
+### Known Issues
+
+Service GatewayMetrics
+
+  * If metrics reporting is enabled within a microservice, along with the handler for `.z.ps`, services calling through the `.z.ps` with `0(f;x)` will throw a `type` error due to a failure in the handler to return correctly. The workaround is if metrics reporting is enabled, disable the `.z.ps` event handler in the metrics configuration for all microservices.
+
+    
+    
+    "metrics": {
+        "enabled": "true",
+        "frequency": 5,
+        "handler": {
+            "pc": true,
+            "pg": true,
+            "ph": true,
+            "po": true,
+            "pp": true,
+            "ps": false,
+            "ts": true,
+            "wc": true,
+            "wo": true,
+            "ws": true
+        }
+    }
+    
+
+### Upgrade considerations
+
+#### Licensing
+
+From 1.1.0 licensing changes are included to enable feature and comsumption
+based licensing in some cases. As part of this Microservices now require
+clients to upgrade to new licenses with feature flags. Previous licenses only
+required `KXCE` in the banner.
+
+To validate if a license has feature flags, start a process or Microservice
+using it and check `.z.l 4` in the terminal. This should return something like
+`"insights.lib.embedq insights.lib.pykx insights.lib.sql insights.app.rt
+insig..`
+
+#### Database (Service Gateway, Data Access, Storage Manager)
+
+### Artifacts
+
+#### Service Discovery
+
+#### Stream Processor
+
+#### Data Access
+
+microservice |  Docker  
+---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.1.2  
+  
+#### Storage Manager
+
+microservice |  Docker  
+---|---  
+Storage Manager | registry.dl.kx.com/kxi-sm:1.1.0  
+End of Interval (EOI) | registry.dl.kx.com/kxi-sm-eoi:1.1.0  
+End of Day (EOD) | registry.dl.kx.com/kxi-sm-eod:1.1.0  
+Database Migration (DBM) | registry.dl.kx.com/kxi-sm-dbm:1.1.0  
+  
+#### Service Gateway
+
+microservice |  Docker  
+---|---  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.1.1  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.1.2  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.1.1  
+  
+#### User interface
+
+#### Machine Learning
+
+#### Miscellaneous
+
+# 1.1.2
+
+### Release Date
+
+2022-07-15
+
+### Changes
+
+#### Storage Manager & Data Access
+
+[NEW] Late and out-of-order data handling
+
+[NEW] Data received out of order is recorded with an appropriate ingest
+timestamp
+
+[NEW] Late data is recorded, irrespective of where its correct destination is
+in the lifecycle (RDB, IDB, HDB)
+
+[NEW] Late data is included by default for all requests, `getData` and ANSI
+SQL
+
+[NEW] Late data can be filtered out (for example, to see only data present in
+the system at a particular point in time)
+
+[NEW] Performance is not significantly impacted by late data arrival
+
+[NEW] Reference data can be queried in the Explore Window, in a data pipeline
+and as part of the `getData()` API
+
+[NEW] Support for non time-series reference data in Database
+
+[NEW] Data in reference tables can be joined to time-series tables in free-
+form q queries or `getData` Improved SQL support for queries (joins and
+complex queries, except for reference tables)
+
+[NEW] Compression support, including object storage
+
+[NEW] Improved resiliency and performance
+
+[FIX] The getData API endpoint no longer returns an error when an `outputTZ`
+is provided.
+
+[FIX] Queries against the interval tier (idb) around the end-of-day rollover
+process could return zero results.
+
+[FIX] Reference data joins which do not include the foreign column or where
+the foreign column has a different name are now possible.
+
+[FIX] An issue where certain queries using `count` could throw the error
+`Error: noupdate: `.Q `pn` has been resolved.
+
+### Known Issues
+
+Service Gateway
+
+  * If you request too much data in a single getData(), the request will fail. To overcome this issue you should request less data per getData() call. The error message returned will look like the example below 
+
+    
+    
+       {"header":{"http":"json","corr":"6dd8f0c5-1895-49c9-a87a-636a834af370","logCorr":"6dd8f0c5-1895-49c9-a87a-636a834af370","client":":10.0.10.76:5050","api":".kxi.getData","protocol":"gw","numRP":1,"ogRcID":"10.0.10.100:5060","to":"2022-04-07T11:41:35.717000000","retryCount":0,"rc":42,"ac":10,"ai":"Agg died"},"payload":[]}
+    
+
+### Upgrade considerations
+
+#### Licensing
+
+From 1.1.0 licensing changes are included to enable feature and comsumption
+based licensing in some cases. As part of this Microservices now require
+clients to upgrade to new licenses with feature flags. Previous licenses only
+required `KXCE` in the banner.
+
+To validate if a license has feature flags, start a process or Microservice
+using it and check `.z.l 4` in the terminal. This should return something like
+`"insights.lib.embedq insights.lib.pykx insights.lib.sql insights.app.rt
+insig..`
+
+#### Database (Service Gateway, Data Access, Storage Manager)
+
+  * Critical invalid configuration will now fatally exit the process with a `FATAL` log message and information on the configuration error
+  * Assembly `mounts.*.uri` is now defined as `mounts.*.baseURI` \- existing assembly files will need to be updated accordingly
+  * [Update to RT Client Library for new API signatures](https://code.kx.com/insights/1.1/microservices/storage-manager/sm-interface.html#interface-with-a-messaging-service)
+
+### Artifacts
+
+#### Service Discovery
+
+microservice |  Docker | Helm Chart  
+---|---|---  
+Discovery Registry | registry.dl.kx.com/kxi-eureka-discovery:1.1.2 | https://nexus.dl.kx.com/repository/kx-insights-charts/kxi-discovery-service-1.1.2.tgz  
+Discovery Proxy | registry.dl.kx.com/kxi-discovery-proxy:1.1.0-rc.3 |   
+  
+#### Stream Processor
+
+microservice |  Docker | qpk  
+---|---|---  
+Controller | registry.dl.kx.com/kxi-sp-controller:1.1.1 |   
+Worker | registry.dl.kx.com/kxi-sp-worker:1.1.1 | https://nexus.dl.kx.com/repository/kx-insights-packages/kxi-sp-worker/1.1.1/kxi-sp-worker.1.1.1.qpk  
+Coordinator | registry.dl.kx.com/kxi-sp-coordinator:1.1.1 |   
+Worker-Python | registry.dl.kx.com/kxi-sp-python:1.1.1 |   
+Worker-ML | registry.dl.kx.com/kxi-ml:1.1.1 |   
+  
+#### Data Access
+
+microservice |  Docker  
+---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.1.2  
+  
+#### Storage Manager
+
+microservice |  Docker  
+---|---  
+Storage Manager | registry.dl.kx.com/kxi-sm:1.1.0  
+End of Interval (EOI) | registry.dl.kx.com/kxi-sm-eoi:1.1.0  
+End of Day (EOD) | registry.dl.kx.com/kxi-sm-eod:1.1.0  
+Database Migration (DBM) | registry.dl.kx.com/kxi-sm-dbm:1.1.0  
+Single Container | registry.dl.kx.com/kxi-sm-single:1.1.0  
+  
+#### Service Gateway
+
+microservice |  Docker  
+---|---  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.1.0  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.1.2  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.1.1  
+  
+#### User interface
+
+microservice |  Docker | Helm Chart  
+---|---|---  
+Dashboards | registry.dl.kx.com/kxi-gui-dash:0.9.0 | https://nexus.dl.kx.com/repository/kx-insights-charts/gui-dash-0.9.0.tgz  
+Gateway | registry.dl.kx.com/kxi-gui-gateway:1.0.0 | https://nexus.dl.kx.com/repository/kx-insights-charts/gui-gateway-1.0.0.tgz  
+Data | registry.dl.kx.com/kxi-gui-data:0.9.0 | https://nexus.dl.kx.com/repository/kx-insights-charts/gui-data-0.9.0.tgz  
+  
+#### Machine Learning
+
+microservice | package  
+---|---  
+ML Registry | https://nexus.dl.kx.com/repository/kx-insights-packages/kxi-ml-registry/0.8.0/kxi-ml-registry.0.8.0.qpk  
+ML Analytics | https://nexus.dl.kx.com/repository/kx-insights-packages/kxi-ml-analytics/0.8.0/kxi-ml-analytics.0.8.0.qpk  
+  
+#### Miscellaneous
+
+microservice |  Docker | package  
+---|---|---  
+Metrics Sidecar | registry.dl.kx.com/kxi-sidecar:1.1.7 |   
+OpenAPI SDK Generator | registry.dl.kx.com/kxi-openapi-codegen:0.8.0 | https://nexus.dl.kx.com/repository/kx-insights-packages/kxi-openapi-codegen/0.8.0/kxi-openapi-codegen-0.8.0-shaded.jar  
+  
+## 1.1.0
+
+KX Insights Microservices 1.1.0 release.
+
+### Release Date
+
+2022.03.14
+
+#### Stream Processor
+
+Microservice |  Docker | Helm Chart  
+---|---|---  
+Controller | registry.dl.kx.com/kxi-sp-controller:1.0.1 | [kxi-sp-1.0.0.tgz](https://nexus.dl.kx.com/repository/kx-insights-charts/kxi-sp-1.0.0.tgz)  
+Worker | registry.dl.kx.com/kxi-sp-worker:1.0.1 |   
+Coordinator | registry.dl.kx.com/kxi-sp-coordinator:1.0.1 |   
+  
+#### Service Gateway
+
+microservice |  Docker  
+---|---  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.0.2  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.0.2  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.0.2  
+  
+#### Data Access
+
+microservice |  Docker  
+---|---  
+Data Access Process(DA) | registry.dl.kx.com/kxi-da:1.0.2  
+  
+#### Storage Manager
+
+microservice |  Docker  
+---|---  
+Storage Manager | registry.dl.kx.com/kxi-sm:1.0.3  
+End of Interval(EOI) | registry.dl.kx.com/kxi-sm-eoi:1.0.3  
+End of Day(EOD) | registry.dl.kx.com/kxi-sm-eod:1.0.3  
+Database Migration(DBM) | registry.dl.kx.com/kxi-sm-dbm:1.0.3  
+  
+#### User Interface
+
+Microservice |  Docker | Helm Chart  
+---|---|---  
+Dashboards | registry.dl.kx.com/kxi-gui-dash:0.9.0-1 | [gui-dash-1.0.0.tgz](https://nexus.dl.kx.com/repository/kx-insights-charts/gui-dash-1.0.0.tgz)  
+Gateway | registry.dl.kx.com/kxi-gui-gateway:1.0.0 |   
+Data | registry.dl.kx.com/kxi-gui-data:0.10.4 |   
+  
+# 0.11.0
+
+Beta Release Patch
+
+### Release Date
+
+2021.12.14
+
+#### Service Discovery
+
+[FIX] Upgrade from version 2.13 to 2.15 of log4j2 to fix CVE
+
+Microservice |  Docker | Helm Chart  
+---|---|---  
+Discovery Registry | registry.dl.kx.com/kxi-eureka-discovery:1.0.5 | https://nexus.dl.kx.com/repository/kx-insights-charts/kxi-discovery-service-1.0.3.tgz  
+Discovery Proxy | registry.dl.kx.com/kxi-discovery-proxy:0.9.3 |   
+  
+## 0.10.0
+
+Beta Release Update
+
+### Release Date
+
+2022.12.08
+
+#### Service Discovery
+
+Microservice |  Docker  
+---|---  
+Discovery Registry | registry.dl.kx.com/kxi-eureka-discovery:1.0.4  
+Discovery Proxy | registry.dl.kx.com/kxi-discovery-proxy:0.9.1  
+  
+#### Stream Processor
+
+microservice |  Docker  
+---|---  
+Controller | registry.dl.kx.com/kxi-sp-controller:0.11.4  
+Worker | registry.dl.kx.com/kxi-sp-worker:0.11.4  
+Coordinator | registry.dl.kx.com/kxi-sp-coordinator:0.11.4  
+  
+#### Service Gateway
+
+microservice |  Docker  
+---|---  
+Gateway | registry.dl.kx.com/kxi-sg-gw:0.9.37  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:0.9.36  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:0.9.36  
+  
+#### Data Access
+
+microservice |  Docker  
+---|---  
+Data Access Process(DA) | registry.dl.kx.com/kxi-da:0.9.33  
+  
+#### Storage Manager
+
+microservice |  Docker  
+---|---  
+Storage Manager | registry.dl.kx.com/kxi-sm:0.9.16  
+End of Interval(EOI) | registry.dl.kx.com/kxi-sm-eoi:0.9.16  
+End of Day(EOD) | registry.dl.kx.com/kxi-sm-eod:0.9.16  
+Database Migration(DBM) | registry.dl.kx.com/kxi-sm-dbm:0.9.16  
+  
+#### User Interface
+
+microservice |  Docker  
+---|---  
+Gateway | registry.dl.kx.com/kxi-gui-gateway:0.10.0  
+Data | registry.dl.kx.com/kxi-gui-data:0.10.0  
+  
+## 0.9.0
+
+Beta Update
+
+### Release Date
+
+2021.08.18
+
+#### Stream Processor
+
+microservice |  Docker | qpk  
+---|---|---  
+Controller | registry.dl.kx.com/kxi-sp-controller:0.9.0 |   
+Worker | registry.dl.kx.com/kxi-sp-worker:0.9.0 | https://nexus.dl.kx.com/repository/kx-insights-packages/kxi-sp-worker/0.9.0/kxi-sp-worker.0.9.0.qpk  
+Coordinator | registry.dl.kx.com/kxi-sp-coordinator:0.9.0 |   
+  
+[NEW] Stream Processor now supports arbitrarily nested namespaces to include
+operators
+
+[NEW] API added to allow extract of metrics and status for Stream Processor
+pipelines
+
+[NEW] Pipeline recovery from Controller fault. Workers die after configurable
+timeout rather than right away and workers retry connection to Controller
+host:port periodically after disconnect
+
+[NEW] Support added for chunked file reading. Chunked reading will leverage a
+concept called 'partials'. Readers will indicate if they write 'partials' into
+the stream. This will be identified by a new optional emit partials discovery
+function in the reader's plugin interface. By default this function will
+return false. If a reader emits partials, the next operator in the pipeline
+can indicate it buffers partials. If a plugin can buffer partials the partials
+will be sent directly to the operator. If it cannot read partials, a buffer
+operator will automatically be inserted in the pipeline that will buffer all
+partials until a full message is available. If an operator emits partials, it
+must implement a combine function that merges partial results. This combiner
+will be made available to the downstream operator.
+
+Proposed API additions:
+
+generatesPartials - This operator will output partial results emitsPartials -
+Should partial results be passed downstream if the next operator can handle
+it? combinePartials - Given n sets of partials, combine the data
+processesPartials - Indicates an operator can process partial data usePartials
+- Indicates to the operator that data will be provided as partials
+
+The result will allow readers to emit partial results. If decoders can process
+partials directly they will be given the partials function and partials when
+available. If they cannot, data will be buffered until a full message is
+emitted. This will also allow reduce operations to be distributed with partial
+results being emitted to a combine stage and being buffered before they are
+finally emitted.
+
+[NEW] API for retrieving the DAG spec from a running pipeline to manifest in
+the UI
+
+[NEW] Pipeline teardown API - REST clients such as the UI should be able to
+request the teardown of a pipeline to the coordinator. Teardown should request
+a teardown from all workers. After the workers cleanly exit, the controller
+and worker resources need to be deallocated. This includes removing pods,
+stateful sets, services, etc.
+
+[NEW] Coordinators now use heartbeats to identify pipelines that are still
+active
+
+[NEW] Kubernetes workloads to StatefulSets, for future integration with RT as
+well as better persistence of checkpointing
+
+[NEW] Kafka reader 'fromBeginning' / 'fromEnd' usability added
+
+[NEW] Length error running passing some atoms to a pipeline
+
+    
+    
+    .qsp.run
+        .qsp.read.fromCallback[`publish; `publish]
+        .qsp.map[`myMap; {x+1}]
+        .qsp.write.toConsole[]
+    
+
+If you pass this pipeline the atom 1, it works fine
+
+publish 1 But if you call it on something with more than one character, you
+get a length error in .spwrite.console.write
+
+publish 100 I'm not sure what the error is here. Can pipelines accept atoms,
+or is the issue that .sp.console.write isn't handling them? If pipelines can't
+accept atoms, it should error earlier
+
+[NEW] Stream Processor now includes CSV Decoder - operators and basic type
+casting
+
+[FIX] .sp.push isn't working for operators with foreign values as parameters
+
+[FIX] Kafka commit offset on checkpoint
+
+[FIX] Kafka library was not reading from the start of a partition
+
+[FIX] .qsp.run was not starting all parent pipelines
+
+[FIX] Added cleanup callback on pipeline teardown
+
+[FIX] .qsp.filter should verify the type of the return value
+
+[FIX] Runtime fails to compile when operations have the same ID
+
+[FIX] isAsync dict is was incorrectly formed if two plugins had the same ID
+
+#### Data Access
+
+microservice |  Docker | qpk  
+---|---|---  
+Data Access Process(DA) | registry.dl.kx.com/kxi-da:0.9.0 | https://nexus.dl.kx.com/repository/kx-insights-packages/kxi-da/0.9.0/kxi-da.0.9.0.qpk  
+Data Access Operator | registry.dl.kx.com/kxi-da-operator:0.9.0 | https://nexus.dl.kx.com/repository/kx-insights-packages/kxi-da-operator/0.9.0/kxi-da-operator.0.9.0.qpk  
+  
+[NEW] DA now return failure codes when a query is unsuccessful
+
+[NEW] Definition and implementation of what metrics the DA microservice will
+expose
+
+[NEW] React to data lifecycle events
+
+[NEW] Determine, fulfill, and report temporal purview of process at start-up
+
+#### Storage Manager
+
+microservice |  Docker | qpk  
+---|---|---  
+Storage Manager | registry.dl.kx.com/kxi-sm:0.9.0 | https://nexus.dl.kx.com/repository/kx-insights-packages/kxi-sm/0.9.0/kxi-sm.0.9.0.qpk  
+End of Interval(EOI) | registry.dl.kx.com/kxi-sm-eoi:0.9.0 | https://nexus.dl.kx.com/repository/kx-insights-packages/kxi-sm-eoi/0.9.0/kxi-sm-eoi.0.9.0.qpk  
+End of Day(EOD) | registry.dl.kx.com/kxi-sm-eod:0.9.0 | https://nexus.dl.kx.com/repository/kx-insights-packages/kxi-sm-eod/0.9.0/kxi-sm-eod.0.9.0.qpk  
+Database Migration(DBM) | registry.dl.kx.com/kxi-sm-dbm:0.9.0 | https://nexus.dl.kx.com/repository/kx-insights-packages/kxi-sm-dbm/0.9.0/kxi-sm-dbm.0.9.0.qpk  
+  
+[NEW] Support for pushing data to S3 via SM
+
+[NEW] Added ObjStor tier option for initial import
+
+[FIX] Fix wrong RDB and IDB purview for freshly imported DB
+
+[FIX] Kurl updates for on-prem DBs
+
+[NEW] Utility to copy data to object storage
+
+[NEW] Updated partition layout options w.r.t. object storage
+
+[NEW] Migration integration with EOD
+
+[NEW] Add tier compression
+
+[NEW] Generic/custom tickerplant as EMS substrate
+
+#### Service Gateway
+
+microservice |  Docker | qpk  
+---|---|---  
+Gateway | registry.dl.kx.com/kxi-sg-gw:0.9.1 |   
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:0.9.1 | https://nexus.dl.kx.com/repository/kx-insights-packages/kxi-sg-rc/0.9.1/kxi-sg-rc.0.9.1.qpk  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:0.9.1 | https://nexus.dl.kx.com/repository/kx-insights-packages/kxi-sg-agg/0.9.1/kxi-sg-agg.0.9.1.qpk  
+  
+[NEW] Surface assembly info and table schemas via SG's getMeta API
+
+[NEW] Added SG asymmetric DAP mode
+
+[NEW] Added Health and Readiness checks for Service Gateway
+
+[NEW] Added request timeout feature - detection and failure.
+
+[NEW] Metadata retrieval API for SG/DA
+
+[NEW] Support for custom code loading in SG and DA
+
+[FIX] Fix to reconnection logic for coordinator when connection is dropped
+
+[NEW] Added Health and Readyness checks for Service Gateway
+
+[NEW] Added request timeout feature - detection and failure.
+
+[NEW] Metadata retrieval API for SG/DA
+
+[NEW] Support for custom code loading in SG and DA
+
+[FIX] Fix to reconnection logic for coordinator when connection is dropped
+
+[FIX] Aggregator sidecar erroring when trying to register with discovery
+
+[FIX] If discovery is up, but then getServices() fails, we did not retry
+
+#### User Interface
+
+microservice |  Docker | Helm Chart  
+---|---|---  
+Dashboards | registry.dl.kx.com/kxi-gui-dash:0.9.0 | https://nexus.dl.kx.com/repository/kx-insights-charts/gui-dash-0.9.0.tgz  
+Gateway | registry.dl.kx.com/kxi-gui-gateway:0.9.0 | https://nexus.dl.kx.com/repository/kx-insights-charts/gui-gateway-0.9.0.tgz  
+Data | registry.dl.kx.com/kxi-gui-data:0.9.0 | https://nexus.dl.kx.com/repository/kx-insights-charts/gui-data-0.9.0.tgz  
+  
+#### Machine Learning
+
+microservice | package  
+---|---  
+ML Registry | https://nexus.dl.kx.com/repository/kx-insights-packages/kxi-ml-registry/0.8.0/kxi-ml-registry.0.8.0.qpk  
+ML Analytics | https://nexus.dl.kx.com/repository/kx-insights-packages/kxi-ml-analytics/0.8.0/kxi-ml-analytics.0.8.0.qpk  
+  
+[NEW] ML Analytics - A centralized location for all machine-learning analytics
+produced by KX
+
+[NEW] ML Registry - The ML Registry defines a centralized location for storing
+versioned machine-learning models and advanced analytics alongside parameters,
+metrics and other important artifacts data scientists to store information
+related to their machine-learning workflows.
+
+#### Miscellaneous
+
+microservice |  Docker | package  
+---|---|---  
+Metrics Sidecar | registry.dl.kx.com/kxi-sidecar:0.8.0 |   
+OpenAPI SDK Generator | registry.dl.kx.com/kxi-openapi-codegen:0.8.0 | https://nexus.dl.kx.com/repository/kx-insights-packages/kxi-openapi-codegen/0.8.0/kxi-openapi-codegen-0.8.0-shaded.jar  
+  
+## 0.8.0
+
+Initial Beta Release for all microservices.
+
+### Release Date
+
+2021.06.30
+
+### Service Discovery
+
+[NEW] A cloud-native, scalable registry which stores, manages and distributes
+running services and their metadata for all other services within the
+Microservice driven application.
+
+Microservice |  Docker | Helm Chart  
+---|---|---  
+Discovery Registry | registry.dl.kx.com/kxi-eureka-discovery:1.0.0 | https://nexus.dl.kx.com/repository/kx-insights-charts/kxi-discovery-service-0.8.0.tgz  
+Discovery Proxy | registry.dl.kx.com/kxi-discovery-proxy:0.8.2 |   
+  
+### Stream Processor
+
+[NEW] A high-performance, scalable event-stream processing system implemented
+in q.
+
+Microservice |  Docker | qpk  
+---|---|---  
+Controller | registry.dl.kx.com/kxi-sp-controller:0.9.0 |   
+Worker | registry.dl.kx.com/kxi-sp-worker:0.9.0 | https://nexus.dl.kx.com/repository/kx-insights-packages/kxi-sp-worker/0.9.0/kxi-sp-worker.0.9.0.qpk  
+Coordinator | registry.dl.kx.com/kxi-sp-worker:0.9.0 | https://nexus.dl.kx.com/repository/kx-insights-packages/kxi-sp-worker/0.9.0/kxi-sp-worker.0.9.0.qpk  
+  
+### Data Access
+
+[NEW] Provides read-only access to all data stored in a database, regardless
+of where the data currently resides in the data lifecycle.
+
+Microservice |  Docker | qpk  
+---|---|---  
+Data Access Process(DA) | registry.dl.kx.com/kxi-da:0.9.0 | https://nexus.dl.kx.com/repository/kx-insights-packages/kxi-da/0.9.0/kxi-da.0.9.0.qpk  
+Data Access Operator | registry.dl.kx.com/kxi-da-operator:0.9.0 | https://nexus.dl.kx.com/repository/kx-insights-packages/kxi-da-operator/0.9.0/kxi-da-operator.0.9.0.qpk  
+  
+### Storage Manager
+
+[NEW] Handles data persistence and migration.
+
+Microservice |  Docker | qpk  
+---|---|---  
+Storage Manager | registry.dl.kx.com/kxi-sm:0.8.0 | https://nexus.dl.kx.com/repository/kx-insights-packages/kxi-sm/0.8.0/kxi-sm.0.8.0.qpk  
+End of Interval(EOI) | registry.dl.kx.com/kxi-sm-eoi:0.8.0 | https://nexus.dl.kx.com/repository/kx-insights-packages/kxi-sm-eoi/0.8.0/kxi-sm-eoi.0.8.0.qpk  
+End of Day(EOD) | registry.dl.kx.com/kxi-sm-eod:0.8.0 | https://nexus.dl.kx.com/repository/kx-insights-packages/kxi-sm-eod/0.8.0/kxi-sm-eod.0.8.0.qpk  
+Database Migration(DBM) | registry.dl.kx.com/kxi-sm-dbm:0.8.0 | https://nexus.dl.kx.com/repository/kx-insights-packages/kxi-sm-dbm/0.8.0/kxi-sm-dbm.0.8.0.qpk  
+  
+### Gateway Service
+
+[NEW] A unified access point for data that is spread across multiple
+processes.
+
+Microservice |  Docker | qpk  
+---|---|---  
+Gateway | registry.dl.kx.com/kxi-sg-gw:0.9.1 |   
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:0.9.1 | https://nexus.dl.kx.com/repository/kx-insights-packages/kxi-sg-rc/0.9.1/kxi-sg-rc.0.9.1.qpk  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:0.9.1 | https://nexus.dl.kx.com/repository/kx-insights-packages/kxi-sg-agg/0.9.1/kxi-sg-agg.0.9.1.qpk  
+REST Server | registry.dl.kx.com/kxi-sg-rest:0.9.1 |   
+REST Proxy | registry.dl.kx.com/kxi-sg-rest-proxy:0.9.1 | https://nexus.dl.kx.com/repository/kx-insights-packages/kxi-sg-rest-proxy/0.9.1/kxi-sg-rest-proxy.0.9.1.qpk  
+  
+### User Interface
+
+[NEW] An interactive data visualization tool that enables non-technical and
+power users to query, transform, share and present live data insights.
+
+Microservice |  Docker | Helm Chart  
+---|---|---  
+Dashboards | registry.dl.kx.com/kxi-gui-direct:0.8.2 | https://nexus.dl.kx.com/repository/kx-insights-charts/gui-direct-0.8.2.tgz  
+Gateway | registry.dl.kx.com/kxi-gui-gateway:0.8.1 | https://nexus.dl.kx.com/repository/kx-insights-charts/gui-gateway-0.8.1.tgz  
+Data | registry.dl.kx.com/kxi-gui-data:0.8.0 | https://nexus.dl.kx.com/repository/kx-insights-charts/gui-data-0.8.0.tgz  
+  
+### Miscellaneous
+
+[NEW] Prometheus metrics sidecar image that provides four metric types:
+counter, gauge, histogram, summary.
+
+[NEW] OpenAPI specifications for all microservices, and a library for
+generating server stubs from an OpenAPI specification that uses our REST
+server library.
+
+Microservice |  Docker | Package  
+---|---|---  
+Metrics Sidecar | registry.dl.kx.com/kxi-sidecar:0.8.0 |   
+OpenAPI SDK Generator | registry.dl.kx.com/kxi-openapi-codegen:0.8.0 | https://nexus.dl.kx.com/repository/kx-insights-packages/kxi-openapi-codegen/0.8.0/kxi-openapi-codegen-0.8.0-shaded.jar
+

@@ -1,0 +1,123 @@
+https://code.kx.com/insights/enterprise/security/shared-keycloak.html
+
+# Shared Keycloak instance - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/security/shared-keycloak.html
+
+# Shared Keycloak instance
+
+By default, kdb Insights Enterprise deploys an instance of Keycloak as its
+identity and access management platform.
+
+In certain circumstances, it can be preferable to use an existing instance of
+Keycloak instead of deploying a new instance. For example, if you deploy
+multiple instances of the application, you can save resources by using a
+shared Keycloak instance.
+
+## Variables
+
+Certain variables are referenced on this page. The below table displays each
+variable and explains its purpose:
+
+name | description  
+---|---  
+`CHART_REPO` | Name of the Helm repository where kdb Insights Enterprise charts are stored  
+`KEYCLOAK_NAMESPACE` | Name of the namespace where the shared Keycloak instance will be installed  
+`KEYCLOAK_RELEASE_NAME` | Release name for the Keycloak install  
+`KEYCLOAK_VERSION` | Version of Keycloak you want to install  
+`INSIGHTS_RELEASE_NAME` | Release name for the Insights install  
+`INSIGHTS_VERSION` | Version of Insights you want to install  
+  
+Replace these variables with the appropriate value when referenced.
+
+You can find the appropriate versions by referring to the Artifacts section of
+the [release notes](../release-notes/latest.html#artifacts).
+
+## Deploy a standalone Keycloak instance
+
+Follow the below steps to deploy a standalone Keycloak instance:
+
+  1. Create a namespace called `$KEYCLOAK_NAMESPACE` and set it to be the current context.
+
+  2. Create `kxi-keycloak` and `kxi-postgresql` secrets.
+
+Passwords
+
+Replace `<PASSWORD>` in the secret generation commands below with a password
+of your choosing.
+
+You can have a unique password for each command if desired.
+
+    
+        kubectl create secret generic kxi-keycloak \
+      --from-literal=admin-password=<PASSWORD> \
+      --from-literal=management-password=<PASSWORD>
+    kubectl create secret generic kxi-postgresql \
+      --from-literal=postgres-password=<PASSWORD> \
+      --from-literal=password=<PASSWORD>
+    
+
+This creates two secrets called `kxi-keycloak` and `kxi-postgresql`.
+
+  3. Deploy the keycloak-server chart.
+    
+        helm install --set \
+      keycloak.auth.existingSecret=kxi-keycloak,keycloak.postgresql.auth.existingSecret=kxi-postgresql \
+      $KEYCLOAK_RELEASE_NAME $CHART_REPO/keycloak-server --version $KEYCLOAK_VERSION
+    
+
+## Upgrade a standalone Keycloak instance
+
+If there are no breaking changes between the installed version and the version
+you are upgrading to, follow the below steps to upgrade your Keycloak
+instance.
+
+  1. Ensure your current context is set to be the `$KEYCLOAK_NAMESPACE`
+
+  2. Upgrade the keycloak-server chart using `helm upgrade`
+    
+        helm upgrade --set \
+      keycloak.auth.existingSecret=kxi-keycloak,keycloak.postgresql.auth.existingSecret=kxi-postgresql \
+      $KEYCLOAK_RELEASE_NAME $CHART_REPO/keycloak-server --version $KEYCLOAK_VERSION
+    
+
+If there are breaking changes, refer to the [release notes](../release-
+notes/latest.html) for further guidance.
+
+## Deploy Insights
+
+Passwords must match between Insights and Keycloak deployments
+
+To successfully authenticate with the shared Keycloak instance, the Keycloak
+and PostgreSQL passwords defined in this stage must exactly match those
+defined in the `kxi-keycloak` and `kxi-postgresql` secrets in the Keycloak
+deployment.
+
+  1. Switch to the namespace where you want to install kdb Insights Enterprise.
+
+  2. Run the following to create the necessary secrets and a default values file for the kdb Insights Enterprise using a shared Keycloak instance:
+    
+        kxi install setup --keycloak-auth-url http://$KEYCLOAK_RELEASE_NAME-keycloak.$KEYCLOAK_NAMESPACE.svc.cluster.local/auth/
+    
+
+  3. Set these values in the resulting `values.yaml` to enable kdb Insights Enterprise to use a shared Keycloak instance, replacing the variables:
+    
+        global:
+      keycloak:
+        auth:
+          existingSecret: kxi-keycloak
+        authURL: http://<KEYCLOAK_RELEASE_NAME>-keycloak.<KEYCLOAK_NAMESPACE>.svc.cluster.local/auth/
+      postgresql:
+        auth:
+          existingSecret: kxi-postgresql
+        service:
+          name: <KEYCLOAK_RELEASE_NAME>-postgresql.<KEYCLOAK_NAMESPACE>-keycloak.svc
+    keycloak:
+      enabled: false
+    
+
+  4. Install kdb Insights Enterprise.
+    
+        kxi install run --filepath values.yaml --version $INSIGHTS_VERSION $CHART_REPO/insights
+    
+

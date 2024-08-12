@@ -1,0 +1,132 @@
+https://code.kx.com/dashboards/layout/
+
+# Layout - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/layout/
+
+# Layout Panel
+
+![Screenshot](../img/layout/layoutpanel.jpg)
+
+Layout panels are used to nest components within the dashboard, and are best
+used within [Flex Panel](../flexpanel/), [Tab Control](../tabcontrol/) and
+[Accordion](../accordion/) components or to create elements like navigation
+menus.
+
+## Basics
+
+![Screenshot](../img/layout/layoutpanelmenu.png)
+
+_Name_
+
+    A name for the component provided by the user. 
+_Fill Height_
+
+    
+
+When checked, autosizes nested components to fill the height of the Layout
+panel.
+
+Tip
+
+Enable after adding all required components to the panel
+
+_Advanced Layout_
+
+    
+
+Best-fit component according to panel width; components stack on resizing.
+Positioning components with _Advanced Layout_ requires CSS.
+
+_Fill Height_ versus _Advanced Layout_
+
+_Fill Height_ auto scales components to browser height. _Advanced Layout_
+requires CSS to position components. If both are enabled, only _Advanced
+Layout_ rules will apply.
+
+_User Layout_
+
+    User arrangement of components; add, remove and reposition. 
+
+  1. Enable User Layout. In `View on Web` mode (or "Quickview") the customization icon will be visible
+
+![Screenshot](../img/layout/switchoncustom.jpg)
+
+  2. Once enabled components will become movable and can be repositioned
+
+![Screenshot](../img/layout/clickanddrag.jpg)
+
+  3. Components can be deleted
+
+![Screenshot](../img/layout/deletecomponents.jpg)
+
+  4. Removed (and hidden) components can be returned (or included) by clicking on the Component Layout button and selecting them from the list. Components are identified by their title, user-defined name or component type, and in that order of preference. Clicking on 'Reset Layout' will restore the layout of the components to their original state.
+
+![Screenshot](../img/layout/addbackcomponents.png)
+
+  5. Once complete, click the settings icon
+
+![Screenshot](../img/layout/clickwhendone.jpg)
+
+  6. Save layout
+
+![Screenshot](../img/layout/savewhendone.jpg)
+
+_Floatable_
+
+    When enabled, an added component will snap to nearest row anchor. Otherwise, component will always snap to top row. 
+_Enable WebGL Context_
+
+    When enabled, every ChartGL widget that is directly added to the Layout Panel will share a single WebGL context.
+_Column Count_
+
+_Row Count_ / _Row Height_
+
+    
+
+Define Layout grid size. Components added are locked in position to this grid.
+The grid is visible when a component is dragged into position.
+
+![Screenshot](../img/layout/setgrid.jpg)
+
+Row Height
+
+If _Fill Height_ is disabled, _Row Count_ becomes _Row Height_. _Row Height_
+is the height in pixels between each grid row. The number of grid rows used is
+defined by the prior _Row Count_ value; e.g. if _Row Count_ is 30 and _Row
+Height_ is set to 30; then the distance from top to bottom - in the absence of
+_Fill Height_ \- is 900 pixels; i.e 30 x 30. If the pixel height is greater
+than the browser height, a scroll bar will appear and some components may be
+positioned off-screen.
+
+### Using Layout Panel
+
+  1. Add a Flex Panel, Accordion or Tab Control component
+
+  2. Left-click-and-drag in a Layout panel
+
+![Screenshot](../img/layout/layoutpanelhtmllight.jpg)
+
+  3. Add a component to the Layout panel; this will fill the area of the Layout panel, but can be resized to add additional components. 
+
+![Screenshot](../img/layout/layoutpaneladdhtmllight.jpg)
+
+Check both
+
+Unless you have a reason to lock the size of components dropped into a Layout
+panel, check both _Fill Height_ and _Advanced Layout_. This ensures the
+components in your Layout panel autosize along with the Accordion or Tab
+Control section that contains it.
+
+Using Advanced Layout CSS
+
+CSS can be used to position components and use fixed-sizing to prevent
+component resizing on changes in browser width. Use `.advanced-item[data-
+widgetid="xxxx-xxxx-xxxx-xxxx"] {}` to configure Advanced Layout CSS
+
+![Screenshot](../img/layout/advancedlayoutcss.jpg)
+
+## Style, Margins, Format
+
+[Style](../style/#component-style) for common settings
+

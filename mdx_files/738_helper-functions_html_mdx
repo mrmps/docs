@@ -1,0 +1,110 @@
+https://code.kx.com/insights/api/database/custom/helper-functions.html
+
+# Helper Functions - kdb products
+
+Original URL: https://code.kx.com/insights/api/database/custom/helper-functions.html
+
+# Helper Functions
+
+When writing custom APIs, the following helper functions are available in the
+DAPs to retrieve data.
+
+Data model
+
+Unlike a typical kdb+ database, table data is not stored in the base table
+name. Data may be distributed across an on-disk table and multiple in-memory
+tables (see [Late data](../../../enterprise/database/query/late-data.html)).
+It is highly recommended to use the following helper functions.
+
+## `.kxi.selectTable`
+
+This a general-purpose function to retrieve data for the specified table. It
+creates a single synthesized view of the table, removing the requirement for
+the user to know exactly how the data is distributed across multiple internal
+tables. This is the recommended method for accessing data.
+
+  * Parameters
+
+    * `tn` \- **symbol** \- Table name.
+    * `ts` \- **timestamp[2]** \- Start and end time (inclusive) of the data to select. This may be an empty list for reference tables.
+    * `wc` \- **list** \- Functional where clause.
+    * `bc` \- **dict/boolean** \- Functional by clause.
+    * `cn` \- **symbol[]** \- Full list of columns to select. This MUST include all columns needed in `agg`.
+    * `agg` \- **dict** \- Functional agg clause.
+  * Return
+
+    * **table** \- Result of select.
+
+### Examples
+
+    
+    
+    .kxi.selectTable[`trade;2024.04.10D 2024.04.15D;((=;`sym;enlist`AAPL);(>;`price;100));enlist[`sym]!enlist`sym;`price`size;`price`size!((avg;`price);(max;`size))] / Complex select on timeseries data
+    .kxi.selectTable[`referenceTable;();();0b;`x`y`z;()] / Simple select on reference data
+    
+
+## Advanced
+
+`.kxi.selectTable` is the recommended way to retrieve data. However, advanced
+users may wish to access internal tables individually for greater control. It
+is not recommended to use these functions without deep knowledge of the data
+model used in kdb Insights, refer to [Late
+data](../../../enterprise/database/query/late-data.html) for more information.
+
+### `.kxi.getDapType`
+
+Returns the type of the data access process being code is executing in. One of
+`RDB`, `IDB`, or `HDB`.
+
+  * Parameters
+
+  * Return
+
+    * **symbol** \- One of `RDB`, `IDB`, or `HDB`.
+
+#### Example
+
+### `.da.getTableMem`
+
+Retrieves the portion of the table held in memory.
+
+  * Parameters
+
+    * `tn` \- **symbol** \- Table name.
+  * Return
+
+    * **table** \- In-memory portion of the table.
+
+#### Example
+
+    
+    
+    q).da.getTableMem`myTable
+    x y
+    ---
+    1 3
+    2 4
+    
+
+### `.da.getTableDelta`
+
+Retrieves the portion of the table held in the in-memory delta table.
+
+  * Parameters
+
+    * `tn` \- **symbol** \- Table name.
+  * Return
+
+    * **table** \- Delta portion of the table.
+
+#### Example
+
+    
+    
+    q).da.getTableDelta`myTable
+    x y
+    ---
+    1 3
+    2 4
+    
+

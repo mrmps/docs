@@ -1,0 +1,88 @@
+https://code.kx.com/insights/accelerators/fsi/ice-ingestion.html
+
+# Ingestion - kdb products
+
+Original URL: https://code.kx.com/insights/accelerators/fsi/ice-ingestion.html
+
+# ICE Ingestion
+
+## ICE Feedhandler Setup
+
+To set up the ICE Feedhandler you should download and configure using the
+steps in the [ICE Order Book Accelerator Quickstart Guide](ice-orderbook-
+quickstart-guide.html).
+
+A values file has been pre-configured to get your configuration started:
+`fsi/fsi-data-assembly/feed/ice-feed-values.yaml`
+
+Update your `ice-feed-values.yaml` as per the ICE Consolidated Feed
+documentation.
+
+Note
+
+Most configuration options in `ice-feed-values.yaml` should not be changed.
+The configuration options that are likely to change according to each
+implementation have been highlighted with a 'TODO' comment in the `ice-feed-
+values.yaml` file.
+
+Save your `ice-feed-values.yaml` file and apply the values to youir ICE FH by
+running:
+
+    
+    
+    helm upgrade rt-ice-pub kx-insights/rt-ice-pub --version="1.8.0-rc.1" -n YOUR_NAMESPACE -f fsi/fsi-data-assembly/feed/ice-feed-values.yaml
+    
+
+This will update the stateful set for the ICE FH, named `rt-ice-pub`
+
+Once the `rt-ice-pub` is correctly downloaded and configured it will publish
+data via the `rt-fsi-data-assembly-icerealtime-north`.
+
+## ICE Pipelines
+
+The FSI Accelerator includes an IceRealtime overlay which contains a suite of
+pipelines for ingesting real-time level 1 and level 2 data from ICE.
+
+### Real-time Data
+
+The FSI accelerator package has a number of pipelines used to ingest data from
+ICE:
+
+**icerealtimel1:**
+
+  * This pipeline is used to ingest real-time level 1 Trade and Quote data from the ICE feed.
+
+**icerealtimel2:**
+
+  * This pipeline is used to ingest real-time level 2 quote data from the ICE feed.
+  * Note the downstream `orderbook` pipeline can be used to transform incoming L2Quote data into OrderbookSnapshots and Depth
+
+### Schemas
+
+A number of schemas come with the Accelerator. The Accelerator's schemas can
+be customized and extended per the instructions in [Customizing the FSI
+Accelerator](customize.html#overlaying-a-schema-with-custom-columns).
+
+**Market data**
+
+  * `Trade` stores trade data from the ICE Feed Handler
+  * `Quote` stores level 1 quote data ICE Feed Handler
+  * `L2Quote` stores level 2 quote data ICE Feed Handler
+
+**Calculated data**
+
+  * `OrderbookUpdates` normalized L2Quote data by _orderID_ to track the life-cycle of an _orderID_ : when it was added, updated and deleted (be that by the order being filled or cancelled). Also used as the input data for the Orderbook construction pipeline.
+  * `OrderbookSnapshots` output of the Orderbook construction pipeline. Stores market-by-price orderbook data. Each row of the OrderbookSnapshots table holds the full orderbook for a given time and instrument as all bid and ask values are stored in sorted, enlisted values.
+  * `Depth` output of the Orderbook construction pipeline. Stores market-by-price orderbook data. All bid and ask values are simple atomic values. Here the depth of each price is signified by an explicit depth column value.
+  * `fsi_bar_Quote_dayStats` stores quote aggregations bucketed by day if the pre-aggregated bars pipeline is enabled.
+  * `fsi_bar_Quote_minStats` stores quote aggregations bucketed by minute if the pre-aggregated bars pipeline is enabled
+  * `fsi_bar_Trade_dayStats` stores trade aggregations bucketed by day if the pre-aggregated bars pipeline is enabled
+  * `fsi_bar_Trade_minStats` stores trade aggregations bucketed by minutes if the pre-aggregated bars pipeline is enabled
+
+**Reference data**
+
+  * `Exchange` stores exchange reference data
+  * `ExchangeHolidayCal` stores holiday calendar data for exchanges
+  * `Instrument` stores instrument reference data
+  * `RelativeContract` stores relative contract data for custom futures symbology
+

@@ -1,0 +1,40 @@
+https://code.kx.com/insights/enterprise/ingest/examples/kafka/ingest.html
+
+# Basic ingestion - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/ingest/examples/kafka/ingest.html
+
+# Streaming Kafka Ingest
+
+> Refer to the [example overview](index.html) for details about this example.
+
+Below is an example `spec.q` Stream Processor application that processes the
+`trades` topic that is being produced by the example producer above. The
+stream is decoded and windowed into 5 second buckets before being converted to
+a table and printed to the console for demonstration. This could also publish
+to a kdb+ tickerplant, write a message back to Kafka, or send the data to one
+of the other available [data sinks](../../../../api/stream-
+processor/q/writers.html).
+
+To run an ingestion pipeline using the kdb Insights Enterprise, first [deploy
+the base system](../../../installation/insights.html). Next, download the
+`kafka_assembly.yaml` assembly by following the [download
+instructions](../../../use-cases/overview.html#downloading-assemblies). Deploy
+the assembly with the following [kdb Insights CLI](../../../cli/index.html)
+command.
+
+    
+    
+    kxi assembly create --filepath kafka_assembly.yaml
+    
+
+Uninstalling the assembly
+
+Remove the assembly with the following [kdb Insights
+CLI](../../../cli/index.html) command:
+
+    
+    
+    kxi assembly teardown --name kafka_assembly
+    
+

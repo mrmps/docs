@@ -1,0 +1,37 @@
+https://code.kx.com/insights/api/stream-processor/index.html
+
+# Stream Processor - kdb products
+
+Original URL: https://code.kx.com/insights/api/stream-processor/index.html
+
+# Stream Processor APIs
+
+The Stream Processor has two supported programming interfaces for writing
+streaming applications, one in q and one in Python.
+
+To interact with the Stream Processor at runtime, refer to the OpenAPI REST
+interface.
+
+  * [Coordinator OpenAPI](rest/coordinator.html) This is the primary interface for interacting with the Stream Processor. Use the Coordinator interface to deploy and teardown pipelines. This interface is available using a Kubernetes service name `<release>-kxi-sp:5000`.
+  * [Controller OpenAPI](rest/controller.html) The controller interface offers localized feedback on a single pipeline. This interface is only accessible in a microservice deployment or using a port forward in a platform deployment.
+  * [Worker OpenAPI](rest/worker.html) The worker interface allows for introspection of the runtime state of a given worker. This interface is only accessible in a microservice deployment or using a port forward in a platform deployment.
+
+Warning
+
+The Stream Processor prior to 1.4.0 kdb Insights and kdb Insights Enterprise
+supported the creation of Stream Processors with many-to-one connections for
+configurations where this was not supported. This has been removed as support
+for this feature causes issues with determinism in pipelines and should be
+avoided. To facilitate scenarios where many-to-one connections are required
+use the merge nodes provided in [Python](python/operators.html#merge) or
+[q](q/operators.html#qspmerge) to connect data into a single connection.
+
+## Deprecation Policy
+
+Code that is marked as `deprecated` is subject to be removed in the next major
+release. Deprecated APIs will be maintained for all minor versions of a
+release but will print a warning indicating that they are deprecated. All
+deprecated APIs will indicate a path for upgrade in the relevant
+documentation. See the [release notes](../../microservices/stream-
+processor/release-notes.html) for details on any deprecated or removed APIs.
+

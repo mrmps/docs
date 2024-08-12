@@ -1,0 +1,61 @@
+https://code.kx.com/insights/api/packaging/q/index.html
+
+# Overview - kdb products
+
+Original URL: https://code.kx.com/insights/api/packaging/q/index.html
+
+# q API
+
+The q API for package interactions provides you with the ability to list and
+load the contents of a package. Two interfaces are provided under the `.kxi`
+namespace, [`packages`](packages.html) and [`udfs`](udfs.html), which allow
+you to interact with these entities independently.
+
+## Quickstart
+
+You can follow the [packaging
+quickstart](../../../enterprise/packaging/quickstart.html) for kdb Insights
+Enterprise to create a package and then use the q API to view the package in a
+Query session.
+
+## Examples
+
+In the following examples kdb Insights Enterprise has two packages installed
+`kxi_packages` and `qpackage`.
+
+  1. List all packages available
+    
+        q).kxi.packages.list.all[]
+    name           versions
+    -----------------------
+    "kxi_packages" "1.2.0"
+    "qpackage"    "1.0.0"
+    
+
+  2. List UDFs associated with the specified installed packages
+    
+        q).kxi.udfs.list.search[::;"q*";"*"]
+    name     function       language file_path                                   ..
+    -----------------------------------------------------------------------------..
+    "sp_map" ".test.sp.map" ,"q"     "/tmp/packages/qpackage/1.0.0/src/sp.q"    ..
+    
+
+  3. Load the package contents
+    
+        q).kxi.packages.load["qpackage";"1.0.0"]
+    q).test
+    variable| 1b
+    sp      | ``map!(::;{[table;params]
+      select from table where x<10
+      })
+    
+
+  4. Retrieve the UDF as a named function
+    
+        q)test_udf:.kxi.udfs.load["sp_map";"qpackage";"1.0.0"]
+    q)test_udf
+    {[table;params]
+      select from table where x<10
+      }
+    
+

@@ -1,0 +1,274 @@
+https://code.kx.com/insights/microservices/database/storage/backup.html
+
+# Backup and restore - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/database/storage/backup.html
+
+# Backup and restore
+
+The database stores all of the business-critical data in your kdb Insights
+application. It is recommended that backups are taken of the database
+periodically so that in the event of system failure, the database can be
+recovered. This page is a guide for creating snapshots of your database
+content for future recovery.
+
+## Data layout
+
+The Storage Manager is responsible for storing data within different
+[tiers](../configuration/assembly/storage.html#tiers) based on your database's
+configuration. To create a backup of your entire system, a backup must be
+taken for each non-memory tier (ex. IDB, HDB, etc.).
+
+Backup logs
+
+Ensure that you backup your streaming logs in combination with your database
+backup. If you are using [Reliable Transport](../../rt/index.html), ensure
+that your
+[archiver](../../../enterprise/database/configuration/assembly/stream.html#archiver)
+is configured to create appropriate backups. If you are using [kdb-
+tick](https://github.com/KxSystems/kdb-tick), you can follow this [white
+paper](https://code.kx.com/q/wp/data-recovery/) for configuring appropriate
+log backups. You need to ensure you have enough logs so that your database
+backup can replay any data between the last backup and the point of failure.
+
+## Offline backup
+
+The simplest and most comprehensive form of backup is to perform an offline
+backup when your system is not ingesting any data. This ensures a completely
+static database for a consistent backup. An offline backup involves stopping
+your running system at the appropriate time during data processing (once all
+EOI and EOD operations are complete), creating a copy of your data folder on
+each tier, and then restarting the system. The one exception to this is batch
+ingest, which could mutate the data on disk outside of an EOD operation. Do
+not run any batch ingests during a backup.
+
+Running an offline backup may not be an option for systems that have 24/7 up-
+time requirements. See online backup below for further details on using the
+snapshot functionality.
+
+Stopping after an end of day writedown
+
+To ensure that all data has been written to disk and all tiers are in a
+consistent state, a backup should be taken after an EOD completes. This can be
+checked by reviewing the EOI and EOD process logs, looking for the log message
+`EOD complete, elapsed <time>`. This ensures that the maximum amount of data
+has been written to disk to minimize recovery. The exact timing of the backup
+does not matter, but it is best to do once the end-of-day writedown has
+completed. To ensure a consistent state, it is critical to ensure the duration
+of your backup is less than that of the time between two sequential EOD
+operations.
+
+Begin by stopping the running assembly that you want to create a backup of. If
+you are running in Docker, teardown your running containers. If you are
+running Kubernetes, stop the workloads that are running your database.
+
+With the system offline, we can now create a backup of the data for each tier.
+This example uses the following mounts and tier configuration:
+
+**Mounts**
+
+    
+    
+    mounts:
+      rdb:
+        type: stream
+        baseURI: file://stream
+        partition: none
+      idb:
+        type: local
+        baseURI: file:///mnt/data/db/idb
+        partition: ordinal
+      hdb:
+        type: local
+        baseURI: file:///mnt/data/db/hdb
+        partition: date
+    
+
+**Tiers**
+
+    
+    
+        tiers:
+          - name: stream
+            mount: rdb
+          - name: idb
+            mount: idb
+            schedule:
+              freq: 0D00:10:00 # every 10 minutes
+          - name: hdb1
+            mount: hdb
+            schedule:
+              freq: 1D00:00:00 # every day
+              snap:   01:35:00 # at 1:35 AM
+            retain:
+              time: 2 days
+          - name: hdb2
+            mount: hdb
+            store: file:///mnt/data/db/hdbtier2
+            retain:
+              time: 5 weeks
+          - name: hdb3
+            mount: hdb
+            store: file:///mnt/data/db/hdbtier3
+            retain:
+              time: 3 months
+    
+
+Once the assembly has been stopped, a backup can be taken of each mount in the
+tiers configuration.
+
+To backup a kdb Insights Database, a backup must be taken of each configured
+[tier](../configuration/assembly/storage.html#tiers) in the assembly file.
+
+DockerKubernetes
+
+With the Docker container stopped, create a copy of the `data` folder
+referenced in your [volume
+configuration](https://docs.docker.com/compose/compose-file/compose-
+file-v3/#volume-configuration-reference). In the example below, the
+`local_dir` is used as a volume mount for the database. This value points to a
+path on the host machine which will contain:
+
+.env
+
+    
+    
+    # Images
+    kxi_sg_gw=$REGISTRY/kxi-sg-gw:$RELEASE
+    kxi_sg_rc=$REGISTRY/kxi-sg-rc:$RELEASE
+    kxi_sg_agg=$REGISTRY/kxi-sg-agg:$RELEASE
+    kxi_sm_single=$REGISTRY/kxi-sm-single:$RELEASE
+    kxi_da_single=$REGISTRY/kxi-da-single:$RELEASE
+    kxi_q=$REGISTRY/qce:$QCE_RELEASE
+    
+    # Paths
+    local_dir="."
+    mnt_dir="/mnt"
+    shared_dir="/mnt/shared"
+    cfg_dir="/mnt/cfg"
+    db_dir="/mnt/data/db"
+    logs_dir="/mnt/data/logs"
+    
+
+In this example, we need to backup the volume mounted for SM.
+
+docker-compose-sm.yaml
+
+    
+    
+    networks:
+      kx:
+        name: ${network_name}
+    
+    services:
+      sm:
+        image: ${kxi_sm_single}
+        command: -p 20001
+        environment:
+          - KXI_NAME=sm
+          - KXI_SC=SM
+          - KXI_ASSEMBLY_FILE=${cfg_dir}/assembly.yaml
+          - KXI_RT_LIB=${shared_dir}/rt_tick_client_lib.q
+          - KXI_LOG_FORMAT=text
+          - KXI_LOG_LEVELS=default:info
+          - KDB_LICENSE_B64
+        volumes:
+          - ${local_dir}:${mnt_dir}
+        networks: [kx]
+        deploy:
+          restart_policy:
+            condition: on-failure
+            max_attempts: 2
+    
+
+backup-pod.yaml
+
+    
+    
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: backup-pod
+    spec:
+      containers:
+      - name: ubuntu
+        image: ubuntu
+        tty: true
+        stdin: true
+        volumeMounts:
+          - mountPath: /data
+            name: database-volume
+      volumes:
+        - name: database-volume
+          persistentVolumeClaim:
+            claimName: myasm-idb   # Set this to be the PVC of the tier you want to create a backup of
+    
+
+Deploy the backup pod.
+
+    
+    
+    kubectl apply -f backup-pod
+    
+
+Create a backup archive of the data folder. This backup will contain a number
+of symbolic links that need to be preserved, so an archive is created before
+copying to ensure they are preserved.
+
+    
+    
+    kubectl exec backup-pod -- sh -c "tar czf /data/backup.tar.gz /data/*"
+    
+
+The backup can then be downloaded using the following:
+
+    
+    
+    kubectl cp backup-pod:/data/backup.tar.gz backup.tar.gz
+    
+
+The `backup.tar.gz` now contains a complete backup of a single tier. Repeat
+this process for each tier in your configuration.
+
+## Online backup
+
+Backups can be taken for a running system by taking a snapshot of the
+database. A snapshot is a point-in-time view of the database created with
+[hard links](https://en.wikipedia.org/wiki/Hard_link). Taking a snapshot is a
+synchronous operation that suspends EOI and EODs while the snapshot is being
+taken. This ensures no data is changed during the snapshot, thereby corrupting
+the backup.
+
+The snapshot API can be accessed by connecting to the Storage Manager directly
+and running the snapshot REST API.
+
+In the example below, `$sm` is the host and port of the Storage Manager that
+administers the on-disk data you are backing up. If running in Kubernetes,
+this is the name or IP of the pod where the Storage Manager is running. If
+using Docker, this is the name and port of the container running the Storage
+Manager.
+
+This API creates a backup for each tier on the database and returns the tier
+name and storage location.
+
+    
+    
+    [
+      {
+        "tier": "idb",
+        "snapRoot": "/data/db/idb/snapshot/20230723160308643935166",
+        "inventory": "/data/db/idb/snapshot/20230723160308643935166/inventory"
+      },
+      {
+        "tier": "hdb",
+        "snapRoot": "/data/db/hdb/snapshot/20230723160308643935166",
+        "inventory": "/data/db/hdb/snapshot/20230723160308643935166/inventory"
+      }
+    ]
+    
+
+To complete the backup, copy the contents of the `snapRoot` location to a safe
+storage location that can be used for recovery. To restore SM from a snapshot,
+copy the snapshot `snapRoot` to the data directory of each tier and restart
+SM.
+

@@ -1,0 +1,79 @@
+https://code.kx.com/platform/stream/report-analytics/
+
+# Report analytics - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/stream/report-analytics/
+
+# Report analytics
+
+Report analytics are the foundation of any report a user wishes to produce. A
+report analytic produces a dataset in table format for the doc generator to
+use.
+
+The report generator allows only one report analytic to run on a target engine
+at any time, so all the information in the final report must be contained in
+the output of a single report analytic.
+
+Use environmental variables
+
+As with all analytics, the report analytic can have up to 8 parameters. When
+running the report, the end user has to set each of these parameters, so using
+environmental variables as defaults for file paths is advisable.
+
+Define parameter types
+
+Kdb+ tables can contain nulls, but errors are frequently produced in resulting
+CSVs and PDFs if columns have empty null types. Ensure the parameter type is
+defined when writing the analytic.
+
+Below are two example report analytics:
+
+## Daily taker
+
+This report provides a summary of daily FX volumes by individual client taker.
+Daily trade information is summarized in the following fields:
+
+_Average spreads for the major currency pairs_
+
+    These spreads are specific to a given taker and represent an average of the best bid-ask spread over a given day
+_Number of Requests_
+
+    Total number of requests a taker produces 
+_Straight-through processing & warehousing volumes_
+
+    The volume of trades that are hedged (warehoused) or offset (straight through processed) is calculated and displayed in terms of its USD equivalent
+_Fill rates_
+
+    The Ack:Nack ratio is summarized in the _fillPrcnt_ field, with the number of Acks in a given day given as a percentage of total requests
+_One and five day_
+
+    ∆s are produced to compare fill rate changes over time
+
+The target engine is set to `BI HDB` for the Daily Taker report.
+
+Syntax: `dfRpt_DailyTaker[Date]`
+
+where `Date` is either an absolute date (e.g. 2018.01.30) or a relational
+date, e.g. `yesterday`, returns Daily Taker data in table format.
+
+Relational dates
+
+Relational dates are particularly valuable when defining scheduled reports.
+The following relational dates are valid: `today`, `startofweek`, `endofweek`,
+`startofmonth`, `endofmonth`, `startofyear` and `endofyear`.
+
+## Daily capacity
+
+This report summarizes daily quote requests for both pool and LP quotes, by
+source. Volume per source is also shown as a percentage of total quote volume
+for the pool and LP quotes on the chosen date.
+
+Two rows at the top of the report summarize daily data capacity statistics so
+the user can see how close they are running to the 2 billion limit on both LP
+and pool quotes.
+
+Syntax: `dfRpt_DailyCapacity[Date]`
+
+where `Date` is either an absolute date (e.g. 2018.01.30) or a relational
+date, e.g. `yesterday`, returns Daily Capacity data in table format.
+

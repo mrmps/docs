@@ -1,0 +1,31 @@
+https://code.kx.com/platform/dc_archive/
+
+# DC_ARCHIVE - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/dc_archive/
+
+# DC_ARCHIVE
+
+Process to delete, zip or move old files.
+
+## Parameters
+
+The below table details the _DC_ARCHIVE_ template parameters.
+
+name | type | default value | description  
+---|---|---|---  
+findFunct | Analytic | dxFileMatch | Analytic used to find files in a directory  
+fileConfig | Config | DC_ARCHIVE_FILES | Files to archive  
+  
+## fileConfig
+
+For each row in the fileConfig config parameter:
+
+  * If numDaysOlderThan is -1 the row is ignored.
+  * The findFunct analytic is run, the analytic should take 1 parameter which is the row passed in as a dictionary. e.g. dxFileMatch uses the system find command to find files or folders older than numDaysOlderThan in the directory like fileRegex but not like ignoreFileRegex. 
+  * For each file or folder returned by findFunct the analytic in the row is run e.g. dxFileGzip or dxFileDelete. This analytic should also take 1 parameter which is the row passed in as a dictionary + the file/folder added as a dictionary key.
+  * dxFileDelete will run rm –fr file.
+  * dxFileGzip will run tar or gzip to create an archive file, and move it to destinationDirectory if destinationDirectory is not null.
+
+**See Also:** [Archiving files](../archive_files/)
+

@@ -1,0 +1,288 @@
+https://code.kx.com/insights/core/rest-server/appendix/sample-openapi.html
+
+# OpenAPI Sample - kdb products
+
+Original URL: https://code.kx.com/insights/core/rest-server/appendix/sample-openapi.html
+
+Below is an OpenAPI 3.0 specification for the REST server shown in the Quick
+Start.
+
+To use this in examples, copy the content below to a local JSON file, and
+import it into the relevant portal.
+
+    
+    
+    {
+        "openapi": "3.0.1",
+        "info": {
+            "title": "kxce-test-api",
+            "description": "",
+            "version": "1.0"
+        },
+        "servers": [
+            {
+                "url": "https://example.azure-api.net"
+            }
+        ],
+        "paths": {
+            "/customers": {
+                "get": {
+                    "summary": "customers",
+                    "description": "Returns all customers",
+                    "operationId": "customers",
+                    "parameters": [
+                        {
+                            "name": "i",
+                            "in": "query",
+                            "description": "Offset of first row",
+                            "schema": {
+                                "type": ""
+                            }
+                        },
+                        {
+                            "name": "cnt",
+                            "in": "query",
+                            "description": "Number of rows to return",
+                            "schema": {
+                                "type": ""
+                            }
+                        }
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": null
+                        }
+                    }
+                }
+            },
+            "/customers.2": {
+                "get": {
+                    "summary": "customersdotv2",
+                    "description": "Returns all customers (v2)",
+                    "operationId": "customersdotv2",
+                    "parameters": [
+                        {
+                            "name": "i",
+                            "in": "query",
+                            "description": "Offset of first row",
+                            "schema": {
+                                "type": ""
+                            }
+                        },
+                        {
+                            "name": "cnt",
+                            "in": "query",
+                            "description": "Number of rows to return",
+                            "schema": {
+                                "type": ""
+                            }
+                        }
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": null
+                        }
+                    }
+                }
+            },
+            "/v3/customers": {
+                "get": {
+                    "summary": "customersv3",
+                    "description": "Returns all customers v3",
+                    "operationId": "customersv3",
+                    "parameters": [
+                        {
+                            "name": "i",
+                            "in": "query",
+                            "description": "Offset of first row",
+                            "schema": {
+                                "type": ""
+                            }
+                        },
+                        {
+                            "name": "cnt",
+                            "in": "query",
+                            "description": "Number of rows to return",
+                            "schema": {
+                                "type": ""
+                            }
+                        }
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": null
+                        }
+                    }
+                }
+            },
+            "/customers/{id}": {
+                "get": {
+                    "summary": "customerbyid",
+                    "operationId": "customerbyid",
+                    "parameters": [
+                        {
+                            "name": "id",
+                            "in": "path",
+                            "description": "Customer ID",
+                            "required": true,
+                            "schema": {
+                                "type": "string"
+                            }
+                        }
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": null
+                        }
+                    }
+                }
+            },
+            "/db": {
+                "get": {
+                    "summary": "db",
+                    "description": "Retrieve list of table names",
+                    "operationId": "db",
+                    "responses": {
+                        "200": {
+                            "description": null
+                        }
+                    }
+                }
+            },
+            "/db/{table}": {
+                "get": {
+                    "summary": "tablebyid",
+                    "operationId": "tablebyid",
+                    "parameters": [
+                        {
+                            "name": "table",
+                            "in": "path",
+                            "description": "Table name",
+                            "required": true,
+                            "schema": {
+                                "type": "string"
+                            }
+                        },
+                        {
+                            "name": "i",
+                            "in": "query",
+                            "description": "Offset of first row",
+                            "schema": {
+                                "type": ""
+                            }
+                        },
+                        {
+                            "name": "cnt",
+                            "in": "query",
+                            "description": "Number of rows to return",
+                            "schema": {
+                                "type": ""
+                            }
+                        }
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": null
+                        }
+                    }
+                }
+            },
+            "/db/{table}/meta": {
+                "get": {
+                    "summary": "tablemeta",
+                    "description": "Get table meta",
+                    "operationId": "tablemeta",
+                    "parameters": [
+                        {
+                            "name": "table",
+                            "in": "path",
+                            "description": "Table name",
+                            "required": true,
+                            "schema": {
+                                "type": "string"
+                            }
+                        }
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": null
+                        }
+                    }
+                }
+            },
+            "/db/{table}/{col}": {
+                "get": {
+                    "summary": "column",
+                    "description": "Get a subset of a column",
+                    "operationId": "column",
+                    "parameters": [
+                        {
+                            "name": "table",
+                            "in": "path",
+                            "description": "Table name",
+                            "required": true,
+                            "schema": {
+                                "type": ""
+                            }
+                        },
+                        {
+                            "name": "col",
+                            "in": "path",
+                            "description": "Column name",
+                            "required": true,
+                            "schema": {
+                                "type": ""
+                            }
+                        },
+                        {
+                            "name": "i",
+                            "in": "query",
+                            "description": "Offset of first row",
+                            "schema": {
+                                "type": ""
+                            }
+                        },
+                        {
+                            "name": "cnt",
+                            "in": "query",
+                            "description": "Number of rows to return",
+                            "schema": {
+                                "type": ""
+                            }
+                        }
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": null
+                        }
+                    }
+                }
+            },
+            "/help": {
+                "get": {
+                    "summary": "help",
+                    "description": "List all endpoints",
+                    "operationId": "help",
+                    "responses": {
+                        "200": {
+                            "description": null
+                        }
+                    }
+                }
+            },
+            "/getCustomers": {
+                "get": {
+                    "summary": "getCustomers",
+                    "description": "API like example endpoint that returns all customers",
+                    "operationId": "getcustomers",
+                    "responses": {
+                        "200": {
+                            "description": null
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+

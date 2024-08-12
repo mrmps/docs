@@ -1,0 +1,62 @@
+https://code.kx.com/platform/stream/report-action-analytics/
+
+# Report action analytics - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/stream/report-action-analytics/
+
+# Report action analytics
+
+The table or dictionary returned by the report analytic is processed by one or
+more _report action analytics_. Examples include writing to a CSV file,
+writing to an HDB, or generating an email. Report action analytics must be
+defined in the analytic group `DxReportActionAnalytics`.
+
+A table returned by the report analytic is mapped to the `reportData`
+parameter in the action analytic.
+
+A dictionary returned by the report analytic is mapped to the `reportStats`
+parameter of the action analytic.
+
+Special analytic parameters
+
+`reportData` and `reportStats` are special parameters required by the analytic
+and are not displayed in the report instance editor.
+
+Standard report action analytics:
+
+action analytic | write report results to  
+---|---  
+Email | an email message  
+Push to TP | a tickerplant  
+Save and Email | a CSV attached to an email  
+Save to Configurable PDF | a dynamic PDF file  
+Save to CSV | a CSV  
+Save to Dynamic PDF | a dynamic PDF  
+Save to HDB Process Serialized | a HDB (Historical Database) in serialized form  
+Save to PDF | a PDF  
+Save to PDF and Email | a PDF attached to an email  
+Save to Text | a text file  
+Save to XLS | an XLS file (Excel)  
+Write to Flat File | a flat file  
+  
+Below is a working example of report action analytic, `dxReportSaveToCSV`.
+
+## Save to CSV example
+
+The action analytic `dxReportSaveToCSV` takes the location that the resulting
+CSV file should be saved to, and the filename of the CSV. As previously
+mentioned, the function uses the `reportData` and `reportStats` parameters,
+which are not visible through the dashboard – these come from the report doc
+generator each time a report instance is run.
+
+![Screenshot](../img/reporting/dxreportsavetocsvh5.png)
+
+When the above report is run, the following CSV file is saved to the location
+defined by `csvpath` using the filename defined by `csvfilename`. Note that in
+this case the `csvfilename` value uses `$` notation to reference the value of
+the report parameter `startDate` in the output filename, e.g. the filename
+would be `DAILYDATA_TODAY_DDMMYY` where `DDMMYY` is actual value of
+`startDate` parameter.
+
+![Screenshot](../img/reporting/dxreportsavetocsvoutputh5.png)
+

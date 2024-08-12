@@ -1,0 +1,152 @@
+https://code.kx.com/insights/accelerators/fsi/getTicksConfig.html
+
+# API configuration - kdb products
+
+Original URL: https://code.kx.com/insights/accelerators/fsi/getTicksConfig.html
+
+# API configuration
+
+Some features of the API calls either must have, or can have configuration to
+be available for use
+
+This section documents configuration that can be set for these API parameters.
+
+Depending on the feature, this is either configured by a q variable loaded
+into the system, or by populating a reference table in the assembly.
+
+## Configuration defined via q variables
+
+These q variables can be packaged up in a custom package using the
+[customization/configuration guide](customize.html#adding-custom-
+configuration-or-code).
+
+Alternatively, these variables can be edited in the existing `fsi-lib` package
+itself. This should be done before deploying any assemblies. To use this
+method, follow these steps:
+
+  * unpack the `fsi-lib` package
+  * edit the `src/fsi.config.q` file and update the variables to the desired values
+  * re-package the `fsi-lib` package
+  * push the `fsi-lib` package
+  * bounce the aggregators and resource-coordinators
+
+Commands to unpack and re-package a package can be found
+[here](customize.html#unpack-fsi-data-assembly).
+
+Commands to push a package and bounce aggregators/resource-coordinators can be
+found [here](deploy.html#push-the-packages).
+
+### idCol / idList
+
+If no configuration is provided, and idCol is not provided in the API call, it
+will look for an `instrumentID` column. If not found and no configuration is
+provided, it will use the leftmost symbol type column. If no symbol is found
+it will then look for guids, then strings and then any type that is not
+temporal.
+
+`.api.cfg.IdCols` can be appened to in a client specified q library loaded
+into the DAPs and aggregator. This is a two column table, or table names and
+idCols. For example, some out of the box definitions are
+
+    
+    
+    .api.cfg.IdCols:flip `table`idCol ! flip (
+        (`Quote;                `instrumentID);
+        (`Trade;                `instrumentID);
+        (`Order;                `instrumentID);
+        (`Contract;             `contractID);
+        (`CanCor;               `instrumentID);
+        ...
+    
+
+### timeCol time windowing
+
+When a timeCol that is not the default partition column is provided, more
+partitions must be scanned to find data within the given time window. Doing
+this is less performant. Therefore the buffer for how many days either side of
+the provided window are checked is configurable.
+
+By default it is 7 days.
+
+If the use case is to query on non partition time columns, but the timestamps
+are guaranteed to be in the same partition, then this can be set to 0 for
+optimal performance.
+
+If timeCol is not provided in query then this makes no difference to
+performance regardless of the setting.
+
+    
+    
+    .api.cfg.timeColQueryBuffer:1
+    
+
+## Configuration defined via reference table population
+
+### idMapping
+
+id mapping functionality depends on a populated `IDMap` table. This is a
+reference table that exists in all DAPs. The content should be as follows
+
+header | type | Description  
+---|---|---  
+queryIdentifier | symbol | The identifer that will be provided in the API call  
+mappedIdentifier | symbol (list) | The underlying identifier(s) that will be queried  
+alwaysMap | boolean | For this querySymbol, always do idMapping regardless of API flag  
+returnAsMappedIdentifier | boolean | Return in the data as the underlying identifier, rather than the querySymbol  
+  
+The corresponding yaml for this table is
+
+    
+    
+    - name: IDMap
+      columns:
+      - description: Identifier that will be provided on query
+        name: queryIdentifier
+        type: symbol
+      - description: Identifier in the source data
+        name: mappedIdentifier
+        type: symbols
+      - description: Flag for if this is always mapped or done with the API flag
+        name: alwaysMap
+        type: boolean
+      - description: Flag for if to returning data in source ID format
+        name: returnAsMappedIdentifier
+        type: boolean
+      description: Identifier mapping reference table
+      type: splayed
+    
+
+### filterRule
+
+Similarly to idMapping, the filterRule functionality depends on a reference
+table called `FilterRules` of format
+
+column | type | Description  
+---|---|---  
+tableName | symbol | Name of the table that will be filtered  
+tradedExchange | symbol | Name of the exchange in the table  
+condition | string | The condition to map against  
+include | symbol[] | List of filter names that will include this condition/exchange combination  
+  
+The corresponding yaml for this table is
+
+    
+    
+    - name: FilterRules
+      columns:
+      - description: Table name that the filter applies to
+        name: tableName
+        type: symbol
+      - description: Exchange that this condition is found on
+        name: tradedExchange
+        type: symbol
+      - description: The condition code to match
+        name: condition
+        type: string
+      - description: Filter rules that include this condition
+        name: include
+        type: symbols
+      description: Filter rule configuration reference table
+      type: splayed
+    
+

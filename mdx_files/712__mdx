@@ -1,0 +1,82 @@
+https://code.kx.com/developer/exporter/
+
+# Exporter - KX Developer
+
+Original URL: https://code.kx.com/developer/exporter/
+
+# Exporter
+
+The Exporter provides an interface for moving data out of the system. Data can
+be persisted to disk in a kdb+ format or can be exported to another format
+altogether.
+
+## Source
+
+Select the data that needs to be exported. If the table to be exported is
+loaded in memory, then select it from the table list.
+
+![](../img/exporter/source.png)
+
+## Output
+
+Output selection is very similar to that of the table Importer.
+
+Select the desired output format from the _Output Format_ dropdown. Once the
+format has been selected, the options area will be populated with the required
+settings for that format.
+
+All of the required fields must be completed before selecting _Finish_.
+
+### CSV – delimited value
+
+Delimited value files can store simple normalized tables into a text format
+which can be be used to simply move data around. To export the data, select a
+location on disk, name the output file and select a delimiter. This will
+produce a file with the contents of the table in a text format using the
+provided delimiter. Selecting the _Download_ option will download the output
+table to the user's local machine.
+
+Nested or complex data
+
+If a table contains nested data or complex data, it cannot be serialized into
+CSV format.
+
+![](../img/exporter/csv.png)
+
+#### Options
+
+field | description  
+---|---  
+Delimiter | The delimiter character for the file. An option can be selected from the drop down or a custom character can be put in the adjacent text field.  
+  
+### JSON - JavaScript object notation
+
+JSON is a popular structured text format that can be used to store a table as
+an array of objects. To export data in this format, enter a file path and file
+name for the output file and press _Next_. JSON can be used to represent much
+more complex data than but will produce much larger output files due to its
+syntax.
+
+![](../img/exporter/json.png)
+
+### KDB - kdb+ database
+
+The Exporter can be used to write data back to disk as a kdb+ table. This will
+write the data in one of the available table formats on disk.
+
+![](../img/exporter/kdb.png)
+
+If the _Download_ option is selected, only _Serialized_ will be available in
+the _Table Format_ dropdown. This is single file database structure for kdb+
+tables.
+
+![](../img/exporter/kdb-download.png)
+
+Partitioned database selection has an extra field for selecting the _Partition
+Column_. This column will be used to separate the data into partitions. A
+restriction of kdb+ is that the type of this column must be either a `date`,
+`month`, `long`, `int` or `short`. The column selected will be renamed by kdb+
+when loaded back into the process to one of `date`, `month`, `year` or `int`.
+
+![](../img/exporter/kdb-partitioned.png)
+

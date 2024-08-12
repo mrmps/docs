@@ -1,0 +1,74 @@
+https://code.kx.com/platform/troubleshooting/
+
+# Troubleshooting - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/troubleshooting/
+
+# Common issues
+
+## Host resolution
+
+Some environments have issues with host resolution between servers and this
+can cause issues with the _KX Delta Platform_. It typically happens in
+environments where all the hostnames aren't resolvable, e.g. cloud provisioned
+servers or processes launched under Kubernetes.
+
+Support has been added for more configurable host resolution when registering
+with _Control_ and the _Messaging Server_. Previously the registering host
+used in both cases was derived by the system and provided no options to
+customize.
+
+### Process host
+
+By default when processes start, they attempt to to derive a FQDN using a
+combination of _kdb+_ and system commands. This host is then reported to
+_Control_ and used by other services for communication. In some scenarios,
+this derived host can be wrong, especially in cloud or Kubernetes
+installations where the reported host is not addressable.
+
+To override this default behavior, a process can be configured to use a
+specific value or else derive something custom.
+
+The former approach is done using the `.ex.i.regHostMode` instance parameter.
+
+  * `IP` \- registers with the local IP address, returned by `.utils.getlocalip[]`.
+  * `ZHOST` \- uses the hostname, returned by `.z.h`.
+
+Custom logic can be used by creating an instruction to run at start-up and
+calling the `.ex.setRegHost` API with a custom hostname.
+
+### Messaging
+
+When a process registers with the MS process, a host name is registered
+against it, which is subsequently used for processes to communicate. By
+default the _MS_ resolves this value from the remote IP during registration.
+Similar to above, the value can be configured in two ways; instance parameters
+or custom logic.
+
+The former is done using the `.dm.i.regHostMode` parameter.
+
+  * `IP` \- register using the local IP address, returned by `.utils.getlocalip[]`
+  * `host` \- uses the process-derived host name, returned by `.utils.gethost[]`
+
+Custom logic can be used by creating an instruction to run at start-up and
+calling `.dm.setRegHost` with the desired hostname.
+
+The screenshot below shows a basic example of host to use custom logic to set
+the hostname for both _Control_ and _Messaging_.
+
+![Screenshot](../img/control/trouble_hostres.png)
+
+### Control cluster
+
+_Control_ processes connect to each other using the host names defined in the
+`failover.csv` file. Host resolution happens as part of the handshake and can
+cause similar issues to above two areas. To disable this behavior the
+following value can be set.
+
+    
+    
+    export DELTACONTROL_CLUSTER_HOSTRESOLUTION=OFF
+    
+
+This is a requirement to use [phopen](../control_resilience/#parallel-hopen)
+

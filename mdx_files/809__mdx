@@ -1,0 +1,70 @@
+https://code.kx.com/dashboards/gettingstarted/
+
+# Get started - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/gettingstarted/
+
+# Getting started
+
+## Download
+
+[__KX Dashboards __Windows __Linux __Mac](../eula/ "Download KX Dashboards")
+
+### Prerequisites
+
+KX Dashboards is a minimal portable install only requiring [kdb+
+3.4+](https://code.kx.com/q/learn/install/) to run.
+
+  1. [Install kdb](https://code.kx.com/q/learn/install/)
+  2. [Define q as a command](https://code.kx.com/q/learn/install/#step-5-edit-your-profile)
+
+### Install and run
+
+  1. Extract Dashboards zip file...
+  2. Run KX Dashboards and a sample data process.   
+Windows  __: click`dash.bat` to launch from the Dashboards folder  
+Linux  __and MacOS __: manually open a terminal and launch the processes.
+
+    
+    
+    $ q sample/demo.q -u 1 &
+    $ q dash.q -p 10001 -u 1
+    
+
+Options
+
+`-secure` restricts dash.q to access only functions defined on the `.api`
+namespace  
+`-p` listening port to serve KX Dashboards  
+`-u 1` disables system commands and no access above start directory  
+`-u` usr-pwd sets a password file for basic authentication  
+`-E` TLS server mode
+
+See the [full command-line reference](https://code.kx.com/q/basics/cmdline/)
+for more detailed explanation
+
+### Upgrade
+
+Follow the steps to upgrade your existing installation to the latest version
+of dashboards.
+
+__[Upgrade](../upgrade/)
+
+### Open Dashboards
+
+Dashboard starts with a Demo page in Viewer mode by default. To enable the
+dashboard editor, insert `/edit/` between the URL and `#dashboard` reference.
+This will enable menu options to create your own dashboard.
+
+    
+
+![Screenshot](../img/gettingstarted/demohomepage.jpg)
+
+  1. Drag a [component](../workspace/#component-listing) from the left and arrange on the central [canvas](../workspace/#central-canvas), e.g. [Data Grid](../datagrid/)
+  2. Configure [properties](../workspace/#component-properties) on the right, e.g. set a new [Data Source](../datasources/) to view data
+  3. Add a [form](../dataform/) component and [link it](../viewstateparameters/#linking-components) using [View States](../viewstateparameters/)
+
+Continue adding components and setting properties to build,
+[style](../style/#component-style) and [share](../publish/#share-dashboard-
+state) interactive visualisations
+

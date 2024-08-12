@@ -1,0 +1,112 @@
+https://code.kx.com/pykx/api/db.html
+
+# Database Interactions - PyKX
+
+Original URL: https://code.kx.com/pykx/api/db.html
+
+Create an on-disk partitioned table within a kdb+ database from a supplied
+`pykx.Table` object. Once generated this table will be accessible as an
+attribute of the `DB` class or a sub attribute of `DB.table`.
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`table` |  | The `pykx.Table` object which is to be persisted to disk |  _required_  
+`table_name` |  | The name with which the table will be persisted and accessible once loaded and available as a `pykx.PartitionedTable` |  _required_  
+`partition` |  | The name of the column which is to be used to partition the data if supplied as a `str` or if supplied as non string object this will be used as the partition to which all data is persisted |  _required_  
+`by_field` |  | A field of the table to be used as a by column, this column will be the second column in the table (the first being the virtual column determined by the partitioning column) |  `None`  
+`sym_enum` |  | The name of the symbol enumeration table to be associated with the table |  `None`  
+`log` |  | Print information about status of partitioned datab |  `True`  
+`compress` |  | `pykx.Compress` initialized class denoting the compression settings to be used when persisting a partition/partitions |  `None`  
+`encrypt` |  | `pykx.Encrypt` initialized class denoting the encryption setting to be used when persisting a partition/partitions |  `None`  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+| A `None` object on successful invocation, the database class will be updated
+to contain attributes associated with the available created table  
+  
+**Examples:**
+
+Generate a partitioned table from a table containing multiple partitions
+
+    
+    
+    >>> import pykx as kx
+    >>> db = kx.DB(path = '/tmp/newDB')
+    >>> N = 1000
+    >>> qtab = kx.Table(data = {
+    ...     'date': kx.q.asc(kx.random.random(N, kx.q('2020.01 2020.02 2020.03m'))),
+    ...     'sym': kx.random.random(N, ['AAPL', 'GOOG', 'MSFT']),
+    ...     'price': kx.random.random(N, 10.0),
+    ...     'size': kx.random.random(N, 100)
+    ... })
+    >>> db.create(qtab, 'stocks', 'date', by_field = 'sym', sym_enum = 'symbols')
+    >>> db.tables
+    ['stocks']
+    >>> db.stocks
+    pykx.PartitionedTable(pykx.q('
+    month   sym  price     size
+    ---------------------------
+    2020.01 AAPL 7.979004  85
+    2020.01 AAPL 5.931866  55
+    2020.01 AAPL 5.255477  49
+    2020.01 AAPL 8.15255   74
+    2020.01 AAPL 4.771067  80
+    ..
+    '))
+
+Add a table as a partition to an on-disk database, in the example below we are
+adding a partition to the table generated above
+
+    
+    
+    >>> import pykx as kx
+    >>> db = kx.DB(path = '/tmp/newDB')
+    >>> N = 333
+    >>> qtab = kx.Table(data = {
+    ...     'sym': kx.random.random(N, ['AAPL', 'GOOG', 'MSFT']),
+    ...     'price': kx.random.random(N, 10.0),
+    ...     'size': kx.random.random(N, 100)
+    ... })
+    >>> db.create(qtab, 'stocks', kx.q('2020.04m'), by_field = 'sym', sym_enum = 'symbols')
+    >>> db.tables
+    ['stocks']
+    >>> db.stocks
+    pykx.PartitionedTable(pykx.q('
+    month   sym  price     size
+    ---------------------------
+    2020.01 AAPL 7.979004  85
+    2020.01 AAPL 5.931866  55
+    2020.01 AAPL 5.255477  49
+    2020.01 AAPL 8.15255   74
+    2020.01 AAPL 4.771067  80
+    ..
+    '))
+
+Add a table as a partition to an on-disk database, in the example below we are
+additionally applying gzip compression to the persisted table
+
+    
+    
+    >>> import pykx as kx
+    >>> db = kx.DB(path = '/tmp/newDB')
+    >>> N = 333
+    >>> qtab = kx.Table(data = {
+    ...     'sym': kx.random.random(N, ['AAPL', 'GOOG', 'MSFT']),
+    ...     'price': kx.random.random(N, 10.0),
+    ...     'size': kx.random.random(N, 100)
+    ... })
+    >>> compress = kx.Compress(kx.CompressionAlgorithm.gzip, level=2)
+    >>> db.create(qtab, 'stocks', kx.q('2020.04m'), compress=compress)
+    >>> kx.q('{-21!hsym x}', '/tmp/newDB/2020.04/stocks/price')
+    pykx.Dictionary(pykx.q('
+    compressedLength  | 2064
+    uncompressedLength| 2680
+    algorithm         | 2i
+    logicalBlockSize  | 17i
+    zipLevel          | 2i
+    '))
+

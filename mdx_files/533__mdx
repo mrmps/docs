@@ -1,0 +1,42 @@
+https://code.kx.com/platform/stream/dw_qr_ws/
+
+# Websocket - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/stream/dw_qr_ws/
+
+# Websockets
+
+Websockets are web protocols that allow clients and servers to communicate bi-
+directionally in realtime over a persistent TCP connection. All messages sent
+across a WebSocket connection are asynchronous.
+
+[Websockets](https://code.kx.com/q/wp/websockets/)
+
+## Async call via websockets
+
+  * Take the code from the appendix and create two files in the same directory: 
+
+[Websocket code](../dw_qr_ws_appendix/)
+
+Within the _HTML_ code, it takes user input, opens a handle to the `kxw_qr_gw`
+service and executes the `.mon.getMemWS` analytic with the input parameters.
+
+  * In `getMemWS.html`, change the host and port tailored to your environment. The port should be addressing a running `kxw_qr_gw` process.
+
+    
+    
+    ws = new WebSocket("ws://HOST:PORT/");
+    
+
+  * Open the `getMemWS.html` on a browser. 
+
+  * _Right-click > Inspect > Console_. If a connection is successfully made, these should be printed to your console: 
+
+[![Screenshot](../img/serviceclass/qr_ws_connected.jpg)](../img/serviceclass/qr_ws_connected.jpg
+"click to expand")
+
+  * Change the parameter values and hit _submit_. Results should be returned as a table on screen.
+
+[![Screenshot](../img/serviceclass/qr_ws_result.jpg)](../img/serviceclass/qr_ws_result.jpg
+"click to expand")
+

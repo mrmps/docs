@@ -1,0 +1,71 @@
+https://code.kx.com/platform/stream/dw_qr_overview/
+
+# Overview - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/stream/dw_qr_overview/
+
+# Overview
+
+The previous section described how to build a warehouse for data storage and
+realtime aggregation. The next logical step is for clients to be able to
+interface with the warehouse; extracting data for reporting, dashboards and
+subscribing to streams. In this section, the document will build some example
+interfaces using _KX Delta Platform_ frameworks for best practices.
+
+## Query interface
+
+The _Query Router_ (QR) framework acts as the access layer for clients trying
+to access data warehouse processes. Its main tasks are;
+
+  * to act as an entry point for client requests
+  * routing them to one or more underlying databases
+  * joining results and publishing back to clients
+  * implementing load-balancing so resources are used efficiently
+
+It consists of two main components: the _Query Router (QR)_ and the _Query
+Processor (QP)_. The _QR_ process manages availability and routes client
+requests. The _QPs_ collect and aggregate results to send back to clients.
+
+This section will showcase different methods of requesting data from the
+warehouse, which will all use this framework under the covers.
+
+[Query Router](../../api/queryrouter/)
+
+### Routed requests
+
+There are two main types of request. In the simplest case, clients know where
+the underlying data lives and what process(es) to target with the request.
+
+However, this is not always possible or desirable. In this case, a _routed
+request_ would be used. This is where the request target is determined by the
+_QR_. Usually this is used where the data exists across multiple processes and
+in this case the _QR_ queries each of the selected databases and aggregates
+the results. This guide will show how to setup routed requests.
+
+## Client examples
+
+To query the data warehouse, many technologies can be used. Example clients
+will be built for each of the following technologies, with sample code
+provided for each.
+
+  * KX Dashboards
+  * kdb+ async
+  * kdb+ sync
+  * Websocket
+  * KX Connect (JS)
+  * KX Connect (Python)
+  * Java
+  * C#
+
+## KX Connect
+
+_KX Connect_ is an application provided as part of the _KX Delta Platform_. It
+provides the means to design and implement a custom external facing API on to
+any solution built within the _KX Delta Platform_. Data can be retrieved via
+RESTful and Websocket interfaces. Streaming data is also supported through the
+latter.
+
+In order to follow the next sections, make sure that all the processes created
+in the data warehouse section are running, as well as the _QR_ framework
+processes.
+

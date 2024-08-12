@@ -1,0 +1,175 @@
+https://code.kx.com/dashboards/logochange/
+
+# Custom logo - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/logochange/
+
+# Change logo
+
+Replace the default _KX Dashboards_ logo with a custom logo.
+
+## Set up
+
+To set up a Dashboards environment with custom styling, create a `style.css`
+file SVN project repository. This file should follow from the trunk/branch
+path as follows:
+
+`dashboard-theme/theme/***/style.css`
+
+Package is installed alongside native HTML5 Dashboards Install
+
+On every Dashboards release, re-install the logo package.
+
+Style the logo using the following CSS selector:
+
+    
+    
+    div#appdiv .quick-base.login-dialog .logo
+    
+
+## Background
+
+The CSS `background` property can be used to replace the logo with a
+`loginTitle.svg` image, assuming the image file is a sibling of `style.css`
+
+    
+    
+    background: transparent url("login_logo.svg") no-repeat 1px 10px;
+    
+
+otherwise
+
+    
+    
+    url("../images/login_logo.svg")
+    
+
+![Screenshot](../img/logo/logoimage.jpg)
+
+thus
+
+    
+    
+    div#appdiv .quick-base.login-dialog .logo {
+     background: transparent url("login_logo.svg") no-repeat 1px 10px;
+    }
+    
+
+Transparent logo
+
+Ensure the replacement logo uses a transparent background and has dimensions
+which fit within the login dialog; e.g. _250 x 50px_
+
+![Screenshot](../img/logo/examplelogo.jpg)
+
+## Login background and font color
+
+Changes can also be made using CSS to logo and color; for example:
+
+    
+    
+    div#appdiv .quick-base.login-dialog.ui-front
+    
+
+Color can be changed using hexadecimal color codes.
+
+[W3 Schools](https://www.w3schools.com/colors/colors_hexadecimal.asp)
+
+    
+    
+    background-color: #00203c;
+    
+
+to give
+
+    
+    
+    div#appdiv .quick-base.login-dialog.ui-front {
+       background-color:#00203c;
+    }
+    
+
+![Screenshot](../img/logo/bluebackgroundimage.jpg)
+
+Change _User_ and _Password_ to a gray matching the logo
+
+    
+    
+    div#appdiv .quick-base.login-dialog.ui-front {
+       background-color:#00203c;
+       color:#a2a2a2;
+    }
+    
+
+## Login button
+
+To change the login button style to match font and image use:
+
+    
+    
+    div#appdiv .quick-base.login-dialog.ui-front button.ui-button {
+       background: #012e56;
+       color:#a2a2a2;  
+    }
+    
+
+![Screenshot](../img/logo/loginbutton.jpg)
+
+## Top-right logo
+
+To change the default logo next to the _Administrator_ dropdown menu top-
+right, use:
+
+    
+    
+    div#appdiv .main-toolbar .logo,
+    div#appdiv .toolbar .logo {
+       background: transparent url("top_logo.svg") no-repeat 3px 2px;
+    }
+    
+
+Different selectors used for _Editor/Preview_ and _Quickview_ :
+
+    
+    
+    div#appdiv .main-toolbar .logo
+    div#appdiv .toolbar .logo
+    
+
+![Screenshot](../img/logo/toprightlogo.jpg)
+
+In the above example, the “Example logo for KX” image uses a transparent
+background with a dimension of 195 × 22 px.
+
+## The About dialog
+
+![Screenshot](../img/logo/aboutdialog.jpg)
+
+Changes to the _About_ dialog (available from the Administrator dropdown) can
+be made using:
+
+    
+    
+    div#appdiv .quick-base.dashboard-name-prompt > .splash{
+        background: transparent url("about_alt.png") no-repeat 3px 2px;
+    }
+    
+
+![Screenshot](../img/logo/aboutdialogv2.jpg)
+
+The text `4.1.0D1` describes the Dashboards version and is not part of the
+background image.
+
+Changes to the style of this text can be made using:
+
+    
+    
+    div#appdiv .quick-base.dashboard-name-prompt > .splash > .version{
+        color: #8a8a8a;                                 /* text color */
+        font-family: 'Times New Roman', Times, serif;   /* font name used */
+        font-size: 2em;                                 /* text size */
+    }
+    
+
+![Screenshot](../img/logo/aboutdialofinal.jpg)
+

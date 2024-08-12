@@ -1,0 +1,388 @@
+https://code.kx.com/insights/core/rest-server/api_reference.html
+
+# API reference | REST server | kdb Insights Core - kdb products
+
+Original URL: https://code.kx.com/insights/core/rest-server/api_reference.html
+
+# REST-server library API reference
+
+.com_kx_rest.
+
+**Initialization** init initialize the namespace
+
+**Registration** register register an endpoint reg.data define a data item:
+input parameter or object member reg.header define a HTTP-header based input
+parameter reg.body define the expected POST body in the request reg.output
+define the output of the endpoint reg.object define an object for use as data
+element, body, or output reg.default get object populated with default values
+
+**Utilities** util.throw throw an error util.response construct response
+util.httpResponse construct HTTP response
+
+**Request processing** process process an incoming HTTP request
+
+The examples on this page assume the following namespace alias has been
+created for convenience.
+
+## `.com_kx_rest.init`
+
+_Initialize the library namespace_
+
+Parameters:
+
+    
+    
+    opts    {dict}  Optional dictionary containing the following:
+                    audoBind {bool}         Whether to automatically bind `.z.ph` and `.z.pp` handlers.
+                    appendNewline {bool}    Whether to append newline at the end of every JSON response (except when the handler returns custom response).
+    
+
+Where called as a nullary, minimally initializes the namespace.
+
+Where called as a unary with dictionary `opts`, initializes the namespace with
+further steps according to entries in `opts`:
+
+    
+    
+    autoBind   whether to automatically bind .z.ph and .z.pp handlers (boolean)
+    
+
+`autoBind`
+
+When true (`1b`) an incoming request is delegated to the next handler (if
+present) if it cannot be matched to an endpoint.
+
+Otherwise a request that does not match an endpoint is rejected with HTTP code
+404.
+
+Examples:
+
+    
+    
+    .com_kx_rest.init[]
+    .com_kx_rest.init enlist[`autoBind]!enlist[1b]
+    
+
+## `.com_kx_rest.process`
+
+_Process an incoming HTTP request_
+
+    
+    
+    .com_kx_rest.process[method;request]
+    
+
+Where
+
+  * `method` is one of ``GET`POST` (symbol atom)
+  * `request` is an HTTP request (list of strings)
+
+processes the HTTP request according to its `http-method` custom header (if
+present), otherwise according to the value of `method`,
+
+Example: set the REST processor as the kdb+ handlers for HTTP GET and POST
+calls:
+
+    
+    
+    .z.ph:.rest.process[`GET;]
+    .z.pp:.rest.process[`POST;]
+    
+
+[`.z.ph`](https://code.kx.com/q/ref/dotz/#zph-http-get),
+[`.z.ph`](https://code.kx.com/q/ref/dotz/#zpp-http-post)
+
+## `.com_kx_rest.reg.body`
+
+_Define the input request body expected by the post-based endpoint_
+
+    
+    
+    .com_kx_rest.reg.body[typ;isReq;dfv;dscr]
+    
+
+Where
+
+    
+    
+    typ       name of object (defined using .com_kx_rest.reg.object) (symbol)
+    isReq     whether the body is required (bool)
+    dfv       default value, of a type compatible with the object (any)
+    dscr      human-readable description (string)
+    
+
+defines the input request body expected by the post-based endpoint.
+
+Example: create a new customer object
+
+    
+    
+    .rest.reg.object[`customerObj;
+      .rest.reg.data[`id;-6h;1b;0N;"Customer ID"],
+      .rest.reg.data[`name;10h;1b;"";"Customer name"] ]
+    
+    .rest.register[`post;"/customers";
+      "Creates one or more customers";
+      {`customers upsert cols[customers]#x`data;count customers};
+      .rest.reg.body[`customerObj;1b;::;"One or more customer object"] ]
+    
+
+## `.com_kx_rest.reg.data`
+
+_Register a data item_
+
+    
+    
+    .com_kx_rest.reg.data[nm;typ;isReq;dfv;dscr]
+    
+
+Where
+
+    
+    
+    nm       name of parameter/item (symbol)
+    typ      q datatype, or object name (defined using
+             .com_kx_rest.reg.object) (short|symbol)
+    isReq    whether parameter is required (boolean)
+    dfv      default value, which must be of typ (any)
+    dscr     human readable description (string)
+    
+
+defines a data item that can be used as one of
+
+  * a path-parameter or query-string based input parameter (when invoked in the context of specifying `params` argument of `.com_kx_rest.register` function)
+  * an element of an object (when invoked in the context of specifying `items` argument of `.com_kx_rest.reg.object` function)
+
+## `.com_kx_rest.reg.default`
+
+_Construct an object using the default values of its elements_
+
+    
+    
+    .com_kx_rest.reg.default nm
+    
+
+Where `nm` (symbol) is the name of an object, constructs it using the default
+values of its elements.
+
+This is useful as the default value of an input parameter object.
+
+See `.com_kx_rest.reg.object` for an example.
+
+_Define a header-based input parameter_
+
+    
+    
+    .com_kx_rest.reg.header[nm;typ;isReq;dfv;dscr]
+    
+
+Where
+
+    
+    
+    nm      name of parameter/item (symbol)
+    typ     q datatype, or object name
+            defined using .com_kx_rest.reg.object (short|symbol)
+    isReq   whether parameter is required (boolean)
+    dfv     default value, which must be of a type that is compatible with `typ` (any)
+    dscr    human-readable description (string)
+    
+
+defines a header-based input parameter.
+
+## `.com_kx_rest.reg.object`
+
+_Register an object_
+
+    
+    
+    .com_kx_rest.reg.object[nm;items]
+    
+
+Where
+
+    
+    
+    nm      name of object, globally unique (symbol)
+    items   one or more data elements, defined by .com_kx_rest.reg.data (table)
+    
+
+registers an object, which can then be a used as the datatype of an input
+parameter, request body, or output.
+
+An example to define an object that contains another object, and an endpoint
+that takes the containing object as input, and returns the nested one:
+
+    
+    
+    .rest.reg.object[`nestedObj;
+      .rest.reg.data[`prop1;6h;1b;0#0Ni;"property 1"],
+      .rest.reg.data[`prop2;11h;1b;0#`;""],
+      .rest.reg.data[`prop3;0h;0b;("v1";"v2");""],
+      .rest.reg.data[`prop4;11h;0b;1#`a_value;""] ]
+    
+    .rest.reg.object[`containerObj;
+      .rest.reg.data[`id;-6h;0b;100;"id"],
+      .rest.reg.data[`name;10h;0b;"xyz";"a name"],
+      .rest.reg.data[`properties;`nestedObj;0b;.rest.reg.default`nestedObj;
+        "A nested object"] ]
+    
+    .rest.register[`post;"/nested";
+      "demonstrates nested object";
+      {x[`data]`properties}; // Returns nested object
+      .rest.reg.body[`containerObj;0b;.rest.reg.default`containerObj;
+        "One or more container objects"],
+      .rest.reg.output[`nestedObj;1b;"Resulting object"] ]
+    
+
+## `.com_kx_rest.reg.output`
+
+_Define the output of an endpoint_
+
+    
+    
+    .com_kx_rest.reg.output[typ;isReq;dscr]
+    
+
+Where
+
+    
+    
+    typ      name of object, defined with .com_kx_rest.reg.object (symbol)
+    isReq    whether output is required (bool)
+    dscr     human-readable description (string)
+    
+
+defines the output of the endpoint.
+
+## `.com_kx_rest.register`
+
+_Register an endpoint_
+
+    
+    
+    .com_kx_rest.register[op;path;dscr;fn;params]
+    
+
+Where
+
+    
+    
+    op        REST operation, typically one of get, post, put, or delete (symbol atom)
+    path      path: supports variables using {var} syntax (e.g. "/users/{id}") (string)
+    dscr      human-readable description (string)
+    fn        handler function (fn) see below
+    params    one or more user input parameter definitions, or empty list
+              if no parameters are defined, see .com_kx_rest.reg.data (dict|table)
+    
+
+registers an endpoint
+
+    
+    
+    .rest.register[`get;"/customers/{id}";
+      "Returns one or more customers by their IDs";
+      {[id] select from customers where uid in id};
+      .rest.reg.data[`id;6h;1b;0;"One or more customer IDs"] ]
+    
+
+Handler function:
+
+  * if the function is defined with arguments named as the keys or columns of `params` (or `body` if `params` has only a `body` key or column) then the function is variadically invoked with its arguments mapped from the request input
+  * otherwise, the function is invoked as a unary on a dictionary:
+
+    
+    
+    op        operation of the endpoint (symbol)
+    path      path of the endpoint (string)
+    arg       input parameters (dict)
+              as defined by params argument of .com_kx_rest.register
+    rawArg    input parameters as received in the request, without parsing (dict)
+    data      value of processed body, typically a dictionary
+              if the body is of an object type, but can be of any type
+              as specified in call to .com_kx_rest.reg.body
+    rawData   raw kdb+ form of the request body (if present) (any)
+    hdr       HTTP headers as received (dict)
+    
+
+and returns one of
+
+  * a kdb+ data structure (typically a dictionary or a table), serialized to JSON by the framework
+  * result of the `.com_kx_rest.util.response` function, which gives the handler control over the HTTP status code, and content type of the response (available with release 1.0.0)
+  * result of the `.com_kx_rest.util.httpResponse` function, which gives the handler total control over the response
+
+In the event of a problem (possibly with input) the handler must call
+`.com_kx_rest.util.throw` to signal an error.
+
+## `.com_kx_rest.util.httpResponse`
+
+_Construct and return endpoint’s HTTP response_
+
+    
+    
+    .com_kx_rest.util.httpResponse[code;headers;cbt]
+    
+
+Where
+
+    
+    
+    code        HTTP status code (string
+    headers     headers dictionary: keys and values are strings (dict)
+    cbt         Content body, encoded according to Content-Type set in headers (string)
+    
+
+returns endpoint’s HTTP response, allowing control over the HTTP headers.
+
+When this function is used, the handler must set the proper `Content-Type`
+header and encode `cnt` accordingly.
+
+## `.com_kx_rest.util.response`
+
+_Constructs and return endpoint’s HTTP response given HTTP status code_
+
+    
+    
+    .com_kx_rest.util.response[code;cnttype;cnt]
+    
+
+Where
+
+    
+    
+    code      HTTP status code (e.g. "201") (string)
+    cnttype   content type (one of the keys of `.h.ty`) (symbol)
+    cnt       content body, already encoded according to cnttype (string)
+    
+
+returns the endpoint’s HTTP response.
+
+Use this function when you need to control the HTTP status code, as well as
+the type of the content.
+
+If the success status code is 200 and the content type is JSON, the endpoint
+handler can return its result directly (e.g. dict or table); the framework
+will encode this as JSON and return it along with 200 status code.
+
+## `.com_kx_rest.util.throw`
+
+_Signal an error_
+
+    
+    
+    .com_kx_rest.util.throw[msg;subj]
+    
+
+Where
+
+    
+    
+    msg   error message (string)
+    subj  subject of the error,e.g. names of input parameters (string)
+    
+
+signals an error formatted as `error-message|error-subject`.
+
+Use this function in an endpoint handler to signal an error in a format that
+distinguishes between the subject of the error, and the error message itself.
+

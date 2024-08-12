@@ -1,0 +1,237 @@
+https://code.kx.com/insights/enterprise/recipes/finance.html
+
+# Backtest trading strategies - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/recipes/finance.html
+
+
+    [
+        {
+            "columns": [
+            {
+                "attrMem": "sorted",
+                "attrOrd": "sorted",
+                "attrDisk": "sorted",
+                "description": "KXI Assembly Schema Column",
+                "name": "timestamp",
+                "type": "timestamp",
+                "compound": false,
+                "foreign": ""
+            },
+            {
+                "description": "KXI Assembly Schema Column",
+                "name": "price",
+                "type": "float",
+                "compound": false,
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "foreign": ""
+            },
+            {
+                "description": "KXI Assembly Schema Column",
+                "name": "volume",
+                "type": "int",
+                "compound": false,
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "foreign": ""
+            }
+            ],
+            "description": "KXI Assembly Schema",
+            "name": "trade",
+            "primaryKeys": [],
+            "prtnCol": "timestamp",
+            "sortColsDisk": ["timestamp"],
+            "sortColsMem": ["timestamp"],
+            "sortColsOrd": ["timestamp"],
+            "type": "partitioned"
+        },
+        {
+            "columns": [
+            {
+                "attrDisk": "",
+                "attrMem": "",
+                "attrOrd": "",
+                "description": "KXI Assembly Schema Column",
+                "name": "Date",
+                "type": "date",
+                "compound": false,
+                "foreign": ""
+            },
+            {
+                "attrDisk": "sorted",
+                "attrMem": "sorted",
+                "attrOrd": "sorted",
+                "description": "KXI Assembly Schema Column",
+                "name": "Time",
+                "type": "timestamp",
+                "compound": false,
+                "foreign": ""
+            },
+            {
+                "description": "KXI Assembly Schema Column",
+                "name": "Open",
+                "type": "float",
+                "compound": false,
+                "attrDisk": "",
+                "attrMem": "",
+                "attrOrd": "",
+                "foreign": ""
+            },
+            {
+                "description": "KXI Assembly Schema Column",
+                "name": "High",
+                "type": "float",
+                "compound": false,
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "foreign": ""
+            },
+            {
+                "description": "KXI Assembly Schema Column",
+                "name": "Low",
+                "type": "float",
+                "compound": false,
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "foreign": ""
+            },
+            {
+                "description": "KXI Assembly Schema Column",
+                "name": "Close",
+                "type": "float",
+                "compound": false,
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "foreign": ""
+            },
+            {
+                "description": "KXI Assembly Schema Column",
+                "name": "AdjClose",
+                "type": "float",
+                "compound": false,
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "foreign": ""
+            },
+            {
+                "description": "KXI Assembly Schema Column",
+                "name": "Volume",
+                "type": "long",
+                "compound": false,
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "foreign": ""
+            },
+            {
+                "description": "KXI Assembly Schema Column",
+                "name": "AssetCode",
+                "type": "symbol",
+                "compound": false,
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "foreign": ""
+            }
+            ],
+            "description": "KXI Assembly Schema",
+            "name": "close",
+            "primaryKeys": [],
+            "sortColsDisk": ["Time"],
+            "sortColsMem": ["Time"],
+            "sortColsOrd": ["Time"],
+            "type": "splayed",
+            "prtnCol": "Time"
+        },
+        {
+            "columns": [
+            {
+                "attrMem": "sorted",
+                "attrOrd": "sorted",
+                "attrDisk": "sorted",
+                "description": "KXI Assembly Schema Column",
+                "name": "timestamp",
+                "type": "timestamp",
+                "compound": false,
+                "foreign": ""
+            },
+            {
+                "description": "KXI Assembly Schema Column",
+                "name": "vwap",
+                "type": "float",
+                "compound": false,
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "foreign": ""
+            },
+            {
+                "description": "KXI Assembly Schema Column",
+                "name": "twap",
+                "type": "float",
+                "compound": false,
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "foreign": ""
+            },
+            {
+                "description": "KXI Assembly Schema Column",
+                "name": "open",
+                "type": "float",
+                "compound": false,
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "foreign": ""
+            },
+            {
+                "description": "KXI Assembly Schema Column",
+                "name": "high",
+                "type": "float",
+                "compound": false,
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "foreign": ""
+            },
+            {
+                "description": "KXI Assembly Schema Column",
+                "name": "low",
+                "type": "float",
+                "compound": false,
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "foreign": ""
+            },
+            {
+                "description": "KXI Assembly Schema Column",
+                "name": "close",
+                "type": "float",
+                "compound": false,
+                "attrMem": "",
+                "attrOrd": "",
+                "attrDisk": "",
+                "foreign": ""
+            }
+            ],
+            "description": "KXI Assembly Schema",
+            "name": "analytics",
+            "primaryKeys": [],
+            "prtnCol": "timestamp",
+            "sortColsDisk": ["timestamp"],
+            "sortColsMem": ["timestamp"],
+            "sortColsOrd": ["timestamp"],
+            "type": "partitioned"
+        }
+    ]
+    
+

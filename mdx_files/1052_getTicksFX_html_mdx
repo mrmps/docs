@@ -1,0 +1,305 @@
+https://code.kx.com/insights/accelerators/fsi/getTicksFX.html
+
+# API Features - kdb products
+
+Original URL: https://code.kx.com/insights/accelerators/fsi/getTicksFX.html
+
+# FX Functionality in getTicks
+
+## fxBookType
+
+FX specific functionality is specified via the `fxBookType` argument. Further
+releases will provide functionality to construct an FX price book in various
+ways.
+
+The `fxBookType` option `rawBook` constructs a book without any mathematical
+operation on the FX market data on a per tick basis. The `numLevels` option is
+an integer input to construct a book for those levels where the data is
+available. In the below example we set `numLevels` value to be 3 but the
+Liquidity Provider was only providing pricing for level 0 at this time. In
+addition, filtering functionality available as part of `getTicks` can be used
+in conjunction with the FX asset specific functionality. This is demonstrated
+in the example below with the `columns` parameter to select only the columns
+of interest.
+
+The `scope` argument is required to allow the correct routing. The value
+provided in the examples below is correct for the KX Flow Accelerator.
+
+    
+    
+    args: (!) . flip (
+        (`table;            `Quote);
+        (`scope;            (enlist`assembly)!(enlist `$"fsi-app-kx-flow"));
+        (`startTS;          2023.07.21D00:00:00);
+        (`endTS;            2023.07.22D00:00:00);
+        (`columns;          `instrumentID`src`baseCcy`level`bidPrice`askPrice`bidSize`askSize);
+        (`numLevels;        3i);
+        (`fxBookType;       `rawBook)
+        );
+    
+    last gw(`getTicks;args;`callback;()!())
+    
+    eventTimestamp                instrumentID src          baseCcy level bidPrice  askPrice  bidSize  askSize  
+    -----------------------------------------------------------------------------------------------------------
+    2023.07.21D13:50:03.261611000 EUR/USD      LP1      EUR     0     1.1132    1.1133    1000000  1000000  
+    2023.07.21D13:50:07.363004000 EUR/USD      LP2      EUR     0     1.1132    1.1133    1000000  1000000  
+    2023.07.21D13:52:29.260346000 EUR/USD      LP1      EUR     0     1.1132    1.1133    1000000  1000000  
+    2023.07.21D13:52:32.656842000 EUR/USD      LP1      EUR     0     1.1132    1.1133    1000000  1000000  
+    2023.07.21D13:52:36.265531000 EUR/USD      LP2      EUR     0     1.1132    1.1133    1000000  1000000  
+    2023.07.21D13:52:48.758550000 EUR/USD      LP1      EUR     0     1.1132    1.1133    1000000  1000000  
+    2023.07.21D13:52:48.859182000 EUR/USD      LP1      EUR     0     1.1132    1.1133    1000000  1000000  
+    2023.07.21D13:52:52.854453000 EUR/USD      LP2      EUR     0     1.1132    1.1133    1000000  1000000  
+    2023.07.21D13:52:57.158072000 EUR/USD      LP1      EUR     0     1.1132    1.1133    1000000  1000000  
+    2023.07.21D13:53:01.204271000 EUR/USD      LP1      EUR     0     1.1132    1.1133    1000000  1000000  
+    2023.07.21D13:53:05.055614000 EUR/USD      LP2      EUR     0     1.1132    1.1133    1000000  1000000 
+    
+
+The `fxBookType` option `VWAP` constucts a volume-weighted average price from
+the quote data. The vwap calculations are done by liquidity provider (src).
+The band(s) are input via the `vwapSize` parameter
+
+    
+    
+    args: (!) . flip (
+        (`table;            `Quote);
+        (`scope;            (enlist`assembly)!(enlist `$"fsi-app-kx-flow"));
+        (`startTS;          2023.08.22D08:00:00);
+        (`endTS;            2023.08.22D08:15:00); 
+        (`idList;           `A);
+        (`fxBookType;       `VWAP);
+        (`vwapSize;         (1000000i;3000000i;5000000i))
+        );
+    
+    last gw(`getTicks;args;`callback;()!())
+    
+    instrumentID eventTimestamp                src bidSize bidPrice askSize askPrice     
+    --------------------------------------------------------------------------------
+    A            2023.08.22D08:13:46.517000000 A   1000000 1.27     1000000 1.3     
+    A            2023.08.22D08:13:46.517000000 A   3000000 1.27     3000000 1.313
+    A            2023.08.22D08:13:46.517000000 A   5000000 1.266    5000000 1.316   
+    A            2023.08.22D08:13:46.517000000 B   1000000 1.28     1000000 1.3     
+    A            2023.08.22D08:13:46.517000000 B   3000000 1.28     3000000 1.3     
+    A            2023.08.22D08:13:46.517000000 B   5000000 1.28     5000000 1.3
+    
+
+Similarly, for periods where one sided rates are streaming from the liquidity
+provider, the vwap will be calculated on the liquidity of the available side
+while the other side's price and size columns will remain null. For example,
+
+    
+    
+    args: (!) . flip (
+        (`table;            `Quote);
+        (`scope;            (enlist`assembly)!(enlist `$"fsi-app-kx-flow"));
+        (`startTS;          2023.08.22D08:20:00);
+        (`endTS;            2023.08.22D08:25:00);
+        (`idList;           `A);
+        (`fxBookType;       `VWAP);
+        (`vwapSize;         4000000i)
+        );
+    
+    last gw(`getTicks;args;`callback;()!())
+    
+    instrumentID eventTimestamp                src bidSize bidPrice askSize askPrice
+    --------------------------------------------------------------------------------
+    A            2023.08.22D08:24:28.967000000 A   4000000 1.25            
+    A            2023.08.22D08:24:28.967000000 B   4000000 1.28            
+    
+
+The book building logic also works with the other features of `getTicks`, for
+example the column filter. In the below example, only the specified columns
+are returned
+
+    
+    
+    args: (!) . flip (
+        (`table;            `Quote);
+        (`scope;            (enlist`assembly)!(enlist `$"fsi-app-kx-flow"));
+        (`startTS;          .z.d+00:00:00);
+        (`endTS;            .z.d+23:59:59);
+        (`idList;           `A);
+        (`fxBookType;       `VWAP);
+        (`vwapSize;         4000000i);
+        (`columns;          `eventTimestamp`instrumentID`src`bidPrice`bidSize)
+        );
+    
+    last gw(`getTicks;args;`callback;()!())
+    
+    eventTimestamp                instrumentID src bidPrice bidSize
+    ----------------------------------------------------------------
+    2023.08.24D10:23:47.702000000 A            A   1.25     4000000
+    2023.08.24D10:23:47.702000000 A            B   1.28     4000000
+    
+
+To select particular LPs to perform a VWAP on, the `filter` functionality can
+be used to select one or many LPs.
+
+    
+    
+    args: (!) . flip (
+        (`table;            `Quote);
+        (`scope;            (enlist`assembly)!(enlist `$"fsi-app-kx-flow"));
+        (`startTS;          .z.d+00:00:00);
+        (`endTS;            .z.d+23:59:59);
+        (`idList;           `A);
+        (`fxBookType;       `VWAP);
+        (`vwapSize;         4000000i);
+        (`filter;           ("=";`src;`A))
+        );
+    
+    last gw(`getTicks;args;`callback;()!())
+    
+    instrumentID eventTimestamp                src bidSize bidPrice  askSize askPrice 
+    ---------------------------------------------------------------------------------
+    A            2023.08.28D09:54:15.273000000 A   4000000 1.25      4000000 1.32
+    
+    
+    
+    args: (!) . flip (
+        (`table;            `Quote);
+        (`scope;            (enlist`assembly)!(enlist `$"fsi-app-kx-flow"));
+        (`startTS;          .z.d+00:00:00);
+        (`endTS;            .z.d+23:59:59);
+        (`idList;           `A);
+        (`fxBookType;       `VWAP);
+        (`vwapSize;         4000000i);
+        (`filter;           ("in";`src;`A`B))
+        );
+    
+    last gw(`getTicks;args;`callback;()!())
+    
+    instrumentID eventTimestamp                src bidSize bidPrice askSize askPrice 
+    --------------------------------------------------------------------------------
+    A            2023.08.28D09:54:15.273000000 A   4000000 1.25     4000000 1.32
+    A            2023.08.28D09:54:15.273000000 B   4000000 1.28     4000000 1.3 
+    
+
+The `disableRounding` optional boolean parameter can be used as part of the
+`VWAP` book building functionality within `getTicks`. By default when
+constructing a VWAP book, rounding will be applied to the output of the VWAP
+calculations based on the reference data that is held for the currency pair.
+If there is no reference data defined for a particular pair, the un-rounded
+values are returned, or alternatively, should an un-rounded value be
+preferable, the disableRounding parameter can be explicitly set to true.
+
+In the first example the `disableRounding` option is set to true, so un-
+rounded values are returned
+
+    
+    
+    args: (!) . flip (
+        (`table;            `Quote);
+        (`scope;            (enlist`assembly)!(enlist `$"fsi-app-kx-flow"));
+        (`startTS;          .z.d+00:00:00);
+        (`endTS;            .z.d+23:59:59);
+        (`idList;           `$("EUR/USD";"AUD/USD"));
+        (`fxBookType;       `VWAP);
+        (`vwapSize;         4000000i);
+        (`filter;           ("in";`src;`A`B));
+        (`disableRounding;  1b)
+        );
+    
+    last gw(`getTicks;args;`callback;()!()) 
+    
+    instrumentID eventTimestamp                src bidSize bidPrice askSize askPrice tenor
+    --------------------------------------------------------------------------------------
+    AUD/USD      2023.09.25D13:00:49.979000000 A   4000000 1.25779  4000000 1.32     Spot 
+    EUR/USD      2023.09.25D13:00:49.979000000 B   4000000 1.281485 4000000 1.3      Spot
+    
+
+The `disableRounding` parameter can be explicitly set to false as follows
+
+    
+    
+    args: (!) . flip (
+        (`table;            `Quote);
+        (`scope;            (enlist`assembly)!(enlist `$"fsi-app-kx-flow"));
+        (`startTS;          .z.d+00:00:00);
+        (`endTS;            .z.d+23:59:59);
+        (`idList;           `$("EUR/USD";"AUD/USD"));
+        (`fxBookType;       `VWAP);
+        (`vwapSize;         4000000i);
+        (`filter;           ("in";`src;`A`B));
+        (`disableRounding;  0b)
+        );
+    
+    
+    last gw(`getTicks;args;`callback;()!())
+    
+    instrumentID eventTimestamp                src bidSize bidPrice askSize askPrice tenor
+    --------------------------------------------------------------------------------------
+    AUD/USD      2023.09.25D13:00:49.979000000 A   4000000 1.25     4000000 1.32     Spot
+    EUR/USD      2023.09.25D13:00:49.979000000 B   4000000 1.28     4000000 1.3      Spot
+    
+
+By default the output is rounded to the reference data settings, if the
+`disableRounding` option is not part of the input arguments of `getTicks`
+
+    
+    
+    args: (!) . flip (
+        (`table;            `Quote);
+        (`scope;            (enlist`assembly)!(enlist `$"fsi-app-kx-flow"));
+        (`startTS;          .z.d+00:00:00);
+        (`endTS;            .z.d+23:59:59);
+        (`idList;           `$("EUR/USD";"AUD/USD"));
+        (`fxBookType;       `VWAP);
+        (`vwapSize;         4000000i);
+        (`filter;           ("in";`src;`A`B))
+        );
+    
+    last gw(`getTicks;args;`callback;()!())
+    
+    instrumentID eventTimestamp                src bidSize bidPrice askSize askPrice tenor
+    --------------------------------------------------------------------------------------
+    AUD/USD      2023.09.25D13:00:49.979000000 A   4000000 1.25     4000000 1.32     Spot
+    EUR/USD      2023.09.25D13:00:49.979000000 B   4000000 1.28     4000000 1.3      Spot
+    
+
+The `fxBookType` option `fullAmount` constructs a full amount price book for a
+given set of bands based on a full amount (FOK) price book. The bands can be
+input to the function using the `fullAmountSize` option.
+
+    
+    
+    args: (!) . flip (
+        (`table;            `Quote);
+        (`scope;            (enlist`assembly)!(enlist `$"fsi-app-kx-flow"));
+        (`startTS;          .z.d+00:00:00);
+        (`endTS;            .z.d+23:59:59);
+        (`idList;           `A);
+        (`fxBookType;       `fullAmount);
+        (`fullAmountSize;   4000000i);
+        (`columns;          `eventTimestamp`instrumentID`src`pool`bidPrice`bidSize`askPrice`askSize)
+        );
+    
+    last gw(`getTicks;args;`callback;()!())
+    
+    eventTimestamp                instrumentID src pool  bidPrice bidSize askPrice askSize
+    --------------------------------------------------------------------------------------
+    2023.09.25D16:38:10.531000000 A            A   PoolA 1.25     4000000 1.32     4000000
+    2023.09.25D16:38:10.531000000 A            B   PoolB 1.28     4000000 1.3      4000000
+    
+    
+    
+    args: (!) . flip (
+        (`table;            `Quote);
+        (`scope;            (enlist`assembly)!(enlist `$"fsi-app-kx-flow"));
+        (`startTS;          .z.d+00:00:00);
+        (`endTS;            .z.d+23:59:59);
+        (`idList;           `A);
+        (`fxBookType;       `fullAmount);
+        (`fullAmountSize;   (1000000i;4000000i));
+        (`columns;          `eventTimestamp`instrumentID`src`bidPrice`bidSize`askPrice`askSize)
+        );
+    
+    last gw(`getTicks;args;`callback;()!())
+    
+    eventTimestamp                instrumentID src  bidPrice  bidSize askPrice askSize
+    ---------------------------------------------------------------------------------------
+    2023.09.25D16:38:10.531000000 A            A    1.23      1000000 1.3      1000000
+    2023.09.25D16:38:10.531000000 A            A    1.25      4000000 1.32     4000000
+    2023.09.25D16:38:10.531000000 A            B    1.24      1000000 1.31     1000000
+    2023.09.25D16:38:10.531000000 A            B    1.28      4000000 1.3      4000000
+    
+

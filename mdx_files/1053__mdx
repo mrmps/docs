@@ -1,0 +1,79 @@
+https://code.kx.com/platform/stream/dw_runtime/
+
+# Running processes - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/stream/dw_runtime/
+
+# Running processes
+
+Now that the core warehouse components are created, let's run them to confirm
+the setup is correct.
+
+  * Run the messaging server `ds_ms_a` if not already.
+  * Right-click the `kxw_tp` service class in the workspace tree
+  * Click the _Run_ button in the context menu
+  * A dialog will appear
+  * A host must be specified but all other parameters are optional
+  * Click the _Run_ button
+
+[![Screenshot](../img/serviceclass/run_service_class.jpg)](../img/serviceclass/run_service_class.jpg
+"click to expand")
+
+  * Once the service is running, it should appear in your _Process Library Status Viewer_. The _Status_ column can be filtered for `running` processes to reduce the list.
+
+  * Perform the same steps for the other services.
+
+    * `kxw_rdb`
+    * `kxw_lr`
+    * `kxw_ihdb`
+    * `kxw_hdb`
+  * Your Process Library should look similar to this:
+
+[![Screenshot](../img/serviceclass/running_processes.jpg)](../img/serviceclass/running_processes.jpg
+"click to expand")
+
+More information is available on running service classes.
+
+[Service classes](../../sc_runtime/)
+
+## Run warehouse
+
+To run all of the service classes created at once you can use the script
+provided in the [Warehouse Appendix](../dw_appendix/#startservicescsvsh).
+
+  * This script takes in a [CSV](../dw_appendix/#systemcsv) which is also provided.
+  * It then runs the `startService.sh` script against each of the services provided in the csv.
+  * You will need to firstly create a `bin` and `config` directory where you have the package checked out. [![Screenshot](../img/stream/configbin.png)](../img/stream/configbin.png "click to expand")
+  * The `startServiceCSV.sh` will go in the bin directory. [![Screenshot](../img/stream/bin.png)](../img/stream/bin.png "click to expand")
+  * The `system.csv` containing your services will be in the config directory. [![Screenshot](../img/stream/config.png)](../img/stream/config.png "click to expand")
+  * To then run the script from the bin directory use this command: 
+
+    
+    
+    ./startServicesCSV.sh ../config/system.csv
+    
+
+You may have to source the `delta.profile`
+
+The `startServicesCSV.sh` reads your _delta.profile_ and _delta_user.profile_.
+Sourcing the `delta.profile` manually will export the variables so the script
+will be able to locate them.
+
+## Loading data
+
+There are two typical scenarios for loading data into these processes; batch
+load from files and realtime streaming. These are discussed in detail in the
+next two sections.
+
+The filewatcher is used for loading batch data into the system from files.
+These files can be in a number of format including CSV, JSON and fixed-width
+binary.
+
+[File Watcher](../dw_filewatcher/)
+
+The other is realtime data captured from a feed. In reality, the data will
+flow in from an external source, but for the purpose of this document, we will
+mock a feed and pass in dummy data to the system.
+
+[Realtime Feed](../dw_feed/)
+

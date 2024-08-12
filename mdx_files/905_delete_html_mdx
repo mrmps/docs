@@ -1,0 +1,107 @@
+https://code.kx.com/insights/microservices/database/storage/delete.html
+
+# Delete - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/database/storage/delete.html
+
+# Database delete - BETA
+
+Beta - For evaluation and trial use only
+
+Database delete is currently in beta.
+
+  * Deleting data already in the object store tier is not supported. When the date interval defined by `startTS`/`endTS` overlaps with dates in the object store, the whole delete action is rejected.
+  * Refer to the [standard terms](../../../enterprise/release-notes/beta.html).
+  * We invite you to use this beta feature and to provide feedback using the [portal](https://kxbetafeatures.ideas.aha.io/ideas/new).
+
+Delete is permanent
+
+Deleting data from a database is permanent. We recommend that you take backup
+of the database before performing a delete. Undoing a delete is only possible
+in certain circumstances, see Undoing a delete below for more details.
+
+## Performing a delete
+
+A database delete can be performed by REST directly on the Storage Manager.
+
+Hostname
+
+In the example below, `$SM` is the hostname and port of the Storage Manager
+process on which to perform the delete operation.
+
+    
+    
+    curl -X POST "$SM/delete" \
+        -H 'Content-Type: application/json' \
+        -d '{"session":"","table":"","startTS":"","endTS":"","filter":[]}'
+    
+
+### Example success response
+
+    
+    
+    HTTP/1.1 200
+    Content-Type: application/json
+    Connection: close
+    Content-Length: 99
+    
+    {"name":"54f5cf87-dbc2-4336-d109-173ed56c0b86","updtype":"delete","status":"processing","error":[]}
+    
+
+### Example failure response
+
+    
+    
+    HTTP/1.1 400
+    Content-Type: application/json
+    Connection: close
+    Content-Length: 48
+    
+    {"code":"400","text":"missing","details":"body"}
+    
+
+**Parameters:**
+
+name | required | type | description  
+---|---|---|---  
+`session` | no | string | An optional delete session name, which can be used to undo the delete. See Undoing a delete for more details. If you do not provide a session name, one is generated and returned.  
+`table` | yes | string | The name of the table to perform this delete operation on.  
+`startTS` | no | timestamp | The start boundary for performing this delete operation. See `endTS`.  
+`endTS` | no | timestamp | The end boundary for performing this delete operation. See below for how to specify a timestamp. Since deleting from the object store tier is not supported, the time window must restrict the delete to the dates in the local HDB tiers. A time window that overlaps with dates in object store is rejected with an error message.  
+`filter` | no | list | A list of triples that can be used for selecting specific data to be deleted. If a filter is provided, any data that matches the filter will be deleted. If no filter is provided, all data between the start and end timestamps will be deleted. See filtering below for more details.  
+  
+### Specifying timestamps
+
+To retrieve the start and end times using `bash`, you may use `date -u` to
+print formatted dates:
+
+    
+    
+    # Define a time interval within the hour
+    startTS=$(date -u '+%Y.%m.%dD%H:00:00')
+    endTS=$(date -u '+%Y.%m.%dD%H:%M%:%S')
+    
+
+Times may be extended to contain a variable number of trailing digits to
+specify milliseconds and nanosecond precision.
+
+### Filtering
+
+The `filter` parameter is similar to the one used for querying. See [Get Data
+filtering](../../../api/database/query/get-data.html#filtering) for details.
+
+## Undoing a delete
+
+Performing a delete is an immediate action considered irreversible. We
+recommend that you create a backup of your database before performing a
+delete. Additionally, all RT logs since the time of issuing the delete must
+also be available for a successful restoration of all data.
+
+When a delete is performed, it is sequenced in the source stream's control
+messages. If you try to undo a delete by restoring your database from a
+backup, the delete is replayed and the matching data is deleted again. To
+avoid this during a data recovery, the `session` of the delete can be ignored
+so that the delete is not performed and the data remains. To ignore a delete
+session during a recovery operation, set the following environment variable
+`KXI_IGNORE_DELETE=<session>[,<session>,...]`.
+

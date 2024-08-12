@@ -1,0 +1,244 @@
+https://code.kx.com/platform/api/timer/
+
+# Timer - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/api/timer/
+
+# Timer
+
+Contains APIs to maintain timer tasks. Can schedule, de-schedule functions and
+set the timer frequency. If the timer frequency isn't set on the process it
+should be set using `.d.prcl.setTimerFreq`. Tasks can be setup at a specified
+frequency and optionally have start and end times. The interval can be
+specified to millisecond granularity.
+
+Warning
+
+Start, end and run times are all **local time**
+
+User code should avoid overwriting the `.z.ts` definition
+
+## `.d.prcl.activateFunct`
+
+Activate a timer function by ID.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+id | int | Timer ID  
+  
+**Example:**
+
+    
+    
+     .d.prcl.activateFunct[2i]
+    
+
+## `.d.prcl.addFunctToTimer`
+
+Adds the named function to the timer and assigns it a unique id. If funct is
+already scheduled and is active the function logs an error message and
+returns. Can optionally specify start and end times.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+funct | symbol | Function name  
+functParams | list | List of function parameters  
+stDT | datetime | Start time  
+endDT | datetime | End time  
+repFreq | int | Repeat frequency (milliseconds)  
+act | boolean | Schedule function as active  
+  
+**Example:** Run immediately every second indefinitely
+
+    
+    
+     .d.prcl.addFunctToTimer[`runJob; (); 0Nz; 0Wz; 1000i; 1b]
+    
+
+**Example:** Run on the hour every hour until midnight
+
+    
+    
+     .d.prcl.addFunctToTimer[`runJob; (`EUR; 1000i); "z"$.z.D+3600000 xbar .z.T; 1+"z"$.z.D+00:00:00.0; 3600000i; 1b]
+    
+
+## `.d.prcl.deactFunct`
+
+Deactivate a timer function.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+id | int | Timer ID  
+  
+**Example:**
+
+    
+    
+     .d.prcl.deactFunct[2i]
+    
+
+## `.d.prcl.forceFunctToTimer`
+
+Force function to timer even if already exists. Same behavior as
+`.d.prcl.addFunctToTimer`.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+funct | symbol | Function name  
+functParams | list | List of function parameters  
+stDT | datetime | Start time  
+endDT | datetime | End time  
+repFreq | int | Repeat frequency (milliseconds)  
+act | boolean | Schedule function as active  
+  
+**Example:** Run immediately every second indefinitely
+
+    
+    
+     .d.prcl.forceFunctToTimer[`runJob; (); 0Nz; 0Wz; 1000i; 1b]
+    
+
+**Example:** Run on the hour every hour until midnight
+
+    
+    
+     .d.prcl.forceFunctToTimer[`runJob; (`EUR; 1000i); "z"$.z.D+3600000 xbar .z.T; 1+"z"$.z.D+00:00:00.0; 1b]
+    
+
+## `.d.prcl.getTimerDetailsByID`
+
+Returns the function details for a given ID. Same return format as
+`.d.prcl.getTimerDetails`
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+id | int | Function ID  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+| ([actID:int] nxtRun:datetime; functName:symbol; functParams:list;
+start:datetime; end:datetime; rptFreq:float; active:boolean) Table of timer
+details  
+  
+**Example:**
+
+    
+    
+     .d.prcl.getTimerDetailsByID[3i]
+     /=> actID| nxtRun                  functName functParams start                   end repeatFreq   active
+     /=> -----| ---------------------------------------------------------------------------------------------
+     /=> 3    | 2017.02.07T11:35:16.334 runJob    `EUR 1000i  2017.02.07T11:30:16.334 0w  0.0001157407 1
+    
+
+## `.d.prcl.getTimerDetails`
+
+Return the timer details for a list of functions
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+functList | symbol[] | List of functions  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+table ([actID:int] nxtRun:datetime; functName:symbol; functParams:list; start:datetime; end:datetime; rptFreq:float; active:boolean) | Table of timer details  
+  
+**Example:**
+
+    
+    
+     .d.prcl.getTimerDetails[`.page.clearCache`runJob]
+     /=> actID| nxtRun                  functName        functParams start                   end repeatFreq   active
+     /=> -----| ----------------------------------------------------------------------------------------------------
+     /=> 1    | 2017.02.07T11:30:42.383 .page.clearCache             2017.02.07T10:31:42.383 0w  0.0006944444 1
+     /=> 3    | 2017.02.07T11:30:26.334 runJob           `EUR 1000i  2017.02.07T11:30:16.334 0w  0.0001157407 1
+    
+
+## `.d.prcl.removeFuncFromTimerByFParam`
+
+Remove specific function and parameter combination from timer
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+funct | symbol | Function name  
+params | list | List of parameters. Needs to be enlisted to match record in timer table  
+  
+**Example:** Delete all instances of function
+
+    
+    
+     .d.prcl.addFunctToTimer[`runJob; (`EUR;1000i); 0Nz; 0Wz; 10000i; 1b]
+     .d.prcl.removeFuncFromTimerByFParam[`runJob; enlist (`EUR;1000i)]
+    
+
+## `.d.prcl.removeFuncFromTimerByID`
+
+Remove function from timer for a specific ID.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+id | int | ID of function  
+  
+**Example:**
+
+    
+    
+     .d.prcl.removeFuncFromTimer[2i]
+    
+
+## `.d.prcl.removeFuncFromTimer`
+
+Remove function from timer. If more than one instance of the function is on
+the timer, the second parameter dictates whether to delete all or take no
+action. If set to true, will delete all.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+funct | symbol | Function name  
+frDelete | boolean | Delete all instances of function if true  
+  
+**Example:** Delete all instances of function
+
+    
+    
+     .d.prcl.removeFuncFromTimer[`runJob; 1b]
+    
+
+## `.d.prcl.setTimerFreq`
+
+Set the timer frequency
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+timeFreq | int | Timer frequency (milliseconds)  
+  
+**Example:**
+
+    
+    
+     .d.prcl.setTimerFreq[1000]
+    
+

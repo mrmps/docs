@@ -1,0 +1,153 @@
+https://code.kx.com/insights/enterprise/configuration/database.html
+
+# Database - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/configuration/database.html
+
+# Database
+
+_Details of how to provide advanced database configuration during deployment_
+
+The [kdb Insights Database](../database/index.html) contains the Service
+Gateway, Resource Coordinator and Aggregator that are included in the base kdb
+Insights Enterprise deployment. These components are configured using a
+[values file](index.html).
+
+## Configuration
+
+In a kdb Insights Enterprise deployment, 2 versions of the Service Gateway
+(SG) are included, a production version and a sandbox version called a _query
+environment_. The production version of the SG is intended for critical
+business applications, while the QE version is intended for exploratory
+workloads that are less business critical. Configuration for the production
+version lives under a `service-gateway` key in your values file, while the
+exploratory version is under a `qe-gateway` key. Both versions have the same
+configuration but use different default values for their respective workloads.
+
+    
+    
+    service-gateway:
+      # See 'Resource Coordinator' section below for details
+      resource-coordinator: {}
+      # See 'Aggregator' section below for details
+      aggregator: {}
+      # See 'Service Gateway' section below for details
+      sg-gateway: {}
+    
+    qe-gateway:
+      # See 'Resource Coordinator' section below for details
+      resource-coordinator: {}
+      # See 'Aggregator' section below for details
+      aggregator: {}
+      # See 'Service Gateway' section below for details
+      sg-gateway: {}
+    
+
+## Service Gateway
+
+The following options are available under the `sg-gateway` configuration for
+both the `service-gateway` and `qe-gateway` versions of configuration.
+
+Example configuration option
+
+    
+    
+    service-gateway:
+      sg-gateway:
+        env:
+          KXI_LOG_LEVELS: "default:trace"
+    
+
+option | default | description  
+---|---|---  
+`image.repository` | `portal.dl.kx.com` | The URL of the image repository for the Service Gateway container.  
+`image.component` | `kxi-sg-gw` | The name of this image.  
+`image.tag` | `$RELEASE` | The tag of the image will match the image specified for the given release version. For example, release `1.0.0` had a tag of `1.0.0`.  
+`image.pullPolicy` | `IfNotPresent` | The [Kubernetes image pull policy](https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy) for this image.  
+`imagePullSecrets` | `[]` | Arrays of name of secrets with image pull permissions.  
+`replicaCount` | `3` | The number of replicas to deploy for this service. The exploratory QE gateway defaults to `1`.  
+`env` | `{}` | Additional environment variables to add to container. Environment variables are supplied as a list of key-value pairs (ex. `KXI_NAME: "mysg"`). See the [list of available environment variables](../../microservices/database/configuration/routing.html#environment-variables) for available options.  
+`ipcPort` | `5050` | The port used for clients to connect to the gateway via IPC using TCP without TLS.  
+`secureIpcPort` | `6050` | The port used for clients to connect to the gateway via IPC using TCPS.  
+`httpPort` | `8080` | The port used to serve HTTP requests from the gateway. This port services the APIs for the [Service Gateway](../../api/database/rest/service-gateway.html)  
+`auth.enabled` | `true` | When [authentication](security.html) is enabled, this value should be enabled to leverage authentication configurations. Setting this value to false will bypass authentication and allow any user with access to the system to perform any API action.  
+`affinity` | `hard` | [Availability policy](availability.html) for pod affinity. One of `hard`, `soft`, `hard-az` or `soft-az`.  
+`autoscaling.enabled` | `true` | Indicates if the gateway should scale its number of replicas to match compute load.  
+`autoscaling.minReplicas` | `1` | When autoscaling is enabled, this is the minimum number of gateway replicas to have running.  
+`autoscaling.maxReplicas` | `10` | When autoscaling is enabled, this is the maximum number of gateway replicas to have running.  
+`autoscaling.targetCPUUtilizationPercentage` | `80` | If the average workload CPU utilization exceeds this percentage, more replicas will be added. See the documentation on [horizontal pod autoscaling](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/) for more details.  
+`autoscaling.targetMemoryUtilizationPercentage` | `80` | If the average workload memory utilization exceeds this percentage, more replicas will be added. See the documentation on [horizontal pod autoscaling](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/) for more details.  
+`autoscaling.stabilizationWindowSeconds` | `300` | To avoid process flapping (scaling up and down), processes will remain in their scaled state for this period of time to stabilize. See [stabilization window](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/#stabilization-window) for more details.  
+`autoscaling.scaleDownPolicy` | `[]` | Policies define the rate of replica teardown. One or more scale down policies may be defined. If not set Kubernetes defaults will be used. See [Scaling Policies](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/#configurable-scaling-behavior) documentation for more details.  
+`autoscaling.scaleUpPolicy` | `[]` | Policies define the rate at which replicas are created. One or more scale up policies may be defined. If not set Kubernetes defaults will be used. See [Scaling Policies](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/#configurable-scaling-behavior) documentation for more details.  
+  
+This service also supports [resources](resources.html) and
+[metrics](observability.html).
+
+## Resource Coordinator
+
+The following options are available under the `resource-coordinator`
+configuration for both the `service-gateway` and `qe-gateway` versions of
+configuration.
+
+Example configuration option
+
+    
+    
+    service-gateway:
+      resource-coordinator:
+        env:
+          KXI_LOG_LEVELS: "default:trace"
+    
+
+option | default | description  
+---|---|---  
+`image.repository` | `portal.dl.kx.com` | The URL of the image repository for the Resource Coordinator container.  
+`image.component` | `kxi-sg-gw` | The name of this image.  
+`image.tag` | `$RELEASE` | The tag of the image will match the image specified for the given release version. For example, release `1.0.0` had a tag of `1.0.0`.  
+`image.pullPolicy` | `IfNotPresent` | The [Kubernetes image pull policy](https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy) for this image.  
+`imagePullSecrets` | `[]` | Arrays of name of secrets with image pull permissions.  
+`replicaCount` | `2` | The number of replicas to deploy for this service. The exploratory QE gateway defaults to `1`.  
+`env` | `{}` | Additional environment variables to add to container. Environment variables are supplied as a list of key-value pairs (ex. `KXI_NAME: "myrc"`). See the [list of available environment variables](../../microservices/database/configuration/routing.html#environment-variables) for available options.  
+`affinity` | `hard` | [Availability policy](availability.html) for pod affinity. One of `hard`, `soft`, `hard-az` or `soft-az`.  
+  
+This service also supports [resources](resources.html) and
+[metrics](observability.html).
+
+## Aggregator
+
+The following options are available under the `aggregator` configuration for
+both the `service-gateway` and `qe-gateway` versions of configuration.
+
+Example configuration option
+
+    
+    
+    service-gateway:
+      aggregator:
+        env:
+          KXI_LOG_LEVELS: "default:trace"
+    
+
+option | default | description  
+---|---|---  
+`image.repository` | `portal.dl.kx.com` | The URL of the image repository for the Aggregator container.  
+`image.component` | `kxi-sg-gw` | The name of this image.  
+`image.tag` | `$RELEASE` | The tag of the image will match the image specified for the given release version. For example, release `1.0.0` had a tag of `1.0.0`.  
+`image.pullPolicy` | `IfNotPresent` | The [Kubernetes image pull policy](https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy) for this image.  
+`imagePullSecrets` | `[]` | Arrays of name of secrets with image pull permissions.  
+`replicaCount` | `2` | The number of replicas to deploy for this service. When autoscaling is disabled, this value sets a fixed number of replicas to deploy. When autoscaling is enabled, this value is compared against the minimum number of replicas and the maximum value is taken.  
+`env` | `{}` | Additional environment variables to add to container. Environment variables are supplied as a list of key-value pairs (ex. `KXI_NAME: "myrc"`). See the [list of available environment variables](../../microservices/database/configuration/routing.html#environment-variables) for available options.  
+`affinity` | `soft` | [Availability policy](availability.html) for pod affinity. One of `hard`, `soft`, `hard-az` or `soft-az`.  
+`autoscaling.enabled` | `true` | Indicates if the aggregator should scale its number of replicas to match compute load.  
+`autoscaling.minReplicas` | `1` | When autoscaling is enabled, this is the minimum number of aggregator replicas to have running.  
+`autoscaling.maxReplicas` | `10` | When autoscaling is enabled, this is the maximum number of aggregator replicas to have running.  
+`autoscaling.targetCPUUtilizationPercentage` | `80` | If the average workload CPU utilization exceeds this percentage, more replicas will be added. See the documentation on [horizontal pod autoscaling](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/) for more details.  
+`autoscaling.targetMemoryUtilizationPercentage` | `80` | If the average workload memory utilization exceeds this percentage, more replicas will be added. See the documentation on [horizontal pod autoscaling](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/) for more details.  
+`autoscaling.stabilizationWindowSeconds` | `300` | To avoid process flapping (scaling up and down), processes will remain in their scaled state for this period of time to stabilize. See [stabilization window](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/#stabilization-window) for more details.  
+`autoscaling.scaleDownPolicy` | `[]` | Policies define the rate of replica teardown. One or more scale down policies may be defined. If not set Kubernetes defaults will be used. See [Scaling Policies](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/#configurable-scaling-behavior) documentation for more details.  
+`autoscaling.scaleUpPolicy` | `[]` | Policies define the rate at which replicas are created. One or more scale up policies may be defined. If not set Kubernetes defaults will be used. See [Scaling Policies](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/#configurable-scaling-behavior) documentation for more details.  
+  
+This service also supports [resources](resources.html) and
+[metrics](observability.html)
+

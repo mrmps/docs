@@ -1,0 +1,108 @@
+https://code.kx.com/insights/core/objstor/examples.html
+
+# Examples | kdb+ Cloud Edition - kdb products
+
+Original URL: https://code.kx.com/insights/core/objstor/examples.html
+
+# Examples
+
+_Code snippets to help use kdb+ and cloud storage._
+
+To run some of the commands it will be necessary to have your cloud vendor cli
+installed.
+
+## Creating data on Cloud Storage
+
+In order for data to to be migrated to the cloud it must first be staged
+locally on a POSIX filesystem. This is because KX Insights Cores does not
+support writing to cloud storage using the traditional `set` and other write
+functions.
+
+To migrate the below database to a cloud storage account. Using a sample
+database
+
+    
+    
+    d:2021.09.01+til 20
+    {[d;n]sv[`;.Q.par[`:test/db/;d;`trade],`]set .Q.en[`:test/;([]sym:`$'n?.Q.A;time:.z.P+til n;price:n?100f;size:n?50)];}[;10000]each d
+    
+
+This will create the below structure
+
+    
+    
+    test/.
+    ├── db
+    │   ├── 2021.09.01
+    │   ├── 2021.09.02
+    │   ├── 2021.09.03
+    │   ├── 2021.09.04
+    │   ├── 2021.09.05
+    │   ├── 2021.09.06
+    │   ├── 2021.09.07
+    │   ├── 2021.09.08
+    │   ├── 2021.09.09
+    │   ├── 2021.09.10
+    │   ├── 2021.09.11
+    │   ├── 2021.09.12
+    │   ├── 2021.09.13
+    │   ├── 2021.09.14
+    │   ├── 2021.09.15
+    │   ├── 2021.09.16
+    │   ├── 2021.09.17
+    │   ├── 2021.09.18
+    │   ├── 2021.09.19
+    │   └── 2021.09.20
+    └── sym
+    
+
+The below functions can be used to create a storage account and copy the
+database to the newly created storage account
+
+## Deleting data from Cloud Storage
+
+Deleting data on Cloud Storage should be a rare occurence but in the event
+that such a change is needed, the below steps should be followed
+
+  * Offline any hdb reader processes that are currently using the storage account
+
+  * Remove any caches created by the kxreaper application
+
+  * Delete the data from the storage account using
+
+## Changing data on Cloud Storage
+
+Altering data e.g. changing types, adding columns etc will require the same
+steps as deleting data. Once the reader processes have been taken offline, the
+changes will be able to happen safely bearing in mind that in order to change
+data, it will first need to be copied from the storage account, amended and
+the copied back to the appropriate path using a cloud cli copy command.
+
+## Creating inventory JSON
+
+Instructions to create and use the inventory file can be found
+[here](main.html#hdb-load-times)
+
+## Combining Cloud and Local Storage in a single HDB
+
+The addition of the object store library allows clients to extend their
+tiering strategies to cloud storage. In some instances it will be necessary to
+query data that has some partitions on a local POSIX filesystem and other
+partitions on cloud storage. To give a kdb+ process access to both datasets
+the par.txt can be set as below
+
+Note that multiple local filesystems and storage accounts can be added to
+par.txt.
+
+## Multiple HDB processes and caching
+
+In many kdb+ architectures multiple HDB processes are used to handle load and
+scale horizontally. All instances of a HDB that use the same storage account
+can also use the same cache directory by setting the `KX_OBJSTR_CACHE_PATH`
+environment variable in each process. A single reaper process should then be
+run to control the amount of data contained in the cache.
+
+Note: if using NAS, the reaper process should be on the same machine as the
+HDB reader process and for this reason is not a recommended setup. For optimal
+performance the cache should be located on local attached storage.
+

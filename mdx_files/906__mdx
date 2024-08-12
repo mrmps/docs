@@ -1,0 +1,895 @@
+https://code.kx.com/platform/api/runtime/
+
+# Runtime - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/api/runtime/
+
+# Runtime
+
+This module contains APIs to manage the process state. This includes;
+
+  * Reporting to and loading required process state from Control
+  * Getting details of other processes
+  * Maintaining handles to and querying other processes
+
+## `.pl.sendemail`
+
+**Deprecated** : Use _Email_ module
+
+Calls to _Control_ and sends an email via the _Alerts_ framework. Function
+takes a dictionary and must have `to`, `sub`, `body` keys. Can optionally
+specify files via the `file_list` key. The files must exist on the same server
+as the email RTE.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+emailDict | dict | Email data  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | True if successfully sent to alert framework  
+  
+**Example:**
+
+    
+    
+     .pl.sendemail[`to`sub`body!(`$"user1@fd.com"; "Subject"; "Message text")]
+     /=> 1b
+    
+
+## `.rpl.isLeader`
+
+Check whether process is leader.
+
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | Leader status  
+  
+**Example:**
+
+    
+    
+     .rpl.isLeader[]
+     /=> 1b
+    
+
+## updEntityChange
+
+**Deprecated** : Use _Entity Subscriptions_ module
+
+Called when _Control_ pushes an update to say an entity is changed. Stub
+function is defined as empty but left as a hook for user-code to overwrite.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+class | symbol | Entity class  
+entity | symbol | Entity name  
+dict | dict | Dictionary containing one symbol key `action`  
+  
+**Example:**
+
+    
+    
+     param:.pm.createname[`delta_install_default`DS_EMAIL_SERVER`DEFAULT]
+     updEntityChange[`configparam; param; `update]
+    
+
+## .ex.prh
+
+Function to handle synchronous communication with _Control_. Parameter is the
+query to be executed. The query will be executed as `deltacomponent` user.
+
+If the Control connection is down, it will immediately try to reconnect before
+throwing an exception.
+
+deltacomponent user
+
+If `deltacomponent` is configured as a non-administrator user then the request
+will be subject to permission checks. For more information see the _KX
+Control_ documentation [here](../../security/#security-and-the-deltacomponent-
+user)
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+| query | Query  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+untyped | Result of query  
+  
+**Example:**
+
+    
+    
+     .ex.prh[(`.pl.getRunningInformation; `)]
+    
+
+## `.ex.getdetails`
+
+Get parameter details for a given instance. Resolves any environment variables
+locally or uses the _Control_ value if local isn't defined.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | symbol | Instance name  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | Instance parameters  
+  
+**Example:**
+
+    
+    
+     .ex.getdetails[`ds_rdb_ops_a]
+     /=> time         | 00:00:00.000
+     /=> sym          | `
+     /=> name         | `DS_RDB
+     /=> paramvalues  | `dc_host`dc_port`dc_taskset`dc_algroups`dc_additionalFiles..
+     /=> defaultparams| `messagingServer`subscriptionChannel`subscriptionTableList..
+     /=> apps         | `symbol$()
+     /=> reqparams    | `messagingServer`subscriptionChannel`subscriptionTableList..
+     /=> optparams    | `dc_taskset`dc_algroups`dc_additionalFiles`dc_timeout..
+     /=> desparams    | `messagingServer`subscriptionChannel`subscriptionTableList..
+     /=> directory    | `/
+     /=> file         | `DS_RDB.q
+     /=> argtypes     | `messagingServer`subscriptionChannel`subscriptionTableList..
+     /=> prdes        | "DeltaStream RealTimeSubscriber Process template"
+     /=> returnstat   | (`symbol$())!`symbol$()
+     /=> description  | `DeltaStream RealTimeSubscriber Process template
+     /=> inherit      | 0b
+    
+
+## `.ex.getdetailsforTask`
+
+Get parameter details for a given task. Resolves any environment variables
+locally or uses the _Control_ value if local isn't defined.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | symbol | Task name  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | Task parameters  
+  
+**Example:**
+
+    
+    
+     .ex.getdetailsforTask[`ds_rdb_ops_a.1]
+     /=> time         | 00:00:00.000
+     /=> sym          | `
+     /=> name         | `DS_RDB
+     /=> paramvalues  | `dc_host`dc_port`dc_taskset`dc_algroups`dc_additionalFiles..
+     /=> defaultparams| `messagingServer`subscriptionChannel`subscriptionTableList..
+     /=> apps         | `symbol$()
+     /=> reqparams    | `messagingServer`subscriptionChannel`subscriptionTableList..
+     /=> optparams    | `dc_taskset`dc_algroups`dc_additionalFiles`dc_timeout..
+     /=> desparams    | `messagingServer`subscriptionChannel`subscriptionTableList..
+     /=> directory    | `/
+     /=> file         | `DS_RDB.q
+     /=> argtypes     | `messagingServer`subscriptionChannel`subscriptionTableList..
+     /=> prdes        | "DeltaStream RealTimeSubscriber Process template"
+     /=> returnstat   | (`symbol$())!`symbol$()
+     /=> description  | `DeltaStream RealTimeSubscriber Process template
+     /=> inherit      | 0b
+    
+
+## `.ex.getresultsbyid`
+
+Get results for a given process run ID
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+| int | Run ID  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | Instance results  
+  
+**Example:**
+
+    
+    
+     .ex.getresultsbyid 16765
+     /=> procname| ds_gw_fx_eval
+     /=> status  | running
+     /=> port    | 6034
+    
+
+## `.ex.loadfileNOERROR`
+
+Loads a q file from disk. Any errors will be trapped and reported to
+_Control_. A boolean will returned to indicate success.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+| symbol | Path to file for loading  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | Load status  
+  
+**Example:**
+
+    
+    
+     .ex.loadfileNOERROR[`$":../shared/q/dbmaint.q"]
+    
+
+## `.ex.prhAsync`
+
+Function to handle asynchronous communication with _Control_. Parameter is the
+query to be executed. The query will be executed as `deltacomponent` user.
+
+If the Control connection is down, it will immediately try to reconnect before
+throwing an exception.
+
+deltacomponent user
+
+If `deltacomponent` is configured as a non-administrator user then the request
+will be subject to permission checks. For more information see the _KX
+Control_ documentation [here](../../security/#security-and-the-deltacomponent-
+user)
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+| query | Query  
+  
+**Example:**
+
+    
+    
+     .ex.prhAsync[(`.ch.heartbeat; `)]
+    
+
+## `.ex.setRegHost`
+
+Sets the host to use for registration with Control. Should be called as part
+of a startup instruction. In order to run the it before registration, the
+instruction should be added to the `.al.preStartupInstructions` parameter of
+the `INSTANCE_CONFIG` override. The default value used is the result of
+`.utils.gethost[]`. To use the IP address, use the result of
+`.utils.getlocalip[]`.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+host | symbol | Registration host  
+  
+**Example:**
+
+    
+    
+     .ex.setRegHost[`host]
+    
+
+## `.pl.getConnection`
+
+Gets details for a _Control_ connnection.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+name | symbol | Connection name  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+string | Connection string in `hopen` format  
+  
+**Throws:**
+
+Type | Description  
+---|---  
+| 'notexist  
+  
+**Example:**
+
+    
+    
+     .pl.getConnection[`ds_rdb_fx_eval]
+     /=> `:coredev1:6025
+    
+
+## `.pl.getParameters`
+
+Get instance and runtime parameters.
+
+**Returns:**
+
+Type | Description  
+---|---  
+dict | Generic and instance-specific parameters  
+  
+**Example:**
+
+    
+    
+     .pl.getParameters[]
+     /=> entity_name           | `task.ds_tp_ops_a.1
+     /=> messagingServer       | `configname`value`fullconfigname!(`DS_MESSAGING_SERVER:DS;+(,`instance)!,`ds_ms_a`ds_ms_b;`delta_install_default:DS_MESSAGING_SERVER:DS)
+     /=> publishChannel        | `ds_tp_ops_a
+     /=> subscriptionChannel   | `ds_ops
+     /=> subscriptionTableList | `symbol$()
+     /=> logDirectory          | `ENV=DELTAOPS_TPLOGDIR=
+     /=> dsLsInstance          | (,`instancename)!,`
+     /=> timeOffset            | 0i
+     /=> pubFreq               | 100i
+     /=> eodTime               | 00:00:00.000
+     /=> initialStateFunct     | `analyticname`functioncode`function!(`dxEmptyFunctionNull;"{[]\n\n }";{[] })
+     /=> logRecoveryFunct      | `analyticname`functioncode`function!(`dxEmptyFunction;"{[x;y]\n }";{[x;y] })
+     /=> includeColumns        | 1b
+     ...
+    
+
+## `.pl.getWorkflowParams`
+
+If process launched as part of a workflow, this function can be used to get
+parameters/results passed from the upstream tasks. Results are returned as a
+dictionary of upstream task IDs to serialised results. To de-serialise, use
+`.utils.dsd`.
+
+**Returns:**
+
+Type | Description  
+---|---  
+dict | Mapping of upstream task IDs to parameters  
+  
+**Example:**
+
+    
+    
+     .pl.getWorkflowParams[]
+     /=> 164| 0x0100000036000000630b000200000070726f636e616d6500737461747573000000020000000a000700000074657374315f64f56f6b00
+     /=> 163| 0x0100000036000000630b000200000070726f636e616d6500737461747573000000020000000a000700000074657374325f64f56f6b00
+    
+
+**Example:**
+
+    
+    
+     .utils.dsd each .pl.getWorkflowParams[]
+     /=>    | procname  status
+     /=> ---| ----------------
+     /=> 164| "test1_d" ok
+     /=> 163| "test2_d" ok
+    
+
+## `.pl.gethostport`
+
+Get the connection string for an instance
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+instanceName | symbol | Instance name  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol | Connection string  
+  
+**Example:**
+
+    
+    
+     .pl.gethostport[`ds_tp_ops_a]
+     /=> `:localhost:6031
+    
+
+## `.pl.r.addReconnectFunction`
+
+Add a function to be executed after the _Control_ connection is re-established
+after a disconnect.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+funct | symbol | Name of function to call. Should take no parameters  
+functParams | untyped | List of parameters to call with function  
+  
+**Example:**
+
+    
+    
+     logReconnect:{.log.out[.z.h;”New leader is”;.ex.prh”(.utils.gethost[];system\”p\”)”]}
+     .pl.r.addReconnectFunction[`logReconnect;()]
+    
+
+## `.pl.r.deleteReconnectFunction`
+
+Remove a _Control_ reconnect function.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+| symbol | Function name  
+  
+**Example:**
+
+    
+    
+     .pl.r.deleteReconnectFunction[`logReconnect;()]
+    
+
+## `.pl.return_exit`
+
+Return results to Control and shutdown. Used to indicate the process has
+finished successfully. Control uses this information for audit logging and to
+know when to initiate any downstream workflow tasks. By default all processes
+templates will call this after loading custom code and shutdown. Template code
+must call `.pl.setexitblockedoncompletion` to continue running.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+data | dict | Results for this instance run  
+  
+**Example:**
+
+    
+    
+     .pl.return_exit[`trade`quote!(10; 134)]
+    
+
+## `.pl.return_noexit`
+
+Return results to _Control_ without shutting down.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+data | dict | Results for this instance run  
+  
+**Example:**
+
+    
+    
+     .pl.return_noexit[`trade`quote!(10; 134)]
+    
+
+## `.pl.runProcess`
+
+Run an instance or task from _Control_
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+pr | symbol | Instance or task name  
+  
+**Example:**
+
+    
+    
+     .pl.runProcess[`ds_rdb_ops_a]
+    
+
+## `.pl.setexitblockedoncompletion`
+
+Default behavior of process templates will execute code, report results to
+_Control_ and shutdown. Calling `.pl.setexitblockedoncompletion` ensures the
+process stays running after returning results.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+bExit | boolean | Stay running  
+  
+**Example:**
+
+    
+    
+     .pl.setexitblockedoncompletion[1b]
+    
+
+## `.ex.getEntityClass`
+
+Get entity type of current run; `instance` or `task`
+
+**Returns:**
+
+Type | Description  
+---|---  
+symbol | Task type  
+  
+**Example:**
+
+    
+    
+     .ex.getEntityClass[]
+     /=> `task
+    
+
+## `.ex.getEntityName`
+
+Get entity name of self process. Entity class can be an instance or task.
+
+**Returns:**
+
+Type | Description  
+---|---  
+symbol | Entity name  
+  
+**Example:**
+
+    
+    
+     .ex.getEntityName[]
+     /=> `task.ds_tp_ops_a.1
+    
+
+## `.ex.getFileName`
+
+Get location of template file
+
+**Returns:**
+
+Type | Description  
+---|---  
+symbol | File path  
+  
+**Example:**
+
+    
+    
+     .ex.getFileName[]
+     /=> `:/home/dcore/core/install/dc-data/qsrc///DS_TP.q
+    
+
+## `.ex.getInstanceName`
+
+Gets the instance name. Returns instance even if running as task.
+
+**Returns:**
+
+Type | Description  
+---|---  
+symbol | Instance name  
+  
+**Example:**
+
+    
+    
+     .ex.getInstanceName[]
+     /=> `ds_tp_ops_a
+    
+
+## `.ex.getName`
+
+Get name of running process
+
+**Returns:**
+
+Type | Description  
+---|---  
+symbol | Process name  
+  
+**Example:**
+
+    
+    
+     .ex.getName[]
+     /=> `ds_tp_ops_a.1
+    
+
+## `.ex.getProcessName`
+
+Get process template name
+
+**Returns:**
+
+Type | Description  
+---|---  
+symbol | Template name  
+  
+**Example:**
+
+    
+    
+     .ex.getProcessName[]
+     /=> `DS_TP
+    
+
+## `.ex.getRuntimeName`
+
+Get the runtime name of a process. If running as a service, always returns the
+runtime name. If running as an instance, returns the instance or task
+according to `task` parameter
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+task | boolean | Return task name  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol | Process name  
+  
+**Example:** Running as service
+
+    
+    
+     .ex.getRuntimeName[0b]
+     /=> `ds_tp_ops_2345
+     .ex.getRuntimeName[1b]
+     /=> `ds_tp_ops_2345
+    
+
+**Example:** Running as task
+
+    
+    
+     .ex.getRuntimeName[0b]
+     /=> `ds_tp_ops_a
+     .ex.getRuntimeName[1b]
+     /=> `ds_tp_ops_a.1
+    
+
+## `.pl.closehandle`
+
+Close a handle to an instance. Reciprocal operation for `.pl.openhandle`.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+instanceName | symbol | Instance name  
+  
+**Example:**
+
+    
+    
+     .pl.closehandle[`ds_tp_ops_a]
+    
+
+## `.pl.openhandle`
+
+Open a handle to a specific instance. If a handle has already been opened by
+this API, the existing handle will be returned. Can optionally specify
+credentials and a connection timeout. Calls to _Control_ to get host and port
+details. Throws an exception if the handle can't be opened
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+instanceName | symbol | Instance name  
+user | symbol | Username  
+password | symbol | Password  
+timeout | long | Connection timeout  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol | Handle  
+  
+**Example:** Open with credentials and 100 millisecond timeouts
+
+    
+    
+     .pl.openhandle[`ds_tp_ops_a; `user; `password; 100]
+     /=> 5i
+    
+
+**Example:**
+
+    
+    
+     .pl.openhandle[`ds_tp_ops_a; `; `; 0]
+     /=> 'hop. OS reports: Connection refused
+    
+
+## `.pl.sendquery`
+
+Send a sync or async query to a named instance. Internally uses
+`.pl.openhandle` to get a handle to the process. Can optionally specify user,
+password and connection timeout parameters.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+bSync | boolean | Send sync query  
+instanceName | symbol | Target instance  
+query | executable | Query object  
+user | symbol | Username  
+password | symbol | Password  
+timeout | long | Connection timeout  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+untyped | Returns a result or error for sync queries. Throws an exception if can't open a handle.  
+  
+**Example:**
+
+    
+    
+     .pl.sendquery[1b; `ds_rdb_ops_a; "select from dxSessionInfo"; `; `; 100]
+     /=> time                          sym                                         action user          su..
+     /=> -------------------------------------------------------------------------------------------------..
+     /=> 2017.02.16D06:53:07.787278000 coredev1-56547-MTU6NTM6MDcvMDAwMDAzMDAwMDAw login  Administrator su..
+    
+
+## .ex.err
+
+Reports the run status to _Control_ as an error.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+x | symbol | Usually set to `.z.h`  
+y | string | Error message to display  
+z | untyped | Additional data. Any q object  
+  
+**Example:**
+
+    
+    
+     .ex.err[.z.h; "Failed to initialize reference data"; `trade`quote!(10; 134)]
+    
+
+## .ex.out
+
+Reports information message to _Control_ with data and log to standard out.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+x | symbol | Usually set to `.z.h`  
+y | string | Information message  
+z | untyped | Additional data. Any q object  
+  
+**Example:**
+
+    
+    
+     .ex.out[.z.h; "Initialised reference data"; `trade`quote!(10; 134)]
+    
+
+## .ex.warn
+
+Reports warning message to _Control_ with data and log to standard out.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+x | symbol | Usually set to `.z.h`  
+y | string | Warning message  
+z | untyped | Additional data. Any q object  
+  
+**Example:**
+
+    
+    
+     .ex.warn[.z.h; "Initialised reference data"; `trade`quote!(10; 134)]
+    
+
+## `.pl.report_error_addInfo`
+
+Report an error to _Control_ with message and payload.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+msg | string | Error string to report  
+data | untyped | Additional information about error. Format can be any q object  
+  
+**Example:**
+
+    
+    
+     .pl.report_error_addInfo["Failed to initialize reference data"; `trade`quote!(10; 134)]
+    
+
+## `.pl.report_error_and_terminate`
+
+Report an error to _Control_ with message and shutdown.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+msg | string | Error string to report  
+data | untyped | Error payload  
+  
+**Example:**
+
+    
+    
+     .pl.report_error_and_terminate["Failed to initialize reference data"; `trade`quote!(10; 134)]
+    
+
+## `.pl.report_error`
+
+Report an error to _Control_ with message.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+msg | string | Error string to report  
+  
+**Example:**
+
+    
+    
+     .pl.report_error["Failed to initialize reference data"]
+    
+
+## Admin
+
+## Process info
+
+APIs to get process meta information. These are useful when interfacing with
+_Control_ when getting state for the task or instance.
+
+## Queries
+
+These functions exist to query other processes. The user only needs to know
+the instance or task name and the API will do the rest. The `.pl.sendquery`
+function can then be used to execute sync or async queries.
+
+Tip
+
+The _QR_ client framework offers a greater breadth of functionality; load-
+balancing, targeting groups of databases, group types (leaderCluster, round-
+robin).
+
+## Reporting
+
+Set of APIs for reporting process state to _Control_. Logs messages to stdout
+logs of both processes. _Control_ will generate alerts for these events.
+

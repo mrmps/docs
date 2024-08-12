@@ -1,0 +1,252 @@
+https://code.kx.com/analyst/libraries/code-coverage/
+
+# Code coverage - KX Analyst
+
+Original URL: https://code.kx.com/analyst/libraries/code-coverage/
+
+## Overview
+
+`.cov.run` returns code coverage as a table of the number of times each
+logical line, line in a loop, and branch in a conditional was run. Functions
+rewritten to measure coverage run much slower than normal. This overhead is
+dependent only on the volume of code being run (i.e. the number of function
+calls, lines, and branches). Long-running operations which do not execute
+significant amounts of code, such as large disk operations, will not take
+longer. Try running coverage on a small dataset first to gauge performance, as
+runtimes can be significantly larger than normal.
+
+## Basic usage
+
+    
+    
+    .cov.run[.example.myFunc; 1 2 3; `functions`namespaces!(`.example.myFunc; `.example.i)]
+    
+
+## Output
+
+Coverage is output as a table showing how many times each logical line and
+'block' ran for each function passed to `.cov.run`. A block is any line in a
+loop or conditional. The `iterations` column indicates how many times the
+function was run. `lineIterations` and `blockIterations` indicate how many
+times each line and block were run. The ranges of each line and block are
+given in the `lines` and `blocks` columns, as indices into the text in the
+`text` column. Only lambdas and projections (functions having types 100h or
+104h) will be included in the output. Coverage will discard any compositions
+or functions bound to adverbs.
+
+### Examples
+
+In this example, neither the `OR` function nor the else-branch in the
+conditional were ever executed.
+
+    
+    
+    .example.foo: {
+        AND:{x and y};
+        OR:{x or y};
+        $[  AND[1b;1b];
+            AND[0b;1b];
+            OR[0b;0b]]
+        };
+    
+    .cov.run[.example.foo; enlist[::]; ``functions!``.example.foo]
+    
+    
+    
+    name         iterations lineIterations blockIterations lines                         blocks            text                                                                                                          
+    ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    .example.foo 1          2 0 1 1 1      1 1 0           11 18 29 35 6  19 25 36 42 96 46 56 66 76 86 95 "{\n    AND:{x and y};\n    OR:{x or y};\n    $[  AND[1b;1b];\n        AND[0b;1b];\n        OR[0b;0b]]\n    }"
+    
+
+In this example, each line in the do loop, and each clause in the conditionals
+is reported as a separate item in the `blocks` column.
+
+    
+    
+    foo: {
+        do[10;
+            quux: $[bar[]; 100; 200]];
+        show quux * 5;
+        : quux;
+        };
+    
+    bar: {
+        num: rand 3;
+        : $[num ~ 2; 1b; 0b];
+        };
+    
+    .cov.run[foo; enlist [::]; enlist[`functions]!enlist `foo`bar]
+    
+    
+    
+    name iterations lineIterations blockIterations lines              blocks                         text                                                                                       
+    --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    bar  10         10 10          10 1 9          (6 17;23 43)       (27 34;36 38;40 42)            "{\n    num: rand 3;\n    : $[num ~ 2; 1b; 0b];\n    }"                                    
+    foo  1          1 1 1          1 10 10 1 9     (6 46;52 65;71 77) (9 11;21 45;29 34;36 39;41 44) "{\n    do[10;\n        quux: $[bar[]; 100; 200]];\n    show quux * 5;\n    : quux;\n    }"
+    
+
+If .cov.run is invoked on a function with no name bound to it, which is the
+case for functions defined using set, or when using kdb+ versions \<3.6, then
+this initial function will show up in the output as `.cov.initial`.
+
+    
+    
+    `..foo set {$[x + y; 1b; 0b]};
+    .cov.run[foo; 1 2; ``functions!``foo];
+    
+    
+    
+    name         iterations lineIterations blockIterations lines blocks            text                
+    ---------------------------------------------------------------------------------------------------
+    .cov.initial 1          1              1 1 0           1 17  3  8  10 12 14 16 "{$[x + y; 1b; 0b]}"
+    foo          0          0              0 0 0           1 17  3  8  10 12 14 16 "{$[x + y; 1b; 0b]}"
+    
+
+## Format
+
+There are two functions for formatting the output of the coverage tool:
+
+  * `.cov.format.go` returns the formatted output as a list of lines. 
+  * `.cov.format.display` will write the results to standard out, and as such, is not limited by the console size restrictions. 
+
+Both functions display the total % covered for all functions instrumented, the
+number of functions without complete coverage, and the body of those functions
+with unrun sections wrapped in "<<<" and ">>>". Any line containing unexecuted
+code will be prefixed with an X. The percentage next to the function name
+indicates how much of the function executed. It measures what percentage of
+characters covered by the `lines` and `blocks` ranges were run.
+
+### Examples
+
+To format the results visually, pass the table to .cov.format.go, or
+.cov.format.display.  
+.cov.format.display uses STDOUT, so the output will not be truncated if it
+exceeds the console limits.
+
+    
+    
+    foo: {[x]
+        x: not x;
+        : $[ x;
+            $[  0b;
+                $[1b; 0b; 0b];
+                $[1b; 0b; 0b]];
+            $[  1b;
+                $[1b; 0b; 0b];
+                $[1b; 0b; 0b]]];
+        : count
+            1 2 3;
+        };
+    
+    .cov.format.display .cov.run[foo; enlist 0b; ``functions!``foo];
+    
+    
+    
+    45% coverage
+    1/1 functions have incomplete coverage
+    
+    foo 45%
+    
+      {[x]
+          x: not x;
+          : $[ x;
+              $[  0b;
+    X             <<<$[1b; 0b; 0b]>>>;
+    X             $[1b; 0b; <<<0b>>>]];
+    X         <<<$[  1b;
+    X             $[1b; 0b; 0b];
+    X             $[1b; 0b; 0b]]>>>];
+    X     <<<: count
+    X         1 2 3>>>;
+          }
+    
+
+## .cov.format.display
+
+Show the coverage results visually. This writes to -1 instead of returning
+strings, to avoid being limited by the console size
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+results | table | A coverage results table  
+  
+**Returns:**
+
+**Example:** Format the coverage result, printing to STDOUT
+
+    
+    
+     q) myFunc: {
+         {{x*y}/[x]}
+         };
+     q) .cov.format.display .cov.run[myFunc; enlist 1 2 3; (enlist `functions)!(enlist `myFunc)]
+     18% coverage
+     1/1 functions have incomplete coverage
+    
+     myFunc 18%
+    
+       {
+     X     {<<<{x*y}/[x]>>>}
+           }
+     ::
+    
+
+## .cov.format.go
+
+Format the coverage results visually
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+results | table | A coverage results table  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+String[] |   
+  
+**Example:** Format the coverage result, returning the result as strings
+
+    
+    
+     q) myFunc: {
+         {{x*y}/[x]}
+         };
+     q) .cov.format.go .cov.run[myFunc; enlist 1 2 3; (enlist `functions)!(enlist `myFunc)]
+     "18% coverage"
+     "1/1 functions have incomplete coverage"
+     ""
+     "myFunc 18%"
+     ""
+     "  {"
+     "X     {<<<{x*y}/[x]>>>}"
+     "      }"
+    
+
+## .cov.run
+
+This evaluates a function while recording coverage
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+function | fn | The function to run  
+parameters | *[] | The list of arguments for the function. If there is only one argument, it must be enlisted.  
+settings | dict |   
+settings.context | symbol | The context to run the function in. The root context (`.) by default.  
+settings.functions | symbol | symbol[] | The names of the functions to instrument. Unqualified functions are assumed to be in the root context  
+settings.ignoreFunctions | symbol | symbol[] | The names of the functions to ignore, even if their namespace is instrumented. Unqualified functions are assumed to be in the root context  
+settings.namespaces | symbol | symbol[] | The names of the namespaces to instrument  
+settings.ignoreNamespaces | symbol | symbol[] | The names of the namespaces to ignore, even if their parent namespace is instrumented  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+table | The coverage data
+

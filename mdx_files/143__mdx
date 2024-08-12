@@ -1,0 +1,403 @@
+https://code.kx.com/developer/libraries/overview-typedefs/
+
+# Overview typedefs - KX Developer
+
+Original URL: https://code.kx.com/developer/libraries/overview-typedefs/
+
+# Type Definitions
+
+This page contains defintions for various data structures/types used by the
+libraries documented here.
+
+## Global
+
+### .any
+
+Name | Type | Description  
+---|---|---  
+.any | any | Any kdb+ type  
+  
+### .hsym
+
+Name | Type | Description  
+---|---|---  
+.hsym | hsym | File symbol  
+  
+## Date Parser
+
+### .qdate.temporal
+
+Name | Type | Description  
+---|---|---  
+.qdate.temporal | date | month | time | second | timestamp | timespan | datetime |   
+  
+## Documentation Generator
+
+### .qd.files
+
+Name | Type | Description  
+---|---|---  
+.qd.files | symbol | symbol[] | A symbolic path to the q file or the directory if you want to document all files in the directory  
+  
+### .qd.items
+
+Name | Type | Description  
+---|---|---  
+.qd.items | table | An in memory table of items to be documented  
+.qd.items.name | symbol | Symbolic name of the items inlcuding their namespace/context. E.g.: .foo.bar  
+.qd.items.kind | symbol | Symbolic type of the items. Could be one of `function`, `data`, `file`  
+.qd.items.content | string | String contents of the items  
+  
+### .qd.out.mkdocs.settings
+
+Name | Type | Description  
+---|---|---  
+.qd.out.mkdocs.settings | dict |   
+.qd.out.mkdocs.settings.out | symbol |   
+.qd.out.mkdocs.settings.config | symbol | string | string[] |   
+.qd.out.mkdocs.settings.index | symbol | string | string[] |   
+.qd.out.mkdocs.settings.assets | symbol |   
+.qd.out.mkdocs.settings.sitename | symbol |   
+.qd.out.mkdocs.settings.group | symbol |   
+.qd.out.mkdocs.settings.sanitizeURL | boolean |   
+  
+### .qd.output
+
+Name | Type | Description  
+---|---|---  
+.qd.output | dict | A dictionary of path to the output directory (MD files), markdown content in each file and the table of errors  
+.qd.output.out | hsym | The directory where the generated markdown files are written on disk  
+.qd.output.md | table | A table of items and their generated markdown content  
+.qd.output.md.file | symbol | Name of the markdown file where the item resides  
+.qd.output.md.name | symbol | Name of the item  
+.qd.output.md.kind | symbol | Type of the item  
+.qd.output.md.module | symbol | The module the item belongs to  
+.qd.output.md.category | symbol | The category the item belongs to  
+.qd.output.md.subcategory | symbol | The subcategory the item belongs to  
+.qd.output.md.content | string | Markdown content of the item  
+.qd.output.error | table | A table of errors encountered during markdown generation  
+.qd.output.error.ref | symbol | Name of the item  
+.qd.output.error.qdType | string | The documented qdoc type  
+.qd.output.error.errorType | symbol | The type of error (`PARSE` or `RESOLUTION`)  
+.qd.output.error.error | string | The error message  
+  
+### .qd.settings
+
+Name | Type | Description  
+---|---|---  
+.qd.settings | dict |   
+.qd.settings.out | symbol | Path to store generated documentation. Default is ./out  
+.qd.settings.errFile | symbol | Path to file to store the errors/warnings encountered during qdoc generation  
+.qd.settings.preprocessors | symbol[] | Specifies the preprocessors you want to run. Options are `FILE`, `FUNCTION`, `README`. Default is all.  
+.qd.settings.tagmap | dict | Use a non-default tag name, i.e. ``parameter`description!`param`fileoverview``  
+.qd.settings.tagmap.<symbol> | symbol | Repeatable;  
+.qd.settings.group | symbol | Specifies grouping in markdown files. Options are `category` and `subcategory`. Default is category.  
+.qd.settings.exclude | string | (symbol; string) | Specifies a regex expression indicating items to exclude.  
+.qd.settings.docprivate | boolean | Specifies whether to include items with an @private tag. Default is false.  
+.qd.settings.docempty | boolean | Specifies whether to include items that have no qdoc tags. Default is false.  
+.qd.settings.doctodo | boolean | Specifies whether to include items that have @todo tags. Default is false.  
+.qd.settings.doctest | boolean | Specifies whether to run and document examples with @doctest tags. Default is false.  
+.qd.settings.recursive | boolean | Specifies whether to recurse subdirectories looking for q scripts and README.md files. Default is true.  
+.qd.settings.write | boolean | Specifies whether to write the generated markdown files to disk. Default is true.  
+.qd.settings.sanitizeURL | boolean | Specifies whether to sanitize the file names by replacing spaces and underscores with hyphen. Default is false.  
+  
+### .qd.src
+
+Name | Type | Description  
+---|---|---  
+.qd.src | ([ .qd.files ](./#qdfiles) | [ .qd.items ](./#qditems)) | Source of the data to be documented. You can document using q files on disk or a table of items  
+  
+## Grammar of Graphics
+
+### .gg.stat.ty
+
+Name | Type | Description  
+---|---|---  
+.gg.stat.ty | dict |   
+.gg.stat.ty.applyF | fn (table) → table |   
+.gg.stat.ty.colmap | symbol[] |   
+  
+## Importer
+
+### .im.import
+
+Parameters: %in, %out
+
+Name | Type | Description  
+---|---|---  
+.im.import | dict |   
+.im.import.input | %in |   
+.im.import.output | %out |   
+.im.import.transform | fn (table) → table |   
+.im.import.records | long |   
+.im.import.batching | boolean |   
+.im.import.batchsize | long |   
+  
+### .im.io
+
+Parameter: %target
+
+Name | Type | Description  
+---|---|---  
+.im.io | dict |   
+.im.io.format | symbol |   
+.im.io.target | %target |   
+.im.io.offset | long |   
+.im.io.schema | table |   
+.im.io.baseschema | table |   
+  
+### .im.schema
+
+Name | Type | Description  
+---|---|---  
+.im.schema | table |   
+.im.schema.name | symbol |   
+.im.schema.kind | symbol |   
+.im.schema.primary | boolean |   
+.im.schema.foreign | symbol |   
+.im.schema.attribute | symbol |   
+.im.schema.include | boolean |   
+.im.schema.enum | boolean |   
+  
+## Linter
+
+### .qlint.ty.fileResults
+
+Name | Type | Description  
+---|---|---  
+.qlint.ty.fileResults | table |   
+.qlint.ty.fileResults.fileName | symbol |   
+.qlint.ty.fileResults.namespace | symbol |   
+.qlint.ty.fileResults.label | symbol |   
+.qlint.ty.fileResults.errorClass | symbol |   
+.qlint.ty.fileResults.description | string |   
+.qlint.ty.fileResults.problemText | string |   
+.qlint.ty.fileResults.errorMessage | string |   
+.qlint.ty.fileResults.startLine | long |   
+.qlint.ty.fileResults.endLine | long |   
+.qlint.ty.fileResults.startIndex | long |   
+.qlint.ty.fileResults.endIndex | long |   
+  
+### .qlint.ty.linterResults
+
+Name | Type | Description  
+---|---|---  
+.qlint.ty.linterResults | table |   
+.qlint.ty.linterResults.label | symbol |   
+.qlint.ty.linterResults.errorClass | symbol |   
+.qlint.ty.linterResults.description | string |   
+.qlint.ty.linterResults.problemText | string |   
+.qlint.ty.linterResults.errorMessage | string |   
+.qlint.ty.linterResults.startLine | long |   
+.qlint.ty.linterResults.endLine | long |   
+.qlint.ty.linterResults.startIndex | long |   
+.qlint.ty.linterResults.endIndex | long |   
+  
+### .qlint.ty.ruleTable
+
+Name | Type | Description  
+---|---|---  
+.qlint.ty.ruleTable | table |   
+.qlint.ty.ruleTable.label | symbol |   
+.qlint.ty.ruleTable.nodeNames | symbol[] |   
+.qlint.ty.ruleTable.func | fn |   
+.qlint.ty.ruleTable.errorClass | symbol |   
+.qlint.ty.ruleTable.description | string |   
+  
+## Profiler
+
+### .profile.ty.summarizedResults
+
+Name | Type | Description  
+---|---|---  
+.profile.ty.summarizedResults | table |   
+.profile.ty.summarizedResults.name | symbol |   
+.profile.ty.summarizedResults.calls | long |   
+  
+### .profile.ty.userSettings
+
+Name | Type | Description  
+---|---|---  
+.profile.ty.userSettings | dict |   
+.profile.ty.userSettings.i_.null | null |   
+.profile.ty.userSettings.i_.type | symbol |   
+.profile.ty.userSettings.i_.extensions | symbol[] |   
+.profile.ty.userSettings.context | string |   
+.profile.ty.userSettings.functions | symbol[] |   
+.profile.ty.userSettings.contexts | symbol[] |   
+.profile.ty.userSettings.ignoreFunctions | symbol[] |   
+.profile.ty.userSettings.ignoreContexts | symbol[] |   
+.profile.ty.userSettings.spaceOrTime | symbol |   
+.profile.ty.userSettings.protectedRun | boolean |   
+.profile.ty.userSettings.subtractChild | boolean |   
+.profile.ty.userSettings.logAnon | boolean |   
+.profile.ty.userSettings.debug | boolean |   
+.profile.ty.userSettings.trace | boolean |   
+.profile.ty.userSettings.lines | boolean |   
+  
+## Repository Exporter
+
+### .axrepo.options
+
+Name | Type | Description  
+---|---|---  
+.axrepo.options | dict |   
+.axrepo.options.src | symbol |   
+.axrepo.options.artifacts | symbol |   
+.axrepo.options.out | symbol |   
+.axrepo.options.dependency | symbol |   
+.axrepo.options.hook | symbol |   
+.axrepo.options.artifacts_file | symbol |   
+.axrepo.options.source_artifacts | symbol |   
+  
+## Testing
+
+### .qch.genS
+
+Name | Type | Description  
+---|---|---  
+.qch.genS | dict | Generator definition  
+.qch.genS.arb | fn |   
+.qch.genS.shrink | fn |   
+.qch.genS.less | fn |   
+.qch.genS.maxSize | fn |   
+  
+### .qch.state.ty.cmd
+
+Name | Type | Description  
+---|---|---  
+.qch.state.ty.cmd | dict |   
+.qch.state.ty.cmd.label | symbol |   
+.qch.state.ty.cmd.execF | fn |   
+.qch.state.ty.cmd.argsF | fn |   
+.qch.state.ty.cmd.precondition | fn |   
+.qch.state.ty.cmd.postconditions | fn[] |   
+.qch.state.ty.cmd.nextstate | fn |   
+  
+### .qch.state.ty.link
+
+Name | Type | Description  
+---|---|---  
+.qch.state.ty.link | dict |   
+.qch.state.ty.link.cmd | [ .qch.state.ty.cmd ](./#qchstatetycmd) |   
+.qch.state.ty.link.args | any[] |   
+.qch.state.ty.link.result | any |   
+.qch.state.ty.link.laststate | any |   
+  
+### .qch.state.ty.result
+
+Name | Type | Description  
+---|---|---  
+.qch.state.ty.result | dict |   
+.qch.state.ty.result.length | long |   
+.qch.state.ty.result.success | boolean |   
+.qch.state.ty.result.error | any |   
+.qch.state.ty.result.spec | [ .qch.state.ty.spec ](./#qchstatetyspec) |   
+  
+### .qch.state.ty.spec
+
+Name | Type | Description  
+---|---|---  
+.qch.state.ty.spec | dict |   
+.qch.state.ty.spec.setupF | fn |   
+.qch.state.ty.spec.currstateF | fn |   
+.qch.state.ty.spec.commands | [ .qch.state.ty.cmd ](./#qchstatetycmd)[] |   
+.qch.state.ty.spec.pstop | float |   
+.qch.state.ty.spec.path | [ .qch.state.ty.link ](./#qchstatetylink)[] |   
+.qch.state.ty.spec.currstate | any |   
+  
+### .qu.results
+
+Name | Type | Description  
+---|---|---  
+.qu.results | dict |   
+.qu.results.allTestResults | table |   
+.qu.results.allFailedTestResults | table |   
+.qu.results.allSkippedTestResults | table |   
+.qu.results.parseErrorList | string[] |   
+  
+### .qu.specs
+
+Name | Type | Description  
+---|---|---  
+.qu.specs | table |   
+.qu.specs.namespace | symbol |   
+.qu.specs.fileName | symbol |   
+.qu.specs.content | string[] | string |   
+  
+### .qu.specsCtx
+
+Name | Type | Description  
+---|---|---  
+.qu.specsCtx | table |   
+.qu.specsCtx.namespace | symbol |   
+.qu.specsCtx.fileName | symbol |   
+.qu.specsCtx.context | symbol |   
+.qu.specsCtx.content | string[] | string |   
+  
+### .qu.ty.userSettings
+
+Name | Type | Description  
+---|---|---  
+.qu.ty.userSettings | dict |   
+.qu.ty.userSettings.legacy | boolean |   
+.qu.ty.userSettings.ignoreBlock | symbol[] |   
+  
+## Utilities
+
+### .table.handle
+
+Name | Type | Description  
+---|---|---  
+.table.handle | table | [ .hsym ](./#hsym) | symbol | (hsym; symbol; symbol) |   
+  
+## axaws
+
+### .axaws.DataExchangeAsset
+
+Name | Type | Description  
+---|---|---  
+.axaws.DataExchangeAsset | dict |   
+.axaws.DataExchangeAsset.isSetup | boolean | Optional; Set to true to skip checking if AWS-CLI is setup  
+.axaws.DataExchangeAsset.arn | string | The Data Exchange asset ARN  
+.axaws.DataExchangeAsset.filename | string | The output filename  
+.axaws.DataExchangeAsset.dst | string | The output directory  
+  
+### .axaws.DataExchangeDataset
+
+Name | Type | Description  
+---|---|---  
+.axaws.DataExchangeDataset | dict |   
+.axaws.DataExchangeDataset.sync | boolean | Optional; Set to true to run the downloads synchronously  
+.axaws.DataExchangeDataset.isSetup | boolean | Optional; Set to true to skip checking if AWS-CLI is setup  
+.axaws.DataExchangeDataset.dataset | string | The Data Exchange dataset ID  
+.axaws.DataExchangeDataset.dst | symbol | The output directory  
+  
+### .axaws.S3Copy
+
+Name | Type | Description  
+---|---|---  
+.axaws.S3Copy | dict |   
+.axaws.S3Copy.isSetup | boolean | Optional; Set to true to skip checking if AWS-CLI is setup  
+.axaws.S3Copy.src | string | Source path  
+.axaws.S3Copy.dst | string | Destination path  
+  
+### .axaws.S3List
+
+Name | Type | Description  
+---|---|---  
+.axaws.S3List | dict |   
+.axaws.S3List.isSetup | boolean | Optional; Set to true to skip checking if AWS-CLI is setup  
+.axaws.S3List.path | string | Path to ls in s3 - leave blank to list available buckets  
+  
+### .axaws.S3Preview
+
+Name | Type | Description  
+---|---|---  
+.axaws.S3Preview | dict |   
+.axaws.S3Preview.isSetup | boolean | Optional; Set to true to skip checking if AWS-CLI is setup  
+.axaws.S3Preview.bucket | string | The bucket where the file is located  
+.axaws.S3Preview.file | string | The path to the file (without the bucket or s3:// prefix- eg. folder/file.txt)  
+.axaws.S3Preview.size | long | The number of bytes to get  
+.axaws.S3Preview.output | string | The file to save the preview in
+

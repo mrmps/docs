@@ -1,0 +1,57 @@
+https://code.kx.com/platform/ds_qm/
+
+# DS_QM - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/ds_qm/
+
+# DS_QM
+
+Process Template used to service real-time querying and subscription calls
+from Delta Dashboards onto the Delta Stream platform. The Query Manager
+process protects both the backend Delta Stream platform processes from
+multiple Delta Dashboard queries and subscription requests and the Delta
+Dashboard frontends from high volume, high velocity updates.
+
+### Query manager (Subscription mode)
+
+Applies throttling, conflation and fan-out algorithms to real-time streaming
+data produced by a Stream Tickerplant in order to push the data to large
+numbers of consumers with minimal latency.
+
+### Query manager (Managed polling mode)
+
+Applies throttling and caching against user queries to optimize the end-to-end
+system load when supporting large numbers of users.
+
+## Parameters
+
+The below table details the _DS_QM_ template parameters.
+
+name | type | default value | description  
+---|---|---|---  
+initialStateFunct | Analytic | dxEmptyFunctionNull | Sets the analytic to run on start up  
+logQuery | Boolean | True | Sets whether or not to log query information  
+  
+## Query manager
+
+The Query Manager (QM) process handles polling and real-time subscriptions.
+Located between clients (e.g. Dashboards/Delta Servers) and the underlying
+databases/tickerplants Responsible for:
+
+  * Managing clusters of connections to the clients
+  * Managing multiple, possibly overlapping, polling subscriptions from the clients
+  * Managing connections to a number of distinct, possibly password-protected, databases
+  * Querying databases periodically, according to subscribed parameters and polling intervals
+  * Publishing query results to the corresponding clients
+  * Managing multiple, possibly overlapping, real-time subscriptions from the clients
+  * Managing connections to a number of distinct, possibly password-protected, tickerplants
+  * Aggregating real-time subscriptions into the smallest possible single subscription
+  * Subscribing to tickerplants
+  * Caching real-time updates from tickerplants
+  * Periodically sending batched updates, at a fixed interval (fixed per instance of QM)
+  * Filtering updates by record (i.e. by sym)
+  * Option to filter updates by field (column)
+  * Option to aggregate results to return only the last records, defined by a set of key fields
+  * Managing session IDs to define collections of subscriptions as sessions
+  * Bundling real-time results into a single message per session
+

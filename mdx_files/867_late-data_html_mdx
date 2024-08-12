@@ -1,0 +1,61 @@
+https://code.kx.com/insights/enterprise/database/best-practices/late-data.html
+
+# Late data - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/database/best-practices/late-data.html
+
+# Late Data Best Practices
+
+When setting up your _kdb Insights Database_ for late data, there are things
+to consider beyond the "how to enable". Here are some common pitfalls and tips
+to consider when setting up for late data.
+
+1) Ensure that the local DAPs have access to enough memory to store late data.
+
+When late data is enabled, the IDB and HDB will store in-purview data received
+from the stream in memory until the next EOX event that allows them to purge
+it and read it from disk when needed. To do this, they will need enough RAM
+available to keep the data in memory, while still being able to service
+queries.
+
+An important point to keep in mind when estimating the memory required is
+whether the system is configured with single mount DAPs or multi mount DAPs,
+see [query configuration](../configuration/assembly/query.html) for more
+details. To size appropriately, you need to know the ingestion rate and
+expectations on how old the data ingested is. The RDB will hold data ingested
+since the last EOI, the IDB will hold in memory, data ingested with timestamps
+between the last EOD and the last EOI, and HDB will hold data in memory data
+that has a timestamp older than the last EOD time.
+
+In cases where the ingestion rate is known but the time ranges of the data is
+unknown or varies significantly, the multi mount DAP may be easier to size
+since you can size the whole container that encapsulates all mounts and not
+worry about which particular DAP the data is in.
+
+2) Set [`pctMemThreshold`](../configuration/assembly/query.html) such that RDB
+and IDB can react to an unexpected flood of data.
+
+The `pctMemThreshold` is a number between 0 and 1, representing how much the
+DAP should allow table records to occupy its in-memory cache. This
+`pctMemThreshold` is converted to a record count `maxRecordIntv` the DAP
+expects it can ingest before hitting that cap. When the DAP has ingested
+`maxRecordIntv` records within an interval, then an emergency EOI will be
+triggered to save the process from running out of memory.
+
+3) Avoid situation where there is a large influx of HDB purview data.
+
+There currently is not a way to trigger emergency EODs. Because of this, the
+HDB has no way of flushing its in-memory cache in the case of an emergency.
+What can happen though is that the HDB will enter low memory mode and not
+ingest any additional data until the next `reload`. When in this state,
+queries that hit the HDB will return an AC code of .`AC.MEMORY`, and the `ai`
+will contain information about the number of records that were ignored while
+in this low memory state.
+
+4) If setting up an object storage tier, ensure that data is never as late as
+the data in the object tier.
+
+Currently the _Storage Manager_ does not support the writedown of late data
+updates to an object storage tier, so any data ingested that is destined for
+the object tier will be unqueryable after the next EOD.
+

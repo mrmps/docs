@@ -1,0 +1,235 @@
+https://code.kx.com/platform/stream/dw_qr_setup/
+
+# Setup - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/stream/dw_qr_setup/
+
+# Setup
+
+## Creating public API
+
+Here we create two analytics to extract raw and bucketed data from the
+warehouse. To leverage _KX Connect_ for some of the later examples, the
+_Connect_ conventions will be used. Please refer to the _KX Connect_
+documentation for more details. These analytics may be utilised by a variety
+of clients.
+
+Analytic Rules
+
+Analytics must adhere to the following criteria.
+
+  1. Naming conventions:
+
+     * Analytic Groups should be named `API.<groupName>`.
+     * Analytics should be named `<groupName>.<functionName>`.
+  2. Analytic Group Entity requirements:
+
+     * Must be a public Analytic Group.
+     * API Analytics must be in Analytic Group.
+     * Analytic Group must be permissioned for the calling user(s).
+  3. Parameter requirements:
+
+     * Input parameters must be in dictionary form. 
+     * Return value should be a table. 
+
+  * First, create an analytic group. Right-click on the `KxWarehouse` package in the _Navigation_ pane and select _New > Analytic Group_ from the context menu.
+
+[![Screenshot](../img/serviceclass/qr_analytic_group_new.jpg)](../img/serviceclass/qr_analytic_group_new.jpg
+"click to expand")
+
+  * Name the analytic group adhering to the naming conventions. 
+
+[![Screenshot](../img/serviceclass/qr_api.monpublic_group_name.jpg)](../img/serviceclass/qr_api.monpublic_group_name.jpg
+"click to expand")
+
+  * Set the _Visibility_ to `public` in the _Analytic Group Parameters_ subtab.
+
+  * Add the `monPublic` analytic group to the `kxw_rdb`, `kxw_ihdb`, and `kxw_hdb`.
+
+This analytic will extract raw, un-aggregated data from the `monMem` table. It
+will be written to select data from that table across realtime, intraday and
+historical databases. It will be parameterised to filter by time and server
+names.
+
+  * Add a new analytic to the `API.monPublic` group and name it `.monPublic.getMem`.
+  * Add a description, a unique alias, connection and double check that the analytic is set public. 
+
+[![Screenshot](../img/serviceclass/qr_getmem_details.jpg)](../img/serviceclass/qr_getmem_details.jpg
+"click to expand")
+
+  * In the _Parameters_ subtab, click _Add_ and set the _Parameter Values_ as type _Dict_. Click on the _Value_ column to enter each key of the dictionary as below:
+
+[![Screenshot](../img/serviceclass/qr_getmem_edit_params.jpg)](../img/serviceclass/qr_getmem_edit_params.jpg
+"click to expand")
+
+  * Set the _Return Value_ as a table and use the schema `monMem` previously created. _Save_ the configuration and check to see if it looks like this:
+
+[![Screenshot](../img/serviceclass/qr_getmem_params.jpg)](../img/serviceclass/qr_getmem_params.jpg
+"click to expand")
+
+In the _Content_ subtab, write the analytics to retrieve data from the
+`monMem` table.
+
+The sample code can be found here:
+
+[Public API: getMem](../dw_qr_appendix/#apimonpublicgetmem)
+
+### Bucketed memory
+
+This analytic will be written to extract bucketed memory data. It can again
+filter on time and servers but provides an additional parameter for the bucket
+interval (minutes).
+
+  * Similarly, add a second analytic to the `API.monPublic` group and name it `.monPublic.getMemBucket`. The alias shoud be unique. This analytic will retrieve average data from the `monMem` table in intervals.
+
+[![Screenshot](../img/serviceclass/qr_getmembucket_details.jpg)](../img/serviceclass/qr_getmembucket_details.jpg
+"click to expand")
+
+  * Set the Parameters to be a dictionary and add the following keys.
+
+[![Screenshot](../img/serviceclass/qr_getmembucket_edit_params.jpg)](../img/serviceclass/qr_getmembucket_edit_params.jpg
+"click to expand")
+
+  * In the _Content_ subtab, write the analytics to retrieve bucket data from the `monMem` table. 
+
+[Public API: getMemBucket](../dw_qr_appendix/#apimonpublicgetmembucket)
+
+## Routed configuration
+
+In order to define an analytic as _routed_ , some configuration needs to be
+setup. The solution should create an override of the `DS_QR_ROUTINGS`
+parameter and add a row for the analytic name.
+
+  * To create customized routing rules, create an override parameter.
+
+  * Right-click the `KxWarehouse` package in the _Navigation_ pane and select _New > Parameter Override_ from the context menu.
+
+[![Screenshot](../img/serviceclass/qr_override_new.jpg)](../img/serviceclass/qr_override_new.jpg
+"click to expand")
+
+  * Set parameter as `DS_QR_ROUTINGS` and name the override `KxWarehouse`. Hit _Add_.
+
+[![Screenshot](../img/serviceclass/qr_override_name.jpg)](../img/serviceclass/qr_override_name.jpg
+"click to expand")
+
+  * In the editor window, click _Add_ to create a row. This should open a pop-up. Enter `.monPublic.getMem` to the _Analytic_ column and `kxw_rdb; kxw_ihdb; kxw_hdb` to _Targets_.
+
+[![Screenshot](../img/serviceclass/qr_override_edit_attribute.jpg)](../img/serviceclass/qr_override_edit_attribute.jpg
+"click to expand")
+
+  * Do the same for `.monPublic.getMemBucket` and _Save_. It should look like below
+
+[![Screenshot](../img/serviceclass/qr_override_attribute.jpg)](../img/serviceclass/qr_override_attribute.jpg
+"click to expand")
+
+## QR gateway
+
+The _KX Delta Platform_ has provides interfaces into the _QR_ framework,
+however it's not always possible for clients to use these. This is especially
+true for clients that only support sync communication (the framework is async
+only). To account for these cases, a _QR GW_ process is provided as an access
+point.
+
+Multiple of these processes can be deployed on a system for clients to connect
+directly to. These processes can be customized to use the in-built _QR_
+interface and serve data to clients.
+
+The next sections will create a _QR GW_ and some analytics to serve different
+clients.
+
+[Sync Requests](../../qr_sync/)
+
+  * Create a service class and name it `kxw_qr_gw`. Save the service class without any configuration.
+
+[![Screenshot](../img/serviceclass/qr_gw_name.jpg)](../img/serviceclass/qr_gw_name.jpg
+"click to expand")
+
+### Analytics
+
+#### `.mon.initGW`
+
+The process needs to define some handlers to log and execute WebSocket
+handlers so an initialization function will be created to do this on startup.
+
+    
+    
+    {[]
+      .z.ws:{ value .j.k -9!x;  };
+      .z.wo:{ .log.out[.z.h; "WS opened ",string[x]; ()] };
+      .z.wc:{ .log.out[.z.h; "WS closed ",string[x]; ()] };  
+     }
+    
+
+  * On the _Service Params_ subtab of `kxw_qr_gw`, attach `.mon.initGW` to the `initialStateFunct` parameter. Hit _Save_. 
+
+#### `.mon.getMemAsync`
+
+This analytic will be used to serve async clients via the _QR_.
+
+[![Screenshot](../img/serviceclass/qr_getmemasync_params.jpg)](../img/serviceclass/qr_getmemasync_params.jpg
+"click to expand")
+
+[![Screenshot](../img/serviceclass/qr_getmem_dict_params.jpg)](../img/serviceclass/qr_getmem_dict_params.jpg
+"click to expand")
+
+  * In the _Contents_ subtab, copy and paste the code below and _Save_.
+
+    
+    
+    {[id;dict]
+      .qr.client.sendRequest[(`.monPublic.getMem; dict); `; {[h; id; res] neg[h] (`collectResults; id; res) }[.z.w; id; ]; ()!()];
+     }
+    
+
+#### `.mon.getMemSync`
+
+This analytic will be used to serve sync clients.
+
+  * Create a new analytic named `.mon.getMemSync`. 
+
+  * Same as above; set the parameters to be `dict`.
+
+  * Add the following to the _Contents_ subtab and _Save_.
+
+    
+    
+    {[dict]
+      .qr.client.sendSyncRequest[(`.monPublic.getMem; dict); `; ()!(); {[res] res }];
+     }
+    
+
+#### `.mon.getMemWS`
+
+This analytic will be used to serve WebSocket clients.
+
+  * Create a new analytic named `.mon.getMemWS`. 
+
+  * Same as above; set the parameters to be `dict`.
+
+  * Add the following to the _Contents_ subtab and _Save_.
+
+    
+    
+    {[dict]
+      dict:@[dict; `start`end; {"p"$"Z"$x}];
+      dict[`syms]:except[; `] `$csv vs dict`syms;
+      .qr.client.sendRequest[(`.monPublic.getMem; dict); `; {[h; res] neg[h] -8!.j.j .sd.r:res }[.z.w]; ()]
+     }
+    
+
+## Starting up server processes
+
+Ensure the following processes are all running before proceeding.
+
+  * ds_qr_a
+  * ds_qp_a
+  * ds_ms_a
+  * kxw_tp
+  * kxw_rdb
+  * kxw_lr
+  * kxw_ihdb
+  * kxw_hdb
+  * kxw_qr_gw
+  * mon_feed
+  * mon_agg
+

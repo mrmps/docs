@@ -1,0 +1,250 @@
+https://code.kx.com/platform/configurations/
+
+# Configurations - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/configurations/
+
+# Configurations
+
+## Parameters
+
+Configuration parameters are the main configuration method within _KX Control_
+systems. They let you add flexibility points in your system to make it more
+modular. Typically they are used to manage system data (e.g. the configuration
+of a gateway) or business-oriented data (e.g. the constituents of a basket of
+stocks).
+
+In the example below, a configuration parameter is used to modularize the use
+of the messaging server. The `dhtDMServer` is associated with the parameter,
+and the parameter is associated with all of the other process instances. If we
+were to change the messaging server for some reason, we would only have to
+change the association once in the configuration parameter, not change the
+association in every instance.
+
+![Screenshot](../img/control/configurationparametersmap.png)
+
+Overrides can be created using a specific name. If a process tries to load an
+override which is not available it will load the default value instead.
+
+When a configuration parameter is updated, its new value is pushed
+automatically to all associated processes.
+
+Validation analytics are used to validate user input. This can be to ensure
+the parameter is populated with the required data; or its schema is compatible
+with this associated functionality. A validation analytic can be set at any
+time for a parameter.
+
+Exposing configuration parameters to Dashboards users
+
+The _KX Dashboards_ plugin Config Manager lets dashboard users view and modify
+_KX Control_ configuration parameters.
+
+Parameters can be found from the _Navigation_ panel as shown below:
+
+![Screenshot](../img/control/parameternavigationpanel.png)
+
+From here you can:
+
+  1. Double-click to summon the Configuration Parameter Editor
+  2. Right-click to open the _Parameter_ menu
+
+### Parameters viewer
+
+The Parameters Viewer can be summoned from the _Tools_ menu: _Open Viewer >
+Parameter_. The Parameters Viewer supports searching across all parameters in
+the system.
+
+![Screenshot](../img/control/openparameterviewer.jpg)
+
+![Screenshot](../img/control/parametersviewlight.jpg)
+
+### Create a new parameter
+
+From the _File_ menu, pick _New > Parameter_. Alternatively, right-click the
+_Parameters_ dropdown in the Entity view on the _Navigation_ panel:
+
+![Screenshot](../img/control/newparameter.jpg)
+
+Once you have named and added the parameter, the Parameter Editor opens.
+
+### Parameter editor
+
+The Parameter Editor has six tabs.
+
+_Details_
+
+  * A description of the parameter and a validation analytic to validate its elements
+
+_Parameter Attributes_
+
+  * Associates attributes with the parameter: the value of an attribute determines the type of data entry field that will be used in the _Attribute Values_ tab. Attributes can be ordered, added, edited and removed using the buttons.
+
+![Screenshot](../img/control/pattributesoptions.jpg)
+
+    
+    
+    An attribute has a name and a type. The type is displayed in the _Attribute Values_ tab.
+    
+    At least one attribute must be defined before a parameter can be saved.
+    
+
+_Groups_
+
+  * Assigns the parameter to a parameter group. Once assigned, it will appear in the Navigation Panel in the drop-down for that parameter group. 
+
+_Entitlements_
+
+  * Assigns users or user groups to the parameter, giving them permissions to read or edit that parameter.
+
+_Revision History_
+
+  * Version details of the parameter.
+
+The Parameter menu is available as a context menu (right click) from
+parameters in the Parameter Viewer, or in the _Navigation_ panel.
+
+![Screenshot](../img/control/parameterrightclick.jpg)
+
+item | action  
+---|---  
+Edit | Open the Parameter Editor  
+Override | Create a Parameter Override (see below)  
+Export | Export the parameter as a CSV file. See the _tip_ below on exporting a specific revision  
+Delete | Delete the parameter  
+Duplicate | Create a duplicate of the parameter (see below)  
+Copy Name | Copy the name of the parameter to the Clipboard  
+View Revision History | Lists version details  
+  
+Exporting a specific parameter revision
+
+The context menu in the revisions tab for a parameter includes an entry to
+export the state of the parameter at a particular revision.
+![Screenshot](../img/control/param_export_revision.png)
+
+### Create an override
+
+Name the override and (optionally) select a package.
+
+![Screenshot](../img/control/newparampoverride.jpg)
+
+Click the _Add_ button. A Parameter Editor will open, with details of the new
+override you have created, copied from the original parameter.
+
+### Duplicate a parameter
+
+Name the duplicate.
+
+![Screenshot](../img/control/newparamduplicate.jpg)
+
+Click _Add_. A Parameter Editor will open, with details of the duplicate
+parameter, copied from the original parameter.
+
+### Importing a parameter
+
+Parameters can be imported from a local CSV. Below is the CSV used in the
+following example.
+
+    
+    
+    symbol,date,open,high,low,close,volume,adj_close
+    CH,2017-03-31,6.88,7.00,6.88,6.98,27600,6.98
+    CH,2017-03-30,6.96,7.00,6.92,6.94,21500,6.94
+    FAX,2017-03-31,4.97,4.99,4.96,4.99,333900,4.99
+    FAX,2017-03-30,4.98,4.98,4.95,4.96,370800,4.96
+    FCO,2017-03-31,8.50,8.50,8.40,8.40,17900,8.40
+    FCO,2017-03-30,8.59,8.59,8.44,8.52,40800,8.52
+    IAF,2017-03-31,6.07,6.10,6.05,6.06,44800,6.06
+    IAF,2017-03-30,6.10,6.14,6.02,6.10,40200,6.10
+    
+
+  1. Pick _Import Parameter_ from the context menu.
+
+![Import Menu](../img/control/importparameter1.png)
+
+  2. Pick a name for your parameter, click the _Upload_ button and pick your CSV from the resulting system prompt.
+
+![Import Menu](../img/control/importparameter2.png)
+
+  3. The parameter should be created, a warning that data types are best guess is shown, and you can now search for your new parameter in the navigator and open it. If there is an error during import a dialog will be shown.
+
+![Import Menu](../img/control/importparameter3.png)
+
+  4. After opening the new parameter you can see the resulting attribute values. Edit as necessary
+
+![Import Menu](../img/control/importparameter4.png)
+
+  5. After opening the new parameter you can see the resulting parameter attributes. Edit as necessary
+
+### Exporting a parameter
+
+Parameters can also be exported to a local CSV.
+
+  1. Click _Export_ from within the parameter editor.
+
+![Import Menu](../img/control/importparameter7.png)
+
+The parameter will then be exported and downloaded as a CSV file.
+
+## Parameter groups
+
+Parameters can be grouped. The groups can be found in the _Navigation_ panel,
+expandable.
+
+![Screenshot](../img/control/paramgroupnav.jpg)
+
+From here you can:
+
+  1. Double-click to summon the Parameter Group Viewer
+  2. Right-click to open the Parameter Group menu
+
+### Parameter group viewer
+
+The Parameter Group Viewer can be summoned from the _Tools_ menu: _Open Viewer
+> Parameter Group_. It shows the names of the parameter groups and their
+packages.
+
+![Screenshot](../img/control/paramgroupviewer2.jpg)
+
+### Create a new parameter group
+
+From the _File_ menu, pick _New > Parameter Group_. Alternatively, right-click
+the _Parameters_ drop down within the Entity view of the _Navigation_ panel.
+
+Name the parameter group and click _Add_. The Parameter Group Editor will
+open.
+
+### Parameter group editor
+
+The editor has three tabs.
+
+_Parameter Group Contents_
+
+  * Assigns parameters to the group:
+
+![Screenshot](../img/control/pgoverview.jpg)
+
+_Entitlements_
+
+  * Grants users and user groups access to the parameter group
+
+_Revision History_
+
+  * Version details of the parameter group
+
+The _Parameter Group_ menu can be found as a context menu (right click) for
+parameter group in the Parameter Group Viewer, or in the _Navigation_ panel.
+
+![Screenshot](../img/control/pgrightclick.jpg)
+
+item | action  
+---|---  
+Edit | Open the Parameter Group Editor  
+New Parameter | Create a new parameter  
+New Parameter Override | Create a new parameter override  
+Delete | Delete the parameter group  
+Duplicate | Creates a duplicate of the parameter group  
+Copy Name | Copy the name of the parameter group to the Clipboard  
+View Revision History | List version details for the parameter group  
+  
+All of these menu items work similarly to the Parameter menu items.
+

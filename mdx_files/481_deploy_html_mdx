@@ -1,0 +1,248 @@
+https://code.kx.com/insights/accelerators/fsi/deploy.html
+
+# Deploy - kdb products
+
+Original URL: https://code.kx.com/insights/accelerators/fsi/deploy.html
+
+# How to Deploy the FSI Accelerator
+
+See the following for steps on how to deploy an FSI accelerator package.
+
+## Push the Packages
+
+Push the `fsi-lib` and accelerator package to your _kdb Insights Enterprise_
+install using the `kxi package push` command.
+
+    
+    
+     > ls /tmp/artifacts
+    fsi-data-assembly-1.0.0.kxi  fsi-lib-1.0.0.kxi
+     >
+     > kxi package push --force fsi-lib/1.0.0
+    {
+        "fsi-lib": [
+            {
+                "version": "1.0.0",
+                "_status": "InstallationStatus.SUCCESS"
+            }
+        ]
+    }
+     >
+     > kxi package push --force fsi-data-assembly/1.0.0
+    {
+        "fsi-data-assembly": [
+            {
+                "version": "1.0.0",
+                "_status": "InstallationStatus.SUCCESS"
+            }
+        ]
+    }
+     >
+     > kxi package remote-list
+    {
+        "fsi-data-assembly": [
+            {
+                "fields": {},
+                "version": "1.0.0"
+            }
+        ],
+        "fsi-lib": [
+            {
+                "fields": {},
+                "version": "1.0.0"
+            }
+        ]
+    }
+     >
+    
+
+## Bounce the aggregators and resource coordinators
+
+Bounce the insights aggregators and resource coordinators to ensure the `fsi-
+lib` aggregation functions are picked up.
+
+    
+    
+     > kubectl delete pod insights-aggregator-0
+    pod "insights-aggregator-0" deleted
+     >
+     > kubectl delete pod insights-qe-aggregator-0
+    pod "insights-qe-aggregator-0" deleted
+     >
+     > kubectl delete pod insights-resource-coordinator-0
+    pod "insights-resource-coordinator-0" deleted
+     >
+     > kubectl delete pod insights-qe-resource-coordinator-0
+    pod "insights-qe-resource-coordinator-0" deleted
+     >
+    
+
+Note that if the pre-requisite has not been done that lists the package in the
+aggregator and resource co-ordinator, then the APIs will error reporting no
+such join function `fsiJoin`.
+
+If the environment variables for the package were not set up pre-install in
+the values.yaml, they can be added by editing the stateful set.
+
+    
+    
+     > kubectl edit sts insights-aggregator
+    
+
+adding
+
+    
+    
+            - name: KXI_PACKAGES
+              value: fsi-lib:1.0.0
+    
+
+at `spec.template.spec.contains.env` next to
+
+    
+    
+            - name: KX_PACKAGE_PATH
+              value: /opt/kx/shared/packaging/packages
+    
+
+## Deploy fsi-data-assembly
+
+Deploy the `fsi-data-assembly` package with `kxi package deploy`.
+
+    
+    
+     > kubectl get pods
+    NAME                                            READY   STATUS    RESTARTS          AGE
+    insights-aggregator-0                           2/2     Running   221 (4h52m ago)   13h
+    insights-api-gateway-867d9776d5-r2g6d           1/1     Running   0                 14h
+    insights-client-controller-86b88cf88d-hcmtx     2/2     Running   0                 2d8h
+    insights-discovery-proxy-d478c5d7-scp6b         2/2     Running   237 (4h53m ago)   14h
+    insights-gui-848cf5b5d9-jfw2m                   1/1     Running   0                 22h
+    insights-gui-data-69b4f86899-gn6m8              1/1     Running   0                 2d8h
+    insights-gui-gateway-0                          1/1     Running   119 (4h55m ago)   14h
+    insights-information-service-65ffb69cfd-jgfqc   2/2     Running   0                 2d8h
+    insights-keycloak-0                             1/1     Running   1 (4d17h ago)     4d17h
+    insights-kxi-acc-svc-0                          1/1     Running   1 (4h48m ago)     4d8h
+    insights-kxi-controller-0                       2/2     Running   0                 4d17h
+    insights-kxi-discovery-service-0                1/1     Running   0                 4d17h
+    insights-kxi-package-manager-77d669db59-hkgv2   1/1     Running   0                 2d1h
+    insights-kxi-scratchpad-788985f968-tqjqp        1/1     Running   0                 4d17h
+    insights-kxi-service-broker-5c5978fb46-djt2z    1/1     Running   0                 14h
+    insights-kxi-sp-5f758b8c68-96wcp                2/2     Running   254 (4h52m ago)   15h
+    insights-postgresql-0                           1/1     Running   0                 15h
+    insights-qe-aggregator-0                        2/2     Running   253 (4h53m ago)   15h
+    insights-qe-gateway-84f58899f8-pdbt5            1/1     Running   109 (4h48m ago)   15h
+    insights-qe-resource-coordinator-0              2/2     Running   221 (4h52m ago)   13h
+    insights-resource-coordinator-0                 2/2     Running   220 (4h53m ago)   13h
+    insights-sg-gateway-767cc9db5d-6z7zg            1/1     Running   100 (4h55m ago)   2d22h
+     >
+     >
+     >
+     > kxi package deploy fsi-data-assembly/1.0.0 --local --without-version
+    Deployment fsi-data-assembly-100-0f9a: Starting
+    Searching for potential name collisions:
+    Searching: Finished
+    Deployment fsi-data-assembly-100-0f9a: Ready
+    Deployment fsi-data-assembly-100-0f9a: Deployed
+    {
+        "packageName": "fsi-data-assembly",
+        "packageVersion": "1.0.0",
+        "uuid": "d979635d-352a-4dca-8a01-2ae3e3550f9a",
+        "status": "Deployed",
+        "pipelines": [
+            "eb164462-e38e-54da-3bbf-e203ae0bdb32",
+            "23e93d00-c799-40ac-38b8-62a6bc0b5cbf",
+            "40f8a542-0a38-6a58-4f83-120914b2420a",
+            "de2ed92f-716d-63cf-2f26-98dabfe6549d",
+            "5f2f752a-43f9-e63f-f243-49ad16acfc46",
+            "3bac5431-bd07-470b-5e48-f3ab8053073d",
+            "d145e849-3234-ecf4-cd0e-7c5e66bc050b",
+            "ddd79936-b321-6c91-3ab5-18846187e0ff",
+            "8466bce8-395d-303e-f8d3-f9041a27363d",
+            "6d46d33d-d1dd-531a-a78a-eb9e1c3b3c6d"
+        ],
+        "databases": [
+            "ec1c709e-33c6-6934-e1e9-71e8bfd2e903"
+        ],
+        "assemblies": [
+            "a086610d-a1dd-7854-496d-c42caf590acc"
+        ],
+        "streams": [
+            "fc5eb6d1-64ab-b3b6-5601-b715f31d1f3f",
+            "c4866c3b-e5cf-9e63-93ba-53dd09b93caf"
+        ],
+        "schemas": [
+            "9ec4ebcb-bece-c316-60c5-0379c826125f"
+        ],
+        "update_time": "2023-07-11T23:51:28.372986",
+        "instance": "https://user.aws-acceldev.kxi-dev.kx.com",
+        "name": "fsi-data-assembly-100-0f9a",
+        "deploy_name": "fsi-data-assembly",
+        "error": {
+            "content": ""
+        }
+    }
+     >
+     >
+     >
+     >
+     > kubectl get pods
+    NAME                                            READY   STATUS    RESTARTS          AGE
+    fsi-data-assembly-cancordaybeforeyday-1-spwork-0       2/2     Running   0                 65s
+    fsi-data-assembly-cancordaybeforeyday-spctl-0          2/2     Running   0                 82s
+    fsi-data-assembly-cancoreachsecondtoday-1-spwork-0     2/2     Running   0                 58s
+    fsi-data-assembly-cancoreachsecondtoday-spctl-0        2/2     Running   0                 82s
+    fsi-data-assembly-cancortoday-1-spwork-0               2/2     Running   0                 62s
+    fsi-data-assembly-cancortoday-spctl-0                  2/2     Running   0                 81s
+    fsi-data-assembly-cancoryday-1-spwork-0                2/2     Running   0                 60s
+    fsi-data-assembly-cancoryday-spctl-0                   2/2     Running   0                 81s
+    fsi-data-assembly-dap-hdb-0                            2/2     Running   0                 82s
+    fsi-data-assembly-dap-idb-0                            2/2     Running   0                 82s
+    fsi-data-assembly-dap-rdb-0                            2/2     Running   0                 82s
+    fsi-data-assembly-qe-dap-hdb-0                         2/2     Running   0                 79s
+    fsi-data-assembly-qe-dap-idb-0                         2/2     Running   0                 79s
+    fsi-data-assembly-qe-dap-rdb-0                         2/2     Running   0                 79s
+    fsi-data-assembly-refcorpactions-1-spwork-0            2/2     Running   0                 60s
+    fsi-data-assembly-refcorpactions-spctl-0               2/2     Running   0                 82s
+    fsi-data-assembly-refinitivrealtime-1-spwork-0         2/2     Running   0                 60s
+    fsi-data-assembly-refinitivrealtime-spctl-0            2/2     Running   0                 82s
+    fsi-data-assembly-refinstrument-1-spwork-0             2/2     Running   0                 60s
+    fsi-data-assembly-refinstrument-spctl-0                2/2     Running   0                 81s
+    fsi-data-assembly-sm-0                                 2/2     Running   0                 82s
+    fsi-data-assembly-trthcancor-1-spwork-0                2/2     Running   0                 59s
+    fsi-data-assembly-trthcancor-spctl-0                   2/2     Running   0                 81s
+    fsi-data-assembly-trthquotes-1-spwork-0                2/2     Running   0                 60s
+    fsi-data-assembly-trthquotes-spctl-0                   2/2     Running   0                 81s
+    fsi-data-assembly-trthtrades-1-spwork-0                2/2     Running   0                 60s
+    fsi-data-assembly-trthtrades-spctl-0                   2/2     Running   0                 81s
+    insights-aggregator-0                           2/2     Running   221 (4h54m ago)   13h
+    insights-api-gateway-867d9776d5-r2g6d           1/1     Running   0                 14h
+    insights-client-controller-86b88cf88d-hcmtx     2/2     Running   0                 2d8h
+    insights-discovery-proxy-d478c5d7-scp6b         2/2     Running   237 (4h55m ago)   14h
+    insights-gui-848cf5b5d9-jfw2m                   1/1     Running   0                 22h
+    insights-gui-data-69b4f86899-gn6m8              1/1     Running   0                 2d8h
+    insights-gui-gateway-0                          1/1     Running   119 (4h57m ago)   14h
+    insights-information-service-65ffb69cfd-jgfqc   2/2     Running   0                 2d8h
+    insights-keycloak-0                             1/1     Running   1 (4d17h ago)     4d17h
+    insights-kxi-acc-svc-0                          1/1     Running   1 (4h50m ago)     4d8h
+    insights-kxi-controller-0                       2/2     Running   0                 4d17h
+    insights-kxi-discovery-service-0                1/1     Running   0                 4d17h
+    insights-kxi-package-manager-77d669db59-hkgv2   1/1     Running   0                 2d1h
+    insights-kxi-scratchpad-788985f968-tqjqp        1/1     Running   0                 4d17h
+    insights-kxi-service-broker-5c5978fb46-djt2z    1/1     Running   0                 14h
+    insights-kxi-sp-5f758b8c68-96wcp                2/2     Running   254 (4h54m ago)   15h
+    insights-postgresql-0                           1/1     Running   0                 15h
+    insights-qe-aggregator-0                        2/2     Running   253 (4h55m ago)   15h
+    insights-qe-gateway-84f58899f8-pdbt5            1/1     Running   109 (4h49m ago)   15h
+    insights-qe-resource-coordinator-0              2/2     Running   221 (4h54m ago)   13h
+    insights-resource-coordinator-0                 2/2     Running   220 (4h55m ago)   13h
+    insights-sg-gateway-767cc9db5d-6z7zg            1/1     Running   100 (4h56m ago)   2d22h
+    rt-fsi-data-assembly-fsi-data-0                        2/2     Running   0                 83s
+    rt-fsi-data-assembly-fsi-data-1                        2/2     Running   0                 67s
+    rt-fsi-data-assembly-fsi-data-2                        2/2     Running   0                 53s
+    rt-fsi-data-assembly-fsi-north-0                       2/2     Running   0                 82s
+    rt-fsi-data-assembly-fsi-north-1                       2/2     Running   0                 67s
+    rt-fsi-data-assembly-fsi-north-2                       2/2     Running   0                 53s
+     >
+    
+

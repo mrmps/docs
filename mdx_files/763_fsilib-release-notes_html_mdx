@@ -1,0 +1,182 @@
+https://code.kx.com/insights/accelerators/fsi/release-notes/fsilib-release-notes.html
+
+# Release Notes - kdb products
+
+Original URL: https://code.kx.com/insights/accelerators/fsi/release-notes/fsilib-release-notes.html
+
+# kdb Insights Enterprise FSI Accelerator - Release notes
+
+_This section details the release notes for the kdb Insights FSI Accelerator
+Library._
+
+# Version 1.1.1
+
+#### Release Date
+
+2024-06-28
+
+## Bug Fixes
+
+  * Fixed issue where ingestion pipelines incorrectly enlisted string columns
+
+## Artifacts
+
+type | Location  
+---|---  
+Accelerator Package | https://portal.dl.kx.com/assets/raw/kxi-accelerators/fsi/fsi-lib/packages/1.1.1  
+  
+## Version Dependencies
+
+There are minimum versions of kdb Insights Enterprise and the kxi CLI which
+are required to use FSI Accelerators that rely on the FSI Accelerator Library.
+
+FSI Library | Insights Enterprise | kxi CLI  
+---|---|---  
+1.1.1 | 1.9.3 | 1.9.0  
+  
+## Known Issues
+
+Expand to see the list of known issues here
+
+  * ID Mapping is not applied to get* API calls. Data is only returned for underlying symbols, even when `IDMapping` is set on get* API calls. Requests for ID Mapped symbols do not return any results. 
+  * When holiday calendars are applied in get* API calls using `applyHolidayCalendar`, the call always returns an empty result.
+
+## Version 1.1.0
+
+#### Release Date
+
+2024-06-17
+
+## New Features
+
+  * Added API parameter `decPlaces` to round the output of float columns
+  * Added the parameters `ref` and `refFilter` to join and filter reference data via foreign key defined relationships in getTicks, getStats and getBars
+
+## Bug Fixes
+
+  * Added fixes to various get* API parameters to ensure functionality with Insights Enterprise 1.9
+  * Fixed issue where a number of get* API parameters would not behave as expected when called from a dashboard
+  * Fixed an issue in which certain column namings for bar schemas would result in an initialization error
+
+## Artifacts
+
+type | Location  
+---|---  
+Accelerator Package | https://portal.dl.kx.com/assets/raw/kxi-accelerators/fsi/fsi-lib/packages/1.1.0  
+  
+## Version Dependencies
+
+There are minimum versions of kdb Insights Enterprise and the kxi CLI which
+are required to use FSI Accelerators that rely on the FSI Accelerator Library.
+
+FSI Library | Insights Enterprise | kxi CLI  
+---|---|---  
+1.1.0 | 1.9.0 | 1.9.0  
+  
+## Known Issues
+
+Expand to see the list of known issues here
+
+  * ID Mapping is not applied to get* API calls. Data is only returned for underlying symbols, even when `IDMapping` is set on get* API calls. Requests for ID Mapped symbols do not return any results. 
+  * When holiday calendars are applied in get* API calls using `applyHolidayCalendar`, the call always returns an empty result.
+
+## Version 1.0.0
+
+#### Release Date
+
+2024-04-08
+
+## New Features
+
+### APIs
+
+The following core API endpoints are included in Release 1.0.0:
+
+  * **[getTicks](../getTicks.html) provides additional finance specific functionality for data retrieval:**
+
+    * Request quote and trade time series for a given period.
+
+    * Time-slice data to query specific intraday periods over a time range. For example, around market close or for particular trading sessions.
+
+    * Apply custom identifiers to symbol IDs to match your own internal identifiers for different securities.
+
+    * Exchange data cancellation and correction support. Apply cancellations and corrections to exchange trade data to see an adjusted time series, or retrieve your time series as it was first published.
+
+    * Exchange data condition-code filters. Use named filters with combinations of exchange data condition code rules to query specific data across exchanges. For example, only data relevant to auctions. 
+
+    * Rack and fill missing rows of data with missing values using zeros, last observed value, nulls, or linear interpolation between observations.
+
+    * View matched filter rules on results to classify trades and quotes for further processing downstream, or fine tune and troubleshoot filters.
+
+    * Query on exchange or insert times to view results on source or system times, and publish or receipt ordering.
+
+  * **[getStats](../getStats.html) provides quote and trade analytics on top of `getTicks` adjusted data:**
+
+    * Bucketing and binning with custom granularity and sliding window support.
+
+    * Calculations for averages, first, last, min, max, median, cumulative sums, VWAP, and TWAP.
+
+    * Time slicing, racking & filling, custom symbology, cancellation and correction support, and condition code filters as for `getTicks`.
+
+  * **[getBars](../getBars.html) provides pre-calculated aggregated barred data, supported by a customizable analytics pipeline:**
+
+    * A customizable pipeline template for FSI Accelerator or custom analytics, which can be run end-of-day to populate the database (intraday bars are queryable via `getStats`).
+
+    * An API endpoint for querying the pre-aggregated data, with custom granularity supported by the pre-aggregated bars.
+
+    * Time slicing, racking & filling, custom symbology, cancellation and correction support, and condition code filters as for `getTicks`.
+
+### Asset class support
+
+Futures schema overlays are included in this release. Several enhancements
+have been added to `getTicks` to support futures use cases:
+
+  * **Basic futures curve construction** \- Contracts are stitched together without any price adjustment.
+
+  * **Adjusted futures curve construction** \- Curves are back-adjusted using the spread between the rolling and next contracts. The rollover dates methodology can be set in one of three ways:
+
+    * By expiry date of the near contract.
+
+    * By a specified number of business days before expiry of the near contract.
+
+    * Determined by the date when open interest between the near and far contract flips.
+
+  * **Additional[options](../getTicksFutures.html#interpretation-of-contract-argument-if-futures-argument-absent)** \- For the `contract` argument if the `futures` argument is not supplied to `getTicks`.
+
+  * **Foreign Exchange schema overlays and quote snapshots** \- Price book construction support has been added to `getTicks`.
+
+    * Ability to construct a VWAP pricing book via `getTicks` for a given set of layers based on a IOC sweepable price book.
+
+    * Pipeline to ingest FX reference data from a csv in AWS storage to define FX reference data such as spot decimals, forward decimal precision, base currency and counter currency etc. This rounding reference data is integrated with the VWAP price book functionality within `getTicks`.
+
+    * Ability to construct a Full Amount pricing book via `getTicks` for a given set of layers based on an FOK full amount price book.
+
+## Artifacts
+
+KX Nexus
+
+The KX Nexus repository will be sunsetted in the future. Nexus links on this
+page are provided as a temporary alternative to the KX Downloads Portal for
+existing users. The KX Downloads Portal is the preferred repository for all
+use cases and KX Nexus links will be removed once the KX Nexus repository is
+decommissioned.
+
+type | Location  
+---|---  
+Accelerator Package | https://nexus.kxi-dev.kx.com/#browse/browse:kxi-accelerators:packages%2Ffsi  
+Futures Tutorial files | https://gitlab.com/kxdev/kxinsights/accelerators/fsi/-/blob/main/notebooks/FSI_Futures_Demo.ipynb  
+  
+## Version Dependencies
+
+There are minimum versions of kdb Insights Enterprise and the kxi CLI which
+are required to use FSI Accelerators that rely on the FSI Accelerator Library.
+
+FSI Library | Insights Enterprise | kxi CLI  
+---|---|---  
+1.0.0 | 1.9.0 | 1.9.0  
+  
+## Known issues
+
+  * ID Mapping is not applied to get* API calls. Data will only be returned for underlying symbols, even when `IDMapping` is set on get* API calls. Requests for ID Mapped symbols will not return any results. 
+  * When holiday calendars are applied in get* API calls using `applyHolidayCalendar`, the call will always return an empty result.
+

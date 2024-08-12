@@ -1,0 +1,153 @@
+https://code.kx.com/pykx/troubleshooting.html
+
+# Troubleshooting - PyKX
+
+Original URL: https://code.kx.com/pykx/troubleshooting.html
+
+[ ](https://github.com/kxsystems/pykx/edit/main/docs/troubleshooting.md "Edit
+this page")
+
+# Troubleshooting
+
+## License issues
+
+The following section outlines practical information useful when dealing with
+getting access to and managing licenses for PyKX.
+
+### Accessing a license valid for PyKX
+
+A number of trial and enterprise type licenses exist for q/kdb+. Not all
+licenses for q/kdb+ however are valid for PyKX. In particular users require
+access to a license which contains the feature flags `pykx` and `embedq` which
+provide access to the PyKX functionality. The following locations can be used
+for the retrieval of evaluation/personal licenses
+
+  * For non-commercial personal users you can access a 12 month kdb+ license with PyKX enabled [here](https://kx.com/kdb-insights-personal-edition-license-download).
+  * For commercial evaluation, contact your KX sales representative or [sales@kx.com](mailto:sales@kx.com) requesting a PyKX trial license. Alternately apply through <https://kx.com/book-demo>.
+
+For non-personal or non-commercial usage please contact
+[sales@kx.com](mailto:sales@kx.com).
+
+Once you have access to your license you can install the license following the
+walkthrough provided [here](getting-started/installing.html) or through
+installation using the function `kx.license.install` as follows
+
+    
+    
+    >>> import pykx as kx
+    >>> kx.license.install('/path/to/downloaded/kc.lic')
+
+### Initialization failing with a 'embedq' error
+
+Failure to initialize PyKX while raising an error `embedq` indicates that the
+license you are attempting to use for PyKX in [licensed modality](user-
+guide/advanced/modes.html) does not have the sufficient feature flags
+necessary to run PyKX. To access a license which does allow for running PyKX
+in this modality please following the instructions here to get a new license
+with appropriate feature flags.
+
+### Initialization failing with a 'kc.lic' error
+
+If after initially completing the installation guide for PyKX [here](getting-
+started/installing.html) you receive the following error:
+
+    
+    
+    pykx.exceptions.PyKXException: Failed to initialize embedded q. Captured output from initialization attempt:
+        '2023.09.02T21:28:45.699 licence error: kc.lic
+
+It usually indicates that your license was not correctly written to disk or a
+license could not be found, to check that the installed license matches the
+license you expect.
+
+## Environment issues
+
+The following section outlines how a user can get access to a verbose set of
+environment configuration associated with PyKX. This information is helpful
+when debugging your environment and should be provided if possible with
+support requests.
+
+    
+    
+    >>> import pykx as kx
+    >>> kx.util.debug_environment()  # see below for output
+
+Output
+
+    
+    
+    >>> kx.util.debug_environment()
+    missing q binary at '/usr/local/anaconda3/lib/python3.8/site-packages/pykx/lib/m64/q'
+    **** PyKX information ****
+    pykx.args: ()
+    pykx.qhome: /usr/local/anaconda3/lib/python3.8/site-packages/pykx/lib
+    pykx.qlic: /usr/local/anaconda3/lib/python3.8/site-packages/pykx/lib
+    pykx.licensed: True
+    pykx.__version__: 1.5.3rc2.dev525+g41f008ad
+    pykx.file: /usr/local/anaconda3/lib/python3.8/site-packages/pykx/util.py
+    
+    **** Python information ****
+    sys.version: 3.8.3 (default, Jul  2 2020, 11:26:31) 
+    [Clang 10.0.0 ]
+    pandas: 1.5.3
+    numpy: 1.24.4
+    pytz: 2022.7.1
+    which python: /usr/local/anaconda3/bin/python
+    which python3: /usr/local/anaconda3/bin/python3
+    
+    **** Platform information ****
+    platform.platform: macOS-10.16-x86_64-i386-64bit
+    
+    **** Environment Variables ****
+    IGNORE_QHOME: 
+    PYKX_IGNORE_QHOME: 
+    PYKX_KEEP_LOCAL_TIMES: 
+    PYKX_ALLOCATOR: 
+    PYKX_GC: 
+    PYKX_LOAD_PYARROW_UNSAFE: 
+    PYKX_MAX_ERROR_LENGTH: 
+    PYKX_NOQCE: 
+    PYKX_Q_LIB_LOCATION: 
+    PYKX_RELEASE_GIL: 
+    PYKX_Q_LOCK: 
+    PYKX_ENABLE_PANDAS_API: 
+    QARGS: 
+    QHOME: /usr/local/anaconda3/lib/python3.8/site-packages/pykx/lib
+    QLIC: 
+    PYKX_DEFAULT_CONVERSION: 
+    PYKX_SKIP_UNDERQ: 
+    PYKX_UNSET_GLOBALS: 
+    SKIP_UNDERQ: 
+    UNSET_PYKX_GLOBALS: 
+    
+    **** License information ****
+    pykx.qlic directory: True
+    pykx.lic writable: True
+    pykx.qhome lics: ['kc.lic']
+    pykx.qlic lics: ['kc.lic']
+    
+    **** q information ****
+    which q: /usr/local/anaconda3/bin/q
+    q info: 
+
+## Issues running PyKX in a subprocess?
+
+Internally PyKX makes use of a number of variables/environment variables which
+are persisted within the Python/q process within imports PyKX. Due to how
+Python subprocesses work with respect to inheriting environment variables
+users who attempt to spawn a subprocess dependent on PyKX will run into a
+Segmentation Fault.
+
+To avoid this subprocesses should be spawned while making use of the
+`kx.PyKXReimport` functionality as follows:
+
+    
+    
+    import pykx as kx
+    import subprocess
+    with kx.PyKXReimport():
+        subprocess.Popen(['python', 'file.py']) # Run Python with a file that imports PyKX
+
+For more information on the `PyKXReimport` functionality see its API
+documentation [here](api/reimporting.html).
+

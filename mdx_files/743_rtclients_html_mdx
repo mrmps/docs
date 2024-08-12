@@ -1,0 +1,314 @@
+https://code.kx.com/insights/microservices/rt/rest/rtclients.html
+
+# RT clients - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/rt/rest/rtclients.html
+
+# RT clients observability
+
+This API returns information about the publishers and subscribers connected to
+the RT.
+
+To call the REST API, you can use:
+
+## Response
+
+The response includes a response header and a payload.
+
+Each publisher and subscriber entry is keyed by its client name which defaults
+to the hostname on which the client is running. Where there are multiple
+publisher or subscriber clients on the same host, all entries are listed in
+the array for that client name.
+
+The metrics for each publisher and subscriber entry only apply to that
+client's connection and are updated every 10 seconds. Where a client
+reconnects, its previous entry is marked as inactive and a new active entry is
+created. Inactive clients are removed after 24 hours.
+
+The payload members are:
+
+group | member | type | description  
+---|---|---|---  
+node |  | string | The name of the sequencer node on which the query runs.  
+publishers | key | string | The publisher's client name (defaults to the hostname it is running on).  
+| active | bool | Whether this publisher is currently connected.  
+| connect_time | datetime | The datetime of when the publisher connected to RT.  
+| last_message | datetime | The datetime of the last sent data.  
+| replicated_pos | unsigned | The latest position in the publisher's directory that has been replicated to RT.  
+| total_bytes | unsigned | The total number of bytes that have been replicated from the publisher.  
+| transfer_rate | unsigned | The data transfer speed as byte/sec.  
+| target_directory | string | The target directory of the publisher log files.  
+subscribers | key | string | The subscriber's client name (defaults to the hostname it is running on).  
+| active | bool | Whether this subscriber is currently connected.  
+| connect_time | datetime | The datetime of when the subscriber connected to RT.  
+| last_message | datetime | The datetime of the last received data.  
+| replicated_pos | unsigned | The latest position in RT's output directory that has been replicated to subscriber.  
+| transfer_rate | unsigned | The data transfer speed as byte/sec.  
+| total_bytes | unsigned | The total number of bytes that have been replicated to the subscriber.  
+  
+Note
+
+The `transfer_rate` calculation is based on the bytes transferred by a
+publisher or subscriber during the last measured periodic time slot. Each
+periodic time slot is 10 seconds long and is refreshed every 10 seconds.
+
+## Example
+
+port-forwardinglocalhostrest-proxy
+
+Endpoint
+
+An example of the `$ENDPOINT` variable is `0:6000`.
+
+    
+    
+    bash-4.4$ curl http://$ENDPOINT/rt-clients | jq .
+    {
+      "result": {
+        "node": "kxi-mystream-0",
+        "publishers": [
+          {
+            "pub-b-0.kxi-mystream": [
+              {
+                "active": true,
+                "connect_time": "2024-02-06T10:57:54.723z",
+                "last_message": "2024-02-06T10:59:16.849z",
+                "replicated_pos": 1612241540,
+                "total_bytes": 1602552825,
+                "transfer_rate": 19738712,
+                "target_directory": "/s/in/pub-b-0.kxi-mystream"
+              }
+            ]
+          },
+          {
+            "pub-a-0.kxi-mystream": [
+              {
+                "active": false,
+                "connect_time": "2024-02-06T10:57:57.780z",
+                "last_message": "2024-02-06T10:59:06.845z",
+                "replicated_pos": 1409919688,
+                "total_bytes": 1397332525,
+                "transfer_rate": 0,
+                "target_directory": "/s/in/pub-a-0.kxi-mystream"
+              },
+              {
+                "active": true,
+                "connect_time": "2024-02-06T10:59:10.339z",
+                "last_message": "2024-02-06T10:59:16.866z",
+                "replicated_pos": 17592319900370,
+                "total_bytes": 132622379,
+                "transfer_rate": 22103729,
+                "target_directory": "/s/in/pub-a-0.kxi-mystream"
+              }
+            ]
+          }
+        ],
+        "subscribers": [
+          {
+            "sub-a-0.mystream": [
+              {
+                "active": true,
+                "connect_time": "2024-02-06T10:58:11.055z",
+                "last_message": "2024-02-06T10:59:19.997z",
+                "replicated_pos": 489272421776492,
+                "total_bytes": 3178358610,
+                "transfer_rate": 40217788
+              }
+            ]
+          },
+          {
+            "sub-b-0.mystream": [
+              {
+                "active": false,
+                "connect_time": "2024-02-06T10:58:21.494z",
+                "last_message": "2024-02-06T10:58:59.955z",
+                "replicated_pos": 489271659542128,
+                "total_bytes": 1539637621,
+                "transfer_rate": 0
+              },
+              {
+                "active": true,
+                "connect_time": "2024-02-06T10:59:12.760z",
+                "last_message": "2024-02-06T10:59:19.998z",
+                "replicated_pos": 489272421776492,
+                "total_bytes": 408346091,
+                "transfer_rate": 58335155
+              }
+            ]
+          }
+        ]
+      }
+    }
+    
+
+Note
+
+First, you must exec onto a sequencer node.
+
+    
+    
+    bash-4.4$ curl http://0:6000/rt-clients | jq .
+    {
+      "result": {
+        "node": "kxi-mystream-0",
+        "publishers": [
+          {
+            "pub-b-0.kxi-mystream": [
+              {
+                "active": true,
+                "connect_time": "2024-02-06T10:57:54.723z",
+                "last_message": "2024-02-06T10:59:16.849z",
+                "replicated_pos": 1612241540,
+                "total_bytes": 1602552825,
+                "transfer_rate": 19738712,
+                "target_directory": "/s/in/pub-b-0.kxi-mystream"
+              }
+            ]
+          },
+          {
+            "pub-a-0.kxi-mystream": [
+              {
+                "active": false,
+                "connect_time": "2024-02-06T10:57:57.780z",
+                "last_message": "2024-02-06T10:59:06.845z",
+                "replicated_pos": 1409919688,
+                "total_bytes": 1397332525,
+                "transfer_rate": 0,
+                "target_directory": "/s/in/pub-a-0.kxi-mystream"
+              },
+              {
+                "active": true,
+                "connect_time": "2024-02-06T10:59:10.339z",
+                "last_message": "2024-02-06T10:59:16.866z",
+                "replicated_pos": 17592319900370,
+                "total_bytes": 132622379,
+                "transfer_rate": 22103729,
+                "target_directory": "/s/in/pub-a-0.kxi-mystream"
+              }
+            ]
+          }
+        ],
+        "subscribers": [
+          {
+            "sub-a-0.mystream": [
+              {
+                "active": true,
+                "connect_time": "2024-02-06T10:58:11.055z",
+                "last_message": "2024-02-06T10:59:19.997z",
+                "replicated_pos": 489272421776492,
+                "total_bytes": 3178358610,
+                "transfer_rate": 40217788
+              }
+            ]
+          },
+          {
+            "sub-b-0.mystream": [
+              {
+                "active": false,
+                "connect_time": "2024-02-06T10:58:21.494z",
+                "last_message": "2024-02-06T10:58:59.955z",
+                "replicated_pos": 489271659542128,
+                "total_bytes": 1539637621,
+                "transfer_rate": 0
+              },
+              {
+                "active": true,
+                "connect_time": "2024-02-06T10:59:12.760z",
+                "last_message": "2024-02-06T10:59:19.998z",
+                "replicated_pos": 489272421776492,
+                "total_bytes": 408346091,
+                "transfer_rate": 58335155
+              }
+            ]
+          }
+        ]
+      }
+    }
+    
+
+Endpoint
+
+An example of the `$ENDPOINT` variable is `kxi-mystream-0:5002`.
+
+    
+    
+    bash-4.4$ cd /opt/kx/app/rt/replicator/clib/
+    bash-4,4$ ./rest_proxy --endpoint $ENDPOINT --target rt-clients | jq .
+    {
+      "result": {
+        "node": "kxi-mystream-0",
+        "publishers": [
+          {
+            "pub-b-0.kxi-mystream": [
+              {
+                "active": true,
+                "connect_time": "2024-02-06T10:57:54.723z",
+                "last_message": "2024-02-06T10:59:16.849z",
+                "replicated_pos": 1612241540,
+                "total_bytes": 1602552825,
+                "transfer_rate": 19738712,
+                "target_directory": "/s/in/pub-b-0.kxi-mystream"
+              }
+            ]
+          },
+          {
+            "pub-a-0.kxi-mystream": [
+              {
+                "active": false,
+                "connect_time": "2024-02-06T10:57:57.780z",
+                "last_message": "2024-02-06T10:59:06.845z",
+                "replicated_pos": 1409919688,
+                "total_bytes": 1397332525,
+                "transfer_rate": 0,
+                "target_directory": "/s/in/pub-a-0.kxi-mystream"
+              },
+              {
+                "active": true,
+                "connect_time": "2024-02-06T10:59:10.339z",
+                "last_message": "2024-02-06T10:59:16.866z",
+                "replicated_pos": 17592319900370,
+                "total_bytes": 132622379,
+                "transfer_rate": 22103729,
+                "target_directory": "/s/in/pub-a-0.kxi-mystream"
+              }
+            ]
+          }
+        ],
+        "subscribers": [
+          {
+            "sub-a-0.mystream": [
+              {
+                "active": true,
+                "connect_time": "2024-02-06T10:58:11.055z",
+                "last_message": "2024-02-06T10:59:19.997z",
+                "replicated_pos": 489272421776492,
+                "total_bytes": 3178358610,
+                "transfer_rate": 40217788
+              }
+            ]
+          },
+          {
+            "sub-b-0.mystream": [
+              {
+                "active": false,
+                "connect_time": "2024-02-06T10:58:21.494z",
+                "last_message": "2024-02-06T10:58:59.955z",
+                "replicated_pos": 489271659542128,
+                "total_bytes": 1539637621,
+                "transfer_rate": 0
+              },
+              {
+                "active": true,
+                "connect_time": "2024-02-06T10:59:12.760z",
+                "last_message": "2024-02-06T10:59:19.998z",
+                "replicated_pos": 489272421776492,
+                "total_bytes": 408346091,
+                "transfer_rate": 58335155
+              }
+            ]
+          }
+        ]
+      }
+    }
+    
+

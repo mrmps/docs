@@ -1,0 +1,349 @@
+https://code.kx.com/dashboards/template/
+
+# Overview - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/template/
+
+# Templates
+
+Templates are a way to modify how data is formatted and displayed. They can be
+created via the Template Editor.
+
+![Screenshot](../img/template/templateeditor.png)
+
+## Editor
+
+### Basic
+
+![Screenshot](../img/template/basictemplateeditor.jpg)
+
+The Basic editor is a WYSIWYG interface.
+
+  * Double-click from the left panel - a data source value or view state parameter - to add selection as a handlebars helper in the editor panel. 
+  * Select the handlebars helper to apply font formats as required
+  * Add any additional text labels
+
+Folders prefixed by an `@` designate the object as an array; double clicking
+an array will insert #each block helpers around the content (these are hidden
+in Basic mode editor). These are the only block handlebars helpers available
+in Basic mode; if other block helpers are selected, Advanced mode will be
+enabled.
+
+### Advanced
+
+![Screenshot](../img/template/advancedtemplateeditor.jpg)
+
+The Advanced editor displays template content as HTML giving more control on
+template customization. The full range of handlebars helpers are available for
+use in Advanced Mode.
+
+## Working examples
+
+This tooltip
+
+![Screenshot](../img/template/tooltiphelperrollover.jpg)
+
+uses:
+
+    
+    
+    <h2> Formatting options</h2>
+    
+    <table style="min-width:250px;">
+    
+        <tr>
+            <td>Forename (first):  </td>
+            <td>{{first points.0.cols.name}} </td>
+        </tr>
+        <tr>
+            <td>Surname(last):  </td>
+            <td>{{last points.0.cols.name}} </td>
+        </tr>
+        <tr>
+            <td>Tel (phoneNumber):  </td>
+            <td>{{phoneNumber points.0.cols.telephone}} </td>
+        </tr>
+        <tr>
+            <td>Salary (addCommas):  </td>
+            <td>{{addCommas points.0.cols.salary}} </td>
+        </tr>
+        <tr>
+            <td>IsInsured (ifEven):  </td>
+            <td>{{#ifEven (toInt points.0.cols.isInsured)}} mp{{else}} yes {{/ifEven}} </td>
+        </tr>
+        <tr>
+            <td>Tax % (toAbbr):  </td>
+            <td>{{toAbbr (toInt points.0.cols.tax) 2}} </td>
+        </tr>
+        <tr>
+            <td>Has PPS (equalsLength):  </td>
+            <td>{{#lengthEqual points.0.cols.pps 6}} yes {{else}} no {{/lengthEqual}} </td>
+        </tr>
+        <tr>
+            <td> Staff (eachIndex): </td>
+            <td>
+                {{#eachIndex points.0.cols.staff}}
+                {{index}} :{{item}} <br> 
+                {{/eachIndex}}
+            </td>
+        </tr>
+        <tr>
+            <td> Tickets (sort) :</td>
+            <td>{{sort points.0.cols.openIssues}} </td>
+        </tr>
+        <tr>
+            <td> Salary (toExponential): </td>
+            <td>{{toExponential (toInt points.0.cols.salary) 2}} </td>
+        </tr>
+        <tr>
+            <td> Tickets (sort): </td>
+            <td>{{#withFirst array}}{{this}} is smart.{{/withFirst}} </td>
+        </tr>
+    
+    </table>
+    
+
+### Example 1
+
+_Display price with two decimal places and use comma for digit grouping_
+
+    
+    
+    ([] marketPrice:(1154.0543f;101.8562f))
+    
+
+Solution:
+
+    
+    
+    $ {{addCommas (toFixed marketPrice 2)}}
+    
+
+Result:
+
+$ 1,154.05 $ 101.86
+
+### Example 2
+
+_Display second currency of currency pair where it's listed first in a
+currency list._
+
+    
+    
+    ([] currencyPairs:(("EUR/USD";"BRL/GBP"); ("JPY/AUD";"CHF/CAD";"NOK/INR")))
+    
+
+Solution:
+
+    
+    
+    {{last (split (first currencyPairs) "/")}}
+    
+
+Result:
+
+USD AUD
+
+### Example 3
+
+_Display different message if the value is above 40%_
+
+    
+    
+    ([] performance:(0.43f;0.21f))
+    
+
+Solution:
+
+    
+    
+    {{#gt (multiply performance 100) 40}}
+        value is above 40%
+    {{else}}
+        less than or equal to 40%
+    {{/gt}}
+    
+
+Result:
+
+value is above 40% less than or equal to 40%
+
+### Example 4
+
+_Display index of each currency pair in the list_
+
+    
+    
+    ([] currencyPairs:(("EUR/USD";"BRL/GBP"); ("JPY/AUD";"CHF/CAD";"NOK/INR")))
+    
+
+Solution:
+
+    
+    
+    {{#each currencyPairs}}
+        {{add @index 1}}:{{this}}
+    {{/each}}
+    
+
+Result:
+
+1:EUR/USD 2:BRL/GBP 1:JPY/AUD 2:CHF/CAD 3:NOK/INR
+
+### Data Grid
+
+A sample [data grid](../datagrid/#tooltip) template tooltip:
+
+    
+    
+    <div style="margin:0 2px; padding:10px; background: #f0f0f0; 
+      color: #101010; font-size:11px; 
+      border:1px solid #c0c0c0; border-radius: 2px;">
+        {{#each this}}
+            {{#isnt @key "thisValue"}}
+                {{#isnt @key "thisRawValue"}}
+                    {{#isnt @key "thisField"}}
+                     <b>{{@key}}</b> : {{this}}<br>
+                    {{/isnt}}
+                {{/isnt}}
+            {{/isnt}}
+        {{/each}}
+    </div>
+    
+
+will return column values on a rollover:
+
+![Screenshot](../img/template/datagridrolloverdisplay.jpg)
+
+![Screenshot](../img/template/customtooltip.jpg)  
+_A Map with a tooltip display_
+
+Tooltips show data values associated with the cursor position.
+
+To define a Tooltip display you need:
+
+  1. Data items from the components’s [_Data Source_](../datasources/), mapped to [View State Parameters](../viewstateparameters/).
+
+The mapping is defined in the component’s [Viewstate Routing
+table](../viewstateparameters/#selected-values).
+
+  2. HTML for the Tooltip display; the View State Parameters mapped into it with [Handlebars](https://handlebarsjs.com).
+
+The HTML is defined in the Configure Tooltip dialog, summoned by clicking in
+the box for the component’s _Custom Tooltip_ setting.
+
+### Standard Template
+
+Custom tooltips for [Chart](../canvascharts/) can be found in the **Overlay**
+property
+
+![Screenshot](../img/template/customtooltipstyle.jpg)
+
+The standard template will pull in the default column names and column data
+
+    
+    
+    <table>
+      <thead>
+        <tr style="padding-right: 10px;">
+          <th> {{xLabel}} </th>
+          <th/>
+        </tr>
+      </thead> 
+      {{#each points}}
+        <tr>
+          <td> 
+            <svg height="12" width="12">
+              <rectheight="12" width="12"
+                style="fill: {{colors.backgroundColor}}; 
+                  stroke-width: 3; stroke: {{colors.borderColor}};" />
+            </svg> 
+            {{layerName}}: 
+          </td>
+          <td style="padding-right: 10px; text-align: left;">
+            {{layerData}}
+          </td>
+        </tr> 
+      {{/each}}
+    </table>
+    
+
+### Grouping layers
+
+To group layers with the same name, modify the template as follows:
+
+    
+    
+    <table>
+      <thead>
+        <tr style="padding-right: 10px;">
+          <th>{{ xLabel }}</th>
+        </tr>
+      </thead> 
+      {{#groupByLayer}} 
+        {{#each layers }}
+          <tr>
+            <td> 
+              <svg height="12" width="12">
+              <rect height="12" width="12"
+                style="fill: {{colors.backgroundColor}}; 
+                  stroke-width: 3; stroke: {{colors.borderColor}};" /> 
+              </svg> {{ layerName }}: 
+            </td> 
+            {{#each layerPoints}}
+             <td style="text-align: left;"> 
+               {{data}} 
+             </td> 
+            {{/each}} 
+          </tr> 
+        {{/each}}
+      {{/groupByLayer}} 
+    </table>
+    
+
+To display selected layers, set the `names` attribute in `#filterLayers` as a
+comma-separated list of layers to display; for example, to show `Layer 1` and
+`Layer 3` use:
+
+    
+    
+    <table>
+      <thead>
+        <tr style="padding-right: 10px;">
+          <th> {{xLabel}} </th>
+          <th> </th>
+        </tr>
+      </thead> 
+      {{#filterLayers names="Layer 1,Layer 3"}}
+        {{#each points}}
+          <tr>
+            <td> 
+              <svg height="12" width="12">
+              <rect height="12" width="12"
+                style="fill: {{colors.backgroundColor}}; 
+                  stroke-width: 3; stroke: {{colors.borderColor}};" />
+              </svg> 
+              {{layerName}}: 
+            </td>
+            <td style="padding-right: 10px; text-align: left;">
+              {{layerData}}
+            </td>
+          </tr> 
+        {{/each}}
+      {{/filterLayers}}
+    </table>
+    
+
+## Supported Handlebar expressions
+
+category | functions  
+---|---  
+Arrays | [`after`](../helper-array/#after), [`arrayify`](../helper-array/#arrayify), [`before`](../helper-array/#before), [`eachindex`](../helper-array/#eachindex), [`filter`](../helper-array/#filter), [`first`](../helper-array/#first), [`forEach`](../helper-array/#foreach), [`inArray`](../helper-array/#inarray), [`isArray`](../helper-array/#isarray), [`itemAt`](../helper-array/#itemat), [`join`](../helper-array/#join), [`last`](../helper-array/#last), [`lengthEqual`](../helper-array/#lengthequal), [`map`](../helper-array/#map), [`reverse`](../helper-array/#reverse), [`sort`](../helper-array/#sort), [`sortBy`](../helper-array/#sortby), [`withAfter`](../helper-array/#withafter), [`withBefore`](../helper-array/#withbefore), [`withFirst`](../helper-array/#withfirst), [`withGroup`](../helper-array/#withgroup), [`withLast`](../helper-array/#withlast), [`withSort`](../helper-array/#withsort)  
+Comparison | [`and`](../helper-comparison/#and), [`compare`](../helper-comparison/#compare), [`contains`](../helper-comparison/#contains), [`eq`](../helper-comparison/#eq), [`gt`](../helper-comparison/#gt), [`gte`](../helper-comparison/#gte), [`has`](../helper-comparison/#has), [`ifEven`](../helper-comparison/#ifeven),[`ifNth`](../helper-comparison/#ifnth), [`ifOdd`](../helper-comparison/#ifodd), [`is`](../helper-comparison/#is), [`isnt`](../helper-comparison/#isnt), [`lt`](../helper-comparison/#lt), [`lte`](../helper-comparison/#lte), [`neither`](../helper-comparison/#neither), [`or`](../helper-comparison/#or), [`unlessEq`](../helper-comparison/#unlesseq), [`unlessGt`](../helper-comparison/#unlessgt), [`unlessLt`](../helper-comparison/#unlesslt), [`unlessGteq`](../helper-comparison/#unlessgteq), [`unlessLteq`](../helper-comparison/#unlesslteq)  
+Dates | [`moment`](../helper-date/#moment)  
+Math | [`add`](../helper-math/#add), [`avg`](../helper-math/#avg), [`ceil`](../helper-math/#ceil), [`divide`](../helper-math/#divide), [`floor`](../helper-math/#floor), [`multiply`](../helper-math/#multiply), [`random`](../helper-math/#random), [`round`](../helper-math/#round), [`subtract`](../helper-math/#subtract), [`sum`](../helper-math/#sum)  
+Misc | [`typeOf`](../helper-misc/#typeof)  
+Numbers | [`addCommas`](../helper-number/#addcommas), [`bytes`](../helper-number/#bytes), [`phoneNumber`](../helper-number/#phonenumber), [`toAbbr`](../helper-number/#toabbr), [`toExponential`](../helper-number/#toexponential), [`toFixed`](../helper-number/#tofixed), [`toFloat`](../helper-number/#tofloat), [`toInt`](../helper-number/#toint), [`toPrecision`](../helper-number/#toprecision)  
+Strings | [`camelcase`](../helper-string/#camelcase), [`capitalize`](../helper-string/#capitalize), [`capitalizeAll`](../helper-string/#capitalizeall), [`center`](../helper-string/#center), [`chop`](../helper-string/#chop), [`dashcase`](../helper-string/#dashcase), [`dotcase`](../helper-string/#dotcase), [`hyphenate`](../helper-string/#hyphenate), [`isString`](../helper-string/#isstring), [`lowercase`](../helper-string/#lowercase), [`occurrences`](../helper-string/#occurrences), [`pascalcase`](../helper-string/#pascalcase), [`pathcase`](../helper-string/#pathcase), [`plusify`](../helper-string/#plusify), [`replace`](../helper-string/#replace), [`reverse`](../helper-string/#reverse), [`sentence`](../helper-string/#sentence), [`snakecase`](../helper-string/#snakecase), [`split`](../helper-string/#split), [`startsWith`](../helper-string/#startswith), [`titleize`](../helper-string/#titleize), [`trim`](../helper-string/#trim), [`uppercase`](../helper-string/#uppercase)  
+Utils | [`random`](../helper-util/#random)
+

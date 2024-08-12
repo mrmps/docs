@@ -1,0 +1,126 @@
+https://code.kx.com/insights/microservices/rt/rest/loghistory.html
+
+# Archiver log history - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/rt/rest/loghistory.html
+
+# Archiver log history
+
+This API returns garbage collection details from the log files.
+
+To call the REST API, you can use:
+
+## Response
+
+The response includes a response header and a payload, where the payload
+members are:
+
+member | type | description  
+---|---|---  
+logPath | string | Name of the file, including the path.  
+logTime | string | Time of the first message in the log file.  
+logPos | integer | Position of the first message in the log file.  
+logAge | integer | Age of file in minutes since it was rolled, -1 if the file is the active log file.  
+truncationTime | string | Time the log file was garbage collected, "" if the file has not been garbage collected.  
+  
+## Example
+
+rest-proxyport-forwardinglocalhost
+
+Endpoint
+
+An example of the `$ENDPOINT` variable is `kxi-mystream-1:5002`.
+
+    
+    
+    bash-4.4$ cd /opt/kx/app/rt/replicator/clib/
+    bash-4,4$ ./rest_proxy --endpoint $ENDPOINT --target log-history | jq .
+    [
+      {
+        "logPath": ":/s/out/OUT/log.0.0",
+        "logTime": "2023-08-21T12:21:07.689363710",
+        "logPos": 0,
+        "logAge": 40,
+        "truncationTime": "2023-08-21T13:33:20.468957590"
+      },
+      {
+        "logPath": ":/s/out/OUT/log.0.1",
+        "logTime": "2023-08-21T12:53:20.112235355",
+        "logPos": 1073741824,
+        "logAge": 15,
+        "truncationTime": ""
+      },
+      {
+        "logPath": ":/s/out/OUT/log.0.2",
+        "logTime": "2023-08-21T13:20:02.901729789",
+        "logPos": 2147483648,
+        "logAge": -1,
+        "truncationTime": ""
+      }
+    ]
+    
+
+Endpoint
+
+An example of the `$ENDPOINT` variable is `kxi-mystream-1:6000`.
+
+    
+    
+    bash-4.4$ curl http://$ENDPOINT/log-history | jq .
+    [
+      {
+        "logPath": ":/s/out/OUT/log.0.0",
+        "logTime": "2023-08-21T12:21:07.689363710",
+        "logPos": 0,
+        "logAge": 40,
+        "truncationTime": "2023-08-21T13:33:20.468957590"
+      },
+      {
+        "logPath": ":/s/out/OUT/log.0.1",
+        "logTime": "2023-08-21T12:53:20.112235355",
+        "logPos": 1073741824,
+        "logAge": 15,
+        "truncationTime": ""
+      },
+      {
+        "logPath": ":/s/out/OUT/log.0.2",
+        "logTime": "2023-08-21T13:20:02.901729789",
+        "logPos": 2147483648,
+        "logAge": -1,
+        "truncationTime": ""
+      }
+    ]
+    
+
+Note
+
+First, you must connect to a sequencer node.
+
+    
+    
+    bash-4.4$ curl http://0:6000/log-history | jq .
+    [
+      {
+        "logPath": ":/s/out/OUT/log.0.0",
+        "logTime": "2023-08-21T12:21:07.689363710",
+        "logPos": 0,
+        "logAge": 40,
+        "truncationTime": "2023-08-21T13:33:20.468957590"
+      },
+      {
+        "logPath": ":/s/out/OUT/log.0.1",
+        "logTime": "2023-08-21T12:53:20.112235355",
+        "logPos": 1073741824,
+        "logAge": 15,
+        "truncationTime": ""
+      },
+      {
+        "logPath": ":/s/out/OUT/log.0.2",
+        "logTime": "2023-08-21T13:20:02.901729789",
+        "logPos": 2147483648,
+        "logAge": -1,
+        "truncationTime": ""
+      }
+    ]
+    
+

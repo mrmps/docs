@@ -1,0 +1,394 @@
+https://code.kx.com/platform/api/servicediscovery/
+
+# Service discovery - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/api/servicediscovery/
+
+# Service discovery
+
+This module provides the ability to do service discovery. Solutions can use it
+to subscribe to updates of processes starting and stopping. The _Control_
+process acts as the discovery service by publishing messages when services
+logon or logoff.
+
+This module is instantiated by a call to `.px.sd.init`. This subscribes to
+_Control_ for service updates and caches the current state locally in the
+process.
+
+For simple clients who only need to periodically check the service state, they
+can use the APIs described in this module to check the current state.
+
+Supported operations are; \- get cached services table \- get details for
+single or multiple services \- get host & port for single or multiple services
+\- get services by class or template
+
+Other clients may need to actively know when the service list changes. In this
+mode clients should implement handlers for logon and logoff events. For
+processes that take actions on logoff, please note the warning below.
+
+Service logoff
+
+Broadcast messages only indicate the status of the service to Control
+connection. A service may disconnect from Control but still be running. In
+this case it's up to the client to decide how to handle this scenario.
+
+The suggested approach is to only treat the process as disconnected if a
+logoff broacast is received _and_ the connection from the client to this
+service is disconnected. Therefore, the client should implement logoff and
+disconnect handlers that check both the Control and the handle status.
+
+## Active client
+
+An example service client is implemented to illustrate how this works. The
+example is going to create a module to connect to running services. This
+module creates a table to maintain the online state of each service and
+connection to each of them. The state of each service is updated through
+logon/off event handlers.
+
+  * Define a table which will store running services
+  * Define a timer function to connect to each service and cache the handle
+  * Define the disconnect function
+  * this disconnects services if still they're still running
+  * if not running, it removes them from the table
+
+    
+    
+    // Store running services 
+    .sol.runningServices:1!flip `process`class`handle!"ssi"$\:();
+    
+    // Define the logon callback analytic 
+    .sol.connect:{[]
+      data:select process, handle:@[hopen; ; 0Ni] each .px.sd.getHostPorts[process] from .px.sd.running;
+      `.sol.runningServices upsert data;
+     };
+    
+    // Add connect function to timer
+    .d.prcl.addFunctToTimer[`.sol.connect; (); 0Nz; 0Wz; 1000i; 1b];
+    
+    // Define the logoff callback analytic which takes the handle 
+    .sol.serviceDisconnect:{[hn]
+      cl:0!select from .sol.runningServices where handle=hn;
+      if[not count cl; :()];    
+      .log.out[.z.h;"Service disconnect for process "; pname:first cl`process];
+    
+      $[.px.sd.checkRunning[pname];
+        update handle:0Ni from `.sol.runningServices where process=pname;
+        delete from `.sol.runningServices where process=pname
+       ];
+     };
+    
+    
+
+The below code defines the logon and logoff callbacks. These will be triggered
+whenever the list of running services changes.
+
+    
+    
+    .sol.serv.logon:{[x]
+      .log.out[.z.h;"New service available";`process`port!(x`process;x`port)];
+      `.sol.runningServices upsert select process, class from x;
+     };
+    
+    .sol.serv.logoff:{[x]  
+      if[not null .sol.runningServices[x`process]`handle; :()];
+    
+      .log.out[.z.h;"Service logged off";`process`port!(x`process;x`port)];
+      delete from `.sol.runningServices where process=x`process;
+     };
+    
+    
+    After the above functions are defined, the module can be initialised by
+    defining the callbacks and running the init method.
+    
+    ```q
+    .px.sd.addCallbacks[`.sol.serv.logon; `.sol.serv.logoff];
+    .px.sd.init[]
+    
+
+## Passive client
+
+For a passive client, services details can be requested on-demand using a set
+of public APIs.
+
+  * .px.sd.checkRunning - Check if a service is running
+  * .px.sd.getClass - Get services based on their class
+  * .px.sd.getHostPort/s - Get the hostport of a services 
+  * .px.sd.getServices - Gets the cached services
+  * .px.sd.getTemplate - Get all running services based on their template
+
+## `.px.sd.addCallbacks`
+
+Adds callbacks for logon and logoff events. Each API should take a single
+parameter. Provide a null symbol for a null callback.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+logon | symbol | Logon API name  
+logoff | symbol | Logoff API name  
+  
+**Example:**
+
+    
+    
+     `.px.sd.addCallbacks[`.qr.serv.logon; `.qr.serv.logoff]`
+    
+
+**Example:** No logoff handler
+
+    
+    
+     `.px.sd.addCallbacks[`.qr.serv.logon; `]`
+    
+
+## `.px.sd.checkRunning`
+
+Called to check if a service is running
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+proc | symbol | Process name  
+  
+**Returns:**
+
+**Example:**
+
+    
+    
+     `.px.sd.checkRunning[`fx_rdb_143]`
+     /=> 1b
+    
+
+## `.px.sd.getHostPort`
+
+Gets host & port for service
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+names | Symbol/Symbol[] | name of process/processs  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+table | Table of running services  
+  
+**Example:**
+
+    
+    
+     `.px.sd.getHostPort[`fx_rdb_143]`
+     /=> `:dev-ubuntu.firstderivatives.com:33715
+    
+
+## `.px.sd.getHostPorts`
+
+Gets host & port for a list of services
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+names | Symbol/Symbol[] | name of process/processs  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+table | Table of running services  
+  
+**Example:**
+
+    
+    
+     `.px.sd.getHostPorts[`fx_rdb_143`fx_qp_142]`
+     /=> `:dev-ubuntu.firstderivatives.com:33715`:dev-ubuntu.firstderivatives.com:45737
+    
+
+## `.px.sd.getService`
+
+Return cached service
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+names | Symbol/Symbol[] | Name of process  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dictionary/table | Dictionary/table of running service/services  
+  
+**Example:**
+
+    
+    
+     `.px.sd.getService[`fx_rdb_143]`
+     /=> process | fx_rdb_143
+     /=> class   | fx_rdb
+     /=> host    | dev-ubuntu.firstderivatives.com
+     /=> port    | 33715
+     /=> tls     | off
+     /=> template| DS_RDB
+    
+
+## `.px.sd.getServices`
+
+Gets the cached services
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+names | Symbol/Symbol[] | Name of process  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dictionary/table | Dictionary/table of running service/services  
+  
+**Example:**
+
+    
+    
+     `.px.sd.getServices[(::)]`
+     /=> process    class  host                            port  tls template
+     /=> --------------------------------------------------------------------
+     /=> fx_rdb_140 fx_rdb dev-ubuntu.firstderivatives.com 38040 off DS_RDB  
+     /=> fx_rdb_141 fx_rdb dev-ubuntu.firstderivatives.com 46576 off DS_RDB  
+     /=> fx_qp_142  fx_qp  dev-ubuntu.firstderivatives.com 45737 off DS_QP   
+     /=> fx_rdb_143 fx_rdb dev-ubuntu.firstderivatives.com 33715 off DS_RDB 
+    
+
+**Example:**
+
+    
+    
+     .px.sd.getServices[`fx_rdb_143`fx_qp_142]
+     /=> process    class  host                            port  tls template
+     /=> --------------------------------------------------------------------
+     /=> fx_qp_142  fx_qp  dev-ubuntu.firstderivatives.com 45737 off DS_QP   
+     /=> fx_rdb_143 fx_rdb dev-ubuntu.firstderivatives.com 33715 off DS_RDB  
+    
+
+## `.px.sd.getTemplate`
+
+Gets services based on templates
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+names | Symbol/Symbol[] | Template name of process  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+table | Table of running services  
+  
+**Example:**
+
+    
+    
+     `.px.sd.getTemplate[`DS_RDB]`
+     /=> process    class  host                            port  tls template
+     /=> --------------------------------------------------------------------
+     /=> fx_rdb_140 fx_rdb dev-ubuntu.firstderivatives.com 38040 off DS_RDB
+     /=> fx_rdb_141 fx_rdb dev-ubuntu.firstderivatives.com 46576 off DS_RDB
+     /=> fx_rdb_143 fx_rdb dev-ubuntu.firstderivatives.com 33715 off DS_RDB
+    
+
+## `.px.sd.init`
+
+Called to initiate the module state
+
+**Example:**
+
+    
+    
+     `.px.sd.init[]`
+    
+
+## `.px.sd.logoff`
+
+Called when a service logs off
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+topic | symbol | Broadcast topic  
+data | dict | Service details  
+  
+**Example:**
+
+    
+    
+     data:`process`class`host`port`tls`template!(`fx_rdb_a; `fx_rdb; `localhost; 3000; `; `DS_RDB);
+     `.px.sd.logoff[`Service.Logoff; data]`
+    
+
+## `.px.sd.logon`
+
+Called when a new service comes online.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+topic | symbol | Broadcast topic  
+data | dict | Service details  
+  
+**Example:**
+
+    
+    
+     data:`process`class`host`port`tls`template!(`fx_rdb_a; `fx_rdb; `localhost; 3000; `; `DS_RDB);
+     `.px.sd.logon[`Service.Logon; data]`
+    
+
+## .px.sd.executeLogon
+
+Execute new logon callback for all running services
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+logon | symbol | Logon API name  
+  
+## .px.sd.getClass
+
+Gets services based on class
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+names | Symbol/Symbol[] | Class name of process  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+table | Table of running services  
+  
+**Example:**
+
+    
+    
+     .px.sd.getClass[`fx_qp`fx_hdb]
+     /=> process   host                            port  tls template class
+     /=> --------------------------------------------------------------------
+     /=> fx_qp_142  dev-ubuntu.firstderivatives.com 45737 off DS_QP   fx_qp
+    
+

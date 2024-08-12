@@ -1,0 +1,405 @@
+https://code.kx.com/insights/enterprise/ingest/pipeline/index.html
+
+# Overview - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/ingest/pipeline/index.html
+
+# Pipelines
+
+The kdb Insights Stream Processor is a stream processing service for
+transforming, validating, processing, enriching and analyzing real-time data
+in context. It is used for building data-driven analytics and closed loop
+control applications optimized for machine generated data from data sources,
+and delivering data and insights to downstream applications and persistent
+storage.
+
+The Stream Processor allows stateful custom code to be executed over stream or
+batch data sources in a resilient manner, scaling up when data sources allow.
+This code can be used to perform a wide range of ingest, transform, process,
+enrich, and general analytics operations.
+
+Stream processing
+
+Stream processing is the practice of taking one or more actions on a series of
+data that originate from one or more systems that are continuously generating
+data. Actions can include a combination of ingestion (e.g. inserting the data
+into a downstream database), transformation (e.g. changing a string into a
+date), aggregations (e.g. sum, mean, standard deviation), analytics (e.g.
+predicting a future event based on data patterns), and enrichment (e.g.
+combining data with other data, whether historical or streaming, to create
+context or meaning).
+
+These actions may be performed serially, in parallel, or both, depending on
+the use case and data source capabilities. This workflow of ingesting,
+processing, and outputting data is called a _stream processing pipeline_.
+
+This document describes how to use the stream processor in kdb Insights
+Enterprise using the drag-and-drop, low code user interface.
+
+## Operators
+
+Pipelines can be built by dragging operators from the left-hand entity tree
+and linking them together. Connect operators together and configure each
+operator's parameters to build the pipeline. Click an operator to configure it
+using the configuration tray on the right.
+
+Operators are the building blocks for pipelines. Each operator is capable of
+operating on data in a stream but each has a specific function. To begin,
+drag-and-drop operators from the left-hand entity tree into the canvas.
+
+Operators and nodes
+
+The words operators and nodes are used interchangably within this document and
+within the user interface.
+
+### Advanced Operator Configuration
+
+Some nodes support additional advanced configuration that can be accessed by
+clicking the gear icon in the top right corner of the node configuration
+panel. Nodes that don't support this feature will not have the gear present.
+
+See API for more details
+
+See [the q API](../../../api/stream-processor/q/configuring-operators.html)
+for more details about about advanced node configuration.
+
+![Node settings dialog](images/ui/pipeline/node-settings.png)  
+_The node settings dialog for a Map node_
+
+#### Customizing Main Function Parameters
+
+Nodes that contain a 'main function' also support customizing the parameters
+that are passed into that function. For most nodes, only the data from the
+previous node is passed into the main function as the only parameter. However,
+metadata and the operator definition can also be passed into the function if
+desired. This can be helpful when needing to action based on the data's
+metadata, or if needing to use Stream Processor functions like `.qsp.set` and
+`.qsp.get`. This works for both q and Python functions.
+
+Changing the parameters
+
+After changing these settings it is up to the user to update their function to
+accept the new parameters and make use of them.
+
+Main function
+
+The 'main function' is the function defined at the top of the node
+configuration form. Some examples of nodes that use a 'main function' and have
+customizable parameters are the Apply and Map nodes. These parameter settings
+only apply to the main function field. Any subsequent functions defined after
+the main function are not affected by these settings.
+
+### Types
+
+Select from the following types of operator:
+
+  * [Readers](operators/readers.html) read data from an external or internal data source.
+  * [Writers](operators/writers.html) send data data to an internal or external data sink.
+  * [Functions](operators/functions.html) provide building blocks for transforming data by mapping, filtering or merging streams.
+  * [Encoders](operators/encoders.html) map data to serialize data formats that can be shared out of the system with writers.
+  * [Decoders](operators/decoders.html) deserialize incoming data into a kdb+ representation for manipulation.
+  * [Windows](operators/windows.html) group data into time blocks for aggregating streams.
+  * [String Utilities](operators/string.html) perform string operations on data
+  * [Transform](operators/transform.html) operators provide low code and no code transformations for manipulating data.
+  * [Machine Learning](operators/machine-learning.html) operators can be used to build prediction models of data in a stream.
+
+### Actions
+
+When an operator is added, the right-click menu has a number of actions which
+can be done on the operator.
+
+![An example expression pipeline](images/ui/pipeline/operator-library.png)  
+_An example expression pipeline with reader, transformation and writer
+operator; right-click for menu options._
+
+  * Click an operator in the pipeline canvas to edit; this will update the pipeline settings with details of the operator.
+  * Right-click an operator in the pipeline canvas to rename, remove or duplicate an operator. A duplicated operator will retain the contents of the original, and will have the name appended with a numeric tag; `-n`.
+
+![Right click menu on operator editing.](images/ui/pipeline/right-click-
+menu.jpg)  
+_Right click menu on operator editing._
+
+## Building a pipeline
+
+  1. From the Document menu bar or Perspective icon menu on the left, create a new Pipeline by clicking the plus icon.
+
+  2. Click-and-drag an operator listed in the left-hand entity tree into the central workspace; for example, start with a Reader operator.
+
+  3. Build the pipeline by adding operators to the workspace and joining them with the operator-anchors. Operators can be removed on a right-click, or added by click-and-drag from the entity tree, or a right-click in an empty part of the workspace. To change a connection, rollover to display the move icon and drag-connect, remove with a right-click. A successful pipeline requires a reader and writer operator as a minimum.
+
+![A connection of operators by linking to the connector edges
+together.](images/ui/pipeline/link-operators.gif)  
+_A connection of operators by linking to the connector edges together._
+
+  4. Configure each of the pipeline operators; click-select to display operator parameters in the panel on the right.
+
+**Example Pipeline**
+
+_Reader operator_ : **Expression**
+
+    
+        n:2000;
+    ([] date:n?(reverse .z.d-1+til 10);
+        instance:n?`inst1`inst2`inst3`inst4;
+        sym:n?`USD`EUR`GBP`JPY;
+        cnt:n?10)
+    
+
+_Transform operator_ : **Apply Schema**
+
+Leave the `Data Format` as `Any` (required).
+
+Column Name | Column Type | Parse Strings  
+---|---|---  
+date | Timestamp | Auto  
+instance | Symbol | Auto  
+sym | Symbol | Auto  
+cnt | Integer | Auto  
+  
+Preferably, a table schema should be loaded from a database created using the
+[database builder](../../database/configuration/index.html); select the
+database and schema table from their respective dropdowns. Use the above
+schema for the database `table`.
+
+![Load a schema from a database.](images/ui/pipeline/load-schema.png)  
+_Load a schema from a database._
+
+will load
+
+![Predefined schema from database.](images/ui/pipeline/apply-schema.jpg)  
+_Predefined schema from database._
+
+_Writer operator_ : **kdb Insights Database**
+
+Use the existing `table` name to write the data to. If not already done,
+create a [database](../../database/configuration/index.html).
+
+property | setting  
+---|---  
+Database | yourdatabasename  
+Table | testtable  
+Write to HDB | unchecked  
+Deduplicate Stream | checked  
+  
+**Completed Pipeline**
+
+![Completed expression pipeline after
+deployment.](images/ui/pipeline/expression-pipeline.jpg)  
+_Completed expression pipeline after deployment._
+
+Schemas Require a Timestamp Partition Column
+
+All schemas require a timestamp data column. In addition, the table should be
+partitioned and sorted (interval, historic and/or real-time) by this timestamp
+column. This can be configured as part of the set up
+[database](../../database/index.html), or with the essential and advanced
+properties of a schema.
+
+Executable Editors
+
+All q or Python editors in node configuration are executable and can be used
+to interactively develop complex functions. The current selection or line can
+be executed using 'Ctrl-Enter' or '⌘Enter' and the output viewed in the
+Console tab in the bottom section of the pipeline editor.
+
+Table naming
+
+Avoid using reserved keywords for
+[SQL](https://docs.oracle.com/database/121/SQLRF/ap_keywd001.htm#SQLRF55621)
+or [q](https://code.kx.com/q/ref/) when naming tables as this can return an
+error; e.g. do not give a table in the schema a name of `table`.
+
+  5. Rename the pipeline by typing a new name into the name field in the top left corner. The pipeline name should be lowercase, only include letters and numbers, and exclude special characters other than `-`.
+
+  6. Click `Save` to save the pipeline. A pipeline can be associated with a database prior to deployment, or deployed directly to an active database.
+
+Database selection
+
+If not previously created, create a
+[database](../../database/configuration/index.html) before configuring. The
+initial database will have a default table (and schema); additional tables can
+be added to the database schema.
+
+  7. Deploy the database associated with the pipeline. When the database is ready to be queried it will show a green circle with a tick next to it. The pipeline will appear under Pipelines of the Overview page, and show as `Running`.
+
+Test Deploys
+
+A quick or full test deploy can be done by clicking the respective test type
+in the pipeline page. Results will be displayed in the Data Preview tab of the
+lower panel of the pipeline editor - click on an operator to see the results
+at each step along the pipeline. Test deploys will automatically be torn down
+after completion of the test. See [test deploy](test.html) for more details.
+
+![Results from a test deployment of an Expression
+pipeline.](images/ui/pipeline/test-deploy.png)  
+_Results from a test deployment of an Expression pipeline._
+
+![A running pipeline as shown in the Overview
+page.](images/ui/pipeline/running-pipeline.png)  
+_A running pipeline as shown in the Overview page._
+
+  8. [Open a Query workspace](../../visualization/query.html) from the ribbon "+" menu, or from the icon bar on the left. Then open the SQL tab, and in the SQL editor add for the aforementioned _Expression_ example:
+
+SQL query
+
+SELECT * FROM testtable
+
+  9. **Get Data**
+
+![Console output of SQL query.](images/ui/pipeline/sql-query-result.jpg)  
+_Console output of SQL query._
+
+Set up
+
+In order to use Kafka and Postgres pipelines, relevant charts must be
+installed, running, and accessible on the cluster.
+
+Lower Case required
+
+When configuring pipelines, lower case should be used in all instances of
+names and references.
+
+[Take a look at some of the guided walkthrough pipeline
+examples.](../../walkthrough/index.html)
+
+## Pipeline status
+
+The status of a pipeline is available on the **Overview** page under "Running
+pipelines":
+
+![Running pipelines table](images/ui/pipeline/running-pipeline.png)
+
+View the state of the pipeline, teardown the pipeline, view diagnostics, or
+click the pipeline name to open its pipeline template view.
+
+![View diagnostics button](images/ui/pipeline/logs-button.png)  
+To view the logs for a pipeline, click the "View Diagnostics" button.
+
+![Teardown button](images/ui/pipeline/teardown-button.png)  
+To teardown a pipeline, click the "Teardown" button.
+
+A pipeline can have the following statuses:
+
+  * `Creating` \- Pipeline SP Controller is being created.
+  * `Initializing controller` \- Pipeline SP Controller has been created.
+  * `Partitioning workers` \- Pipeline is in the process of distributing partitions among one or more Workers.
+  * `Ready to receive data` \- Pipeline is ready to start, but is not yet processing messages.
+  * `Running` \- Pipeline is running and processing messages.
+  * `Unresponsive` \- Pipeline SP Controller is not responding to HTTP requests.
+  * `Errored` \- Pipeline errored before starting. This does not include errors encountered while processing messages.
+  * `Tearing down` \- Pipeline is in the process of tearing down.
+  * `Finished` \- Pipeline has finished processing messages, but has not been torn down.
+  * `Not Found` \- Pipeline does not exist.
+
+Note
+
+If you are using the pipeline APIs such as the [details](../../../api/stream-
+processor/rest/coordinator.html) or [status](../../../api/stream-
+processor/rest/coordinator.html) API, the statuses will be the following:
+
+  * `CREATING`
+  * `INITIALIZING`
+  * `PARTITIONING`
+  * `READY`
+  * `RUNNING`
+  * `UNRESPONSIVE`
+  * `ERRORED`
+  * `TEARING_DOWN`
+  * `FINISHED`
+  * `NOTEXIST`
+
+### Input and output rates
+
+By default, pipelines enable [record counting](deploy.html#record-counting)
+for all their readers and writers. This allows the pipeline to calculate the
+average number of records entering and exiting the pipeline over the last 5
+minutes. If record counting is disabled, input and output rates will not be
+available.
+
+## Pipeline settings
+
+Clicking the `Settings` tab will allow changing the pipeline resources,
+environment variables and tuning pipeline settings. See [pipeline
+settings](deploy.html) for more details.
+
+## Deploying, Testing, and Saving
+
+### Duplicate
+
+Creates a copy of the pipeline.
+
+_Pipeline name_
+
+    Give the duplicate pipeline a name. The duplicate pipeline name should be lowercase, only include letters and numbers and have a different name to the original pipeline, while excluding special characters other than `-`.
+
+### Save
+
+Save the pipeline.
+
+### Quick test
+
+Run a quick test deploy in the scratchpad to validate that the pipeline works.
+See [test deploys](test.html) for more information.
+
+### Full test
+
+Run a full test deploy using worker and controller pods to validate that the
+pipeline works. See [test deploys](test.html) for more information.
+
+### Deploy
+
+Deployed pipelines are deployed indefinitely. If a deployed pipeline errors,
+it will remain deployed. A deployed pipeline can be torn down from the
+pipeline listing, or from the banner that appears when the pipeline is
+deployed. Note that it is recommend that a [test deploy](test.html) is run
+before running a pipeline normally, as test deploys let you validate the
+output without writing from the writers.
+
+## Graph options
+
+![Pipeline canvas options and configuration
+properties.](images/ui/pipeline/pipeline-canvas.jpg)  
+_Pipeline canvas options and configuration properties._
+
+icon | function  
+---|---  
+![Undo button](images/ui/pipeline/undo-button.jpg) | Undo change  
+![Redo button](images/ui/pipeline/redo-button.jpg) | Redo change  
+![Reset view button](images/ui/pipeline/reset-button.jpg) | Reset view  
+![Layout button](images/ui/pipeline/layout-button.jpg) | Automatically layout pipeline  
+  
+## Operator configuration
+
+When an operator is selected, the right-hand panel contains the configuration
+details for the selected operator.
+
+![Pipeline properties for a Kafka import.](images/ui/pipeline/kafka-
+reader.png)  
+_Pipeline properties for a Kafka import._
+
+## Global code
+
+When no operator is selected, the right-hand panel contains the Global Code
+configuration. Global Code is executed before a pipeline is started; this code
+may be necessary for Stream Processor hooks, global variables and named
+functions.
+
+## Python code within pipeline UI
+
+Development of stream processor pipelines within the UI provides the ability
+for logic to be written in Python. The following sections of documentation
+outlines requirements and caveats which you should bear in mind when
+developing such nodes.
+
+### Writing Python code within the pipeline UI
+
+When defining the code which is to be used for a given node you need to take
+the following into account:
+
+  * The parsing logic used to determine the function used within a Python node works by retrieving for use the first function defined within the code block. The entire code block will be evaluated but it is assumed that the first function defined is that is retrieved is that used in execution.
+  * Only Python functions are supported at this time for definition of the execution function logic. You should not attempt to use `lambdas` or functions within classes to define the execution logic for a node. Additionally while functions/variables defined within the global code block can be used within individual nodes they cannot be referenced by name as the definition of the function to be used.
+  * All data entering and exiting an executed Python node block will receive and emit it's data as a [`PyKX`](https://code.kx.com/pykx) object. The PyKX documentation provides outlines on how these objects can be converted to common Python types and additionally includes notes on performance considerations which should be accounted for when developing code which interacts with PyKX objects.
+
+The following provides an example of a map and filter node logic which could
+be used on a pipeline:
+

@@ -1,0 +1,425 @@
+https://code.kx.com/insights/enterprise/free-trial/tour.html
+
+# Product tour - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/free-trial/tour.html
+
+# kdb Insights Enterprise Product Tour
+
+_This product tour lets you try out selected features of kdb Insights
+Enterprise such as querying sample data, configuring code in an easy-to-use
+interface and visualizing your data._
+
+Free Trial
+
+The product tour is only available with our free trial. If you don't have the
+free trial, it's easy to [sign up](https://trykdb.kx.com/kx/signup).
+
+Please note that resources in free trial are only provisioned for the
+activities described in these instructions. Be aware that if you perform
+additional analysis you may encounter issues and unexpected behaviour due to
+these constraints.
+
+## Aim
+
+The aim of this tour is to show you the power and speed of the data analytic
+capabilities provided by kdb Insights Enterprise. It guides you on how to gain
+insights from your data by running queries on the NYC taxi dataset showcasing
+the use of SQL, q, and Python.
+
+This tour is divided into the following sections:
+
+  * The dataset \- which introduces the data being analysed.
+  * The Query tab \- which introduces you to the **Query** tab and how it is used to explore the data.
+  * Analysing the data \- which guides you through querying the data to answer questions relating to daily trips, average fares, passenger counts, tipping behaviour and more.
+  * Next steps \- which provides links to other useful resources.
+
+## The dataset
+
+This product tour uses a taxi dataset which contains historical data from New
+York's yellow taxi network, provided by the NYC Taxi & Limousine Commission.
+Using this data you will gain insights into the journeys being taken.
+
+The data contains approximately 3 million records from trips taken during the
+month of December 2021. This data records attributes such as pick-up and drop-
+off dates/times, pick-up and drop-off locations, trip distances, itemized
+fares, rate types, payment types, and driver-reported passenger counts.
+
+## The Query tab
+
+In kdb Insights Enterprise data analysis is done in the **Query** tab. This is
+accessible by clicking [+] on the ribbon bar and selecting **Query** , or by
+clicking **Query** on the Overview tab, as shown below.
+
+![The query tab can be opened from the left-hand menu tree, the \[+\] menu in
+the ribbon menu, or from the Query panel on the Overview
+page.](img/queryoverview.jpg)  
+
+The **Query** tab explained
+
+  * _Get Data_ : The top part of the screen is used for extracting the data for analysis. You can extract the data using SQL, q, or a set of controls in the UI.
+  * _Scratchpad_ : The middle section of the screen is used for analyzing the extracted data. You can use python or q, whichever you prefer, choosing from the language option at the bottom right of this section.
+  * _View Data_ : The lower part of the screen is used for visualizing the analyzed data. The data can be visualized in three different ways using the **Console** , **Table** , or **Visual** tabs.
+
+The following screenshot displays the **Query** tab.
+
+![The **Query** tab with Get Data, Scratchpad and Output
+elements.](img/queryoverview.png)  
+
+### Explore the data's shape
+
+In this section we query how many records there are in the dataset.
+
+  1. Open the **Query** tab and select either **SQL** or **Q** , in the top part of the screen. Add the appropriate code depending on your query method.
+
+There around 3 million records in the dataset.
+
+Session initialization
+
+Please note the first query you run with **Get Data** may take a little longer
+while the session is initialized.
+
+  2. Enter a text name for the **Output variable**. 
+
+  3. Click **Get Data**.
+
+Next, we query how many columns are in the dataset and what are the datatypes.
+
+  1. In the Get Data section of the screen, choose the `Q` tab; select `database=taxi` and `instance=hdb`, and add the following code.
+    
+        // what are the columns and datatypes?
+    meta trips
+    
+
+Syntax explanation
+
+The [`meta`](https://code.kx.com/q/ref/meta/) operator allows you to inspect
+the schema of the table. This returns a table of the available columns, their
+types, and other information. The following columns are returned:
+
+  2. Enter a text name for the **Output variable**.
+
+  3. Click **Get Data**.
+
+The following screenshot displays the output of meta trips run using `q`.
+
+![Output of meta trips run using q.](img/columntypesanddatatypes.jpg)  
+
+You can see the columns that are part of the dataset and their types. At this
+stage you have a better understanding of the size and shape of the data, which
+will assist with the later analysis.
+
+## Analysing the data
+
+You are now ready to start running some queries on this data. You will find
+out:
+
+### Daily trip count
+
+In the Get Data part of the **Query** tab choose either **SQL** or `Q` and
+enter the relevant query to find out the daily trip count.
+
+SQLQ
+
+    
+    
+    -- how many trips per day?
+    SELECT date, COUNT(*) AS num_trips
+    FROM trips
+    WHERE date BETWEEN '2021-12-01' AND '2021-12-31'
+    GROUP BY date
+    
+
+The following screenshot shows the daily trip count query run using
+
+**SQL**
+
+.
+
+![Daily trip count run using **SQL** .](img/howmanytrips_sql.jpg)  
+
+Select `database=taxi` and `instance=hdb`.
+
+    
+    
+    // how many trips per day?
+    select num_trips:count i by date from trips where date within (2021.12.01;2021.12.31)
+    
+
+Syntax explanation
+
+The above [virtual column `i`](https://code.kx.com/q4m3/9_Queries_q-
+sql/#9322-the-virtual-column-i) maps to a record index in the table. A simple
+aggregation can be obtained by taking the count of this virtual column.
+
+To assign the resulting aggregation to a new column name in the resulting
+table, we simply use a colon `:`.
+
+The following screenshot shows the daily trip count query run using `q`.
+
+![Daily trip count run using q.](img/dailytripcount.jpg)  
+
+How many trips occur each day?
+
+Switching to the visual tab, in the lower part of the screen, you see that
+around 100,000 trips were taken per day during the month and that trips taken
+reduced towards the end of the month, with the lowest day being Christmas day.
+
+This analysis could help taxi companies decide how many drivers are required
+on different days of the year.
+
+### Daily average fare
+
+In the Get Data part of the **Query** tab choose either **SQL** or **Q** and
+enter the relevant query to find out the daily average fare.
+
+SQLQ
+
+    
+    
+    -- what is the average fare each day?
+    SELECT date, avg(fare)
+    FROM trips
+    WHERE date BETWEEN '2021-12-01' AND '2021-12-31'
+    GROUP BY date
+    
+
+The following screenshot shows the daily average fare using
+
+`SQL`
+
+.
+
+![Daily average fare run using SQL.](img/averagetripperday_sql.jpg)  
+
+Select `database=taxi` and `instance=hdb`.
+
+    
+    
+    // what is the average fare each day?
+    select avg fare by date from trips where date within (2021.12.01;2021.12.31)
+    
+
+The following screenshot shows the daily average fare using
+
+`Q`
+
+.
+
+![Daily average fare run using q.](img/dailyaveragefare.jpg)  
+
+What is the average fare each day?
+
+Again using the visual tab, it is clear the number of trips per day was lower
+around Christmas, however, you can also see that the average fare amount was
+higher for these days.
+
+This analysis could help taxi companies to determine which days are most
+lucrative possibly indicating higher demand.
+
+### Hourly passenger count
+
+In the Get Data part of the **Query** tab choose **Q** and enter the following
+query to find out the hourly passenger count.
+
+Q
+
+Select `database=taxi` and `instance=hdb`.
+
+    
+    
+    // 1. group the pickup time into 60 minute buckets using xbar
+    // 2. get the average number of passengers for the trips in each bucket
+    select avg passengers by buckets:60 xbar pickup_datetime.minute from trips where date within (2021.12.01;2021.12.31)
+    
+
+Syntax explanation
+
+The [`xbar`](https://code.kx.com/q/ref/xbar/) function is used to group the
+data on the pickup datetime column into 60 minute buckets.
+
+To assign the resulting buckets to a new column name in the resulting table,
+we simply use a colon `:`.
+
+The following screenshot shows the hourly passenger count query using `q`.
+![Hourly passenger count run using q.](img/hourlypassengercoubt.jpg)  
+
+What is the average number of passengers per trip each hour?
+
+In the later hours of the day, trips have a higher average number of
+passengers than in the early morning hours.
+
+This analysis could help taxi companies optimise the deployment of their
+drivers based on the seat capacity of the cars in their fleet.
+
+### Tipping behavior
+
+In the Get Data part of the **Query** tab choose **Q** and enter the following
+query to find out the tipping behaviour.
+
+The following screenshot displays the tipping behaviour query.
+
+![Tipping behavior run using q.](img/tippingbehavior.jpg)  
+
+When are people giving the most tips?
+
+Throughout the day, there is usually a consistent amount of tips, with a
+slight decline in the middle of the night. This decline is followed by a
+massive increase during the hours of 4am to around 7am.
+
+This analysis could help taxi companies encourage their drivers to work shifts
+that include those early morning hours.
+
+### Compare tips and distance
+
+For this example you can switch to the scratchpad for analyzing the extracted
+data in further detail.
+
+  1. In the top part of the **Query** tab choose **Q** and enter the following query and save it as a variable called `tip_buckets`.
+
+  2. In the Get Data part of the **Query** tab choose **Q** and enter the following query and save it as a variable called `distance_buckets`.
+
+  3. In the Scratchpad, in the middle part of the Query screen, select **Python**. Add the following python code to the scratchpad editor:
+    
+        # join the tables 'tip_buckets' and 'distance_buckets' on the time column 'buckets'
+    # this is joining tables with varying time granularity
+    import pandas as pd
+    pd.merge_asof(tip_buckets.pd(), distance_buckets.pd(), left_on="buckets", right_on="buckets")
+    
+
+Cursor position for Python
+
+You may need to move the cursor to the final line of code and run `Ctrl+Enter`
+to visualize in Python.
+
+  4. In the Visual tab, switch the chart type to **Line**.
+
+  5. Click **Run Scratchpad**. The line chart showing the results of the python query, on tip and distance travelled, is displayed, as shown in the following screenshot.
+
+![Line chart of tip and distance travelled as run in Python using the
+scratchpad.](img/pythontipdistance.jpg)  
+
+Syntax explanation
+
+We need to import the [`pandas`](https://pandas.pydata.org/) module to access
+the `pandas.merge_asof` function to merge the tables together. When importing
+this module, we alias it as `pd`.
+
+This [`pd.merge_asof`](https://pandas.pydata.org/pandas-
+docs/version/0.25.0/reference/api/pandas.merge_asof.html) function does not
+work on pykx tables so we need to convert this data structure into a pandas
+dataframe. This is done by calling the
+[`.pd()`](https://code.kx.com/pykx/1.4/api/type_conversions.html#pykxtable)
+function on the pykx table.
+
+In this example, we use the `pd.merge_asof` function to join two tables
+together of varying temporal granularity.
+
+  6. The same output can be generated using **Q** in the scratchpad:
+    
+        // join the tables 'tip_buckets' and 'distance_buckets' on the time column 'buckets'
+    // this is joining tables with varying time granularity
+    aj[`buckets;tip_buckets;distance_buckets]
+    
+
+Syntax explanation
+
+[`aj`](https://code.kx.com/q/ref/aj/) is a powerful timeseries join, also
+known as an asof join, where a time column in the first argument specifies
+corresponding intervals in a time column of the second argument.
+
+In this example, we use it to join two tables together of varying temporal
+granularity.
+
+Does the distance of journey have an impact on tips earned?
+
+Trips that are a longer distance tend to earn higher tips for drivers.
+
+This analysis might influence drivers to choose to take longer distance fares
+as they can earn a higher tip.
+
+### Breakdown trips by rate type
+
+In the top part of the **Query** tab choose either **SQL** or **Q** and enter
+the relevant query to find out the breakdown of trips by rate type.
+
+How many trips occur for each area?
+
+You can see here that most of the trips fall into `Standard rate`, while there
+are also a good number of trips falling under the airport rates `JFK`,
+`Newark`, and `Nassau or Westchester`.
+
+This analysis could help taxi companies gauge how many of the trips their
+drivers did of each rate type so they can manage the fare rates associated
+with each rate type.
+
+The following screenshot shows the number of trips under each rate type, as
+returned by the q query.
+
+![Number of trips under each rate type as generated by a q
+query.](img/breakdownbyratetype.jpg)  
+
+### Daily airport trips
+
+In the Get Data part of the **Query** tab choose either **SQL** or **Q** and
+enter the relevant query to find the number of daily airport trips.
+
+SQLQ
+
+    
+    
+    -- how many trips to and from the airport were there each day?
+    SELECT date, rate_type, COUNT(*) AS num_trips
+    FROM trips
+    WHERE date BETWEEN '2021-12-01' AND '2021-12-31'
+        AND rate_type in ('JFK', 'Newark', 'Nassau or Westchester')
+    GROUP BY date, rate_type
+    
+
+The following screenshot shows the number of daily airport trips as generated
+by a
+
+`SQL`
+
+query.
+
+![Number of daily airport trips as generated by a SQL
+query.](img/dailyairporttrips.jpg)  
+
+Select `database=taxi` and `instance=hdb`.
+
+    
+    
+    select num_trips:count i by date, rate_type from trips where date within (2021.12.01;2021.12.31), rate_type in `$("JFK"; "Newark"; "Nassau or Westchester")
+    
+
+The following screenshot shows the number of daily airport trips as generated
+by a
+
+`q`
+
+query.
+
+![Number of daily airport trips as generated by a q
+query.](img/dailyairporttrips_q.jpg)  
+
+How many trips to and from the airport were there each day?
+
+You can see here that the number of trips to and from the airport was
+relatively constant and that Christmas had a minimal effect on the daily
+airport journeys.
+
+This analysis could help taxi companies ensure that they have enough drivers
+working during this period despite the holidays.
+
+Timestamp data for Trip data
+
+If you are using the `Query` get data filters, please be aware that the taxi
+data covers the period from 2021.12.31D00:00:00.000000000, for duration of the
+day.
+
+## Next steps
+
+  * Learn how to build databases and pipelines to ingest, query and visualize data using the [guided walkthrough](../walkthrough/index.html).
+  * Build a real-time trading application or learn how to apply predictive analytics for manufacturing using the [industry tutorials](../recipes/index.html).
+

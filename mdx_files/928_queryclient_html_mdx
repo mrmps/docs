@@ -1,0 +1,70 @@
+https://code.kx.com/insights/core/rest-server/appendix/queryclient.html
+
+# queryclient - kdb products
+
+Original URL: https://code.kx.com/insights/core/rest-server/appendix/queryclient.html
+
+# `queryclient`
+
+_Full definition of example client that interacts with REST server_
+
+    
+    
+    if[not `server in key .Q.opt .z.x; '"Provide -server http://host:port"]
+    server:first @[;`server] .Q.opt .z.x
+    
+    // Wait forever until health check returns true.
+    while[200 <> first @[.kurl.sync;(server,"/v1/hc";`GET;::);{(-1;"")}];
+      system "sleep 1"]
+    
+    // Create a new project folder
+    body: .j.j `name`dir!("myProject";"projFolder1")
+    headers:("http-method";"Content-Type")!("POST";"application/json")
+    resp:.kurl.sync (server,"/v1/projects";`POST;`body`headers!(body;headers))
+    if[200 <> first resp; 'last resp]
+    project:.j.k last resp
+    -1 "Created ", project `name;
+    projectID:string project `id
+    
+    // Create an empty database folder
+    body: .j.j enlist[`name]!enlist "db1"
+    
+    resp:.kurl.sync (server,"/v1/projects/",projectID,"/databases";
+        `POST;
+        `body`headers!(body;headers))
+    
+    if[200 <> first resp; 'last resp]
+    database:.j.k last resp
+    databaseID:database `id
+    
+    // Create a random partitioned table using JSON
+    // Note that this is just for demonstrations sake
+    //  instead of calling this API, you may mount a db externally on the server
+    n:1000
+    
+    t:([]
+        date:n?2021.01.01 2021.01.02 2021.01.03;
+        x: n?100f;
+        y: n?0b )
+    
+    resp:.kurl.sync
+      (0N!server,"/v1/projects/",projectID,"/databases/",databaseID,"/tables";
+      `POST;
+      `body`headers!(.j.j `name`table!(`t;t);headers))
+    
+    if[200 <> first resp; 'last resp]
+    
+    // Submit a query job
+    body:.j.j`query`databaseID!("select from t"; databaseID)
+    resp:.kurl.sync (server,"/v1/projects/",projectID,"/jobs";
+        `POST;
+        `body`headers!(body;headers))
+    if[200 <> first resp; 'last resp]
+    job:.j.k last resp
+    jobID:string job `id
+    
+    // Check on the job
+    resp:.kurl.sync (server,"/v1/projects/",projectID,"/jobs/",jobID;`GET;::)
+    if[200 <> first resp; 'last resp]
+    
+

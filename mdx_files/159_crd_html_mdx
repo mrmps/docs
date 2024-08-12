@@ -1,0 +1,55 @@
+https://code.kx.com/insights/core/sql/crd.html
+
+# Table Creation - kdb products
+
+Original URL: https://code.kx.com/insights/core/sql/crd.html
+
+# Table Creation, Modification and Deletion
+
+`KX SQL` supports the [Data Definition Language
+(DDL)](https://en.wikipedia.org/wiki/Data_definition_language) which can be
+used to handle the database descriptions and schemas. It can also be used to
+define and modify the structure of the data.
+
+## Create
+
+`CREATE` can be used to create a new table in kdb Insights Core in memory.
+
+**Examples**
+
+  * Creating an empty table of 2 columns, using varchar and float to define columns of q type symbol and float respectively:
+    
+        s)CREATE TABLE tripsFare (vendor varchar,fare float)
+    s.e.SELECT * FROM tripsFare
+    
+
+  * Creating an empty table of 10 columns, using a number of different data types:
+    
+        s)CREATE TABLE cars (id int, Name varchar(250), "Miles_per_Gallon" smallint, "Cylinders" smallint, "Displacement" smallint, "Horsepower" smallint, "Weight_in_lbs" smallint NOT NULL, "Acceleration" smallint, "Year" date NOT NULL, "Origin" character varchar(60));
+    s.e.SELECT * FROM cars
+    
+
+Note
+
+We could also have used char(n>1) here. If we wanted to define a column of q
+type char - we would use char(1).
+
+See here for a full list of supported data types.
+
+## Insert
+
+`INSERT` can be used to add new records to a table in memory.
+
+**Examples**
+
+## Drop
+
+`DROP` can be used to delete a kdb Insights Core table from memory.
+
+**Examples**
+
+  * Dropping a table:
+    
+        s)DROP table IF EXISTS tripsFare
+    
+

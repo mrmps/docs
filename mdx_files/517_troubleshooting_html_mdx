@@ -1,0 +1,422 @@
+https://code.kx.com/insights/microservices/database/query/troubleshooting.html
+
+# Troubleshooting - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/database/query/troubleshooting.html
+
+# Troubleshooting
+
+This guide is meant to help users diagnose system and configuration issues
+while running the _kdb Insights Database_.
+
+## General tips
+
+## DAP configuration issues
+
+For reference, the elements section of DAP assembly configuration should look
+similar to this:
+
+    
+    
+    elements:              # Elements section of assembly
+      dap:                 # Start of DAP configuration section
+        instances:
+          hdb:             # Start of config for DAPs with KXI_SC env set to "hdb"
+            mountName:hdb  # Mount this DAP to provide read access to (must match name in `mounts` section)
+          rdb:             # Start of config for DAPs with KXI_SC env set to "rdb"
+            mountName:rdb
+    
+
+A DAP generates fatal errors if the assembly is misconfigured; these are
+listed below along with solutions:
+
+### Missing DAP from elements section of assembly
+
+This issue occurs when the assembly file does not have a `dap` section under
+the `elements` section of the assembly. This can be due to the section being
+missing, or a simple typo as in the below example.
+
+    
+    
+    elements:
+      dapp:                 # Typo in "dap"
+        instances:
+          hdb:
+            mountName:hdb
+          rdb:
+            mountName:rdb
+    
+
+### Missing service class config under `dap` instances of assembly
+
+If this startup error occurs, it is because the `KXI_SC` environment variable
+set for the DAP does not match any name under `elements.dap.instances` of the
+assembly file. To resolve this, compare the `KXI_SC` set for the DAP with
+those in its assembly file.
+
+### Mount does not exist within assembly `mounts`
+
+DAPs fail to start if the mount they are configured to provide access to does
+not exist within the assembly file. This mount is set by
+`elements.dap.instances.*.mountName`. For example, in the above snippet the
+DAP `hdb` has a mount called `hdb`, and the DAP `rdb` DAP has a mount called
+`rdb`.
+
+To resolve this error ensure that a `mounts` section exists for the assembly
+file, and that the mount names there match those defined in the DAP config. An
+example `mounts` section for the above might look like this:
+
+    
+    
+    mounts:
+      rdb: # This line defines the name of the mount that `mountName` references
+        type: stream
+        baseURI: none
+        partition: none
+    
+      hdb:
+        type: local
+        baseURI: file:///data/hdb
+        partition: date
+    
+
+### Error mounting database: `.DS_Store`
+
+`.DS_Store` is a hidden file automatically created on `macOS`, and used to
+store custom attributes of a given folder. The presence of these files results
+in a FATAL error when re-starting the database. To resolve this issue, use the
+following command to delete all these files inside the database folder.
+
+    
+    
+    find $DB_PATH -name .DS_Store -type f -exec rm {} \;
+    
+
+### No mount dir defined - set `baseURI` of associated mount
+
+The `mounts` configuration needs to have the `baseURI` set for the mount so
+that the DAP can find where to mount the on-disk data from.
+
+### Invalid table configuration, exiting
+
+DAPs fail to start if one or more schemas are misconfigured. Before failing
+with the above error the DAP outputs any detected errors with the schema
+definition. Possible errors are summarized below:
+
+Error Message | Remediation  
+---|---  
+`assembly.table.%s has invalid name, consider using` | Table name is invalid and must be changed  
+`assembly table.%s missing required key(s):` | Add required key to table  
+`assembly.table.%s columns missing required key(s):` | Columns must have a name and type. Add the missing key  
+`assembly.table.%s has no columns` | Remove table, or add columns  
+`assembly.table.%s column name: '%s' is invalid, please consider using '%s'` | Change noted column name to suggestion or something else  
+`assembly.table.%s.%s column type: %s is invalid` | Column type is invalid, change to supported type  
+`assembly.table.%s missing required key(s): `prtnCol` | Partitioned tables require a `prtnCol` key  
+`assembly.table.%s.%s prtnCol is not timestamp type` | The `prtnCol` key must be of a timestamp type  
+`assembly.table.%s %s: %s conflict with %s: %s. Can NOT apply %s# to %s column of %s table.` | Add the referenced column with attribute to referenced `sortCols` key  
+`assembly.table.%s: %s conflict with parted attribute: Can NOT apply parted attribute to vector columns %d` | A vector column type cannot have a parted attribute applied to it  
+  
+### No assembly labels defined - set labels in assembly
+
+The RC's routing of DAPs relies on there being labels defined for the
+assembly, so DAP/RC registration expects that the DAP has some labels attached
+to the assembly. If none are defined, then the DAP startup fails. To fix this,
+add at least one label to the `labels` section of the assembly. For example,
+to add a `region` label of `eu`, add this to the assembly:
+
+## Queries
+
+### My queries are not returning data
+
+When no data is returned, either the query is succeeding but finding no data
+given the parameters of the request, or the request itself is failing. The way
+to tell the difference is to look at the `rc`, `ac`, and `ai` in the header of
+the response. If the `rc` and `ac` are 0, then from the DAP's perspective the
+queries have succeeded and there was no data to return. If either the `rc` or
+`ac` are non-zero the `ai` should give more information about the specific
+error encountered.
+
+### My queries are refused
+
+If the GW returns immediately with an error of the form:
+
+    
+    
+    'Resource Coordinator connection not established
+    
+
+Then this indicates that the GW has not connected to the RC. Alternatively,
+you can check the GW logs for the following messages:
+
+    
+    
+    // Error
+    INFO  com.kx.sg.IPCService - Coordinator connection establish error: java.net.ConnectException: Connection refused (Connection refused). Will try again in 5 seonds...
+    
+    // Success
+    INFO  com.kx.sg.IPCService - Connected to coordinator <rc_address>
+    
+
+If the `Error` message appears multiple times without the `Success` message,
+then the GW is unable to connect to the RC. Check the connection details in
+the GW configuration.
+
+### My queries always fail
+
+This can happen for multiple reasons. The first element in the response is the
+_response header_ (see "header" page) and the `rc`, `ac`, and `ai` fields (see
+"codes" page) contain details on the error. The following table summarizes the
+possible routing errors from the RC.
+
+`rc` | `ac` | `ai` | cause | solution  
+---|---|---|---|---  
+`NOT_READY (58)` | `NOT_READY (20)` | `"No resources connected"` | No DAPs (or other RCs) are connected to the RC. | See RC-DA and RC-RC.  
+`NOT_SUPPORTED (12)` | `NOT_SUPPORTED (17)` | `"SQL library not loaded"` | Attempting to make a SQL query in unsupported q version. | Upgrade q.  
+`APP (5)` | `*` | `"SQL parse error"` | Error parsing SQL statement. | Fix query.  
+`APP (5)` | `ARG (23)` | `"bad args purview dimensions"` | Invalid routing arguments. | Check query, labels must be symbols, `startTS` and `endTS` are timestamps.  
+`APP (5)` | `ARG (23)` | `"startTS >= endTS"` | Invalid request timestamps. | Start time must be less than end time.  
+`NOT_SUPPORTED (12)` | `DOMAIN (27)` | `"outside all RC taxonomies"` | Request for unknown label values. | Check that labels in query match labels of desired DAPs (assembly file). If this looks correct, then the desired DAPs or RCs may not be connected properly. See RC-DA and RC-RC.  
+`NO_DEST (56)` | `NO_DEST (17)` | `"no Agg"` | Can't find an aggregator. | See RC-Agg.  
+`TIMEOUT (45)` | `ERR (10)` |  | Request timed out before completing | See Timeouts.  
+  
+### Timeouts
+
+Constant timeouts are usually due to the RC being unable to find a DAP to
+cover a temporal region of the request, which would point to a DAP not
+correctly connecting with the RC. When the RC encounters a timeout it augments
+the log and `ai` code of the request with metadata about portions of the
+request that did not complete.
+
+The metadata includes the RC responsible for the request, the current status
+of the request, and details of items in the queue. The queue details include
+the labels and temporal range for the request being serviced, and the reason
+the portion was not sent to a DAP to be serviced.
+
+#### No DAP covers labels/time range
+
+The RC reports this in cases where no DAP has registered with the appropriate
+time ranges or labels. If you can attach or open an IPC handle to the RC
+process and there are no active requests, run the following command on the
+process:
+
+This returns a table with the labels, `startTS` and `endTS` for each
+contiguous set of label values. If any label combination does not cover from
+`startTS=-0Wp` to `endTS=0Wp`, one or more of the DAPs with those labels is
+missing.
+
+#### Busy executing another API
+
+Occurs when one or more DAPs needed to service the request were too busy
+servicing another API. Depending on the request parameters, there might not be
+anything wrong other than the system was not sufficiently resourced to handle
+the query load. If this issue occurs often, some possible remediation steps
+are to look into the query code to see if it can be optimized (in the case of
+a custom API), or to add more DAPs to the system to service queries.
+
+#### DAP reference vintage %n does not match %s reference vintage %n
+
+DAPs keep track of where they are in the RT stream any time they ingest
+reference data, and they report this position (or vintage) to the RC. When
+sending a request to DAPs, the RC checks that the vintages of the portions of
+the request match, so as to minimize disparities in the data reported. This
+timeout error can occur when one or more DAPs are falling behind in ingestion,
+and so the reference vintage they report is lagging behind the global value.
+When this occurs, it is best to check the logs and determine the cause of any
+ingestion issue that might be affecting particular DAPs.
+
+#### Unavailable for unspecified reasons
+
+When this reason is specified, the DAP has marked itself unavailable to the
+RC. This usually occurs when the DAP is acting on a reload signal and is thus
+performing in-memory data purges, or garbage collect calls. The DAP logs
+contain details of what it was doing during the time of the request.
+
+This can occur in cases where the DAP has started and registered with the RC,
+but has remained marked as "unavailable". In this case, the issue could be
+that it has not ingested its end-of-replay marker. In a healthy system you
+should be able to see the DAP log both of these:
+
+    
+    
+    INFO DA Injecting end of log replay message, marker
+    INFO DA Finished RT log replay
+    
+
+In cases where there is an ingestion issue, you see only the first log
+message. If you have access to the DAP console, you can confirm it has not
+received the end-of-replay message by querying `.da.i.eorReceived` in the DAP
+that is unavailable and confirming the value is `0b`.
+
+#### Unknown reason for not assigning request portion to DAP(s)
+
+Occurs when the RC does not know why the request portion was unable to be
+served. This requires deeper investigation into the logs and state of the
+system.
+
+## RC-DAP
+
+At startup, a DA reaches out to its configured RC and initiates connection.
+The DA logs should have a message of the form:
+
+    
+    
+    [rdb] INFO  DA Initializing RC connection, rc=<KXI_SG_RC_ADDR>
+    [rdb] INFO  KXDSCONN Attempting to connect to rc at <KXI_SG_RC_ADDR>
+    [rdb] INFO  KXDSCONN Connected to proc=rc addr=<KXI_SG_RC_ADDR> handle=<handle>
+    [rdb] INFO  DA Registering with RC
+    
+
+If this message does not appear, the DA did not connect to the RC. Verify
+connection details.
+
+If connection is established, the RC logs should contain a message of the
+form:
+
+    
+    
+    [KXI-SG-RC-sg-rc] INFO  SGRC Received DAP registration request, handle=<handle>
+    [KXI-SG-RC-sg-rc] INFO  SGRC Registering valid DAP, handle=<handle> asm=<dap_assembly_name> instance=<KXI_SC> addr=<KXI_NAME>:<KXI_PORT>
+    
+
+Ensure that the purview matches the expected values. The RC uses these values
+(except `ver`) to route requests; they must the labels in your request.
+
+    
+    
+    [KXI-SG-RC-sg-rc] INFO  SGRC Adding new purview ID, id=1 labels=[labelKey=`labelValue]
+    
+
+If there is no registration message, look for one of the following error
+messages in the RC log:
+
+    
+    
+    // Incorrect args to the registration call.
+    ERROR [KXI-SG-RC-sg-rc] SGRC Incorrect DAP registration param types
+    
+    // Bad purview.
+    ERROR [KXI-SG-RC-sg-rc] Invalid DAP purview registration
+    
+    // Invalid metadata.
+    ERROR [KXI-SG-RC-sg-rc] Invalid DAP metadata
+    
+    // Invalid schema definitions.
+    ERROR [KXI-SG-RC-sg-rc] Invalid DAP schemas
+    
+    // Unexpected update.
+    ERROR [KXI-SG-RC-sg-rc] Unknown DAP update
+    
+    // Invalid purview on update.
+    ERROR [KXI-SG-RC-sg-rc] Invalid purview update, rejecting DAP
+    
+
+Any of these messages indicates a bug. Failing any of the above, look for any
+error messages in the DAP or RC that would indicate that initialization failed
+before the registration was attempted, which would also indicate a bug.
+Contact technical support.
+
+## RC-RC
+
+At startup, if using multiple RCs, for every RC pair, one RC should initiate a
+connection to the other. To ensure the RCs are configured to find each other,
+look for the following message:
+
+    
+    
+    INFO  [KXI-SG-RC-sg-rc] SGMRC Setting multi-RC mode to <mode>
+    
+
+If the message is not present, one of the following messages should appear:
+
+    
+    
+    INFO  [KXI-SG-RC-sg-rc] SGRC Setting mono-RC mode
+    
+    // OR
+    
+    FATAL  [KXI-SG-RC-sg-rc] SGRC Unrecognized 'KXI_DISC_MODE' mode: <mode>
+    
+
+These indicate the `KXI_DISC_MODE` environment variable is either unset
+(former) or set to an unrecognized value (latter). See "SG configuration page"
+for details.
+
+Assuming discovery mode is correctly set, for every pair of RCs, one RC should
+attempt to connect to the other (which one is not guaranteed). Say, `RC_0`
+connects to `RC_1`. Ensure the following messages appear in the logs:
+
+    
+    
+    // RC_0
+    INFO  [KXI-SG-RC-sg-rc-0] SGRC Attempting connection to RC, name=<rc_names> hostport=<rc_host:ports>
+    
+    // RC_1
+    INFO  [KXI-SG-RC-sg-rc-1] SGRC Registering RC, name=<rc_0_name> host=<rc_0_host> port=<rc_0_port>
+    INFO  [KXI-SG-RC-sg-rc-1] SGRC Reciprocating registration with RC
+    
+    // RC_0
+    INFO  [KXI-SG-RC-sg-rc-south] SGRC Registering RC, name=<rc_1_name> host=<rc_1_host> port=<rc_1_port>
+    
+
+In the event of communication failure, there may be a log message of the form
+`"Error sending: <error>"`, but the RCs should retry in a few seconds, so
+these can be ignored, unless they repeat constantly.
+
+If these messages do not appear in either RC, then one or both are incorrectly
+configured.
+
+  * If using `"kubernetes"` discovery mode, ensure that the annotations are correctly set in the pod metadata:
+    
+        kind: Pod
+    metadata:
+      annotations:
+        kxi-kdisc: "${Name of the RC container}: sc=KXI-SG-RC port=${Container port number}" # Check these!
+    
+
+The name of the RC container should match the name `spec.containers.name` of
+the RC container:
+
+    
+        spec:
+       containers:
+       - name: ${Name of the RC container}
+    
+
+## RC-Agg
+
+At startup, the Agg should open a connection to its RC. The following message
+should appear in the Agg's logs:
+
+    
+    
+    INFO [KXI-SG-AGG-sg-agg] SGAGG Attempting to register with RC, hp=:<rc_host>:<rc_port>
+    INFO [KXI-SG-AGG-sg-agg] SGAGG Connected to RC, handle=<hanle_number>
+    
+
+If instead, the following messages appears:
+
+    
+    
+    FATAL [KXI-SG-AGG-sg-agg] Must define KXI_SG_RC_ADDR env variable
+    
+
+then the `KXI_SG_RC_ADDR` environment variable is not set (should be
+`KXI_SG_RC_ADDR="<rc_host>:<rc_port>"`). If the following message continually
+pops up:
+
+    
+    
+    INFO [KXI-SG-AGG-sg-agg] SGAGG Attempting to register with RC, hp=:<rc_host>:<rc_port>
+    WARN [KXI-SG-AGG-sg-agg] SGAGG Unable to connect to RC
+    
+
+check to make sure the RC's host and port are set.
+
+Once connection is established, a confirmation message should appear in the
+RC's logs:
+
+    
+    
+    INFO [KXI-SG-AGG-sg-agg] Registering Agg, host=<agg_host> port=<agg_port> handle=<handle_number>"
+    
+

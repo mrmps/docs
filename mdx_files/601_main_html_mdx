@@ -1,0 +1,413 @@
+https://code.kx.com/insights/core/objstor/main.html
+
+# Object storage | kdb+ Cloud Edition - kdb products
+
+Original URL: https://code.kx.com/insights/core/objstor/main.html
+
+# Object storage
+
+_Authenticate with cloud credentials via Kurl and get native access to cloud
+object storage_
+
+Example: a single bucket on each of the clouds, using the prefixes:
+
+    
+    
+    aws     `:s3://
+    gcp     `:gs://
+    azure   `:ms://
+    
+
+Start kdb+ with the object store library loaded. AWS_REGION must be set to us-
+east-2
+
+Delve deeper into the buckets
+
+Other read operations work as if the file were on block storage.
+
+    
+    
+    q)hcount `$":gs://kxinsights-marketplace-data/db/2020.01.01/trade/sym"
+    2955832
+    
+    q)-21!`$":gs://kxinsights-marketplace-data/db/2020.01.01/trade/sym"
+    compressedLength  | 69520
+    uncompressedLength| 2955832
+    algorithm         | 2i
+    logicalBlockSize  | 17i
+    zipLevel          | 6i
+    
+    q)read1`$":gs://kxinsights-marketplace-data/db/2020.01.01/trade/.d"
+    0xff010b000000000073796d0074696d650070726963650073697a650073746f7000636f6e640..
+    
+
+To mount an HDB directly from object storage, we set up a partition file
+locally as
+
+    
+    
+    $ more db/par.txt
+    s3://kxinsights-marketplace-data/db
+    
+
+with the HDB sym file local too. Any number of paths can be specified in
+`par.txt`, mixing both cloud and block storage paths. There should be no
+trailing `/` after the object store path!
+
+The local directory tree should look like
+
+The sym file
+
+The sym file in this `db` dir should be the enum domain, i.e. a symbol list.
+The partitions listed in `par.txt` should not contain this enum domain in
+their root.
+
+[`par.txt`](https://code.kx.com/q/database/segment/#partxt)
+
+The HDB can then be mounted via the usual
+
+Since kdb+ changes the working directory to `db`, the following will not work
+
+    
+    
+    q)\l s3://kxinsights-marketplace-data/db
+    
+
+because the S3 storage is not presented as a POSIX filesystem. Hence the only
+way presently to load a database is by `par.txt`.
+
+Splayed tables resident on object storage can be mapped and queried directly:
+
+    
+    
+    q)t:get`$":s3://kxinsights-marketplace-data/db/2020.01.01/trade/"
+    q)select from t
+    sym time         price    size stop cond ex
+    -------------------------------------------
+    0   09:32:37.334 18.54794 496  1    G    E
+    0   09:36:09.052 19.20235 360  1    D    H
+    0   09:38:12.338 13.56027 142  0    B    J
+    0   09:44:26.045 11.5101  671  0    O    C
+    0   09:44:32.357 15.55949 896  1    Y    J
+    ...
+    
+
+or the shorter
+
+    
+    
+    q)select from `$":s3://kxinsights-marketplace-data/db/2020.01.01/trade/"
+    sym time         price    size stop cond ex
+    -------------------------------------------
+    0   09:32:37.334 18.54794 496  1    G    E
+    0   09:36:09.052 19.20235 360  1    D    H
+    0   09:38:12.338 13.56027 142  0    B    J
+    0   09:44:26.045 11.5101  671  0    O    C
+    0   09:44:32.357 15.55949 896  1    Y    J
+    ...
+    ...
+    
+
+All keys in a bucket are cached in memory, along with each object’s size. The
+first time a bucket is read from, all keys will be retrieved. To trigger a
+reload of this metadata, use a path of `_` after the bucket, indicating
+‘drop’. e.g.
+
+## Read only
+
+The `objstor` library allows read-only access to object storage. The objects
+should be created using the cloud vendor’s standard CLI tooling to copy data
+from block storage to the cloud, e.g.
+
+## Environment variables
+
+Although the Kurl module can detect most of the necessary components for
+credentials from the environment, the following additional environment
+variables are required.
+
+`AWS_REGION`
+
+    
+
+If a region is not selected, then `us-east-1` is used by default.
+
+The URIs requested to the cloud are printed to STDERR if the following
+environment variable is set. e.g.
+
+`AZURE_STORAGE_ACCOUNT`
+
+    
+
+The DNS prefix for your storage account; e.g. for
+`mystorage.blob.core.windows.net` the name would be `mystorage`. The list of
+your storage accounts can be displayed using the Azure CLI tool `az`:
+
+    
+    
+    az storage account list | jq -r '.[] | .name'
+    
+
+`GCLOUD_PROJECT_ID`
+
+    
+
+A unique, user-assigned ID that can be used as the request header `x-goog-
+project-id` in Google APIs. It is used as a request header that specifies
+which project you are working on. It may be any valid project number or name.
+This request header tells Cloud Storage which project to create a bucket in or
+which project to list buckets for. Examples:
+
+    
+    
+    000111222333
+    my-project-name
+    example.com:my-google-apps-for-work-project-name
+    
+
+The list of your projects can be displayed using the Google CLI tool, Gcloud,
+via
+
+For other important environment variables please refer to [rest client
+documentation](https://code.kx.com/insights/core/kurl/kurl.html#automatic-
+registration-using-credential-discovery)
+
+## Performance
+
+Cloud object storage is high-latency and low bandwidth, and will perform
+significantly worse than block storage.
+
+### Cache
+
+Due to the high latency of cloud storage, `kdbs3.so` offers to cache the
+results of requests on a local high-performance disk, the path to which should
+be specified in the environment variable `KX_OBJSTR_CACHE_PATH`, e.g.
+
+    
+    
+    export KX_OBJSTR_CACHE_PATH=/myfastssd/kxs3cache
+    
+
+and kdb+ will then create the cached files under a subdir as
+`$KX_OBJSTR_CACHE_PATH/objects`.
+
+Shared cache
+
+This cache area on disk is designed to be shared by multiple kdb+ processes,
+and will only ever populate it.
+
+Managing eviction from this cache folder is done by the kxreaper process.
+
+Bear in mind that cloud vendors charge for object storage as a combination of
+volume stored, per retrieval request, and volume egress. Using the built-in
+compression and the cache can help to reduce these costs.
+
+### Secondary threads
+
+The way to achieve concurrency with these high-latency queries is with
+secondary threads, through the command line option `-s`. It is expected that
+the larger the number of secondary threads, irrespective of CPU core count,
+the better the performance of object storage. Conversely the performance of
+cached data appears to be better if the secondary-thread count matches the CPU
+core count. A balance is to be found. We expect in future to improve the
+thread usage for these requests.
+
+The impact of threading is seen mainly in two use cases:
+
+Kdb+ V4.0 has an optimization that columns used in a query are mapped in
+parallel at the start of a select, so the number of secondary threads should
+be at least the number of columns selected. Assuming `peach` is not already
+being used in an outer function then `select` performance is improved as it
+will mmaps columns in parallel.
+
+    
+    
+    q)// -s 8
+    q)\t select from quote where date=2018.09.07
+    1083
+    
+    q)// -s 0
+    q)\t select from quote where date=2018.09.07
+    6594
+    
+
+Multithreaded prims will show improved performance when running against long
+vectors, triggering concurrent requests to object store.
+
+    
+    
+    q)// -s 8
+    q)\t select max bid from quote where date=2018.09.07
+    12443
+    
+    q)// -s 0
+    q)\t select max bid from quote where date=2018.09.07
+    81693
+    
+
+### Compression
+
+Due to the cost of storage, possible egress costs, high-latency and low
+bandwidth, we recommend storing data on cloud object storage using
+[compression](https://code.kx.com/q/kb/file-compression/).
+
+### HDB Load Times
+
+Load times for a hdb process can be improved by adding an inventory file to
+the storage account. The file must be gzipped JSON, as an array of
+`{Key:string,Size:int}` objects. An example is shown below:
+
+    
+    
+    [
+      {
+        "Key": "db/2020.12.30/trade/size",
+        "Size": 563829
+      },
+      {
+        "Key": "db/2020.12.30/trade/stop",
+        "Size": 49731
+      },
+      {
+        "Key": "db/2020.12.30/trade/sym",
+        "Size": 69520
+      },
+      {
+        "Key": "db/2020.12.30/trade/time",
+        "Size": 1099583
+      }
+    ]
+    
+
+Symbolic links can be simulated via an optional "Path" field in an entry,
+which represents the realpath that the Key should resolve to. The Path must
+reside in the same bucket, and the Size field must represent that of the Path.
+e.g.
+
+    
+    
+    [
+      {
+        "Key": "db/2020.12.30/trade/size",
+        "Size": 563829,
+        "Path": "newdb/2020.12.30/trade/size"
+      },
+      {
+        "Key": "db/2020.12.30/trade/stop",
+        "Size": 49731,
+        "Path": "newdb/2020.12.30/trade/stop"
+      },
+      {
+        "Key": "db/2020.12.30/trade/sym",
+        "Size": 69520,
+        "Path": "newdb/2020.12.30/trade/sym"
+      },
+      {
+        "Key": "db/2020.12.30/trade/time",
+        "Size": 1099583,
+        "Path": "newdb/2020.12.30/trade/time"
+      }
+    ]
+    
+
+The inventory file can be created and uploaded to the storage account using
+the following commands.
+
+User can control which file is used as inventory via env var
+
+    
+    
+    export KX_OBJSTR_INVENTORY_FILE=_inventory/all.json.gz
+    
+
+The reading of the inventory file bypasses the cache, and to avoid cache
+invalidation issues, is not readable explicitly.
+
+## S3-compatible object storage
+
+For this section, we use [min.io](http://min.io) as an example, although other
+S3 compatible stores should also work.
+
+An explicit endpoint can be embedded into the S3 URI using the following
+pattern
+
+    
+    
+    `:s3://http[s]://hostname[:port]/bucket/path
+    
+
+e.g. using [min.io playground](https://docs.min.io/docs/aws-cli-with-
+minio.html)
+
+    
+    
+    `:s3://https://play.min.io:9000/kxinsights-marketplace-data
+    
+
+n.b. remember to set the AWS Access Key ID and AWS Secret Access Key.
+
+The default implicit endpoint used for all relative S3 URIs such as
+
+    
+    
+    `:s3://kxinsights-marketplace-data
+    
+
+defaults to
+
+    
+    
+    https://bucket-name.s3.Region.amazonaws.com/keyname
+    
+
+and can be overridden via the environment variable `KX_S3_ENDPOINT`.
+
+e.g.
+
+    
+    
+    export KX_S3_ENDPOINT=https://play.min.io:9000
+    
+
+S3 requests are sent by default as a virtual-hosted–style request, where the
+bucket name is part of the domain name in the URL. Amazon S3 virtual-hosted-
+style URLs use the following format:
+
+    
+    
+    https://bucket-name.s3.Region.amazonaws.com/key name
+    
+
+In this example, `my-bucket` is the bucket name, US West (Oregon) is the
+region, and `puppy.png` is the key name:
+
+    
+    
+    https://my-bucket.s3.us-west-2.amazonaws.com/puppy.png
+    
+
+Other S3-compatible storage vendors may not support virtual-hosted–style
+requests, or it might be onerous to configure serverside, so kdb+ also
+supports sending path-style requests, where URLs use the following format:
+
+    
+    
+    `:s3//https://s3.Region.amazonaws.com/bucket-name/key name
+    
+
+For example, if you create a bucket named `mybucket` in the US West (Oregon)
+region, and you want to access the `puppy.jpg` object in that bucket, you can
+use the following path-style URL:
+
+    
+    
+    `:s3//https://s3.us-west-2.amazonaws.com/mybucket/puppy.jpg
+    
+
+kdb+ will use path-style requests for S3 if the following environment variable
+is set
+
+    
+    
+    export KX_S3_USE_PATH_REQUEST_STYLE=1
+    
+

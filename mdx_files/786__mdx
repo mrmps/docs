@@ -1,0 +1,1566 @@
+https://code.kx.com/developer/libraries/testing-qcumber/
+
+# Qcumber - KX Developer
+
+Original URL: https://code.kx.com/developer/libraries/testing-qcumber/
+
+# Testing framework for q (`.qu`)
+
+## Overview
+
+qcumber (or _quke_) is a unit testing framework for q/kdb+ code. The framework
+offers assertion based testing, benchmarking capabilities, and property based
+testing.
+
+## Basic usage
+
+    
+    
+    \l qcumber.q_
+    .qu.runTestFile `:test.quke
+    .qu.runTestFolder `:tests/
+    
+
+## Writing tests
+
+A test file is created as nested groups of feature, should, bench, and
+property test blocks.
+
+### File organization
+
+Test file names must end in `.quke`. Test files are commonly located in a
+module whose name matches the function's module name, followed by `.test`. For
+example, a test file for the function `.ab.c` would have the name `c.quke` and
+be found in the `.ab.test` module (`.ab.test/c.quke`).
+
+### Quke syntax overview
+
+Here is a simple test file, containing `feature`, `should`, and `expect`
+blocks. Most tokens allow for a description to be written to the right of the
+token to help identify the block and document the test.
+
+    
+    
+    feature .ab.c 
+        should exhibit some behaviour
+            expect some output
+                1b  / the test case
+    
+
+### Formatting errors
+
+If any formatting errors are detected in a quke file, no tests will be run on
+that file and an error message will be displayed to the user. Clicking on the
+error message will open the malformed quke file at the line number where the
+error was detected. If multiple errors exist, only the first error detected
+will be displayed to the user.
+
+Many blocks contain q code (`q function blocks`). If a `q function block` in a
+given file cannot compile, qcumber will report an error for that block.
+Depending on the parent block, an error that occurs when a `q function block`
+executes may cause the `feature` to abort. All errors will be displayed to the
+user. Every line (other than the first line) in q `q function block` must have
+leading whitespace; otherwise the block cannot compile and it will error. This
+is due to the semantics of q.
+
+### qcumber blocks
+
+The qcumber blocks are described in detail below:
+
+#### Feature
+
+`feature` blocks form the main test block of a quke file. Each `feature` block
+may contain one or more `should`, `bench`, `property`, `before`, `after`,
+`before each`, or `after each` blocks. The `should`, `bench`, and `property`
+blocks contain test cases, while the other four blocks are used to prepare the
+test environment conditions. A quke file must contain at least one `feature`
+block.
+
+name | parent block | content | description allowed | abort on error  
+---|---|---|---|---  
+Feature | NA | Required:   
+At least one block  
+  
+Optional:  
+One or more should blocks  
+One or more bench blocks  
+One or more property blocks  
+One or more before blocks  
+One or more after blocks  
+One or more before each blocks  
+One or more after each blocks | Yes | NA  
+  
+##### Examples
+
+    
+    
+    feature may have a description
+    
+        before              
+            .ab.num1: 0
+        after               
+            delete num1 from `.ab
+        before each         
+            .ab.num1: 1
+        after each        
+            .ab.num1: 0
+    
+        should may have a description
+            expect may have a description
+                .ab.num1 = 1
+            expect          
+                .ab.num1 = 1
+    
+        property may have a description
+            .qch.check .qch.forall[.qch.g.int[]] { x=x } 
+    
+
+Multiple `feature`s are allowed in an quke file.
+
+    
+    
+    feature
+        should
+            expect
+                1b
+    feature
+        should
+            expect
+                1b
+    
+
+#### Should
+
+`should` blocks enclose groups of `expect` blocks.
+
+name | parent block | content | description allowed | abort on error  
+---|---|---|---|---  
+should | feature | One or more expect blocks | yes | NA  
+  
+##### Examples
+
+    
+    
+    feature
+        should              
+            expect 
+                1b
+    
+
+Multiple `should` blocks are allowed within a `feature`.
+
+    
+    
+    feature .ab.c
+        should may have a description
+            expect one
+                1b      
+            expect two
+                1 = 1
+            expect three
+                any 0010b
+    
+        should
+            expect
+                1b
+    
+
+#### Expect
+
+`expect` blocks are the assertion based unit test blocks for qcumber. They
+should return a boolean value, indicating whether or not the test passed, or
+the result of .qu.compare.
+
+The function `.qu.compare` accepts an expected and actual value, and can be
+used in `expect` blocks to report these values in the test results. It returns
+1b if the inputs match, or a dictionary of the actual and expected results if
+they differ.
+
+The arguments to `.qu.compare` are stored in the test results table. This can
+consume significant memory for large values, and performing the comparison in
+an `expect` block would be more performant.
+
+`.qu.compare` replaces the deprecated `to match` block.
+
+name | parent block | content | description allowed | abort on error  
+---|---|---|---|---  
+expect | should | Required: q function block | Yes | No  
+|  | Optional: (Deprecated) One to match block |  |   
+  
+##### Examples
+
+    
+    
+    feature
+        should  
+            expect          
+                1b
+    
+    
+    
+    feature
+        should                            
+            expect may have a description
+                // This block spans multiple lines, 
+                // and is parsed into a single function
+                v:0;
+                v+:1;
+                v+:1;
+                v=2;
+    
+    
+    
+    feature
+        should
+            // The following blocks pass
+            expect
+                3 ~ count 1 2 3
+            expect
+                3
+        should
+            // The following test will fail, reporting the actual and expected values
+            expect
+                .qu.compare[1; 2]
+    
+
+#### To match
+
+The `to match` block is deprecated, as unlike `.qu.compare` it cannot be
+evaluated in an editor. Use an `expect` with `.qu.compare` instead.
+
+`to match` blocks specify the expected result from an `expect` block. The test
+will fail unless both blocks return the same value.
+
+The results from the `to match` and `expect` blocks are stored in the test
+results table. This can consume significant memory for large values, and
+performing the comparison in an `expect` block would be more performant.
+
+name | parent block | content | description allowed | abort on error  
+---|---|---|---|---  
+to match | expect | q function block | yes | no  
+  
+##### Examples
+
+    
+    
+    feature
+    
+        should  
+            expect          
+                count 1 2 3
+            to match
+                3
+    
+
+#### Bench
+
+The `bench` block performs benchmarking tests where the runtime of a q
+function in a `behaviour` block is compared to the runtime of a `baseline`
+block _or_ to a timelimit set in a `timelimit` block. The `bench` block may
+contain `behaviour`, `baseline`, `timelimit`, `setup`, `teardown`,
+`tolerance`, and `replicate` blocks.
+
+name | parent block | content | description allowed | abort on error  
+---|---|---|---|---  
+bench | feature | Required:One behaviour block   
+One baseline block, one timelimit block, or one of each  
+If there is a tolerance block, one baseline block is required  
+Optional:  
+One or more setup blocks  
+One or more teardown blocks  
+One tolerance block  
+One replicate block | yes | NA  
+  
+When running functions that are relatively close in runtime (for example, `til
+10000` as a `baseline` function and `til 9000` as a `behaviour` function), the
+`baseline` test will sometimes fail even though the `behaviour` function
+should run slightly faster. This occurs due to overhead from memory
+allocation, and may cause the `bench` test(s) to fail. There are two ways of
+dealing with this issue.
+
+1) The user can increase the number of replicates of the run, so that any
+variation in runtime due to memory allocation will average out. 2) The user
+can set the number of secondary threads in the workspace to zero. Doing so
+allows garbage collection to run after each replicate of the `bench` test.
+Although this makes every run of the `baseline` or `behaviour` q function
+block slightly slower, it makes runtimes for each function more consistent.
+This strategy almost always guarantees that the expected functions will run
+faster. Using both solutions together tends to yield the best results.
+
+The smallest measurable time difference can vary depending on the operating
+system. The runtimes of `baseline` and `behaviour` block functions will be
+indistinguishable if their runtime is less than the smallest measurable time
+difference. The smallest measurable time difference is 1 microsecond for most
+modern operating systems, though for some older Windows versions it is known
+to be closer to 1 millisecond.
+
+Within a `bench` test, up to four sub-tests may be run. If any of these tests
+fail then the entire `bench` test will be considered to have failed. These
+tests are detailed in the following table. To find out more about these tests
+see the blocks listed in the `relevant blocks` column.
+
+name | relevant blocks | description  
+---|---|---  
+Baseline | behaviour baseline | Indicates that the `behaviour` ran slower than the `baseline`. This test only runs if there is a `baseline` block and no `tolerance` block.  
+Timelimit | behaviour timelimit | Indicates that the `behaviour` had a runtime greater than a certain time (in ms). This test only runs if there is a `timelimit` block.  
+Upper Tolerance | behaviour behaviour tolerance | Indicates that the `behaviour` had a runtime greater than some percentage (the upper tolerance value) of the `baseline` runtime.  
+Lower Tolerance | behaviour behaviour tolerance | Indicates that the `behaviour` had a runtime greater than some percentage (the lower tolerance value) of the `baseline` runtime.  
+This test only runs if there is a `tolerance` block with two values.  
+  
+##### Examples
+
+    
+    
+    bench   
+        baseline
+            til 100000000          
+        behaviour
+            til 1    
+    
+    
+    
+    feature                     // bench blocks must be wrapped in feature blocks
+                                // a bench test must have either one baseline block, one timelimit block, or one of each
+         bench 
+             baseline
+                 til 100000000          
+             behaviour
+                 til 1      
+         bench                  // a feature may contain several bench blocks  
+             timelimit
+                 100        
+             behaviour
+                 til 1     
+         bench may have a description
+             timelimit
+                 100         
+             baseline
+                 til 10000000         
+             behaviour
+                 til 1      
+    
+    
+    
+    feature                      
+         bench
+             setup              // multiple setup blocks are allowed
+                 .ab.num1 : 1
+    
+             setup
+                 .ab.num2 : 1
+    
+             baseline
+                 til 100000000
+    
+             behaviour
+                 til 1     
+    
+             teardown           // multiple teardown blocks are allowed
+                 delete num1 from `.ab
+    
+             teardown
+                 delete num2 from `.ab
+    
+    
+    
+    feature                      
+         bench
+             replicate
+                 10             // a single replicate is allowed
+    
+             tolerance
+                 10             // a single tolerance is allowed
+    
+             timelimit
+                 10             // a single timelimit is allowed. A timelimit block is required if there is no baseline block.
+    
+             baseline
+                 til 100000000  // a single baseline is allowed. A baseline block is required if there is no timelimit or if there is a tolerance block.
+    
+             behaviour          // a single behaviour is required
+                 til 1      
+    
+
+#### Behaviour
+
+`behaviour` blocks contain the q function whose runtime is being benchmarked.
+In a `bench` block, the `behaviour` block runtime is compared to either a
+timelimit, the runtime of a `baseline` block, or both. A `bench` block must
+have exactly one `behaviour` block.
+
+name | parent block | content | description allowed | abort on error  
+---|---|---|---|---  
+behaviour | bench | q function block | yes | no  
+  
+Note: `behaviour` may alternatively be spelled `behavior` in the quke file.
+
+##### Examples
+
+    
+    
+    behaviour    
+        til 20                                  // q function block  
+    
+    
+    
+    feature
+         bench
+             timelimit
+                 100                            // timelimit of 100 milliseconds
+    
+             baseline    
+                 til 10000000                   // runtime approximately 10 milliseconds
+    
+             behaviour may have a description   // behaviour blocks must be wrapped in bench blocks
+                 til 1                          // this will have a runtime within the baseline runtime and within the timelimit, and the test will pass
+    
+
+#### Baseline
+
+`baseline` blocks contain the q function whose runtime is being compared to a
+`behaviour` block. A `bench` block may have at most one `baseline` block. A
+`bench` block must contain a `baseline` block if no `timelimit` block is
+present or if there is a `tolerance` block. If no `tolerance` block is
+present, the `behaviour` block must have a runtime less than or equal to the
+runtime of the `baseline` block to pass the `Baseline` test. If a `tolerance`
+block is present then the `behaviour` block must have a runtime within some
+percentages (set by the `tolerance` block) of the `baseline` block runtime to
+pass the `Upper Tolerance` and/or `Lower Tolerance` tests.
+
+name | parent block | content | description allowed | abort on error  
+---|---|---|---|---  
+baseline | bench | q function block | yes | no  
+  
+##### Examples
+
+    
+    
+    baseline 
+        til 200                                 // q function block  
+    
+    
+    
+    feature
+         bench
+             baseline may have a description    // baseline blocks must be wrapped in bench blocks
+                 til 10000000                   // runtime approximately 10 milliseconds
+    
+             behaviour  
+                 til 1                          // this will have a runtime within the baseline runtime, and the test will pass
+    
+
+#### Timelimit
+
+`timelimit` blocks set the maximum runtime (in milliseconds) for a `behaviour`
+block. A `bench` block may have at most one `timelimit` block. If no
+`baseline` block is present a `bench` block must have a `timelimit` block. The
+`behaviour` block must have a runtime less than or equal to the timelimit to
+pass the `Timelimit` test (see above).
+
+name | parent block | content | description allowed | abort on error  
+---|---|---|---|---  
+timelimit | bench | One long datatype | no | NA  
+  
+##### Examples
+
+    
+    
+    timelimit
+        10                  // timelimit of 10 milliseconds
+    
+    
+    
+    feature
+         bench
+             timelimit      // timelimit blocks must be wrapped in bench blocks
+                 100        // timelimit of 10 milliseconds
+    
+             behaviour
+                 til 1      // this will have a runtime less than the timelimit, and the test will pass
+    
+
+#### Tolerance
+
+`tolerance` blocks set tolerance limits for the benchmark tests. The
+`tolerance` block may contain one or two numerical values. If one value is
+present it is the upper tolerance value. If two values are present the larger
+one is the upper tolerance value and the smaller one is the lower tolerance
+value.
+
+Two tolerance tests exist: the `Upper Tolerance` test and the `Lower
+Tolerance` test.
+
+In the upper tolerance test, the `behaviour` must execute with a runtime less
+than or equal to some percentage (the upper tolerance value) of the `baseline`
+runtime to pass the `Upper Tolerance` test.
+
+In the lower tolerance test, the `behaviour` must execute with a runtime
+greater than or equal to some percentage (the lower tolerance value) of the
+`baseline` runtime to pass the `Lower Tolerance` test. The lower tolerance
+test only runs if there is a lower tolerance value.
+
+A `bench` block that contains a tolerance block must also have a `baseline`
+block.
+
+name | parent block | content | description allowed | abort on error  
+---|---|---|---|---  
+tolerance | bench | One or two float or long datatypes | no | NA  
+  
+##### Examples
+
+    
+    
+    tolerance
+        90                  // a tolerance with only an upper tolerance value of 90%
+                            // the behaviour must have a runtime less than 90% of the baseline runtime to pass the upper tolerance test
+                            // the lower tolerance test will not run
+    
+    
+    
+    tolerance
+        10 90               // a tolerance block with both upper and lower tolerance values of 90% and 10% respectively
+                            // the behaviour must have a runtime less than 90% of the baseline runtime to pass the upper tolerance test
+                            // the behaviour must have a runtime greater than 10% of the baseline runtime to pass the lower tolerance test
+    
+    
+    
+    tolerance
+        10.0 120.0          // a tolerance block with both the upper and lower tolerance values as floats
+                            // the upper tolerance value can be greater than 100%
+    
+    
+    
+    feature
+        bench
+           baseline         // if a tolerance block is present there must be a baseline block
+             til 10000000 
+    
+           behaviour
+             til 5000000 
+    
+           tolerance        // tolerance blocks must be wrapped in bench blocks
+              10 90         // the behaviour will have a runtime within the given percentages of the baseline runtime
+    
+
+#### Replicate
+
+`replicate` blocks set the number of replicates to be performed on the test
+functions of the `bench` block. The average runtimes will be used in the
+benchmarking tests. The number of replicates defaults to 1 if no replicate
+block is present. The number of replicates must be greater than zero.
+
+name | parent block | content | description allowed | abort on error  
+---|---|---|---|---  
+replicate | bench | One long datatype that is greater than zero | no | NA  
+  
+##### Examples
+
+    
+    
+    replicate
+        10                  // 10 replicates 
+    
+    
+    
+     feature
+          bench
+              replicate     // replicate blocks must be wrapped in bench blocks
+                  10        // 10 replicates. The behaviour will be executed 10 times, and its average runtime will be found.
+    
+              timelimit
+                  100    
+    
+              behaviour
+                  til 1      
+    
+    
+    
+    feature
+         bench
+             replicate
+                 10         // 10 replicates. The behaviour and baseline will each execute 10 times, and their average runtimes will be found and compared.
+    
+             baseline
+                 10000000
+    
+             behaviour
+                 til 1      
+    
+
+#### Setup
+
+`setup` blocks execute at the beginning of a `bench` block. They are used for
+test preparation by, for example, setting global variables to be used in the
+tests. Errors thrown in `setup` blocks cause the `feature` to abort.
+
+name | parent block | content | description allowed | abort on error  
+---|---|---|---|---  
+setup | bench | q function block | no | yes  
+  
+##### Examples
+
+    
+    
+    setup
+        a::1                    // q function block   
+    
+    
+    
+    feature
+        bench
+           setup                // setup blocks must be wrapped in bench blocks
+              .ab.num1 : 1      // the setup runs at the beginning of the bench block
+    
+           baseline
+             til 10000000
+    
+           behaviour
+             til 1
+    
+    
+    
+    feature
+        bench
+           setup
+              .ab.num1 : 1      // multiple setups are allowed
+    
+           setup
+              .ab.num1 : 1
+    
+           baseline
+             til 10000000
+    
+           behaviour
+             til 1
+    
+
+#### Teardown
+
+`teardown` blocks execute at the beginning of a `bench` block. They are used
+for test cleanup. For example, deleting global variables from the workspace.
+Errors thrown in `teardown` blocks cause the `feature` to abort.
+
+name | parent block | content | description allowed | abort on error  
+---|---|---|---|---  
+teardown | bench | q function block | no | yes  
+  
+##### Examples
+
+    
+    
+    teardown
+        a::0                            // q function block  
+    
+    
+    
+    feature
+        bench
+           setup
+                .ab.num1 : 1
+    
+           baseline
+                til 10000000
+    
+           behaviour
+                til 1
+    
+           teardown                     // setup blocks must be wrapped in bench blocks
+                delete num1 from `.ab   // the teardown runs at the end of the bench block
+    
+    
+    
+    feature
+        bench
+           setup
+                .ab.num1 : 1;
+                .ab.num2 : 2;
+    
+           baseline
+                til 10000000
+    
+           behaviour
+                til 1
+    
+           teardown
+                delete num1 from `.ab   // multiple teardowns are allowed
+    
+           teardown
+                delete num2 from `.ab    
+    
+
+#### Property
+
+`property` blocks allow for property based testing using the QuickCheck
+framework provided by the `.qch` module. This allows multiple tests to be run
+with randomly generated input parameters. Although QuickCheck tests can be run
+within an `expect` block, the `property` block has the benefit of displaying
+any counter examples to the user.
+
+A `property` block must contain q that returns the results of a valid
+QuickCheck expression. The valid QuickCheck expression must contain the
+function `.qch.check`, followed by one of the seven `.qch.forall` functions.
+See the `.qch` module for more information. This expression returns a
+dictionary indicating whether the test passed or failed, any counter-examples
+to the test, and any errors that occurred while running the test.
+
+A handy `.qch` function to use is `.qch.with.times`. This allows the user to
+set the number of samples to test in a given property block. An example of
+`.qch.with.times`, along with other `property` blocks, can be seen below.
+
+name | parent block | content | description allowed | abort on error  
+---|---|---|---|---  
+property | feature | valid QuickCheck expression | yes | no  
+  
+##### Examples
+
+    
+    
+    property 
+        // a valid QuickCheck expression, with the function .qch.check followed by a .qch.forall function
+        .qch.check  
+            .qch.forall[.qch.g.int[]]{
+                x=x
+            }
+    
+    
+    
+    feature
+        property another property                           // property blocks must be wrapped in feature blocks
+             // another valid QuickCheck expression, containing .qch.check followed by the .qch.forall2 function
+            .qch.check
+                .qch.forall2[.qch.g.int[];.qch.g.int[]]{
+                    all .axq.isInt each x, y
+                }
+    
+    
+    
+    feature
+        property 
+             a::1;                                          // additional q code is allowed prior to the QuickCheck expression in the property block
+             .qch.check
+                 .qch.forall[.qch.g.int[]]{
+                    1 in a,x
+                 }
+    
+    
+    
+    // By default, QuickCheck does 100 samples to look for errors
+    // The function `.qch.with.times` can be used to alter the number of samples.
+    feature
+        property 
+             .qch.check
+                 .qch.with.times[10]             // Set the number of samples to 10
+                     .qch.forall[.qch.g.int[]]{
+                         1 = x
+                     }
+    
+
+#### Before
+
+`before` blocks execute after any `skip if` blocks in a `feature`. They are
+used for test preparation. For example, setting global variables to be used in
+the tests. Errors thrown in `before` blocks cause the `feature` to abort.
+
+name | parent block | content | description allowed | abort on error  
+---|---|---|---|---  
+before | feature | q function block | no | yes  
+  
+##### Examples
+
+    
+    
+    before 
+        .ab.num1 : 1            // q function bloc
+    
+    
+    
+    feature                   
+        before                  // before blocks must be wrapped in feature blocks
+            .ab.num1 : 1        // before blocks execute at the start of their parent feature 
+    
+    feature                    
+        before 
+            .ab.num1 : 2 
+    
+    
+    
+    feature                     // multiple before blocks are allowed in a feature
+        before         
+            .ab.num1 : 1
+    
+        before 
+            .ab.num2 : 2
+    
+
+#### Before each
+
+`before each` blocks execute prior to each `should` and each `property` block
+in a `feature` block that is not skipped. They are used for test preparation.
+For example, setting global variables to be used in the tests. Errors thrown
+in `before each` blocks cause the `feature` to abort.
+
+name | parent block | content | description allowed | abort on error  
+---|---|---|---|---  
+before each | feature | q function block | no | yes  
+  
+##### Examples
+
+    
+    
+    before each
+        .ab.num1 : 1            // q function block  
+    
+    
+    
+    feature                    
+        before each             // before each blocks must be wrapped in feature blocks
+            .ab.num1 : 1
+    
+        before each             // multiple before each blocks are allowed in a feature
+            .ab.num2 : 2  
+    
+    
+    
+    feature
+        before each                   
+             .ab.num1 : 1       // this before each block executes prior to both of the should blocks
+    
+        should
+            expect
+                show .ab.num1;         // will display 1
+                .ab.num1 :2;
+                1b
+    
+            expect
+                show .ab.num1;         // will display 2
+                .ab.num1 :2;
+                1b
+    
+        should
+            expect
+                show .ab.num1;         // will display 1
+                .ab.num1 : 2;
+                1b
+    
+
+#### After
+
+`after` blocks execute at the end of a `feature` block. They are used for test
+cleanup. For example, deleting any global variables defined by the test.
+
+name | parent block | content | description allowed | abort on error  
+---|---|---|---|---  
+after | feature | q function block | no | no  
+  
+##### Examples
+
+    
+    
+    after 
+        .ab.num1 : 1            // q function block  
+    
+    
+    
+    feature                    
+        after                   // after blocks must be wrapped in feature blocks   
+            .ab.num1: 1
+    
+        after                   // multiple after blocks are allowed in a feature
+            .ab.num2 : 2
+    
+    
+    
+    
+    feature                     // after blocks execute at the end of their parent feature 
+        after 
+            .ab.num1: 1
+    
+    feature                    
+        after 
+            .ab.num2 : 2 
+    
+
+#### After each
+
+`after each` blocks execute after each `should` and each `property` block in a
+`feature` block that is not skipped. They are used for test cleanup. For
+example, deleting any global variables defined by the test. Errors thrown in
+`after each` blocks cause the `feature` to abort.
+
+name | parent block | content | description allowed | abort on error  
+---|---|---|---|---  
+after each | feature | q function block | no | yes  
+  
+##### Examples
+
+    
+    
+    after each
+        .ab.num1 : 1                // q function block  
+    
+    
+    
+    feature                    
+        after each                  // after each blocks must be wrapped in feature blocks   
+            .ab.num1 : 1
+    
+        after each                  // multiple after each blocks are allowed in a feature
+            .ab.num2 : 2  
+    
+    
+    
+    feature
+         before
+             .ab.num1 : 1
+         after each                 
+              .ab.num1 : 2                 // this after each block executes after every should block
+    
+         should
+             expect
+                 show .ab.num1;            // will display 1
+                 1b
+    
+             expect
+                 show .ab.num1;            // will display 1
+                 1b
+    
+         should
+             expect
+                 show .ab.num1;            // will display 2
+                 1b 
+    
+
+#### Skip if
+
+`skip if` blocks execute at the beginning of a `feature`. They are used to
+validate conditions and determine whether or not the tests should be run. If
+the block returns boolean true (`1b`), then the `feature` is skipped, and all
+of its blocks are reported as skipped blocks. If the `skip if` block returns
+boolean false (`0b`), then `feature` is executed. If a non-boolean value is
+returned, or if an error is thrown, the `feature` aborts.
+
+name | parent block | content | description allowed | abort on error  
+---|---|---|---|---  
+skip if | feature | q function block | no | yes  
+  
+##### Examples
+
+    
+    
+       skip if 
+            .z.o like "l*"      // q function block, will skip if os is linux
+    
+    
+    
+    feature                    // multiple "skip if" blocks are allowed in a feature
+       skip if 
+           .z.o like "m*"
+       skip if 
+           `w64 ~ .z.o
+    
+    
+    
+    // "skip if" blocks execute at the start of their parent feature, and determine whether the rest of the feature is tested
+    feature                    
+       skip if 
+           .z.o like "m*"       
+    feature                    
+       skip if 
+           `w64 ~ .z.o
+    
+
+### Skipping tests
+
+It is possible to skip individual test blocks by prepending an `x` to the
+block name. The test blocks that may be skipped are `feature`, `should`,
+`expect`, `bench`, and `property`. For example, to skip an `expect` block,
+replace the `expect` with `xexpect`. Skipping a test causes it to be
+completely ignored during the test run. No parsing errors will be reported for
+these blocks. Skipping a block may cause a parse error in any enclosing blocks
+if that block was expected in the enclosing block. Any skipped tests will be
+reported in the output of the test runner.
+
+It is also possible to skip tests dynamically using a `skip if` block. See
+above for details.
+
+## Running qcumber
+
+Two functions are provided to run test files programmatically: .qu.runTestFile
+and .qu.runTestFolder. The arguments to both functions are a string or symbol
+which represents the path to the file or folder respectively. Both relative
+and absolute paths are accepted. The function .qu.runTestFolder will
+recursively find and run all test files within a folder.
+
+    
+    
+    .qu.runTestFolder "folder"
+    .qu.runTestFile   "folder/file"
+    
+    .qu.runTestFolder `:folder
+    .qu.runTestFile   `:folder/file
+    
+
+If generic null is passed to .qu.runTestFolder then it will recursively run
+all tests in the current directory.
+
+    
+    
+    .qu.runTestFolder[]
+    
+
+The results dictionary has the structure:
+
+key | value  
+---|---  
+allTestResults | A table containing the results from all tests.  
+allFailedTestResults | A table containing the results from all failed tests.  
+allSkippedTestResults | A table containing the tests that were skipped.  
+parseErrorList | A list of strings reporting every quke file with parse errors.  
+  
+The result table reported by the keys `allTestResults`,
+`allFailedTestResults`, and `allSkippedTestResults` have the following schema:
+
+column | type | description  
+---|---|---  
+namespace | symbol | The folder path.  
+fileName | symbol | The name of the file.  
+feature | symbol | The name of the feature.  
+block | symbol | The block type.  
+description | string | A description of the block.  
+expectations | string | If the `block` `is `should`, then this will be the description associated with individual `expect` block in the `should` block.  
+line | long | The line number in the file.  
+success | boolean | Whether or not the test was successful.  
+result | any | The result returned by the test. Differs depending on the test block type.  
+error | string | Any errors found.  
+aborted | boolean | Whether or not the test was aborted.  
+skipped | boolean | Whether or not the test was skipped.  
+parseError | boolean | Whether or not the test file had a parse error.  
+start | timestamp | The start time.  
+time | timespan | The time taken to run the test.  
+  
+In the above table, the result column may have different structures depending
+on the block type. If the `block` `is `should`, then the result column will
+contain a dictionary with the following structure:
+
+key | value type | value  
+---|---|---  
+expect | any | If the test failed, the result of the `expect` block, or `.qu.compare`. Null otherwise.  
+toMatch | any | If the test failed, the result of `.qu.compare`, or 1b if `.qu.compare` was not used. Null otherwise.  
+expectError | string | Any errors thrown by the `expect` block.  
+toMatchError | string | Any errors thrown by a deprecated `to match` block.  
+  
+If the `block` `is `bench`, then the result column will contain a dictionary
+with the following structure:
+
+key | value type | value  
+---|---|---  
+baseline | string | The description of the `baseline` block.  
+behaviour | string | The description of the `behaviour` block.  
+baselineError | string | Any errors thrown by the `baseline` block.  
+behaviourError | string | Any errors thrown by the `behaviour` block.  
+passedBaseline | boolean | Whether or not the `Baseline` test passed.  
+passedTimelimit | boolean | Whether or not the `Timelimit` test passed.  
+passedLowerTolerance | boolean | Whether or not the `Lower Tolerance` test passed.  
+passedUpperTolerance | boolean | Whether or not the `Upper Tolerance` test passed.  
+timeBehaviour | float | The runtime of the `behaviour` block in ms.  
+timeBaseline | float | The runtime of the `behaviour` block in ms. Null if there was no `baseline` block.  
+timelimit | long | The set timelimit in ms. Null if there was no `timelimit` block.  
+  
+If the `block` `is `property`, then the result column will contain a
+dictionary with the following structure:
+
+key | value type | value  
+---|---|---  
+output | string | The raw output from the `property` block. This should normally correspond to a QuickCheck dictionary (see `.qch` for more details). If the property block was improperly formatted then it may have a different data structure.  
+formatError | boolean | Whether or not the `property` block was properly formatted. If this is true (1b) then the block did not correspond to a valid QuickCheck expression, and you cannot query into the `output` column to investigate the expected QuickCheck dictionary.  
+failed | any | The counter example. If possible this will be the shrunk value from `.qch`.  
+  
+If the `block` is none of the above, the then the result column holds generic
+null.
+
+To load qcumber into a q process, refer to the Running Libraries section of
+the `Notes & TroubleShooting` guide.
+
+## Mocking functions
+
+Qcumber provides utilities to mock user functions. This can facilitate testing
+by allowing users to replace the implementation of functions with their mocked
+functions that allow verifying that the correct arguments are supplied, or by
+controlling the return type to easily test the calling functions.
+
+To mock functions, either use `.qu.stub.single` to mock a single function or
+`.qu.stub.mock` to mock a set of functions. `.qu.stub.single` takes the name
+of the function to mock and the replacement function as arguments. The
+argument to `.qu.stub.mock` is a list, where each item is a list consisting of
+the name of the function to replace and the replacement function.
+
+To restore all of the mocked functions to their original versions call
+`.qu.stub.restoreAll`. To restore only a subset of functions, call
+`.qu.stub.restore`. The argument to `.qu.stub.restore` is a list of the
+functions to restore. If a given function was mocked multiple times then
+`.qu.stub.restore` will only restore the function to the version prior to its
+current version.
+
+## Debugging tests
+
+To debug a failing test, errors within tests can be propagated rather than
+trapped by calling
+
+    
+    
+    .qu.setBreakOnErrors 1b
+    
+
+Calling the same function with `0b` resets this behaviour.
+
+## Examples
+
+### File examples
+
+Examples test files are presented below. These show the main types of qcumber
+blocks:
+
+  * A feature block, illustrating the terminology used in the documentations.
+
+    
+    
+    feature                 // qcumber token: designates a feature block
+        should              // qcumber token: designates a should block
+            expect          // qcumber token: designates a expect block
+                v:0;        // |
+                v+:1;       // |
+                v+:1;       // | q function block: this block spans multiple lines but is parsed into a single function
+                v+:1;       // |
+                v = 3;      // |
+    
+            expect          // qcumber token: designates a second expect block
+                1b          // q function block: a second q function, though this one spans only one line
+    
+            expect          // qcumber token: designates a second expect block
+                [a:8;       // |
+                 b:8;       // | q function block: a q function block may optionally be enclosed by a single pair of square brackets
+                 a=b]       // |
+    
+    
+    
+    // expect blocks are used to run assertion tests
+    feature
+        should this is a should           
+            expect this is an expect    
+                1b
+    
+            expect this is an expect    
+                1 = 1
+    
+    
+    
+    // bench blocks are used to perform runtime tests
+    feature 
+        bench this is a bench                       
+            setup
+                .ab.num1 : 1
+    
+            timelimit 
+                100
+    
+            tolerance 
+                10 100
+    
+            replicate 
+                1000
+    
+            baseline this is a baseline            
+                til 10000
+    
+            behaviour this is a behaviour          
+                til 5000
+    
+            teardown
+                delete num1 from `.ab
+    
+    
+    
+    // property blocks are used to perform tests on sets of randomly generated values
+    feature
+        property this is a property         
+            .qch.check
+                .qch.forall[.qch.g.int[]]{
+                    x=x
+                }
+    
+
+  * A quke file showing all types of blocks, as well as multiple features. In additions, comments are shown after tokens that allow descriptions.
+
+    
+    
+    // A feature block containing all of the possible qcumber blocks
+    feature this is a feature                       // descriptions are allowed after feature blocks
+        before              
+            .ab.num1 : 0
+    
+        after               
+            delete num1 from `.ab
+    
+        before each       
+            .ab.num1 : 1
+    
+        after each        
+            .ab.num1 : 0
+    
+        should this is a should                     // descriptions are allowed after should blocks
+            expect this is an expect                // descriptions are allowed after expect blocks 
+                .ab.num1 = 1
+    
+            expect this is another expect           // descriptions are allowed after expect blocks  
+                .ab.num1 = 1
+    
+        bench this is a bench                       // descriptions are allowed after bench blocks
+            setup
+                .ab.num2 : 1
+    
+            timelimit 
+                100
+    
+            tolerance 
+                10 100
+    
+            replicate 
+                1000
+    
+            baseline this is a baseline            // descriptions are allowed after baseline blocks
+                til 10000
+    
+            behaviour this is a behaviour          // descriptions are allowed after behaviour blocks
+                til 5000
+    
+            teardown
+                    delete num2 from `.ab
+    
+        property this is a property                 // descriptions are allowed after property
+            .qch.check
+                .qch.forall[.qch.g.int[]]{
+                    x=x
+                } 
+    
+
+### Failing test examples
+
+Examples of the expected outputs for failing tests are shown below:
+
+  * An example failing expect test, along with the failed test output, is shown below.
+
+Consider a test file .ab.test/expectExample.quke with the following content:
+
+    
+    
+    feature       
+        should    
+            expect
+                0b
+    
+
+This test will fail because the `expect` block returns a value other than
+boolean true (in this case, it returns boolean false). When the user runs the
+test, it will display the following failed test message:
+
+    
+    
+    1 of 1 test failed
+    
+    Failed Tests : 1 
+    feature 
+        should 
+            expect  (.ab.test/expectExample.quke.quke:3)
+                Expected Result: 1b
+                Actual Result: 0b
+    
+
+Clicking on the tag (.ab.test/expectExample.quke:3) will open the failed test
+file on the line with the block that failed (in this case, line 3). An example
+of a failing bench test, along with the failed test output, is shown below.
+
+Consider a test file .ab.test/benchExample.quke with the following content:
+
+    
+    
+    feature                 
+        bench               
+            baseline        
+                til 1
+    
+            behaviour       
+                til 10000000
+    
+
+When the user runs the test, it will display a failed test message similar to
+the following:
+
+    
+    
+    1 of 1 test failed
+    
+    Failed Tests : 1 
+    feature 
+        bench  (.ab.test/benchExample.quke:2)
+            Behaviour Runtime: 8.85 ms
+            Baseline Runtime: 0.001 ms
+            Baseline test: Failed
+    
+
+In this case, the `Baseline test` failed, which indicates that the `behaviour`
+ran slower than the `baseline`. The runtimes for the `behaviour` and
+`baseline` as well as the timelimit (if present) are reported to the user.
+
+An example of a failing property test, along with the failed test output, is
+shown below.
+
+Consider a test file .ab.test/propertyExample.quke with the following content:
+
+    
+    
+    feature                              
+       property                          
+           .qch.check                    
+               .qch.forall[.qch.g.int[]]{   
+                   .axq.isFloat x        
+               }                         
+    
+
+This test will fail because no integer is a float.
+
+When the user runs the test, it will display a failed test message similar to
+the following:
+
+    
+    
+    1 of 1 test failed
+    
+    Failed Tests : 1 
+    feature 
+        property  (.ab.test/benchExample.quke:2)
+            Counter Example: ,0i
+    
+
+In this case, the counter example that broke the test is displayed to the
+user. If an error occurred in the QuickCheck expression, it will also be
+displayed to the user.
+
+### Skipped test examples
+
+An example of a skipped expect test, along with the test output is shown
+below. Consider a test file .ab.test/skippedExample.quke with the following
+content:
+
+    
+    
+    feature skippedExample.quke
+        should exhibit a behaviour
+            xexpect a specific result
+                0b
+    
+            expect a specific result
+                0b
+    
+
+This test has two failing expects, but only the latter is reported since the
+first test was skipped. When the user runs the test, it will display the
+following failed test message:
+
+    
+    
+    1 of 2 tests failed
+    1 test skipped
+    
+    Failed Tests : 1 
+    feature skippedExample
+        should exhibit a behaviour
+            expect a specific result (.ab.test/skippedExample.quke:6)
+                Expected Result: 1b
+                Actual Result: 0b
+    Skipped Tests : 1 
+    
+
+Clicking on the tag (.ab.test/skippedExample.quke:6) will open the failed test
+file on line 6 where the block failed. Both the "Failed Tests" and "Skipped
+Tests" tags can be clicked to open an close drop down menus that describe the
+failed and skipped tests in further detail. To view the skipped tests, click
+on the arrow next to the "Skipped Tests" (not visible in this document).
+
+## Block summary
+
+name | description | parent block | content | description allowed | abort on error  
+---|---|---|---|---|---  
+feature | Contains all other blocks | NA | Required:   
+At least one child block  
+Optional:  
+One or more before blocks  
+One or more after blocks  
+One or more before each blocks  
+One or more after each blocks  
+One or more should blocks  
+One or more bench blocks  
+One or more property blocks | yes | NA  
+should | Wrapper block to contain expects | feature | One or more expect blocks | yes | NA  
+expect | Assertion test block | should | Required:   
+q function block  
+Optional:  
+(Deprecated) one to match block | yes | no  
+to match | (Deprecated) Expected result from preceding expect block | expect | q function block | yes | no  
+bench | Benchmarking test block | feature | Required:   
+One behaviour block  
+One baseline block, one timelimit block, or one of each  
+If there is a tolerance block, one baseline block is required  
+  
+Optional:  
+One or more setup blocks  
+One or more teardown blocks  
+One tolerance block  
+One replicate block | yes | NA  
+behaviour | Code whose runtime is compared to a timelimit or the baseline runtime | bench | q function block | yes | no  
+baseline | Baseline code whose runtime is compared to behaviour function | bench | q function block | yes | no  
+timelimit | Timelimit for behaviour code | bench | One long datatype | no | NA  
+tolerance | Upper and lower tolerance percentages for baseline/behaviour runtime comparison | bench | One or two float or long datatypes | no | NA  
+replicate | Number of times to measure runtime of behaviour and baseline code | bench | One long datatype that is greater than zero | no | NA  
+setup | Runs code at start of a bench | bench | q function block | no | yes  
+teardown | Runs code at end of a bench | bench | q function block | no | yes  
+property | Property test block | feature | valid QuickCheck expression | yes | no  
+before | Runs code at the start of a feature | feature | q function block | no | yes  
+before each | Runs code prior to each should in a feature | feature | q function block | no | yes  
+after | Runs code at the end of a feature | feature | q function block | no | no  
+after each | Runs code after each should in a feature | feature | q function block | no | yes  
+skip if | Runs code at the start of a feature to decide if the rest of the feature is run | feature | q function block | no | yes  
+  
+## .qu.compare
+
+Compares two values such that the actual vs. expected values can be included
+in qcumber results
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+actual | any | The output being tested  
+expected | any | The reference value  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | dict (expect: any; toMatch: any) | 1b if the inputs match, or a dictionary of the actual and expected results if they differ  
+  
+## .qu.runTestFile
+
+Runs a single test file with default settings
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+path | string | symbol | The folder path  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+[ .qu.results ](../overview-typedefs/#quresults) | See `.qu/README.md` for more information about the structure of the results table given different block types.  
+  
+**Example:**
+
+    
+    
+     .qu.runTestFile "file.quke"
+    
+
+## .qu.runTestFileWithSettings
+
+Runs a single test file
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+path | string | symbol | The folder path  
+sts | [ .qu.ty.userSettings ](../overview-typedefs/#qutyusersettings) | null | The qcumber settings  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+[ .qu.results ](../overview-typedefs/#quresults) | See Running qcumber for more information about the structure of the results table given different block types.  
+  
+**Example:**
+
+    
+    
+     .qu.runTestFile "file.quke"
+    
+
+## .qu.runTestFolder
+
+Runs all tests in a folder with default settings
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+path | string | symbol | null | The folder path. Null is replaced with "." namespace  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+[ .qu.results ](../overview-typedefs/#quresults) | See Running qcumber for more information about the structure of the results table given different block types.  
+  
+**Example:**
+
+    
+    
+     .qu.runTestFolder "folder"
+    
+
+## .qu.runTestFolderWithSettings
+
+Runs all tests in a folder
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+path | string | symbol | null | The folder path. Null is replaced with "." namespace  
+sts | [ .qu.ty.userSettings ](../overview-typedefs/#qutyusersettings) | null | The qcumber settings  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+[ .qu.results ](../overview-typedefs/#quresults) | See Running qcumber for more information about the structure of the results table given different block types.  
+  
+**Example:**
+
+    
+    
+     .qu.runTestFolder "folder"
+    
+
+## .qu.setBreakOnErrors
+
+Allows errors from unit tests to propagate, facilitate debugging
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | boolean | 1b to not trap errors in unit tests  
+  
+**Returns:**
+
+## .qu.settings.default
+
+the default settings for qcumber
+
+## .qu.ty.onLoad
+
+The type definitions for qcumber
+
+**Returns:**
+

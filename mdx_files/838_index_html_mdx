@@ -1,0 +1,72 @@
+https://code.kx.com/insights/enterprise/cli/index.html
+
+# kdb Insights Enterprise CLI - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/cli/index.html
+
+# Command line interface overview
+
+The kdb Insights Command Line Interface is a tool to manage your kdb Insights
+Enterprise application. Use it to:
+
+  * **Manage deployments**
+
+You can install, upgrade, and uninstall kdb Insights Enterprise.
+
+Refer to [kdb Insights Enterprise installation](../installation/insights.html)
+for more information.
+
+  * **Manage assemblies**
+
+You can programmatically create, manage and teardown assemblies.
+
+This functionality is available through the `kxi assembly` subcommand.
+
+Deprecation of deployment with assembly yaml files
+
+The deployment of assembly yaml files using the `kxi assembly` command in the
+kdb Insights CLI has been deprecated and may be removed from future releases.
+You should instead use packages, which can be deployed and managed by both the
+UI and the kdb Insights CLI. For more information about packages, refer to
+[Packages](../packaging/index.html).
+
+  * **Manage packages**
+
+You can create and manage packages that enable you to manage the life cycle of
+deployments and custom logic in kdb Insights Enterprise.
+
+For more information, refer to [Packaging](../packaging/index.html).
+
+  * **Azure**
+
+You can interact with kdb Insights Enterprise on the Azure Marketplace.
+
+For more information on how to use the CLI with Azure, refer to [kdb Insights
+Enterprise on Azure Marketplace](../azure-marketplace/index.html).
+
+## Installing the CLI
+
+To install the CLI, use the [CLI installation guide](install.html).
+
+## Options precedence
+
+The CLI reads each option value in the following order of precedence:
+
+  1. [The command line parameter](../kxi-cli/cli.html)
+  2. The value set in your local [cli-config file](configuration.html)
+  3. The setting from the [values file](../configuration/index.html) passed with `--filepath` (in the case of `kxi install run/upgrade`)
+  4. The setting from the [values file already deployed on cluster](../kxi-cli/cli.html#kxi-install-get-values) (in the case of `kxi install upgrade`)
+  5. The response to a user prompt (in an interactive session)
+  6. [The default value](configuration.html)
+
+### Namespace precedence
+
+The namespace option precedence has an extra check and is read in the
+following order:
+
+  1. [The `--namespace` command line parameter](../kxi-cli/cli.html)
+  2. The `namespace` value set in your local [cli-config file](configuration.html)
+  3. The namespace set in your active [Kubernetes context](https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/)
+  4. The response to a user prompt (in an interactive session)
+  5. [The default value](configuration.html)
+

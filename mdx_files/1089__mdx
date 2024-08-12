@@ -1,0 +1,512 @@
+https://code.kx.com/dashboards/helper-array/
+
+# Arrays - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/helper-array/
+
+# Array helpers
+
+## `after`
+
+Returns the items of an array after a starting index. Opposite of `before`.
+
+Parameters:
+
+  * `array` {Array}: Collection
+  * `n` {Number}: Starting index (number of items to exclude)
+
+Returns {Array} `array` excluding first `n` items.
+
+Example:
+
+    
+    
+    <!-- array: ['a', 'b', 'c'] -->
+    {{after array 1}}
+    <!-- results in: '["c"]' -->
+    
+
+## `arrayify`
+
+Returns a value as a single-item array.
+
+Parameters:
+
+Returns an array.
+
+Example:
+
+    
+    
+    {{arrayify "foo"}}
+    <!-- results in: [ "foo" ] -->
+    
+
+## `before`
+
+Parameters:
+
+Returns `array` excluding items after the index `n`. Opposite of `after`.
+
+Example:
+
+    
+    
+    <!-- array: ['a', 'b', 'c'] -->
+    {{before array 2}}
+    <!-- results in: '["a", "b"]' -->
+    
+
+## `eachIndex`
+
+Implementation of the default Handlebars loop helper {{#each}} adding index
+(0-based index) to the loop content
+
+Parameters:
+
+  * `array` {Array}
+  * `options` {Object}
+  * `returns` {String}
+
+Returns: {String}
+
+Example:
+
+    
+    
+    <!-- array: ['a', 'b', 'c'] -->
+    {{#eachIndex array}}
+      {{item}} is {{index}}
+    {{/eachIndex}}]
+    <¬-- results in 'a is 0, b is 1, c is 2' -->
+    
+
+## `filter`
+
+Block helper: filters `array` and renders the block for values that evaluate
+to `true`; otherwise the inverse block is returned.
+
+Parameters:
+
+  * `array` {Array}
+  * `value` {any}
+  * `options` {Object}
+
+Returns: {String}
+
+Example:
+
+    
+    
+    <!-- array: ['a', 'b', 'c'] -->
+    {{#filter array "foo"}}AAA{{else}}BBB{{/filter}}
+    <!-- results in: 'BBB' -->
+    
+
+## `first`
+
+Returns the first item, or first `n` items, of an `array`
+
+Parameters:
+
+  * `array` {Array}
+  * `n` {Number}: Number of items to return, starting at 0. Optional.
+
+Returns: {Array}
+
+Example:
+
+    
+    
+    {{first "['a', 'b', 'c', 'd', 'e']" 2}}
+    <!-- results in: '["a", "b"]' -->
+    
+
+## `forEach`
+
+Iterates over each item in `array` and exposes the current item as context to
+the inner block.
+
+The helper also exposes the following variables to the inner block:
+
+  * `index`
+  * `total`
+  * `isFirst`
+  * `isLast`
+
+Also, `@index` is exposed as a private variable, and additional private
+variables may be defined as hash arguments.
+
+Parameters:
+
+Returns {String}
+
+Example:
+
+    
+    
+    <!-- accounts = [
+    {'name': 'John', 'email': 'john@example.com'},
+    {'name': 'Malcolm', 'email': 'malcolm@example.com'},
+    {'name': 'David', 'email': 'david@example.com'}
+    ] -->
+    
+    {{#forEach accounts}}
+      <a href="mailto:{{ email }}" title="Send an email to {{ name }}">
+        {{ name }}
+      </a>{{#unless isLast}}, {{/unless}}
+    {{/forEach}}
+    
+
+## `inArray`
+
+Block helper: renders the block if `array` contains `value`. Optionally
+specify an inverse block to render when the array does not have the given
+value.
+
+Parameters:
+
+  * `array` {Array}
+  * `value` {any}
+  * `options` {Object}
+
+Returns {String}
+
+Example:
+
+    
+    
+    <!-- array: ['a', 'b', 'c'] -->
+    {{#inArray array "d"}}
+      foo
+    {{else}}
+      bar
+    {{/inArray}}
+    <!-- results in: 'bar' -->
+    
+
+## `isArray`
+
+Returns true if `value` is an ES5 array.
+
+Parameters:
+
+  * `value` {any}: the value to test
+
+Returns {Boolean}
+
+Example:
+
+    
+    
+    {{isArray "abc"}}
+    <!-- results in: false -->
+    
+    <!-- array: [1, 2, 3] -->
+    {{isArray array}}
+    <!-- results in: true -->
+    
+
+## `itemAt`
+
+Returns the item from `array` at index `idx`.
+
+Parameters:
+
+  * `array` {Array}
+  * `idx` {Number}
+
+Returns {any}
+
+Example:
+
+    
+    
+    <!-- array: ['a', 'b', 'c'] -->
+    {{itemAt array 1}}
+    <!-- results in: 'b' -->
+    
+
+## `join`
+
+Join all elements of `array` into a string, optionally using a given
+separator.
+
+Parameters:
+
+  * `array` {Array}
+  * `separator` {String}: The separator to use. Defaults to `,`.
+
+Returns {String}
+
+Example:
+
+    
+    
+    <!-- array: ['a', 'b', 'c'] -->
+    {{join array}}
+    <!-- results in: 'a, b, c' -->
+    
+    {{join array '-'}}
+    <!-- results in: 'a-b-c' -->
+    
+
+## `last`
+
+Returns the last item, or last `n` items of `value`. Opposite of first.
+
+Parameters:
+
+  * `value` {Array|String}: Array or string
+  * `n` {Number}: Number of items to return from the end of the array.
+
+Returns: {Array or String}
+
+Example:
+
+    
+    
+    <!-- var value = ['a', 'b', 'c', 'd', 'e'] -->
+    
+    {{last value}}
+    <!-- results in: ['e'] -->
+    
+    {{last value 2}}
+    <!-- results in: ['d', 'e'] -->
+    
+    {{last value 3}}
+    <!-- results in: ['c', 'd', 'e'] -->
+    
+
+## `lengthEqual`
+
+Alias for `equalsLength`
+
+## `map`
+
+Returns a new array, created by calling `function` on each element of the
+given `array`.
+
+Parameters:
+
+  * `array` {Array}
+  * `fn` {Function}
+
+Returns {String}
+
+Example:
+
+    
+    
+    <!-- array: ['a', 'b', 'c'], and "double" is a
+    fictitious function that duplicates letters -->
+    {{map array double}}
+    <!-- results in: ["aa", "bb", "cc"] -->
+    
+
+## `reverse`
+
+Reverse the elements in an array, or the characters in a string.
+
+Parameters:
+
+Returns {Array|String} Returns the reversed string or array.
+
+Example:
+
+    
+    
+    <!-- value: 'abcd' -->
+    {{reverse value}}
+    <!-- results in: 'dcba' -->
+    <!-- value: ['a', 'b', 'c', 'd'] -->
+    {{reverse value}}
+    <!-- results in: ['d', 'c', 'b', 'a'] -->
+    
+
+## `sort`
+
+Sort `array`. If its items are objects, optional `key` specifies the sort.
+
+Parameters:
+
+  * `array` {Array}: the array to sort.
+  * `key` {String|Function}: The object key to sort by, or sorting function.
+
+Returns {Array}
+
+Example:
+
+    
+    
+    <!-- array: ['b', 'a', 'c'] -->
+    {{sort array}}
+    <!-- results in: '["a", "b", "c"]' -->
+    
+
+## `sortBy`
+
+Sort an array. If its items are objects, optional `props` specifies the sort.
+
+Parameters:
+
+  * `array` {Array}: the array to sort.
+  * `props` {String|Function}: One or more properties to sort by, or sorting functions to use.
+
+Returns {String}
+
+Example:
+
+    
+    
+    <!-- array: [{a: 'zzz'}, {a: 'aaa'}] -->
+    {{sortBy array "a"}}
+    <!-- results in: '[{"a":"aaa"}, {"a":"zzz"}]' -->
+    
+
+## `withAfter`
+
+Use the items in `array` after index `idx` as context inside a block. Opposite
+of withBefore.
+
+Parameters:
+
+  * `array` {Array}
+  * `idx` {Number}
+  * `options` {Object}
+
+Returns {Array}
+
+Example:
+
+    
+    
+    <!-- array: ['a', 'b', 'c', 'd', 'e'] -->
+    {{#withAfter array 3}}
+      {{this}}
+    {{/withAfter}}
+    <!-- results in: "de" -->
+    
+
+## `withBefore`
+
+Use the items in the array `before` the specified index as context inside a
+block. Opposite of withAfter.
+
+Parameters:
+
+  * `array` {Array}
+  * `idx` {Number}
+  * `options` {Object}
+
+Returns {Array}
+
+Example:
+
+    
+    
+    <!-- array: ['a', 'b', 'c'] -->
+    {{#withFirst array}}
+      {{this}}
+    {{/withFirst}}
+    <!-- results in: 'a' -->
+    
+
+## `withFirst`
+
+Use the first item in a collection inside a Handlebars block expression.
+Opposite of `withLast`.
+
+Parameters:
+
+  * `array` {Array}
+  * `idx` {Number}
+  * `options` {Object}
+
+Returns {String}
+
+Example:
+
+    
+    
+    <!-- array: ['a', 'b', 'c'] -->
+    {{#withFirst array}}
+      {{this}}
+    {{/withFirst}}
+    <!-- results in: 'a' -->
+    
+
+## `withGroup`
+
+Block helper: groups array elements by group `size`.
+
+Parameters:
+
+  * `array` {Array}: The array to iterate over
+  * `size` {Number}: The desired length of each array "group"
+  * `options` {Object}: Handlebars options
+
+Returns {String}
+
+Example:
+
+    
+    
+    <!-- array: ['a','b','c','d','e','f','g','h'] -->
+    {{#withGroup array 4}}
+      {{#each this}}
+        {{.}}
+      {{each}}
+      <br>
+    {{/withGroup}}
+    <!-- results in: -->
+    <!-- 'a','b','c','d'<br> -->
+    <!-- 'e','f','g','h'<br> -->
+    
+
+## `withLast`
+
+Use the last or last `n` items in `array` as context inside a block. Opposite
+of withFirst.
+
+Parameters:
+
+  * `array` {Array}
+  * `idx` {Number}: The starting index.
+  * `options` {Object}
+
+Returns {String}
+
+Example:
+
+    
+    
+    <!-- array: ['a', 'b', 'c'] -->
+    {{#withLast array}}
+      {{this}}
+    {{/withLast}}
+    <!-- results in: 'c' -->
+    
+
+## `withSort`
+
+Block helper: sorts a collection and exposes the sorted collection as context
+inside the block.
+
+Parameters:
+
+  * `array` {Array}
+  * `prop` {String}
+  * `options` {Object}: Specify reverse="true" to reverse the array.
+
+Returns {String}
+
+Example:
+
+    
+    
+    <!-- array: ['b', 'a', 'c'] -->
+    {{#withSort array}}{{this}}{{/withSort}}
+    <!-- results in: 'abc' -->
+    
+

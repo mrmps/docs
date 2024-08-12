@@ -1,0 +1,116 @@
+https://code.kx.com/insights/enterprise/entitlements/prerequisites.html
+
+# Data entitlements prerequisites - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/entitlements/prerequisites.html
+
+# Entitlement prerequisites
+
+Data entitlements are managed using the [kdb Insights CLI](../cli/index.html)
+using the [`entitlements`](../kxi-cli/cli.html#kxi-entitlement) command.
+Before managing entitlements, the following prerequisites must be actioned:
+
+## Enabling entitlements
+
+By default, data entitlements are disabled, meaning that **all** users are
+entitled to query **all** assemblies in a _kdb Insights Enterprise_
+deployment. Those with deployment access to the cluster can enable
+entitlements as follows:
+
+  1. You must update your deployment values to enable entitlements.
+
+The panels below display values for the standard and shared _Keycloak_
+deployments.
+
+Merging install values
+
+The values below are a partial extract of your deployment values. These should
+be **merged** with your existing values file.
+
+Please see the note [here](../configuration/index.html#applying-configuration-
+changes) for more information.
+
+Standard DeploymentShared Keycloak
+
+A standard deployment will deploy Keycloak as part of the application. If
+you're using this configuration, you should ensure your values file includes
+the details shown below.
+
+The names `kxi-keycloak` and `kxi-postgresql` are the default values, update
+these as appropriate.
+
+    
+        global:
+      entitlements:
+        enabled: true
+      keycloak:
+        auth:
+          existingSecret: kxi-keycloak
+      postgresql:
+        auth:
+          existingSecret: kxi-postgresql
+      ..
+    
+    keycloak:
+      auth:
+        existingSecret: kxi-keycloak
+      postgresql:
+        auth:
+          existingSecret: kxi-postgresql
+    ..
+    
+
+Keycloak values
+
+Please note there are two sets of `keycloak` and `postgres` objects;
+`global.keycloak`, `global.postgresql`, `keycloak`, `keycloak.postgresql`.
+
+Both sets of these are required as shown above.
+
+If deploying using the [shared Keycloak](../security/shared-keycloak.html)
+mode, configure the values file as below. The main difference with the
+standard deploy is the `kxi-ent-srv.externalDatabase.host` value. This should
+point at the _Kubernetes_ service for the Postgresql database deployed with
+the shared Keycloak instance.
+
+The `KEYCLOAK_RELEASE_NAME` and `KEYCLOAK_NAMESPACE` variables should be
+updated to match those of your Keycloak deployment. The shared Keycloak docs
+explain each of these values.
+
+    
+        global:
+      entitlements:
+        enabled: true
+      keycloak:
+        authURL: http://${KEYCLOAK_RELEASE_NAME}.${KEYCLOAK_NAMESPACE}.svc.cluster.local/auth/
+        auth:
+          existingSecret: kxi-keycloak
+      postgresql:
+        auth:
+          existingSecret: kxi-postgresql
+      ..
+    kxi-ent-srv:
+      enabled: true
+      externalDatabase:
+        host: ${KEYCLOAK_RELEASE_NAME}-postgresql.${KEYCLOAK_NAMESPACE}.svc.cluster.local
+    
+
+  2. Run the upgrade command with `$INSIGHTS_VERSION` set to your target application version.
+    
+        kxi install upgrade --filepath values.yaml --version $INSIGHTS_VERSION
+    
+
+## Adding users to groups
+
+Data entitlements are configured at the group level, not per user. Therefore,
+before defining any entitlements you must use the Keycloak administration
+console at `https://${INSIGHTS_HOSTNAME}/auth` to:
+
+  1. Create the necessary [groups](../security/managing-groups.html).
+
+  2. Add [users](../security/managing-groups.html#assigning-users) and [service accounts](../security/managing-groups.html#assigning-service-accounts) to those groups.
+
+When these prerequisites are complete, you are ready to give entitlements to
+users. To do this, you can either follow the [quickstart](quickstart.html)
+guide or use the [configuration](configuration.html) details.
+

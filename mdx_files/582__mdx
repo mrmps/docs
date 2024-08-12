@@ -1,0 +1,486 @@
+https://code.kx.com/dashboards/formbuilder/
+
+# Form Builder - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/formbuilder/
+
+# Form Builder
+
+![A form built with FormBuilder](../img/formbuilder/formbuilder_example.jpg)  
+_A form built with FormBuilder_
+
+The FormBuilder component provides a way to create a flexible form in
+Dashboards. With FormBuilder, it is easy to manage the rules governing field
+visibility, dropdown options, and form validation. This can be done by either:
+
+  * Configuring the FormBuilder component properties from the front-end.
+  * Adding an external kdb function from the back-end. 
+
+In either case, it is possible to monitor the form state and react to a user's
+current input, e.g., by showing/hiding certain fields, changing dropdown
+options or updating validation rules.
+
+## Set Up
+
+Before set-up, choose whether you want to build and manage the form using the
+component properties panel or with an external kdb function.
+
+### Set Up Using the Properties Panel
+
+  1. Click "+Element" under Elements to add an element to the form schema.
+  2. Set its id, title, and type.
+
+![Form field
+properties](../img/formbuilder/formbuilder_element_properties.jpg)  
+_Form field properties_
+
+  3. Add any desired validators.
+
+![Validation](../img/formbuilder/formbuilder_add_validator.jpg)  
+_An example of a "required" validator_
+
+  4. Repeat as necessary for each additional form field. 
+
+  5. Create an empty dictionary view state to keep track of the form state as a user interacts with the form, and add it under either _Basics > Form Values_ or as the output of a _State Output_ "Change" action. See Form State Management for more details.
+
+![Form State Output](../img/formbuilder/formbuilder_state_output.jpg)  
+_Form State Output_
+
+### Set Up Using an External Kdb Function
+
+  * Set the _Basics > Kdb Schema_ property to a new empty view state parameter of type "dictionary". Repeat for the Form Values property (or use a State Output action instead).
+
+![Basics > Kdb Schema and Form
+Values](../img/formbuilder/formbuilder_viewstates.png)
+
+  * Create a [query data source](../datasources/#query) returning a function that takes at least one argument named "values" and returns a dictionary with two properties, "schema" and "values", as below. More parameters may be added to this function as desired. See the Form Fields section below for more details on how to add more form fields.
+
+    
+    
+    {[values]
+        / form field definitions
+        field1:`type`title`values`default!("list";"Field 1";("option1";"option2");"option1");
+        field2:`type`title`validators!("int";"Field 2";enlist"required");
+    
+        / define form schema
+        properties:`field1`field2!(field1;field2);
+        schema:`type`title`properties!("group";"A form example";properties);
+    
+        / update values with any missing properties and set them to null
+        values:@[values;(key properties) except (key values);:;`];
+    
+        / return dictionary defining the form
+        `schema`values!(schema;values)
+     }
+    
+
+Once these steps are complete, you have a data source that automatically
+executes in response to user input. When the user interacts with the form, the
+_Form Values_ view state changes. This triggers execution of the data source.
+You can customize the data source to return different schema depending on the
+state of _values_. The result is a form that re-renders as desired in response
+to user input.
+
+## Form Structure
+
+Forms are composed of a nested collection of form _groups_ and form _fields_.
+Each form field belongs to some form group containing it. Form groups may also
+be nested in higher-level groups to create more complex forms. A form's top-
+level group is called its _schema_.
+
+### Form Fields
+
+#### Form Fields Definition
+
+All form fields have the following properties available from the property
+panel (if configuring from the front-end), or defined manually in an external
+kdb function (if configuring from the back-end). See examples below for more
+details.
+
+  * _title_ (required) - The label text used in the form.
+  * _type_ (required) - Must be set to a valid kdb type. For dropdowns use "list". For form sub-groups, use "group".
+  * _default_ (optional) - The default value of the field.
+  * _hidden_ (optional) - If true, the field is hidden on the form.
+  * _disabled_ (optional) - If true, the field is disabled.
+  * _ignoreOnChange_ (optional) - If true, the field will not trigger a "change" state output action.
+  * _classes_ (optional) - Adds the CSS class or classes (separated by spaces) to the field for custom styling.
+  * _validators_ (optional) - Adds form field validation.
+
+Some field types have extra properties. For fields of type "symbol":
+
+  * _password_ (optional) - If true, the "password" html input type is used, which obscures text characters with a dot ("·").
+
+![Example Password Form Input](../img/formbuilder/password_form_builder.png)
+
+For dropdown fields of type "list", you can set the dropdown values in an
+external kdb function using the "values" property:
+
+  * _values_ (optional) - A kdb list corresponding to the desired dropdown values, or a kdb dictionary with "Value" and "Text" properties.
+  * _forceSelect_ (optional) - If true, force selection of the first dropdown value.
+  * _multiSelect_ (optional) - If true, allows the user to select multiple values in the dropdown.
+
+Alternatively, from the front-end you can create specific list items or add a
+data source to generate them:
+
+![List item values](../img/formbuilder/formbuilder_list_values.jpg)
+
+#### Form Fields Examples
+
+  * A _date_ field with default value "2020-01-31": 
+
+    Property panel example:
+    ![Default date field](../img/formbuilder/formbuilder_default_date.jpg)
+    _Date field with default value_
+    Kdb definition:
+    
+    
+        dob:`type`title`default!("date";"Date of birth";"2020-01-31");
+    
+
+  * An _int_ field that is required and must be between 1 and 10 (inclusive):
+
+    Property panel example: 
+    ![Required integer field with range validator](../img/formbuilder/formbuilder_int_field.jpg)
+    _Required integer field with range validator_
+    Kdb definition:
+    
+    
+        e:"Quantity must be an integer between 1 and 10 (inclusive)";
+        qv:`v1`v2!("required";`type`min`max`message!("range";1i;10i;e));
+        quantity:`type`title`validators!("int";"Quantity";qv);
+    
+
+  * A dropdown _list_ with multiple value options:
+
+    Property panel example:
+    ![Dropdown list with two values](../img/formbuilder/formbuilder_list_field.jpg)
+    _Dropdown list with two values_
+    Kdb definition:
+    
+    
+        options:`type`title`values`default!("list";"Options";(`Value`Text!(`value1`value2;`option1`option2));`option1);
+    
+
+    
+
+Alternatively, a single list can be used to define the `values property:
+
+    
+    
+        options:`type`title`values`default!("list";"Options";(`option1`option2);`option1);
+    
+
+  * A _symbol_ field that checks to make sure only alphanumeric characters have been entered:
+
+    Property panel example:
+    ![Symbol field with a regexp validator checking for alphanumeric characters only](../img/formbuilder/formbuilder_symbol_field.jpg)
+    _Symbol field with a regexp validator checking for alphanumeric characters only_
+    Kdb definition:
+    
+    
+        uv:`type`regexp`flags`message!("regexp";"^\\w+$";"ig";"Invalid character");
+        username:`type`title`validators!("symbol";"Username";uv);
+    
+
+### Form Groups
+
+#### Form Groups Definition
+
+All form groups have the following properties available from the property
+panel (if configuring from the front-end), or defined manually in an external
+kdb function (if configuring from the back-end). See examples below for more
+details.
+
+  * _type_ (required) - Must be set to "group".
+  * _title_ (required) - A string equal to the title of the group.
+  * _layout_ (optional) - If "Row" ("Column") is selected, then its elements are arranged in a row (column) on the form. The default is "Column".
+
+If using kdb to define the group, then you can add elements to it using the
+`properties property:
+
+  * _properties_ \- a dictionary whose keys are the ids of any form fields and sub-groups contained in the group, and whose values are those objects.
+
+Note that the top-level group in the form should be set to the value of the
+_schema_ property in the kdb form definition function - see the example above
+on how to set up the form definition with an external kdb function.
+
+Alternatively, if defining the group from the properties panel, simply click
+the "+ Element" to add an element inside the group.
+
+#### Form Groups Examples
+
+An example of a form group defined in kdb with the example fields defined
+above:
+
+    
+    
+    properties:`dob`quantity`options`username!(dob;quantity;options;username);
+    group1:`type`title`properties!("group";"Group1";properties);
+    
+
+An example of a form with two nested groups:
+
+    
+    
+    props1:`dob`quantity!(dob;quantity);
+    props2:`options`username!(options;username);
+    group1:`type`title`properties!("group";"Group1";props1);
+    group2:`type`title`properties!("group";"Group2";@[props2;`group1;:;group1]);
+    
+
+This produces the following nested form when _group2_ is set as the _schema_
+of the kdb form definition function:
+
+![Example of nested form groups configured in
+kdb](../img/formbuilder/formbuilder_nestedgroups.jpg)
+
+_Example of nested form groups configured in kdb_
+
+From the properties panel, the same configuration above is illustrated below:
+
+![Example of nested form groups configured from the properties
+panel](../img/formbuilder/formbuilder_nested_groups.jpg)
+
+_Example of nested form groups configured from the properties panel_
+
+## Form State Management
+
+There are two ways to manage the form state as the user interacts with the
+form.
+
+  * _Basics > Form Values_: This view state property stores the current form values as a dictionary, regardless of whether the user has clicked "Submit" or if a particular field has the _ignoreOnChange_ property set to true.
+
+  * _State Output_ : State Output actions output the current form values as a dictionary in response to specific triggers - output on "Change", output on "Submit", output on "Cancel". If any field has the _ignoreOnChange_ property set to true, then it does not trigger the "Change" action if the user inputs data into that field.
+
+    ![Form State Output](../img/formbuilder/formbuilder_state_output.jpg)
+    _Form State Output_
+
+The current form state can be used to update the form schema via an external
+kdb function or [virtual query](../datasources/#virtual).
+
+## Form Validation
+
+When the user clicks the submit button, the form checks for any input errors.
+If found, they are shown to the user and submission is halted. The form
+performs two types of validation:
+
+  1. built-in validation, depending on the kdb type of the field
+  2. custom validation, added to the field's properties
+
+### Built-in validation
+
+Built-in validation checks that the user's input matches the correct kdb type
+as specified in the form field's definition. For example, an form field of
+type _int_ will automatically throw an error if the user inputs a floating
+point number:
+
+![Built-in validator with error
+message](../img/formbuilder/formbuilder_built_in_validator.jpg)
+
+### Custom validation
+
+There are several types of custom validators that can be added to a form
+field. Multiple validators may be used together. If using kdb to define the
+form, validators should be defined in the form field's _validators_ property
+as a dictionary, with each validator stored in the dictionary's _values_. See
+the form validation examples below for details.
+
+_required_
+
+  * Cannot be null. 
+
+  * Usage: `"required"`
+
+_range_
+
+  * Must be a number in the range specified by _min_ and _max_ properties. 
+  * Usage: 
+
+    
+    
+    `type`min`max`message!("range";min;max;message)
+    
+
+where _min_ , _max_ specify the range and _message_ is a custom error message.
+
+_email_
+
+  * Must match a valid email format.
+  * Usage: `"email"`
+
+_url_
+
+  * Must match a valid url.
+  * Usage: "url"
+
+_regexp_
+
+  * Must match the provided _regexp_
+  * Usage: 
+
+    
+    
+    `type`regexp`flags`message!("regexp";regexp;flags;message)
+    
+
+where _regexp_ is a string regular expression, _flags_ is a string storing
+optional javascript regexp flags (such as "i" for case insensitive, or "g" for
+global search), and _message_ is a custom error message.
+
+_function_
+
+  * The provided _condition_ property must be false.
+  * Usage: 
+
+    
+    
+    `type`condition`message!("function";condition;message)
+    
+
+where _condition_ is a boolean. If it's true, then validation fails and the
+custom error _message_ is thrown.
+
+Validators also have a `disabled property that disables the validator if set
+to true.
+
+#### Form Validation Examples
+
+A form field _name2_ that's both required and must match another field with id
+_name1_ can be defined with both the _required_ and _function_ validators as
+below:
+
+    
+    
+    name1:`type`title!("symbol";"Name1");
+    validators:`v1`v2!("required";`type`condition`message!("function";values[`name1]<>values[`name2];"Must match name1"));
+    name2:`type`title`validators!("symbol";"Name2";validators);
+    
+
+In this case the _required_ validator is checked first, and if that passes,
+then the _match_ validator is checked. In the example below, it fails:
+
+![Example of a custom validator with error
+message](../img/formbuilder/formbuilder_custom_validator.jpg)
+
+## Basics
+
+![Basics > Kdb Schema and Form
+Values](../img/formbuilder/formbuilder_viewstates.png)
+
+_Name_
+
+    A name for the component provided by the user. 
+_Kdb Schema_
+
+    An empty type dictionary [view state parameter](../viewstateparameters/). Used in setup with an external Kdb Function.
+_Form Values_
+
+    An empty type dictionary [view state parameter](../viewstateparameters/). Used in setup with an external Kdb Function.
+_Title_
+
+    Title for the assigned form.
+
+## Actions
+
+_Trigger Action_ Can be set on form "Submit", "Cancel" or "Change".
+
+[Actions](../action/)
+
+## State Output
+
+An optional action, set to a view state parameter to track the interaction
+state of the user with the form; define as an empty dictionary [view state
+parameter](../viewstateparameters/).
+
+[Actions](../action/)
+
+## Elements
+
+### Element
+
+Define Form inputs.
+
+_id_
+
+    referenced in the kdb definition.
+_Title_
+
+    Text description for the form.
+_Default_
+
+    Define default value of the form.
+_Hidden_
+
+    Hide form element.
+_Disabled_
+
+    Locks form to user input.
+_Ignore on Change_
+
+    Will not trigger a State Output action on change.
+_CSS Classes_
+
+    Apply style from named CSS class.
+
+### Type
+
+Set kdb type for Form element.
+
+### Validators
+
+#### Validator
+
+Select from `email`, `range`, `required`, `regexp` or `url`.
+
+_Message_
+
+    Define message when incorrect input is entered for Form element.
+_Disabled_
+
+    Disable validation check.
+_Min_
+
+_Max_
+
+    Define required numeric `range` min and max input values.
+_regexp_
+
+_flags_
+
+    Define `regexp` string regular expression. _Flags_ stores optional javascript regular expression flags.
+_url_
+
+    Requires a valid `url`. 
+
+## Style, Margins, Format
+
+[Style](../style/#component-style) for common settings.
+
+_Hide Fieldset Borders_
+
+_Hide Group Tiles_
+
+_Hide Submit_
+
+_Hide Cancel_
+
+    Selectively remove Form details and buttons.
+_Horizontal_
+
+_Vertical_
+
+_Layout_
+
+    Configure orientation of the form.
+_Max Form Width_
+
+    Define percentage width occupied by the form within the Form component; between 1 and 100%.
+_Label Widths_
+
+    Set label widths in pixels.
+_Submit Button Text_
+
+_Cancel Button Text_
+
+    Set text description for Form buttons.
+

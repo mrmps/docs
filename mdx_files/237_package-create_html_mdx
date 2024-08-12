@@ -1,0 +1,68 @@
+https://code.kx.com/insights/enterprise/packaging/package-create.html
+
+# Creating a Package - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/packaging/package-create.html
+
+# Package creation
+
+You can use the help command to provide information regarding the additional
+options.
+
+    
+    
+     Usage: kxi package init [OPTIONS] [PATH_TO_PACKAGE]                            
+    
+     Creates a bare package at the specified target path.                           
+     Note: this will not be saved to your KX_PACKAGE_PATH unless `install` is       
+     explicitly run.                                                                
+    
+    ╭─ Options ────────────────────────────────────────────────────────────────────╮
+    │ --force            Force initialisation: overwrite existing directory if one │
+    │                    already exists.                                           │
+    │ --reset            Reset initialisation: overwrite the existing manifest     │
+    │                    only                                                      │
+    │ --version    TEXT  Version of the package to initialise.                     │
+    │ --help             Show this message and exit.                               │
+    ╰──────────────────────────────────────────────────────────────────────────────╯
+    
+
+To create a new package:
+
+  1. Create an empty directory and move into this location:
+    
+        mkdir my_packages
+    cd my_packages
+    
+
+  2. Create a package in that directory:
+    
+        kxi package init packagename --force
+    
+    
+        Creating package at location: packagename
+    Writing packagename/manifest.yaml
+    
+
+An empty package is now stored in the `my_packages` folder. Once the package
+has been initialized you can check out what is inside.
+
+    
+    
+    uuid: a7059c0f-f18e-4c96-8d8e-6d98bc8a8c8c
+    name: qpackage
+    version: 0.0.1
+    metadata:
+      description: ''
+      authors:
+      - {}
+    entrypoints:
+      default: init.q
+    
+
+This package is not yet available within _kdb Insights Enterprise_. You need
+to pack and and push the package to a _kdb Insights Enterprise_ deployment to
+use it in kdb Insights Enterprise.
+
+## Next steps
+

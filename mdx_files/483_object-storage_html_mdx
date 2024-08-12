@@ -1,0 +1,333 @@
+https://code.kx.com/insights/microservices/database/query/object-storage.html
+
+# Query existing object storage - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/database/query/object-storage.html
+
+# Reading from object storage
+
+Within the kdb Insights Database, the Data Access service can be configured to
+read directly from object storage. This mode allows a kdb+ partitioned
+database to be read from a static location in object storage. This is useful
+for easily querying existing kdb data that is managed outside of kdb Insights.
+
+Writing to object storage
+
+Reading directly from object storage uses read-only data. To write data to
+object storage, use an [object storage tier](../storage/tiers.html#object-
+storage-tier).
+
+## Tutorial
+
+_Query a kdb+ partitioned database from object storage_
+
+This example will deploy a kdb Insights Database that reads static data from
+an AWS S3 bucket. The same process works for Azure blob storage and Google
+Cloud Storage. Define the appropriate [authentication
+parameters](../storage/object-storage.html#authentication) based on the
+selected cloud vendor.
+
+### Uploading your database to S3
+
+To upload a database to S3, use `aws s3 cp`. You can skip this section if you
+already have a kdb+ partitioned database in a object storage.
+
+In our example, we will create a simple data set with randomized data.
+
+    
+    
+    // Generate data for today and the past few days last few days
+    n:1000000;
+    d:asc .z.d - til 3;
+    {[d;n]sv[`;.Q.par[`:data/db/;d;`trade],`]set .Q.en[`:data/;([]sym:`$'n?.Q.A;time:("p"$d)+til n;price:n?100f;size:n?50f)];}[;n] each d;
+    
+
+Now we will upload this example data.
+
+    
+    
+    aws s3 cp --recursive "data" "s3://insights-example-data/"
+    
+
+The `sym` file above top of the database directory is an enumeration of all
+symbols in the table. Under the trade table, there is a `sym` column which
+will reference the top-level file with the indices of relevant symbol names.
+
+    
+    
+    data
+    ├── db
+    │   ├── 2023.05.09
+    │   │   └── trade
+    │   │       ├── price
+    │   │       ├── size
+    │   │       ├── sym
+    │   │       └── time
+    │   ├── 2023.05.10
+    │   │   └── trade
+    │   │       ├── price
+    │   │       ├── size
+    │   │       ├── sym
+    │   │       └── time
+    │   └── 2023.05.11
+    │       └── trade
+    │           ├── price
+    │           ├── size
+    │           ├── sym
+    │           └── time
+    └── sym
+    
+
+Additionally, a `par.txt` needs to be added in a different location than the
+database. In this example, the `par.txt` file will contain the following
+content.
+
+par.txt
+
+    
+    
+    s3://insights-example-data/data/db
+    
+    
+    
+    aws s3 cp par.txt s3://insights-example-data/data/par.txt
+    
+
+This `par.txt` is used below when mounting the database.
+
+File locations
+
+The `sym` and `par.txt` file must be in a different folder than the actual
+partitioned data. If they are in the same file, deploying the database will
+result in a `'part` error as kdb+ is unable to mount the partitioned database.
+
+### (Optional) Creating a service account
+
+If you are running in Kubernetes, you can use a _service account_ to allow
+read access to AWS S3 without using environment variables. This can be done
+using `eksctl`.
+
+    
+    
+    eksctl create iamserviceaccount --name kx-s3-read-access \
+        --namespace <your namespace> \
+        --region <your region> \
+        --cluster <your cluster> \
+        --attach-policy-arn arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess \
+        --approve
+    
+
+### Deploying
+
+The static HDB uses a [segmented
+database](https://code.kx.com/q/database/segment/) that points to the object
+storage bucket which is configured with a `par.txt` file. Additionally, to
+maintain performance with symbol queries, we need to directly mount the `sym`
+file into the database.
+
+The configuration to drive the object storage tier uses a [microservice
+assembly](../configuration/assembly/database.html). This assembly has a single
+`object` mount with an explicit `sym` and `par` configuration on the DAP
+instance which point to the `sym` and `par.txt` generated previously.
+
+asm.yaml
+
+    
+    
+    name: odb
+    labels:
+      name: odb-example
+      type: odb
+    tables:
+      trade:
+        type: partitioned
+        prtnCol: time
+        columns:
+          - name: time
+            type: timestamp
+          - name: sym
+            type: symbol
+          - name: price
+            type: float
+          - name: size
+            type: float
+    mounts:
+      odb:
+        type: object
+        baseURI: file:///data/db/odb
+        partition: none
+    elements:
+      dap:
+        instances:
+          odb:
+            mountName: odb
+            sym: s3://insights-example-data/data/sym
+            par: s3://insights-example-data/data/par.txt
+    
+
+DockerKubernetes
+
+This example deploys the object storage tier using Docker Compose to
+orchestrate the deployment.
+
+Prerequisites
+
+This example uses a [`.env`](https://docs.docker.com/compose/environment-
+variables/env-file/) file that will be specific to your deployment when you
+set up your environment and is not defined in this example. This example below
+uses the following environment variables.
+
+variable | description  
+---|---  
+`kxi_da` | This is the URL to the `kxi-da` image. This should be the full image and tag URL. For example, portal.dl.kx.com/kxi-da:1.2.3  
+`AWS_REGION` | The [region](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.RegionsAndAvailabilityZones.html) of the AWS bucket to query data from.  
+`AWS_ACCESS_KEY_ID` | Your AWS access key ID to programatically access the specified bucket.  
+`AWS_SECRET_ACCESS_KEY` | Your AWS secret access key to programatically access the specified bucket.  
+  
+docker-compose.yaml
+
+    
+    
+    services:
+      dap:
+        image: ${kxi_da}
+        env_file: .env
+        environment:
+          - KXI_SC=odb
+          - KXI_ASSEMBLY_FILE=/data/asm.yaml
+          - AWS_REGION=${AWS_REGION}
+          - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+          - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+          - KDB_LICENSE_B64=${KDB_LICENSE_B64}
+        command: ["-p", "5080"]
+        ports:
+          - 5080:5080
+        volumes:
+          - ./odb:/data/db/odb
+          - ./asm.yaml:/data/asm.yaml
+    
+
+Writable volume
+
+When running this example, a local directory `odb` will be created. This
+directory needs to be writable for the DAP to download the `sym` and `par.txt`
+configuration.
+
+Now start the DAP.
+
+This will start the DAP and present the data from object storage. This example
+can be combined with [other deployment examples](../deploy/index.html) to
+leverage all query APIs.
+
+In the example below, an object storage tier database is deployed into
+Kubernetes as a pod configuration. A [persistent volume
+claim](https://kubernetes.io/docs/concepts/storage/persistent-volumes/) is
+used to hold a local cache of the `sym` and `par.txt` files from the object
+storage bucket. A [config
+map](https://kubernetes.io/docs/concepts/configuration/configmap/) is used to
+hold the [microservice assembly](../configuration/assembly/database.html)
+configuration.
+
+deploy.yaml
+
+    
+    
+    ---
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: odb-pvc
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      volumeMode: Filesystem
+      resources:
+        requests:
+          storage: 10Gi
+    ---
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: odb-cm
+    data:
+      asm.yaml: |
+        name: odb
+        labels:
+          name: odb-example
+          type: odb
+        tables:
+          trade:
+            type: partitioned
+            prtnCol: time
+            columns:
+              - name: time
+                type: timestamp
+              - name: sym
+                type: symbol
+              - name: price
+                type: float
+              - name: size
+                type: float
+        mounts:
+          odb:
+            type: object
+            baseURI: file:///data/db/odb
+            partition: none
+        elements:
+          dap:
+            instances:
+              odb:
+                mountName: odb
+                sym: s3://insights-example-data/data/sym
+                par: s3://insights-example-data/data/par.txt
+    ---
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: odb
+    spec:
+      containers:
+      - name: odb
+        image: portal.dl.kx.com/kxi-da:1.5.0
+        ports:
+        - containerPort: 5080
+        env:
+          - name: KXI_SC
+            value: odb
+          - name: KXI_ASSEMBLY_FILE
+            value: /cfg/asm.yaml
+          - name: AWS_REGION
+            value: "us-east-2"
+          - name: AWS_ACCESS_KEY_ID
+            value: "[redacted]"
+          - name: AWS_SECRET_ACCESS_KEY
+            value: "[redacted]"
+          - name: KDB_LICENSE_B64
+            value: "[redacted]"
+        volumeMounts:
+          - name: config
+            mountPath: /cfg
+          - name: data
+            mountPath: /data/db/odb
+        args: ["-p", "5080"]
+      volumes:
+        - name: config
+          configMap:
+            name: odb-cm
+        - name: data
+          persistentVolumeClaim:
+            claimName: odb-pvc
+      securityContext:
+        fsGroup: 65535
+    
+
+To deploy this example, run the following.
+
+    
+    
+    kubectl apply -f deploy.yaml
+    
+
+This will deploy the object storage DAP tier locally into a Kubernetes
+cluster.
+

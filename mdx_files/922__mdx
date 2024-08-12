@@ -1,0 +1,86 @@
+https://code.kx.com/platform/process_instances/
+
+# Process instances - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/process_instances/
+
+# Process instances
+
+Process instances are derived from a process template. They can be configured
+by modifying a set of parameters.
+
+The parameters are described below in the following diagram. (Click to
+expand.)
+
+![Screenshot](../img/control/processinstances.png)
+
+## Create a process instance (archive process example)
+
+![Screenshot](../img/control/createprocessinstance.png)
+
+  1. From the _File_ menu, pick _New Process Instance_
+
+  2. Give the instance a name; e.g. `dht_Archive`
+
+![Screenshot](../img/control/newprocessinstance.png)
+
+  3. Associate it with a package
+
+  4. Select the `DC_ARCHIVE` template
+
+  5. ![Screenshot](../img/control/addbutton.png)
+
+  6. In the _Reserved Parameters_ tab, assign a Host (e.g. `localhost`) and a unique port (1-65,000)
+
+![Screenshot](../img/control/hostportinstanceset.png)
+
+  7. In the _Instance Parameters_ tab, the Template default parameters will be defaulted to in the instance. Review parameters and update where necessary.
+
+![Screenshot](../img/control/instanceparameterslight.png)
+
+  8. Start and stop the process to test it. Search [Process Library Status](../viewers/#process-library-status) for the status of the Process Instance
+
+![Screenshot](../img/control/runprocessinstance.png)
+
+## Additional configuration
+
+Warning alerts can be configured from the _Shutdown Alerts_ panel.
+
+![Screenshot](../img/control/shutdownalerts.png)
+
+alert | description  
+---|---  
+Expected shutdown | Normal shutdown via task finished or user request  
+Unexpected shutdown | Shutdown unexpected; server died; process crashed …  
+Heartbeat Timeout | Process stopped heart beating with Control  
+  
+Various actions can be configured depending on the alert.
+
+action | description  
+---|---  
+Restart Instance | Attempts to restart instances  
+Run new Instance | Attempts to start a different instance  
+Run Workflow | Runs a workflow  
+Close Connection | Closes the connection to the process  
+SIGINT Interrupt | Interrupts the process (*nix only)  
+Kill Process | Kills the process  
+  
+### Process log on/off alert frequency
+
+Process log on/off alerts are not published with each individual event, they
+are grouped and are published on a timer, by default this is every 3000ms.
+
+This frequency can be configured using the environment variable in
+delta.profile
+
+`DELTACONTROL_LOGOFF_ALERT_PUBFREQ`
+
+## View the instance log file
+
+This can be summoned from the [Process Library Status](../viewers/#process-
+library-status)
+
+![Screenshot](../img/control/showpartiallog.jpg)
+
+![Screenshot](../img/control/partiallog.png)
+

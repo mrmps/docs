@@ -1,0 +1,264 @@
+https://code.kx.com/insights/enterprise/assemblies/building-assemblies.html
+
+# Building - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/assemblies/building-assemblies.html
+
+# Building assemblies
+
+Deprecation of deployment with assembly yaml files
+
+The deployment of assembly yaml files using the `kxi assembly` command in the
+kdb Insights CLI has been deprecated and may be removed from future releases.
+You should instead use packages, which can be deployed and managed by both the
+UI and the kdb Insights CLI. For more information about packages, refer to
+[Packages](../packaging/index.html).
+
+This page describes how to develop an assembly using the
+`sdk_sample_assembly.yaml` as an example. This serves as a useful example to
+understand the building blocks of an assembly.
+
+This assembly and other samples are available to [download](../use-
+cases/overview.html#downloading-assemblies).
+
+## Assembly components
+
+The main components of an assembly are:
+
+  * databases \- which store and access your data.
+  * schema \- to define the structure of that data.
+  * pipelines \- these provide a flexible stream processing service.
+  * streams \- provide a reliable transport layer.
+
+### Database
+
+A [database](../database/configuration/assembly/database.html) stores your
+streaming and historical data. It consists of a set of tiers which generally
+separate the data by age. It must contain an `rdb` (real-time), an `idb`
+(interval) and a `hdb` (historic) tiers. It can also be configured with an
+`odb` tier for object-storage migrations.
+
+The common parameters:
+
+  * `size` \- number of replicas to deploy for performance and resilience
+  * `mount` \- how the data for this tier will be stored
+  * `source` \- used by the rdb to subscribe to streams. Corresponds to a stream name.
+  * `rtLogVolume` \- size of the pod storage for stream log files.
+
+    
+    
+          instances:
+            rdb:
+              mountName: rdb
+              source: south
+              rtLogVolume:
+                size: 20Gi
+              size: 3
+            hdb:
+              mountName: hdb
+              rtLogVolume:
+                size: 20Gi
+              size: 3
+            idb:
+              mountName: idb
+              rtLogVolume:
+                size: 20Gi
+              size: 3
+    
+
+#### Mounts
+
+Mounts coordinates storage and access of a database.
+
+The `mounts` section is a dictionary mapping user-defined names of storage
+locations to dictionaries
+
+The needed keys for each storage locations are:
+
+  * `type` which can be one of the following: `stream , local , object`
+  * `baseURI` this is where that data can be mounted from other services
+  * `partition` this is the partitioning scheme for this mount `none, ordinal, date`
+
+Additionally, the `dependency` key specifies the interdependent relationship
+between storage locations.
+
+    
+    
+      mounts:
+        rdb:
+          type: stream
+          baseURI: none
+          partition: none
+          dependency:
+          - idb
+        idb:
+          type: local
+          baseURI: file:///data/db/idb
+          partition: ordinal
+        hdb:
+          type: local
+          baseURI: file:///data/db/hdb
+          partition: date
+          dependency:
+          - idb
+    
+
+### Schema
+
+The [schema](../database/configuration/assembly/schema.html) serves as a
+blueprint for the database, providing a clear and organized structure for
+storing and retrieving data.
+
+A schema has a name, a data table with at least one `timestamp` column and a
+partition mapped to a `timestamp` data column. Each table can be defined under
+the `tables`. For example, in the case of a `trace` table, it may be defined
+with 7 columns, each containing distinct data types and attributes.
+
+    
+    
+    spec:
+      attach: false
+      labels:
+        assemblyname: sdk-sample-assembly
+      tables:
+        trace:
+          description: Manufacturing trace data
+          type: partitioned
+          prtnCol: updateTS
+          sortColsOrd: [sensorID]
+          sortColsDisk: [sensorID]
+          columns:
+            - name: sensorID
+              description: Sensor Identifier
+              type: int
+              attrMem: grouped
+              attrDisk: parted
+              attrOrd: parted
+            - name: readTS
+              description: Reading timestamp
+              type: timestamp
+            - name: captureTS
+              description: Capture timestamp
+              type: timestamp
+            - name: valFloat
+              description: Sensor value
+              type: float
+            - name: qual
+              description: Reading quality
+              type: byte
+            - name: alarm
+              description: Enumerated alarm flag
+              type: byte
+            - name: updateTS
+              description: Ingestion timestamp
+              type: timestamp
+    
+
+In order to use SQL when querying against your schema, you will need to
+augment the assembly. To set `queryEnvironment` [See
+SQL](../database/query/sql.html)
+
+    
+    
+    spec:
+      queryEnvironment:
+        enabled: true
+        size: 1
+    
+
+### Pipelines
+
+Pipelines are how _kdb Insights Enterprise_ ingests data from a source and
+performs stream processing. Pipelines offer a large number of potential data
+sources for importing from, and are highly configurable;
+
+Multiple pipelines are supported within a single assembly.
+
+`source` and `destination` keys relates to the streams
+
+The `protectedExecution` key enables protected execution within the execution
+of the pipelines, it increases the granularity of reporting when errors occur
+within the SP but has an impact on performance of the pipelines.
+
+    
+    
+      elements:
+        sp:
+          description: Transforms incoming data to a table and adds a timestamp
+          pipelines:
+            sdtransform:
+              protectedExecution: false
+              source: north
+              destination: south
+              spec: |-
+                  columns: `sensorID`readTS`captureTS`valFloat`qual`alarm;
+    
+                  // Add in updateTS column as the ingestion time
+                  transformList: {[data] update updateTS:.z.p from flip columns!data };
+                  transformTable: {[data] update updateTS:.z.p from data };
+                  transform: {[data] $[(type data)=98h; transformTable[data]; transformList[data]]};
+    
+                  // Start a pipeline that sends all incoming data through
+                  // the transform function
+                  .qsp.run
+                      .qsp.read.fromStream[]
+                      .qsp.map[transform]
+                      .qsp.write.toStream[]
+    
+
+### Streams
+
+Streams are used to transport data around the application, e.g. from a
+pipeline into the database.
+
+`south` and `north` are the names of the streams used and referenced in the
+database using the `source` key. Streams can be internal or external and can
+be associated with pipelines through the `source` key.
+
+The [`subTopic`](../use-cases/sdk-sample-ingestion.html#matching-topics) is
+the stream id for an external publisher to subscribe to.
+
+More details of additional keys can be found
+[here](../database/configuration/assembly/stream.html)
+
+    
+    
+        sequencer:
+          south:
+            external: false
+            volume:
+              size: 40Gi
+          north:
+            external: true
+            topicConfig:
+              subTopic: "sdk-sample-assembly"
+    
+
+## Common configuration
+
+Every assembly deployed by _kdb Insights Enterprise_ will be configured with
+default [resources](../configuration/resources.html).
+
+These resources are used to ensure optimal performance of your application and
+protect the cluster. However you may want to override the default with
+specific resource requests. The `k8sPolicy` field is used to do this.
+
+The `rtLogVolume` is used to configure the storage needed for stream logfiles.
+
+    
+    
+            rdb:
+              mountName: rdb
+              rtLogVolume:
+                size: 20Gi
+              k8sPolicy:
+                resources:
+                  limits:
+                    cpu: 100m
+                    memory: 2Gi
+                  requests:
+                    cpu: 100m
+                    memory: 2Gi
+              size: 3
+    
+

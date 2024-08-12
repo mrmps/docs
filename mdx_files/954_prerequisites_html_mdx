@@ -1,0 +1,90 @@
+https://code.kx.com/insights/enterprise/onprem/prerequisites.html
+
+# Prerequisites - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/onprem/prerequisites.html
+
+# OpenShift infrastructure prerequisites
+
+This section details the infrastructure prerequisites required to deploy _kdb
+Insights Enterprise_ on OpenShift Container Platform 4.
+
+## OpenShift Container Platform
+
+OpenShift Container Platform (OCP) can be deployed on on-premises
+infrastructures such as datacenters and server rooms.
+
+_kdb Insights Enterprise_ supports [OpenShift Container Platform
+4.12](https://docs.openshift.com/container-
+platform/4.12/release_notes/ocp-4-12-release-notes.html).
+
+## Certificate Manager
+
+The [cert-manager installation](https://cert-manager.io/) is required to add
+certificates and certificate issuers as resource types in the OCP cluster.
+Each deployment of _kdb Insights Enterprise_ creates a namespaced certificate
+issuer to provide mTLS between microservices. A ClusterIssuer such as
+[letsencrypt](https://cert-manager.io/docs/) can be used with the OpenShift
+routes to provide a certificate for the API endpoints. Cert-manager requires
+access to the Internet, so cannot be used in an air-gapped environment.
+Alternatively, OpenShift Routes should reference a Kubernetes secret, which
+contains a certificate for the API endpoints.
+
+## Storage System with dynamic provisioning
+
+The data tier in _kdb Insights Enterprise_ requires a shared filesystem, which
+can be mounted with read/write permission from multiple pods. Depending on
+your performance and availability requirements you can use either [Rook
+Ceph](https://rook.io/), or [NFS](https://www.redhat.com/sysadmin/configure-
+nfs-linux). The links below detail the deployment instructions for each
+option.
+
+After deploying the storage system, the default storage class should be
+defined to facilitate [dynamic
+provisioning](https://docs.openshift.com/container-
+platform/4.13/storage/dynamic-provisioning.html).
+
+[MetalLB](https://docs.openshift.com/container-
+platform/4.13/networking/metallb/about-metallb.html) is a load-balancer
+implementation for OpenShift clusters. _kdb Insights Enterprise_ requires
+LoadBalancer and MetalLB services in order to work. MetalLB can be installed
+from the OperatorHub in the OCP console. Follow [this
+guide](https://docs.openshift.com/container-
+platform/4.13/networking/metallb/metallb-operator-install.html) for more
+details.
+
+## OpenShift CLI
+
+With the OpenShift CLI (oc), you can create applications and manage OpenShift
+Container Platform projects from a terminal. Follow [this
+guide](https://docs.openshift.com/container-
+platform/4.13/cli_reference/openshift_cli/getting-started-cli.html) to install
+OpenShift CLI for your corresponding operating system.
+
+## Cluster role
+
+You must have the `cluster-admin` cluster role to install or upgrade _kdb
+Insights Enterprise_. Please follow [this
+guide](https://docs.openshift.com/container-
+platform/4.12/authentication/using-rbac.html#creating-cluster-admin_using-
+rbac) to assign.
+
+## Istio
+
+If you wish to turn on [Encryption of data in transit](../security/encryption-
+in-transit.html) you need to prepare an OpenShift cluster for Istio.
+
+For OpenShift Container Storage on-prem clusters we recommend you use the
+following steps to download and install Istio version 1.19.0:
+
+    
+    
+    curl -L https://istio.io/downloadIstio | ISTIO_VERSION=1.19.0 TARGET_ARCH=x86_64 sh -
+    cd istio-1.19.0
+    istioctl install --set profile=openshift -y
+    
+
+Istio provides documentation
+[here](https://istio.io/latest/docs/setup/platform-setup/openshift/) for
+preparing an OpenShift cluster.
+

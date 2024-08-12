@@ -1,0 +1,29 @@
+https://code.kx.com/platform/stream/dw_realtime_db/
+
+# Realtime database - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/stream/dw_realtime_db/
+
+# Realtime database
+
+The traditional realtime database (_RDB_) captures all the data from the
+tickerplant and stores it in memory until the end of day, when it writes all
+of its data to disk and reloads the _HDB_.
+
+However, with increasing data volumes, it is unrealistic to store an entire
+day's data in-memory. One of the solutions is to have a _Log Replay_ process
+(_LR_) write data to disk (_IHDB_) periodically and release memory space.
+
+  * To create an _RDB_ , right-click on the _Navigation panel_ in the `KxWarehouse` Package and select _New > Service Class_ from the context menu.
+
+[![Screenshot](../img/serviceclass/rdb_name.jpg)](../img/serviceclass/rdb_name.jpg
+"click to expand")
+
+parameter | value  
+---|---  
+messagingServer | DS_MESSAGING_SERVER:DS  
+subscriptionChannel | kxw_tp  
+subscriptionTableList |   
+publishChannel |   
+eodFunct | dxEODSaveAndDelete
+

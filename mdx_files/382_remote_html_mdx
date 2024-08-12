@@ -1,0 +1,23 @@
+https://code.kx.com/pykx/api/remote.html
+
+# Remote Python Execution - PyKX
+
+Original URL: https://code.kx.com/pykx/api/remote.html
+
+Reset/clear the session and libraries associated with a defined session
+information
+
+Example:
+
+    
+    
+    >>> from pykx.remote import session
+    >>> remote_session = session()
+    >>> remote_session.create(port = 5050)
+    >>> remote_session.add_library('numpy')
+    >>> {'session': session._session, 'libraries': session._libraries}
+    {'session': pykx.QConnection(port=5001), 'libraries': ['numpy']}
+    >>> remote_session.clear()
+    >>> {'session': session._session, 'libraries': session._libraries}
+    {'session': None, 'libraries': []}
+

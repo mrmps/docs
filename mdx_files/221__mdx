@@ -1,0 +1,54 @@
+https://code.kx.com/platform/stream/release_421/
+
+# 4.2.1 - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/stream/release_421/
+
+# Changes in 4.2.1
+
+## Messaging
+
+### Table callbacks
+
+The ability to specify callbacks per table has been added at the messaging
+level. The example below shows the APIs to manage callbacks.
+
+    
+    
+     callback:{[t;x] 0N!(t;x) };
+     trade:([] time:.z.p; sym:`A`B; price:100 200.; size:1000 1000)
+    
+     // add a callback
+     .dm.addCallback[`trade; `callback];
+    
+     // execute callbacks
+     .dm.applyCallbacks[`trade; trade];
+     /=> (`trade;+`time`sym`price`size!(2018.08.06D05:42:44.188299000 2018.08.06D05:42:44.188299000;`A`B;100 200f;1000 1000))
+    
+     // remove callback
+     .dm.removeCallback[`trade; `callback];
+    
+
+Multiple callbacks can be added for each table.
+
+### Reconnections
+
+The reconnection logic is now configurable via enhanced instance parameters.
+See the [Messaging](../messaging/#reconnections) section for more information.
+
+## HDB template
+
+A new process parameter, _reloadFunct_ , has been added to the DS_HDB
+template. This is an analytic that will be called whenever the HDB is
+reloaded.
+
+It should be an analytic with no parameters.
+
+![Screenshot](../img/stream/hdbtemplateparams.png)
+
+## Report run info
+
+Run information of past reports can now be searched using start and end times.
+
+[Run the report](../create-run-reports/#run-the-report)
+

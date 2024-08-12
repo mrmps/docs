@@ -1,0 +1,170 @@
+https://code.kx.com/platform/stream/rdb_template/
+
+# RDB - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/stream/rdb_template/
+
+# DS_RDB
+
+The _RDB_ is a Real-Time Database that stores intra-day data that can be
+queried by the user. The RDB is an extension of the RTE functionality. At
+start-up it reads in all of the RTE code. As such the RDB has all of the
+parameters of the RTE. The RDB typically subscribes to data from the
+Tickerplant and stores this data for intra-day queries. At start up the RDB
+loads the TP log file if it is required depending on the logMsgFunct specified
+in the input parameters. The RDB also supports End-Of-Day write down to a
+Historical Database. Depending on the required uses of the RDB it can
+subscribe to filtered lists of tables and syms. It can be queried via any q
+process, an IDE in Control, Dashboards or Excel.
+
+## Parameters
+
+The below table details the _RDB_ template parameters.
+
+name | type | default value | description  
+---|---|---|---  
+messagingServer | Configuration | DS_MESSAGING_SERVER | Messaging server  
+subscriptionChannel | Symbol |  | Messaging channel to subscribe to  
+subscriptionTablelist | Symbol[] |  | List of tables to subscribe to  
+subscriptionColumnList | Symbol[] |  | Column to subscribe to in each table for the subscriptionFilterList values  
+subscriptionFilterList | Symbol[] |  | List of symbols to subscribe to  
+publishChannel | Symbol |  | Messaging channel to publish on  
+publishTableList | Symbol[] |  | List of tables to publish on  
+logMsgFunct | Analytic | dxUpdInsertPub | Specifies which log replay function to use, run for each incoming replayed data segment.  
+postLogMsg | Analytic | dxEmptyFunction | Specifies task(s) to perform after the ticker replay function completes running.  
+bufferMsgFunct | Analytic | dxEmptyFunction | Specifies message buffer function to use.  
+postbufferMsg | Analytic | dxEmptyFunction | Specifies task(s) to perform after the message buffer updates have been processed.  
+initialStateFunct | Analytic | dxInitialDataState | Specifies the Analytic to be used to initialize the RDB process.  
+realTimeMsgFunct | Analytic | dxUpdInsertPub | Update function to be used by the RDB  
+logReplayFunct | Analytic | dxLogReplay | Specifies log replay function  
+eodFunct | Analytic | dxEODSaveAndDelete | End of day (EOD) actions  
+rollOverFunct | Analytic | dxRolloverMultiServer | Function called by DS_EOD  
+hdbProcess | Process Instance |  | Historical Database Process  
+gatewayQuery | Analytic | dxQuery_basic | Gateway Query utilised  
+monitoringInterval | Integer |  | Monitoring Interval  
+tableEodList | Configuration | DS_TABLES_EOD_LIST | EOD tables  
+subscriptionSource | Process Instance |  | List of processes that the RDB should subscribe to  
+consumerProcesses | Process Instance |  | List of consumer processes  
+consumerAlertSize | Integer |  | Number of bytes in output queue of a consumer process to trigger an alert  
+consumerDisconnectSize | Integer |  | Number of bytes in output queue of a consumer process to trigger a disconnect  
+endInterval | Analytic | dxEndIntervalTemplate | Function to call when TP sends endInterval trigger  
+intervalDelete | Analytic | dxRdbDeleteTables | Function to delete data from tables when dxRdbDelete is called  
+  
+## APIs
+
+### `.ds.rdb.getHdbHandleByInst`
+
+Used to get the _handle_ of a specific HDB.
+
+**Parameter(s):**
+
+Name | Type | Description  
+---|---|---  
+instance | symbol | HDB instance  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+int | HDB handle  
+  
+**Example:**
+
+    
+    
+    .ds.rdb.getHdbHandleByInst[`ds_hdb_fx_eval];
+    /=>
+    12i
+    
+
+### `.ds.rdb.getHdbHandleList`
+
+Returns a list of all the _handles_ to hdbs available to the process.
+
+**Returns:**
+
+Type | Description  
+---|---  
+int[] | Handles available  
+  
+**Example:**
+
+    
+    
+    .ds.rdb.getHdbHandleList[];
+    /=>
+    16 18i
+    
+
+### `.ds.rdb.getHdbHandle`
+
+Returns the _handle_ of the hdb available to the rdb process.
+
+**Returns:**
+
+Type | Description  
+---|---  
+int | HDB handle available to rdb process  
+  
+**Example:**
+
+    
+    
+    .ds.rdb.getHdbHandle[];
+    /=>
+    12i
+    
+
+### `.ds.rdb.hdbReconnInst`
+
+RDB is not restricted to a single HDB. Many HDB can be defined within the
+instance parameters. This method is used internally with a timer job -
+.ds.rdb.hdbReconn.
+
+Timer job runs and checks handle of each of the defined HDB instances, passes
+instance name to hdbReconnByInst to get connection details and attempt a
+reconnect
+
+**Parameter(s):**
+
+Name | Type | Description  
+---|---|---  
+instance | symbol | HDB instance  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+int | HDB handle  
+  
+**Example:**
+
+    
+    
+    .ds.rdb.hdbReconnByInst[`ds_hdb_fx_eval2];
+    /=>
+    18i
+    
+
+### `.ds.rdb.reloadHDB`
+
+Wrapper for the RDB to call to reload its Primary HDB. Allows RDB to reload
+HDB under the deltacomponent user.
+
+It creates a handle and runs a reload under the that handle.
+
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | Successful or not  
+  
+**Example:**
+
+    
+    
+    .ds.rdb.reloadHDB[];
+    /=>
+    1b
+    
+

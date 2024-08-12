@@ -1,0 +1,381 @@
+https://code.kx.com/insights/api/database/query/get-meta.html
+
+# Get Meta API - kdb products
+
+Original URL: https://code.kx.com/insights/api/database/query/get-meta.html
+
+The `getMeta` API returns meta information on APIs defined in the DAPs and
+aggregation functions in the Aggs for all DAPs and Aggs in the system.
+Additionally, this API returns information on the assemblies, and schemas.
+
+qREST
+
+Gateway URL
+
+The `GATEWAY` variable below is defined as an IPC connection to the Service
+Gateway. For example ``:insights-qe-gateway:5050` would connect to the query
+environment gateway within an `insights` namespace.
+
+    
+    
+    args: `startTS`endTS`labels!(startTS; endTS; labels);
+    GATEWAY (`.kxi.getMeta; args; `callback; opts)
+    
+
+When issuing an IPC request, synchronous requests will return a tuple where
+the first element is the response payload and the second is the response data.
+See the asynchronous requests section below for how to use the `callback`
+parameter to get an asynchronous response.
+
+Gateway URL
+
+The `$GATEWAY` variable should point at your kdb Insights install. For a
+microservice install, this will be the hostname of the install using port
+8080. For an enterprise install, this is your `$INSIGHTS_HOSTNAME` with
+`/servicegateway` as the URL prefix.
+
+    
+    
+    curl -G $GATEWAY/meta" \
+        -H "Content-Type: application/json" \
+        -H "Accept: application/json" \
+        -d "$(jq -n \
+            '{
+                startTS : "",
+                endTS   : "",
+                labels  : {}
+            }' | jq -cr .)"
+    
+
+## Parameters
+
+name | required | type | description  
+---|---|---|---  
+`startTS` | no | `timestamp` | Inclusive start time of period of interest. It is recommended that this field is always used to limit scope of data in the response and to maximize query efficiency.  
+`endTS` | no | `timestamp` | Exclusive end time of period of interest. It is recommended that this field is always used to limit scope of data in the response and to maximize query efficiency.  
+`labels` | no | `object` | Specifies the relevant assemblies (shards) to target the given query with. This object is a map of label names to desired label values. When running an IPC based query, the type of each label must be a symbol or a list of symbols. For a REST request, this can either be a string or an array of strings. It is recommended that this field is used in every request to narrow down the scope of a given query and to target the DAPs. See [database label configuration](../../../microservices/database/configuration/assembly/database.html#labels) for details on configuring labels.  
+  
+Labels
+
+The `labels` parameter allows you to query against DAPs that are part of
+assemblies matching that label. For example if the there are DAPs belonging to
+two assemblies, one with a `region` label of `canada` another with a region
+label of `europe`, then a dictionary with a `region` value of `canada` would
+return only the `canada` data. The assembly label arguments are always
+optional, and will query all assemblies when not specified. If multiple labels
+are provided with multiple values, the cross product of all the label
+combinations is used to select target assemblies.
+
+**Example**
+
+In this example, assume we want to know the meta information for anything
+related to the `region` called `emea` up until the current time.
+
+qREST
+
+Gateway URL
+
+The `GATEWAY` variable below is defined as an IPC connection to the Service
+Gateway. For example ``:insights-qe-gateway:5050` would connect to the query
+environment gateway within an `insights` namespace.
+
+    
+    
+    args: (!) . flip (
+        (`startTS ; -0Wp);
+        (`endTS   ; .z.p);
+        (`labels  ; enlist[`region]!enlist`emea)
+        )
+    
+    GATEWAY (`.kxi.getMeta; args; `; ()!())
+    
+
+This returns a tuple where the first element is a response header and the
+second is the response data. See the [header
+reference](../api/header.html#response-header) for details on the response
+header returned.
+
+Gateway URL
+
+The `$GATEWAY` variable should point at your kdb Insights install. For a
+microservice install, this will be the hostname of the install using port
+8080. For an enterprise install, this is your `$INSIGHTS_HOSTNAME` with
+`/servicegateway` as the URL prefix.
+
+    
+    
+    curl -G "$GATEWAY/meta" \
+        -H "Content-Type: application/json" \
+        -H "Accept: application/json" \
+        -H "Authorization: Bearer $INSIGHTS_TOKEN" \
+        -d "$(jq -n \
+            --arg endTS "$(date -u '+%Y.%m.%dD%H:%M%:%S')" \
+            '{
+                endTS  : $endTS,
+                labels : { region: "emea" }
+            }' | jq -cr .)"
+    
+
+## Response
+
+This API returns a dictionary with 6 keys:
+
+key | type | description  
+---|---|---  
+`rc` | table | Table of available Resource Coordinators and version information.  
+`dap` | table | Table of distinct Data Access Processes (DAPs).  
+`api` | table | Table of APIs (available in DAPs).  
+`agg` | table | Table of aggregation functions (available in Aggs).  
+`assembly` | table | Table of assemblies fronted by the Service Gateway.  
+`schema` | table | Table of schemas in assemblies fronted by the Service Gateway.  
+  
+The schemas for each table are:
+
+### Resource coordinators
+
+This describes the set of available RCs, as well as version information for
+each of the other 4 keys. Schema is as follows:
+
+column | type | description  
+---|---|---  
+`rc` | symbol | RC name.  
+`labels` | table | Table of labels covered by this RC.  
+`started` | timestamp | Start time of the SG's RC process.  
+`api` | long | Version number of `api` field.  
+`agg` | long | Version number of `agg` field.  
+`assembly` | long | Version number of `assembly` field.  
+`schema` | long | Version number of `schema` field.  
+  
+The labels cells are tables, whose columns are the labels of the underlying
+DAPs, and whose rows represent each label combination offered by the DAPs
+registered to this RC.
+
+The "version number" refers to the number of times that the SG's RC has
+updated that particular field. It is incremented every time the appropriate
+resource (Agg for `agg`, DAP for `api`, `assembly` and `schema`) connects,
+disconnects, or updates the given field. These fields can be used, on multiple
+calls to the `getMeta` API, to quickly determine if anything has changed since
+the previous call. Note that if the RC process itself is restarted, the
+version numbers reset to 0. Thus, the `started` timestamp is also included to
+remove any doubt.
+
+### DAPs
+
+This describes the set of distinct DAPs. Schema is as follows:
+
+column | type | description  
+---|---|---  
+`assembly` | symbol | Assembly name.  
+`instance` | symbol | Instance type (corresponds to DAP's assembly `elements.dap.instances` entry).  
+`startTS` | timestamp | Start time of the DAP (inclusive).  
+`endTS` | timestamp | End time of the DAP (exclusive).  
+  
+Note that we only show _distinct_ DAPs. That is, if two or more DAPs have the
+same assembly, instance, `startTS` and `endTS`, we consider them to be
+equivalent and return only one entry rather than many.
+
+### API
+
+This describes the set of APIs and what labels/GWs offer them.
+
+column | type | description  
+---|---|---  
+`api` | symbol | Name of API.  
+`label_1` | symbol[] | Which values of `label_1` support this API.  
+... | ... | ...  
+`label_n` | symbol[] | Which values of `label_n` support this API.  
+`aggFn` | symbol | Default aggregation function (where null means `raze`).  
+`custom` | boolean | Whether this is a custom API (true) or a built-in KXI API (false).  
+`full` | boolean | True if all DAPs/Aggs for these labels support this API and agg function mapping.  
+`metadata` | dictionary | JSON description of the API (see [the custom API metadata reference](../custom/metadata.html)).  
+`procs` | table | Table of individual DAP and Agg processes corresponding to this entry if not full.  
+  
+If `full` is true, the `procs` cell is empty. Otherwise `procs` is a table
+which contains all the DAPs/RCs/Aggs to which this API and agg function
+mapping apply. This can be used to define preferential routing to access
+specific versions of the API, and/or determine which labels to target in API
+arguments. The schema of the table is as follows.
+
+column | type | description  
+---|---|---  
+`dap` | symbol | Host/port of DAP.  
+`agg` | symbol | Host/port of Agg.  
+`rc` | symbol | Name of RC of DAP/Agg.  
+`label_1` | symbol | Value of `label_1` of DAP.  
+... | ... | ...  
+`label_n` | symbol | Value of `label_n` of DAP.  
+  
+In addition to the usual metadata keys (`description`, `params`, `return`,
+`misc`), an API's metadata also contains one additional key: `aggReturn`.
+While `return` refers to the return of the actual function from the DAP (what
+Agg receives), `aggReturn` is the return of the corresponding default
+aggregation function (what the caller receives back from the GW).
+
+Note that we may have more than one row per API if different labels/GWs/Aggs
+support different versions of the API. E.g.
+
+    
+    
+    api   region     decription                     ..
+    ------------------------------------------------..
+    myAPI ,`amer     "amer version of this API"     ..
+    myAPI `emea`apac "emea/apac version of this API"..
+    ..
+    
+
+### Aggregations
+
+This describes the set of aggregation functions and what labels/GWs offer
+them.
+
+column | type | description  
+---|---|---  
+`aggFn` | symbol | Name of aggregation function.  
+`custom` | boolean | Whether this is a custom aggregation function (true) or built-in (false).  
+`full` | boolean | True if the aggregation function definition is consistent across all Agg processes.  
+`metadata` | dictionary | JSON description of the aggregation function (see [the custom API metadata reference](../custom/metadata.html)).  
+`procs` | table | Table of individual DAP and Agg processes corresponding to this entry if not full.  
+  
+If `full` is true, the `procs` cell is empty. Otherwise `procs` is a table
+which contains all the Aggs that contain this aggregation function. This can
+be used to define preferential routing to access specific versions of the API,
+and/or determine which labels to target in API arguments. The schema of the
+table is as follows.
+
+column | type | description  
+---|---|---  
+`agg` | symbol | Host/port of Agg.  
+`rc` | symbol | Name of RC of Agg.  
+  
+### Assembly
+
+This describes the assemblies fronted by the SG.
+
+column | type | description  
+---|---|---  
+`assembly` | symbol | Assembly name.  
+`label_1` | symbol | Value of `label_1` for this assembly.  
+... | ... | ...  
+`label_n` | symbol | Value of `label_n` for this assembly.  
+`tbls` | symbol[] | List of tables in the assembly.  
+  
+### Schema
+
+This describes the tables contained in the assemblies fronted by the SG.
+
+column | type | description  
+---|---|---  
+`table` | symbol | Table name.  
+`assembly` | symbol[] | Assemblies that contain this table with this schema.  
+`typ` | symbol | Table type.  
+`pkCols` | symbol[] | Primary key columns.  
+`prtnCol` | symbol | Column the data is partitioned on.  
+`sortColsMem` | symbol[] | Columns the data is sorted on in memory (e.g. RDB).  
+`sortColsIDisk` | symbol[] | Columns the data is sorted on intraday disk (e.g. IDB).  
+`sortColsDisk` | symbol[] | Columns the data is sorted on on-disk (e.g. HDB).  
+`isSplayed` | boolean | Indicates if the table is splayed.  
+`isPartitioned` | boolean | Indicates if the table is partitioned.  
+`isSharded` | boolean | Indicates if the table is sharded.  
+`description` | string | Table description.  
+`columns` | table | Table columns (see below).  
+  
+Each `columns` cell is a table with the following columns:
+
+column | type | description | example  
+---|---|---|---  
+`column` | symbol | Column name. | ``price`  
+`description` | string | Column description. | `"Trade price"`  
+`typ` | short | KDB+ type. | `9h`  
+`attrMem` | symbol | In-memory attribute (e.g. RDB). | ```  
+`attrIDisk` | symbol | On intraday disk attribute (e.g. IDB). | ``s`  
+`attrDisk` | symbol | On-disk attribute (e.g. HDB). | ``p`  
+`isSerialized` | boolean | Whether column is serialized. | `0b`  
+`fk` | symbol | Foreign table information. | ``instrument.sym`  
+  
+Note that a table may appear in multiple rows if it appears in multiple
+assemblies with a different schema/property. Example:
+
+    
+    
+    table assembly typ        ..
+    --------------------------..
+    trade ,`asm1   partitioned..
+    trade ,`asm2   splayed    ..
+    ..
+    
+
+**Example:**
+
+Assume in the following example that our assemblies are labelled by `region`
+with three regions: ``amer`apac`emea`.
+
+    
+    
+    args:`startTS`endTS`labels!(-0Wp;0Wp;enlist[`region]!enlist`amer`apac`emea)
+    res:last h(`.kxi.getMeta;args;`;(0#`)!())
+    
+    
+    
+    api agg assembly schema rc      labels                  started
+    -------------------------------------------------------------------------------------
+    12  3   12       12     sg-rc-1 +(,`region)!,`amer`emea 2022.01.18D20:41:45.338896800
+    9   1   9        9      sg-rc-2 +(,`region)!,,`apac     2022.01.18D20:44:50.644432900
+    
+    
+    
+    assembly      instance startTS                       endTS
+    ----------------------------------------------------------------------------------
+    assembly-amer HDB      -0W                           2021.03.01D00:00:00.000000000
+    assembly-emea RDB      2021.03.01D11:59:59.500000001 0W
+    assembly-emea IDB      2021.03.01D00:00:00.000000000 2021.03.01D11:59:59.500000001
+    assembly-emea HDB      -0W                           2021.03.01D00:00:00.000000000
+    assembly-amer IDB      2021.03.01D00:00:00.000000000 2021.03.01D11:59:59.500000001
+    assembly-apac RDB      2021.03.01D11:59:59.500000001 0W
+    assembly-amer RDB      2021.03.01D11:59:59.500000001 0W
+    assembly-apac IDB      2021.03.01D00:00:00.000000000 2021.03.01D11:59:59.500000001
+    assembly-apac HDB      -0W                           2021.03.01D00:00:00.000000000
+    
+    
+    
+    api region         aggFn  custom full metadata                                                                                       ..
+    -------------------------------------------------------------------------------------------------------------------------------------..
+    fn1 amer apac emea aggFn1 0      1    `description`params`return`aggReturn!("Function 1";+(,`name)!,`x`y;`type`description!(98h;"res"..
+    fn2 amer apac emea aggFn1 0      1    `description`params`return`aggReturn!("Function 2";(`name`type!(`arg1;11h);`name`isReq!(`arg2;0..
+    fn3 amer apac emea        1      1    `description`params`return`aggReturn!("";();(`symbol$())!();(`symbol$())!())                   ..
+    
+    
+    
+    aggFn  custom full metadata                                                                                          ..
+    ---------------------------------------------------------------------------------------------------------------------..
+    aggFn1 0      1    `description`params`return!("";+`name`type!(,`list;,0h);(`symbol$())!())                          ..
+    aggFn2 1      1    `description`params`return!("Agg function 2";+(,`type)!,,6 7 8 9h;`type`description!(-9h;"Sum"))  ..
+    
+    
+    
+    res`assembly // Assume one assembly per region
+    
+    
+    
+    assembly region
+    ---------------
+    amerAsm  amer
+    emeaAsm  emea
+    apacAsm  apac
+    
+    
+    
+    res`schema // Basic tick schema
+    
+    
+    
+    table typ         pkCols columns                                                                                                         ..
+    -----------------------------------------------------------------------------------------------------------------------------------------..
+    trade partitioned        (+(,`column)!,`time`sym`realTime`price`size)!+`typ`attrMem`attrIDisk`attrDisk`isSerialized`fk!(-16 -11 -12 -9 -7..
+    quote partitioned        (+(,`column)!,`time`sym`realTime`bid`ask`bidSize`askSize)!+`typ`attrMem`attrIDisk`attrDisk`isSerialized`fk!(-16 ..
+    
+
+## Troubleshooting
+
+For issues with the query or responses checkout the [troubleshooting
+guide](../../../microservices/database/query/troubleshooting.html).
+

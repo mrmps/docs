@@ -1,0 +1,213 @@
+https://code.kx.com/insights/api/stream-processor/q/stats.html
+
+# Stats - kdb products
+
+Original URL: https://code.kx.com/insights/api/stream-processor/q/stats.html
+
+# Stats
+
+These features are in beta, and must be enabled by setting the
+`$KXI_SP_BETA_FEATURES` environment variable to "yes".
+
+## `.qsp.stats.describe`
+
+    
+    
+    .qsp.stats.describe[fields; stats]
+    
+
+**Parameters:**
+
+name | type | description | default  
+---|---|---|---  
+fields | symbol or symbol[] | A list of column names to compute statistics on | Required  
+stats | symbol, symbol[], or list of tuples and symbols | A list of statistics which should be computed | Required  
+  
+**Statistic Options**
+
+name | type | description  
+---|---|---  
+minimum | symbol | Computes the maximum of each provided column  
+maximum | symbol | Computes the minimum of each provided column  
+range | symbol | Computes the range of each provided column  
+length | symbol | Counts the length of the batch provided  
+total | symbol | Computes the total sum of each provided column  
+average | symbol | Computes the average of each provided column  
+numDistinct | symbol | Counts the number of distinct elements in each provided column  
+numNull | symbol | Counts the number of null elements in each provided column  
+numInfinity | symbol | Counts the number of infinite elements in each provided column  
+median | symbol | Computes the median of each provided column  
+quartiles | symbol | Computes the quartiles of each provided column  
+frequency | symbol | Creates a frequency dictionary for each provided column  
+mode | symbol | Computes all modes of each provided column  
+sampleVar | symbol | Computes the sample variance of each provided column  
+sampleStd | symbol | Computes the sample standard deviation of each provided column  
+populationVar | symbol | Computes the population variance of each provided column  
+populationStd | symbol | Computes the population standard deviation of each provided column  
+standardError | symbol | Computes the standard error of each provided column  
+skew | symbol | Computes the Fisher-Pearson coefficient of skewness of each provided column  
+percentiles | tuple | Computes the specified percentiles on each provided column  
+  
+Note: some statistics do not support categorical data and will return generic
+null for said data
+
+> For all common arguments, refer to [configuring operators](configuring-
+> operators.html)
+
+This operator computes the requested descriptive statistics on the provided
+columns
+
+This example computes the min, max, and average on a batch of data
+
+    
+    
+    .qsp.run
+        .qsp.read.fromCallback[`publish]
+        .qsp.stats.describe[`y; `minimum`maximum`average]
+        .qsp.write.toVariable[`output];
+    
+    publish ([] x: til 5; y: 10 13 1 9 8)
+    output
+    Expected output: ([] minimum_y: enlist 1; maximum_y: enlist 13; average_y: enlist 8.2)
+    
+
+This example demonstrates how to use the percentiles option The operator below
+will compute the mode and skew along with the 90th, 95th and 99th percentile.
+
+Enlist for percentiles
+
+If only percentiles are to be computed, the tuple must be enlisted.
+
+    
+    
+    .qsp.run
+        .qsp.read.fromCallback[`publish]
+        .qsp.stats.describe[`x; (`mode; `skew; (`percentiles; 0.9 0.95 0.99))]
+        .qsp.write.toVariable[`output];
+    
+    publish ([] x: til 100)
+    output
+    
+
+## `.qsp.stats.ema`
+
+    
+    
+    .qsp.stats.ema[X; alpha; y]
+    
+
+**Parameters:**
+
+name | type | description | default  
+---|---|---|---  
+X | symbol or symbol[] | A list of column names on which to compute the average | Required  
+alpha | float | The decay rate | Required  
+y | symbol or symbol[] | The columns to write to. These can overwrite existing columns | The same as X  
+  
+> For all common arguments, refer to [configuring operators](configuring-
+> operators.html)
+
+This calculates the exponential moving average for each data point.
+
+This example replaces the columns `x` and `y` with their exponential moving
+averages.
+
+    
+    
+    .qsp.run
+        .qsp.read.fromCallback[`publish]
+        .qsp.stats.ema[`x`y; .33]
+        .qsp.write.toConsole[];
+    
+    publish ([] x: til 10; y: 0 1 4 2 5 3 6 7 9 8)
+    
+
+## `.qsp.stats.sma`
+
+**Parameters:**
+
+name | type | description | default  
+---|---|---|---  
+X | symbol or symbol[] | A list of column names on which to compute the average | Required  
+n | long | The number of records to include in the average | Required  
+y | symbol or symbol[] | The columns to write to. These can overwrite existing columns | The same as X  
+  
+> For all common arguments, refer to [configuring operators](configuring-
+> operators.html)
+
+This calculates, for each data point, the arithmetic mean of a moving window
+including that point and the n-1 prior data points.
+
+This example replaces each value in y with the simple moving average of that
+value and the nine prior values.
+
+    
+    
+    .qsp.run
+        .qsp.read.fromCallback[`publish]
+        .qsp.stats.sma[`y; 10]
+        .qsp.write.toConsole[];
+    
+    publish ([] x: til 10; y: 0 1 4 2 5 3 6 7 9 8)
+    
+
+## `.qsp.stats.twa`
+
+    
+    
+    .qsp.stats.twa[X; times; range; y]
+    
+
+**Parameters:**
+
+name | type | description | default  
+---|---|---|---  
+X | symbol or symbol[] | A list of column names on which to compute the average | Required  
+times | symbol | The name of the column containing the time data | Required  
+range | long, int or short | The number of records to include in the average | Required  
+y | symbol or symbol[] | The columns to write to. These can overwrite existing columns | Same as X  
+  
+> For all common arguments, refer to [configuring operators](configuring-
+> operators.html)
+
+This calculates, for each data point, the arithmetic mean of a moving window
+including that point and the n-1 prior data points weighted by the time deltas
+found in times.
+
+Data must be sorted
+
+The incoming data must be sorted, because the average is calculated using the
+deltas between each timestamp. Out of order data would cause negative weight
+to be applied to the calculation.
+
+This example replaces each value in y with the time weighted average of that
+value and the nine prior values using weights derived from the `time` column.
+
+    
+    
+    .qsp.run
+        .qsp.read.fromCallback[`publish]
+        // The windowing is to ensure that records are sorted by timestamp
+        .qsp.window.tumbling[00:01:00; `time; .qsp.use `sort`lateness!(1b; 00:00:10)]
+        .qsp.stats.twa[`data; `time; 10]
+        .qsp.write.toConsole[]
+    
+    publish ([] time: 0p + 00:00:01 * 0 5 6 17 14 21 57 58 71;
+                data: 10 20 10 9 11 8 21 10 9)
+    
+
+This example replaces each value in c and in d with the time weighted average
+of the values within a and b respectively and four prior values using the
+`times` column as a series of times.
+
+    
+    
+    .qsp.run
+        .qsp.read.fromCallback[`publish]
+        .qsp.window.tumbling[00:00:01; `time; .qsp.use `sort`lateness!(1b; 00:00:01)]
+        .qsp.stats.twa[`a`b; `time; 5; `c`d]
+        .qsp.write.toConsole[];
+    
+    publish ([] time: 0p + 00:00:00.1 * 0 8 13 17 19 21; a: 1 7 8 7 7 8; b: til 6);
+    
+

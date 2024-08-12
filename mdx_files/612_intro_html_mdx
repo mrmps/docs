@@ -1,0 +1,392 @@
+https://code.kx.com/insights/enterprise/walkthrough/report/intro.html
+
+# kdb Insights Enterprise Views - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/walkthrough/report/intro.html
+
+Name the new Data Source **weather** and configure the following API
+properties.
+
+property | setting  
+---|---  
+table | weather  
+startTS | 2022-07-28T00:00:00.000000000  
+endTS | 2022-07-28T23:59:00.000000000  
+  
+Click **Execute** , **Apply** and then **Select Item** to apply the data to
+the **Data Grid**. This step closes the query editor.
+
+Defining **table** in the query editor
+
+When creating a new data source, the **table** is the name of the data table
+as hosted on the database, it's not the **Output variable** as defined when
+[exploring](../query.html) the data.
+
+### Basics
+
+In the **Basics** properties enable **Custom Layout** for end-user control of
+the columns to be displayed.
+
+property | setting  
+---|---  
+Filtering | Column Filters  
+  
+### Custom Filters
+
+In the **Custom Filters** properties you can add a greater level of filter
+control with the following custom filters:
+
+name | type  
+---|---  
+timestamp | DateTime  
+sensor | Selection  
+airtemp | Number  
+name | Selection  
+borough | Selection  
+  
+### Columns
+
+Use the **Column** properties to apply column configurations which style
+content and widths for the display of data in the table.
+
+column | Display Name | Min Width | Text Align | Format | Precision | Date Format | Time Format | Range Color | Template | Hidden  
+---|---|---|---|---|---|---|---|---|---|---  
+timestamp | Time | 100 | Left | Time | - | - | `HH:mm:ss` | - | - | -  
+sensor | Sensor | 100 | Left | General | - | - | - | - | - | -  
+airtemp | Temperature | 100 | Center | Formatted Number | 2 | - | - | - | - | -  
+name | Name | 150 | Left | General | - | - | - | - | - | -  
+borough | Borough | 150 | Left | General | - | - | - | - | - | -  
+longitude | longitude | - | - | - | - | - | - | - | - | Yes  
+latitude | latitude | - | - | - | - | - | - | - | - | Yes  
+color | color | - | - | - | - | - | - | - | - | Yes  
+  
+You can re-arrange the column order with a click-and-drag to move columns. For
+example, select the **Temperature** column and reposition it below the
+**Borough Column** in the Data Grid **Columns** properties.
+
+### Highlight Rules
+
+Set **Highlight Rules** properties to create a color gradient for temperature.
+Use a **Gradient** highlight rule to give temperature definition in the table,
+using the following properties.
+
+property | setting  
+---|---  
+Name | Temperature Gradient  
+Target | airtemp  
+Rule Min | -120  
+Rule Max | 120  
+Apply Palette To | background  
+COLOR PALETTE | #2bc2f0, #c2e3ed, #ffffff, #fab23f, #ff0000  
+  
+![Set a color gradient for a highlight rule.](img/weathertemp.jpg)  
+
+### Selection & Routing
+
+The **Selection & Routing** properties are used to pull value(s) from a table
+and set them to a [view state
+parameter](https://code.kx.com/dashboards/viewstateparameters/). A view state
+parameter is a stored value accessible to all components and queries.
+
+Change **Selection Mode** to **Single Row** to enable the selection control.
+Actions are used to map cell values from columns to view state parameters -
+enabled by a click inside the data grid. Set the **Trigger Column** to use
+wildcard, `*`.
+
+![Create a view state inside a View.](img/createviewstate.gif)  
+
+Create actions to map:
+
+source column | view state parameter | type | default | value  
+---|---|---|---|---  
+sensor | sensor | symbol | Q-JC_04 | Q-JC_04  
+borough | borough | symbol | - | -  
+name | name | symbol | - | -  
+  
+![Completed weather datagrid with temperature color
+gradient.](img/weatherdatagrid.jpg)  
+
+Name the new Data Source **subway** and configure the following API
+properties.
+
+property | setting  
+---|---  
+table | subway  
+startTS | yyyy-mm-dd 00:00:00.000000000  
+endTS | yyyy-mm-dd 23:59:00.000000000  
+  
+startTS and endTS
+
+Set **startTS** as 00:00 and **endTS** as 23:59 of the deployment date; use a
+[SQL query](../query.html#query) to find the deployment date. Ensure both the
+**subway** pipeline and **insights-demo** database are running and active to
+access data in your View.
+
+  * Click **Execute** then click **Apply** and then **Select Item** to apply the data to the **Data Grid**. This step closes the query editor.
+
+### Basics
+
+**Subway** is an informational data set it is recommended to use a simpler
+**Data Grid** , so the following properties are recommended:
+
+property | setting  
+---|---  
+Filtering | Column Filters  
+Enable Grouping | Unchecked  
+  
+### Custom Filters
+
+**Custom Filters** properties help find additional information for given
+routes. Columns with no custom filter use default text search. Add the
+following:
+
+name | type  
+---|---  
+route_short_name | Selection  
+trip_headsign | Selection  
+route_long_name | Selection  
+direction_id | Selection  
+arrival_time | DateTime  
+  
+**Columns**
+
+Add the following **Column** configurations style content and widths for the
+display of data in the table under the **Columns** properties.
+
+column | Display Name | Min Width | Text Align | Format | Precision | Date Format | Time Format | Range Color | Template | Hidden  
+---|---|---|---|---|---|---|---|---|---|---  
+trip_id | Trip | - | - | - | - | - | - | - | - | Yes  
+arrival_time | Arrival Time | 100 | Left | Time | - | - | `HH:mm:ss` | - | - | -  
+stop_id | Stop | 100 | Left | General | - | - | - | - | - | -  
+stop_sequence | Sequence | 100 | Left | General | - | - | - | - | - | -  
+stop_name | Stop Name | 250 | Left | General | - | - | - | - | - | -  
+stop_lat | Stop longitude | - | - | - | - | - | - | - | - | Yes  
+stop_lon | Stop latitude | - | - | - | - | - | - | - | - | Yes  
+route_id | Route ID | - | - | - | - | - | - | - | - | Yes  
+trip_headsign | Route Header | 200 |  | General | - | - | - | - | - | -  
+direction_id | Direction | 100 | - | General | - | - | - | - | - | -  
+route_short_name | Route Number | 100 | - | Number | - | - | - | - | see below | -  
+route_long_name | Route Name | 200 | - | General | - | - | - | - | - | -  
+route_desc | Description | - | - | - | - | - | - | - | - | Yes  
+route_type | Type | - | - | - | - | - | - | - | - | Yes  
+route_url | Route URL link | - | - | - | - | - | - | - | - | Yes  
+route_color | Route color | - | - | - | - | - | - | - | - | Yes  
+  
+A feature of **columns** is custom **Template**.
+
+  * Template adds custom styling to the data grid, but requires a little coding to get the most out of it. 
+  * Template uses [Handlebars](https://handlebarsjs.com/guide/) to apply column formats. 
+  * For **subway** , use the **route_color** column to apply color to the text of the **route_short_name** column; add to the **Advanced mode** of Template:
+
+    
+    
+    <font color="{{route_color}}">{{route_short_name}}</font>
+    
+
+![Add a custom template to a **Data Grid****; Advanced
+Mode.](img/createtemplate.gif)  
+
+### File Export
+
+In the **File Export** properties uncheck **Show Export CSV button** and
+**Show Export Excel Button** to hide unnessecary file export.
+
+![The subway **Data Grid**.](img/subwaydatagrid.jpg)  
+
+Name the new Data Source **health** and configure the following API
+properties.
+
+property | setting  
+---|---  
+table | health  
+startTS | yyyy-mm-dd 00:00:00.000000000  
+endTS | yyyy-mm-dd 23:59:00.000000000  
+  
+startTS and endTS
+
+Set **startTS** as 00:00 and **endTS** as 23:59 of the deployment date; use a
+[SQL query](../query.html#query) to find the deployment date. Ensure both the
+**health** pipeline and **insights-demo** database are running and active to
+access data in your View.
+
+Click **Execute** , then click **Apply**. Next, click **Select Item** to apply
+the data to the **Data Grid**. This closes the query editor.
+
+### Basics
+
+In the **Basics** properties enable **Column Filtering**.
+
+### Custom Filters
+
+Numeric columns filter with `>`, `<` or `> <` for a range.
+
+name | type  
+---|---  
+timestamp | DateTime  
+name | Selection  
+airquality | Number  
+trafficcongestion | Number  
+bikeacccnt | Number  
+caracccnt | Number  
+  
+![Health columne filter settings.](img/healthfilters.jpg)  
+
+### Columns
+
+Column configurations style content and widths for the display of data in the
+table.
+
+  * Use **Range Color** to add color gradients to numeric columns.
+  * Check **Invert Range Color** to give high values a darker shade.
+
+column | Display Name | Min Width | Text Align | Format | Precision | Date Format | Time Format | Range Color | Template | Hidden  
+---|---|---|---|---|---|---|---|---|---|---  
+name | Name | 250 | Left | General | - | - | - | - | - | -  
+lat | Latitude | - | - | Number | - | - | - | - | - | Yes  
+long | Longitude | - | - | Number | - | - | - | - | - | Yes  
+neighborhood | Neighborhood | 250 | Left | General | - | - | - | - | - | Yes  
+airquality | Air Quality | 250 | Left | Number | 2 | - | - | #d1e3ff | - | -  
+trafficcongestion | Traffic Congestion | 100 | Left | Number | 2 | - | - | #ffe999 | - | -  
+bikeacccnt | Bike Accidents | 100 | Left | Number | 0 | - | - | - | - | -  
+caracccnt | Car Accidents | 100 | Left | Number | 0 | - | - | - | - | -  
+timestamp | Time | 100 | Left | Time | - | - | `HH:mm:ss` | - | - | -  
+  
+Change the column order to re-position the Timestamp column as the first
+column.
+
+![Click-and-drag a column to re-arrange its position in the **Data
+Grid**.](img/clickanddragcolumn.gif)  
+
+### Highlight Rules
+
+Under the **Highlight Rules** properties, add a color highlight for number of
+bike and car accidents.
+
+value | bikeacccnt | caracccnt  
+---|---|---  
+Name | Bike Accidents | Car Accidents  
+Target | bikeacccnt | caracccnt  
+Rule Min | 0 | 0  
+Rule Max | 120 | 12  
+Apply Palette To | background | background  
+COLOR PALETTE | #ffffff, #b71c1c | #ffffff, #b71c1c  
+  
+![Highlight rule to apply red shading to the number of car
+accidents.](img/healthhighlight.jpg)  
+
+### Selection & Routing
+
+**Selection & Routing** properties are used to pull value(s) from a table and
+set it to a [view state
+parameter](https://code.kx.com/dashboards/viewstateparameters/). A view state
+parameter is a stored value accessible to all components and queries. Create a
+view state for neighborhood to use in other (optional) queries, for example a
+chart of accidents, congestion and air quality.
+
+  1. Change the **Selection Mode** to a **Single Row**. 
+  2. Define an action to map the neighborhood name to a view state parameter. This action occurs on a click inside the **Data Grid** ; set the **Trigger Column** to use the wildcard, `*`.
+
+ACTIONS
+
+property | setting  
+---|---  
+Trigger Column | *  
+Trigger Action | Click  
+Source Column | name  
+> | view state parameter: `name`  
+  
+![Create a neighborhood name view state.](img/healthaction.jpg)  
+
+![Completed health **Data Grid** with color highlighting for number of
+accidents.](img/healthtable.jpg)  
+
+Name the new Data Source **crime** and configure the following API properties.
+
+property | setting  
+---|---  
+table | crime  
+startTS | 2022-03-31 00:00:00.000000000  
+endTS | 2022-03-31 23:59:00.000000000  
+  
+Click **Execute** , then click **Apply**. Next, click **Select Item** to apply
+the data to the **Data Grid**. This closes the query editor.
+
+Requires an active database and running pipeline
+
+To build a view, the **crime** must be `running` and the **insights-demo** is
+active.
+
+### Basics
+
+In the **Basics** properties set the following
+
+property | setting  
+---|---  
+Filtering | Column Filters  
+Enable Grouping | Checked  
+Custom Layout | Checked  
+  
+### Custom Filters
+
+In the **Custom Filter** properties, use filters of **Type** = **Selection**
+for descriptive columns and **Type** = **DateTime** for timestamps. Set the
+following filters:
+
+value | setting  
+---|---  
+incident_time | DateTime  
+nypd_precinct | Selection  
+borough | Selection  
+patrol_borough | Selection  
+radio_code | Selection  
+crime_in_progress | Selection  
+call_timestamp | DateTime  
+displatch_timestamp | DateTime  
+arrival_timestamp | DateTime  
+closing_timestamp | DateTime  
+  
+### Columns
+
+Set **Column** properties to ensure descriptive columns have sufficient width
+to display their information.
+
+column | Display Name | Min Width | Text Align | Format | Precision | Date Format | Time Format | Range Color | Template | Hidden  
+---|---|---|---|---|---|---|---|---|---|---  
+event_id | Event | 80 | Left | General | - | - | - | - | - | -  
+incident_time | Time of Incident | 100 | Left | Time | - | - | `HH![🇲🇲](https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/svg/1f1f2-1f1f2.svg)ss | - | - | -  
+nypd_precinct | Precinct | 60 | Left | Number | 0 | - | - | - | - | -  
+borough | Borough | 100 | Left | General | - | - | - | - | - | -  
+patrol_borough | Patrol Borough | 200 | Left | Number | - | - | - | - | - | -  
+call_x_geo | Call x-cord. | - | - | Number | - | - |  | - | - | Yes  
+call_y_geo | Call y-cord. | - | - | Number | - | - | - | - | - | Yes  
+radio_code | Radio Code | 80 | Left | Number | - | - | - | - | - | -  
+description | Crime Description | 300 | Left | General | - | - | - | - | - | -  
+crime_in_progress | Crime in Progress? | 100 | Left | General | - | - |  | - | - | -  
+call_timestamp | Call Time | 100 | Left | Time | - | - | `HH:mm:ss` | - | - | -  
+dispatch_timestamp | Displatch Time | 100 | Left | Time | - | - | `HH:mm:ss` | - | - | -  
+arrival_timestamp | Arrival Time | 100 | Left | Time | - | - | `HH:mm:ss` | - | - | -  
+closing_timestamp | Close Time | 100 | Left | Time | - | - | `HH:mm:ss` | - | - | -  
+latitude | Latitude | - | - | Number | - | - | - | - | - | Yes  
+longitude | Longitude | - | - | Number | - | - | - | - | - | Yes  
+  
+### Highlight Rules
+
+Add color highlights to give context to the seriousness of reported crime. Use
+wildcard, ***** to apply a highlight to the entire row.
+
+value | critical | serious | non-critical  
+---|---|---|---  
+Name | Critical | Serious | Non Critical  
+Target | * | * | *  
+Condition Source | crime_in_progress | crime_in_progress | crime_in_progress  
+Condition Operator | == | == | ==  
+Condition Value | Critical | Serious | Non Critical  
+Background Color | #ffa1a1 | #ffd27d | #fcefd6  
+  
+Refer to this [highlight
+rules](https://code.kx.com/dashboards/datagrid/#highlight-rules) page to learn
+more.
+
+![Reported crime in NY precincts; serious crimes highlighted in
+red.](img/nypdcrimetable.jpg)  
+

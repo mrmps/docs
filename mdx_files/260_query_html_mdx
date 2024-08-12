@@ -1,0 +1,317 @@
+https://code.kx.com/insights/api/kxi-python/query.html
+
+# Query API - kdb products
+
+Original URL: https://code.kx.com/insights/api/kxi-python/query.html
+
+# Querying kdb Insights
+
+The functionality outlined below provides a breakdown of `kxi.Query`, which
+you can use to query data stored in _kdb Insights_ or _kdb Insights
+Enterprise_ deployments via SQL or API calls.
+
+**kxi.query.Query** Querying interface for kdb Insights Enterprise
+
+**Querying** get_data query kdb Insights Enterprise using a formatted API sql
+query kdb Insights Enterprise using SQL get_meta retrieve metadata information
+relating to a deployed database fetch_custom_apis query the database for
+custom APIs and attach them as additional attributes
+
+..
+
+## `kxi.query.Query`
+
+Create an authenticated connection to a kdb Insights or kdb Insights
+Enterprise instance.
+
+**Parameters:**
+
+name | type | description | default  
+---|---|---|---  
+host | str | The host against which a query instance is to be established if provided as a `str` | Value set in environment variable `INSIGHTS_URL`.  
+client_id | str | The client ID associated with the user attempting to establish a connection if provided as a `str` | Value set in environment variable `INSIGHTS_CLIENT_ID`  
+client_secret | str | The client secret ID associated with the user attempting to establish a connection if provided as a `str` | Value set in environment variable `INSIGHTS_CLIENT_SECRET`  
+realm | str | The realm to use for OAuth authentication | Value set in environment variable `INSIGHTS_REALM`, using `insights` if this is unset. Use `admin-cli` for administrator auth, or `insights` for clients.  
+usage | str | Is this client targeted at a kdb Insights (`'MICROSERVICES'`) or kdb Insights Enterprise (`'ENTERPRISE'`) instance | `'ENTERPRISE'`  
+data_format | str | The format of the returned data from subsequent query calls. | By default this is set to `'application/octet-stream'` which will allow the data to be parsed by PyKX as a q variable. If PyKX is not available `'application/json'` should be used to return the payload as a JSON structure  
+timeout | int | The timeout in seconds for requests when attempting to retrieve a token. | 20  
+username | str | Used for Insights admin authentication using the LegacyApplicationClient | N/A  
+password | str | Used for Insights admin authentication using the LegacyApplicationClient | N/A  
+  
+**Example** :
+
+Authenticate for query against an instance of kdb Insights Enterprise using
+defined environment variables and get an access token.
+
+    
+    
+    >>> import kxi.query
+    >>> import os
+    >>> os.environ['INSIGHTS_URL']
+    'https://my-insights.kx.com'
+    >>> os.environ['INSIGHTS_CLIENT_ID']
+    'my-client-id'
+    >>> os.environ['INSIGHTS_CLIENT_SECRET']
+    'my-client-secret'
+    >>> conn = kxi.query.Query()
+    
+
+Connect to an instance of kdb Insights using an environment variable for the
+service gateway URL.
+
+    
+    
+    >>> import kxi.query
+    >>> import os
+    >>> os.environ['INSIGHTS_URL']
+    'http://localhost:8080'
+    >>> conn = kxi.query.Query(usage='MICROSERVICES')
+    
+
+Authenticate for query against an instance of kdb Insights Enterprise through
+specification of client details. These can be retrieved from Keycloak using
+the documentation outlined
+[here](../../enterprise/security/authentication.html#managing-service-
+accounts).
+
+    
+    
+    >>> import kxi.query
+    >>> conn = kxi.query.Query('https://my-deploy.kx.com', client_id='my-client-id', client_secret='my-client-secret')
+    
+
+Connect to an instance of kdb Insights through specification of client
+details.
+
+    
+    
+    >>> import kxi.query
+    >>> conn = kxi.query.Query('http://localhost:8080', usage='MICROSERVICES')
+    
+
+Authenticate for query against an instance of kdb Insights Enterprise
+including definition of return data format.
+
+    
+    
+    >>> import kxi.query
+    >>> conn = kxi.query.Query(data_format='application/json')
+    
+
+### `get_data`
+
+_Run a[getData](../database/query/get-data.html) API call against kdb Insights
+or kdb Insights Enterprise_.
+
+**Parameters:**
+
+name | type | description | default  
+---|---|---|---  
+table | str | The name of the table from which to retrieve data | N/A  
+start_time | str | The earliest time data is to be queried from | 15 minutes prior to the time that the get_data call is made  
+end_time | str | The latest time data is to be queried from | The time that the get_data function is called  
+input_timezone | str | The timezones of start_time and end_time | UTC  
+output_timezone | str | The timezone of output timestamp columns | UTC  
+filter | list | A list of triadic Python lists defining filter conditions in the format `[['function', 'column name', 'parameter'], ... ]` | `None`  
+group_by | list[str] | A list of Python `str` items defining the columns to group aggregations by | `None`  
+aggregations | list[str] | A list of Python `str` items or a list of lists of `str` items defining. The columns to be returned from the table across DAPs if defined as a list of `str`. If provided as a list of 3-element Python lists as follows `[['assignname', 'agg', 'column'], ...]` then `assignName` defines the name to be assigned to the return of the aggregation, `agg` defines the aggregation function to be used and `column` defines the column on which that aggregation is applied. | `None`  
+fill | str | This defines how to handle the presence of null values. This should be supplied as a single `str` item with value `forward` to define the use of the last non-null value in a column or `zero` to replace all null values with the 0 value of that column. | `None`  
+temporality | str | This determines the way that the `start_time` and `end_time` arguments are interpreted. The two support input types are `'slice'` and `'snapshot'`. | `None`  
+slice | list[str] | This should be defined as a Python list of 'times' which denote the time range to grab between each date in the `start_time` and `end_time` range when a temporality of `'slice'` is used. | `None`  
+sort_columns | list[str] | This should be a Python list of `str` type objects denoting the columns which are to be sorted on. | `None`  
+labels | dict[str, str] | labels defined in the assembly file of the DAPs can be used to only select data from DAPs in assemblies matching that label. |   
+  
+**Returns:**
+
+type | description  
+---|---  
+`pykx.Table` or `json` output | The data returned from the `get_data` call  
+  
+**Examples** :
+
+Connect to a running instance of kdb Insights Enterprise and query using
+`get_data` with default values querying a named table.
+
+    
+    
+    >>> import kxi.query
+    >>> conn = kxi.query.Query()
+    >>> conn.get_data('my_table')
+    
+
+Query the instance providing arguments to various get_data calls.
+
+    
+    
+    >>> conn.get_data('my_table', group_by = ['sensorID', 'qual'])
+    >>> conn.get_data('my_table', filter = [['within', 'qual', [0, 2]]])
+    >>> conn.get_data('my_table', start_time='2000.05.26',end_time='2000.05.27')
+    
+
+Connect to a running instance of kdb Insights Enterprise and query using
+`get_data` returning result as json payload.
+
+    
+    
+    >>> import kxi.query
+    >>> conn = kxi.query.Query('https://my-deploy.kx.com',
+    ...                        client_id='my-client-id',
+    ...                        client_secret='my-client-secret',
+    ...                        data_format='application/json')
+    >>> conn.get_data('my_table')
+    
+
+Connect to a running instance of kdb Insights and query using `get_data`
+returning result as json payload.
+
+    
+    
+    >>> import kxi.query
+    >>> conn = kxi.query.Query('http://localhost:8080',
+    ...                        usage='MICROSERVICES')
+    >>> conn.get_data('my_table')
+    
+
+### `sql`
+
+_Run a[SQL](../database/query/sql.html) API call against a kdb Insights or kdb
+Insights Enterprise query environment_.
+
+**Parameters:**
+
+name | type | description | default  
+---|---|---|---  
+query | str | The SQL query which is to be run against the query environment | N/A  
+  
+**Returns:**
+
+type | description  
+---|---  
+`pykx.Table` or `json` output | The data returned from the `sql` call  
+  
+**Examples** :
+
+Connect to a running instance of kdb Insights Enterprise and query a named
+table using `sql`.
+
+    
+    
+    >>> import kxi.query
+    >>> conn = kxi.query.Query()
+    >>> conn.sql('SELECT * FROM my_table')
+    
+
+Connect to a running instance of kdb Insights Enterprise and query using `sql`
+returning result as json payload.
+
+    
+    
+    >>> import kxi.query
+    >>> conn = kxi.query.Query('https://my-deploy.kx.com',
+    ...                        client_id='my-client-id',
+    ...                        client_secret='my-client-secret',
+    ...                        data_format='application/json')
+    >>> conn.sql('SELECT * FROM my_table')
+    
+
+Connect to a running instance of kdb Insights and query using `sql` returning
+result as json payload.
+
+    
+    
+    >>> import kxi.query
+    >>> conn = kxi.query.Query('http://localhost:8080',
+    ...                        usage='MICROSERVICES',
+    ...                        data_format='application/json')
+    >>> conn.sql('SELECT * FROM my_table')
+    
+
+_Run a[`getMeta`](../database/query/get-meta.html) API call against kdb
+Insights or kdb Insights Enterprise_.
+
+**Returns:**
+
+type | description  
+---|---  
+`pykx.Dictionary` or `json` output | A dictionary containing metadata information associated with the various processes and schemas which describe a kdb Insights Enterprise Database  
+  
+**Examples** :
+
+Connect to a running instance of kdb Insights Enterprise and query using
+`get_meta` to retrieve information about the database, schemas and assemblies
+deployed.
+
+    
+    
+    >>> import kxi.query
+    >>> conn = kxi.query.Query()
+    >>> conn.get_meta()
+    
+
+Connect to a running instance of kdb Insights Enterprise and query using
+`get_meta` returning result as json payload.
+
+    
+    
+    >>> import kxi.query
+    >>> conn = kxi.query.Query('https://my-deploy.kx.com',
+    ...                        client_id='my-client-id',
+    ...                        client_secret='my-client-secret',
+    ...                        data_format='application/json')
+    >>> conn.get_meta()
+    
+
+Connect to a running instance of kdb Insights and query using `get_meta` to
+retrieve information about the database, schemas and assemblies deployed.
+
+    
+    
+    >>> import kxi.query
+    >>> conn = kxi.query.Query('http://localhost:8080',
+    ...                        usage='MICROSERVICES',
+    ...                        data_format='application/json')
+    >>> conn.get_meta()
+    
+
+### `fetch_custom_apis`
+
+_Query kdb Insights or kdb Insights Enterprise for custom APIs and attach them
+as additional attributes on the`Query` object_.
+
+**Examples** :
+
+Connect to a running instance of kdb Insights Enterprise and call a custom
+API.
+
+    
+    
+    >>> import kxi.query
+    >>> conn = kxi.query.Query('https://my-deploy.kx.com',
+    ...                        client_id='my-client-id',
+    ...                        client_secret='my-client-secret')
+    >>> conn.fetch_custom_apis()
+    >>> params = {
+    ...     "table": "taxi",
+    ...     "column": "fare",
+    ...     "multiplier": 10
+    ... }
+    >>> conn.example_daAPI(json=params)
+    
+
+Connect to a running instance of kdb Insights and call a custom API.
+
+    
+    
+    >>> import kxi.query
+    >>> conn = kxi.query.Query('http://localhost:8080',
+    ...                        usage='MICROSERVICES',
+    ...                        data_format='application/json')
+    >>> conn.fetch_custom_apis()
+    >>> params = {
+    ...     "table": "taxi",
+    ...     "column": "fare",
+    ...     "multiplier": 10
+    ... }
+    >>> conn.example_daAPI(json=params)
+    
+

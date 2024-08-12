@@ -1,0 +1,253 @@
+https://code.kx.com/dashboards/treemap/
+
+# Tree Map - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/treemap/
+
+# Tree Map
+
+![Screenshot](../img/treemap/heatmaphtmllight.jpg)  
+_A Tree Map_
+
+[Tree Map](https://en.wikipedia.org/wiki/Treemapping), best used in
+conjunction with [Pivot Queries](../datasources/#pivot-query)
+
+## Set up
+
+  1. Define a data source.
+
+  2. Category and box size are assigned from the data source with _Column_ and _Size_.
+
+  3. Choose a color format; options go from single color, color gradient to iterative. 
+
+## Basics
+
+![Screenshot](../img/treemap/treemapmenu.png)
+
+_Name_
+
+    A name for the component provided by the user. 
+_Data Source_
+
+    A [data source](../datasources/)
+_Focus_
+
+    A [View State Parameter](../viewstateparameters/) for [linking components](../viewstateparameters/#linking-components)
+_Selected Value_
+
+    Set a [View State Parameter](../viewstateparameters/) to store the last (most recent) selected interaction.
+
+### Action
+
+[Actions](../action/)
+
+## Data
+
+![Screenshot](../img/treemap/treemapdata.jpg)
+
+Adding more than one data series
+
+Each _Data Source_ column will stack in the Heat Map.
+
+_Column_
+
+    [Data source](../datasources/) variable for Node label; set to `{breakdownId}` for Pivot queries
+_Name_
+
+    Title name for _Column_ ; set to set to `{breakdownId}` for Pivot queries
+_Size_
+
+    [Data source](../datasources/) variable for scaling Node size 
+_Color_
+
+    [Data source](../datasources/) variable to define color shading
+
+### Highlight rules
+
+![Screenshot](../img/treemap/treemaphighlightrule.jpg)
+
+_Opacity_
+
+    Strength of highlight rule color; 0 is transparent (retaining underlying treemap color palette), 100 is opaque; 50 offers a hybrid shading of half _Background Color_ and half of the base treemap color palette. 
+_Inverse_
+
+    Inverse application of color palette and highlight color
+
+[Highlight Rules](../highlightrules/)
+
+## Palette Theme
+
+     [Palette Theme](../palette/#palette-theme)
+
+## Color palette
+
+![Screenshot](../img/treemap/treemapcolorpalette.jpg)
+
+_Coloring_
+
+    
+
+Select from `Fixed`, `Iterative`, `Iterative Children`, `Scaled`, `Gradient`,
+`Gradient Percentage`.
+
+Gradient Percentage
+
+`Gradient Percentage` requires a _Size_ range of between 0 and 1.
+
+_Fixed Color_
+
+    Used when `Fixed` _Coloring_ is selected
+_Selected Color_
+
+    Color of Treemap area on click-selection
+_Hover Color_
+
+    Color of Treemap area on mouse hover
+Color Scheme
+
+     [Palettes](../palette/#palettes)
+
+## Node
+
+![Screenshot](../img/treemap/treemapnodemenu.jpg)
+
+_Show Label_
+
+    Toggle display of Treemap data labels
+_Show Legend_
+
+    Toggle display of gradient or _Name_ legend
+_Format_
+
+    Select format for Node: `General`, `Number`, `Smart Number`, `Formatted Number`, `Datetime`
+_Date/Time Format_
+
+    Use when `Datetime` is selected for _Format_
+_Precision_
+
+    Number of decimal places used for `Number`, `Smart Number` or `Formatted Number`
+_Hide Trailing Zeros_
+
+    Remove extra zeros at the end of a digit
+_Suffix_
+
+_Prefix_
+
+    Add a symbol before or after _Node_ label.
+_Custom Label_
+
+    Add a Custom Label
+    ![Screenshot](../img/treemap/customlayoutvisual.jpg)
+    _Additional information displayed on Treemap_
+    Sample configuration
+    ![Screenshot](../img/treemap/customlayout.jpg)
+_Label Color_
+
+    Font color for label
+_Scale Node Size_
+
+    When enabled, nodes scaled by _Size_ variable. 
+_Min Value_
+
+_Max Value_
+
+    Defined from _Size_ value range
+_Border Color_
+
+_Border Width_
+
+_Gap Width_
+
+    Set pixel width and color of border
+_Show Node Header_
+
+_Header Font Color_
+
+_Header Height_
+
+_Header Font Size_
+
+    Display _Name_ as header and define Header style
+_Show Color Scale Index_
+
+    Display the color scale index text
+
+[Template](../template/) for common settings
+
+## Group by
+
+Create a heat map layer on top of a heat map
+
+_Use Grouped By_
+
+_Grouped By_
+
+    Select _Data Source_ column to group Data
+
+![Screenshot](../img/treemap/byregionnode.jpg)
+
+_Show Group By Header_
+
+    Displays group header name (from _Data Source_)
+_Scale By Children_
+
+    Scale Node by _Group By_ variable
+
+## Animation
+
+_Duration_
+
+    Set duration in milliseconds to change Treemap animation. 
+_Animation Effect_
+
+    Select animation from: `easeInQuad`, `easeOutQuad`, `easeInOutQuad`,  
+`easeInCubic`, `easeOutCubic`, `easeInOutCubic`,  
+`easeInQuart`, `easeOutQuart`, `easeInOutQuart`,  
+`easeInQuint`, `easeOutQuint`, `easeInOutQuint`,  
+`easeInSine`, `easeOutSine`, `easeInOutSine`,  
+`easeInExpo`, `easeOutExpo`, `easeInOutExpo`,  
+`easeInCirc`, `easeOutCirc`, `easeInOutCirc`,  
+`easeInElastic`, `easeOutElastic`, `easeInOutElastic`,  
+`easeInBack`, `easeOutBack`, `easeInOutBack`,  
+`easeInBounce`, `easeOutBounce`, and `easeInOutBounce`.
+
+## File export
+
+selection | export  
+---|---  
+Show Export CSV Button | Export display values as CSV file  
+Show Export Excel Button | Export display values as an XLS file  
+Show Screenshot Button | Take an image snapshot (.png) of your treemap  
+  
+_Filename_
+
+    
+
+Includes variable as part of file save name
+
+![Screenshot](../img/treemap/filename.jpg)
+
+![Screenshot](../img/treemap/fileexportname.jpg)
+
+_Filename Part_
+
+    
+
+A filename for the exported file, or a View State Parameter which can be
+linked to a [Text Input](../textinput/) for user defined file names.
+
+## Style
+
+[Style](../style/#component-style) and [Template](../template/) for common
+settings
+
+## Format
+
+![Screenshot](../img/treemap/treemapformat.jpg)
+
+[Format](../style/#format) for common settings
+
+## Margins
+
+[Margins](../style/#margins) for common settings
+

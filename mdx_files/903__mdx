@@ -1,0 +1,79 @@
+https://code.kx.com/platform/control_failover/
+
+# Overview - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/control_failover/
+
+# Failover and replication
+
+The _Control_ process is the core component of the _KX Delta Platform_. It's
+responsible for; running processes, storing configuration, code etc. In order
+to provide resilience in the event of external failures, it runs in a cluster
+of multiple nodes, usually split across servers. The cluster processes
+maintain long-lived connections to each other and elect a leader who is
+responsible for client requests and applying state-changes. This section
+describes the various aspects of the _Control_ cluster.
+
+## Heartbeats
+
+The long-lived connections the cluster processes maintain to each other are
+used to determine the health of the other node. If one of the processes was to
+die, this would be picked up by the other nodes and trigger a failover. This
+however doesn't give a full picture of a process' health. The process could go
+into an unresponsive state without dropping its handle. In the case of a
+network or server failure, the handle isn't dropped for a period of time.
+
+Heartbeats between the processes help to alleviate this by timing out and
+disconnecting unresponsive nodes.
+
+[Heartbeats](../control_heartbeats/)
+
+## Resilience
+
+Heartbeats are used to determine when a failure has occurred but how the
+system recovers from a failure is important. How quickly processes reconnect
+after dropped connections is something that will differ depending on the
+application so these values can be tuned accordingly.
+
+_KX Delta PLatform_ can also be configured to take advantage of multi-homed
+servers, i.e. those with multiple network interfaces. If setup this way,
+processes can quickly fail over to a backup network when the primary one
+fails.
+
+[Resilience](../control_resilience/)
+
+## Replication
+
+The _Control_ cluster needs to replicate its internal state to all nodes in
+the cluster. All state-changes via the public interfaces (_Web UI_ , _Process
+API_ etc) are automatically persisted to a transaction log and streamed to
+followers in realtime. Each change is tracked by a UID. When a process starts,
+it connects to the leader and compares its own UID with that of the cluster.
+If it has fallen behind, it will re-sync with the leader and become a
+follower.
+
+[Replication](../control_replication/)
+
+## Persistence
+
+The internal state of the cluster is backed-up to disk for resiliency. The
+persistence section goes into detail on how and where the data is stored, and
+recovery in the case of corruptions.
+
+[Persistence](../control_persistence/).
+
+## Package deployment
+
+There are a couple of considerations when deploying packages to the _Control_
+cluster.
+
+[Packages](../control_packagedeploy/).
+
+## Failover actions
+
+If a failover event occurs in a _KX Control_ cluster, any running processes
+should connect to the new leader _KX Control_ process. The timeout for this
+connection and the action taken if the connection is not made are configurable
+
+[Failover actions](../control_failoveractions/).
+

@@ -1,0 +1,211 @@
+https://code.kx.com/platform/deployment/custom_packages/
+
+# Building custom packages - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/deployment/custom_packages/
+
+# Building custom packages
+
+Each _KX Delta Platform_ package is a collection of entities stored as a set
+of XML files. These files can be imported into a KX Delta Platform instance to
+populate it with the entities defined in the package.
+
+## Package contents
+
+The package XML files are organized into directories based on the entity type
+they represent. As well as the XML files there are 2 package manifest files
+which define the list of entities which are part of the package and also the
+name of the package in Control. There is often an optional XML file which
+contains the list of permissions to be set on each entity when importing into
+KX Delta Platform. Using the example of the DeltaStream package the files in
+questions are:
+
+  * DeltaStream.cfg
+  * DeltaStream_export.cfg
+  * DeltaStream_permissions.xml
+
+Packages should be named based on the solution they contain. Package names are
+typically camel case and there should be no spaces in the package name.
+
+## Package structure
+
+In order for a package to be installable via the Installation script it must
+follow a set structure.
+
+### Package - Naming convention
+
+The product name for a package is the string before the first “_” in the
+package name. i.e. for `DeltaStream_4_5_0_200231082608.tgz` the product name
+is `DeltaStream`
+
+**Note** : All package config files (except version.txt) are based on the
+Product Name and it is important that these files are named correctly or else
+the install script will not find them in the package. The files required for a
+package and the naming conventions are described below.
+
+_KX Delta Platform_ packages must be named as follows:
+
+    
+    
+    <ProductName>_<Major.Version>_<Minor.Version>_<Incremental.Version>_<buildtimestamp>.tgz
+    
+
+They must untar (`tar -xvzf <package>.tgz`) into a directory with the
+following name:
+
+    
+    
+    <ProductName>_<Major.Version>_<Minor.Version>_<Incremental.Version>_<buildtimestamp>
+    
+
+Example:
+
+    
+    
+    tar -xvzf DeltaStream_4_5_0_200231082608.tgz
+    DeltaStream_4_5_0_200231082608/
+    
+
+### Package - Required files
+
+This section describes the files which must be present in the package in order
+for it to be installed with the script.
+
+File | Naming Convention | Location  
+---|---|---  
+*.cfg | CustomSolution.cfg | Package directory  
+*_export.cfg | CustomSolution_export.cfg | Package directory  
+*_permissions.xml | CustomSolution_permissions.xml | Package directory  
+Version file | version.txt | Package directory  
+Install Config | CustomSolution.install.config | Package directory/install_config/profiles  
+  
+Example:
+
+    
+    
+    CustomSolution_4_5_0_200231082608/CustomSolution.cfg
+    CustomSolution_4_5_0_200231082608/CustomSolution_export.cfg
+    CustomSolution_4_5_0_200231082608/CustomSolution_permissions.xml
+    CustomSolution_4_5_0_200231082608/version.txt
+    CustomSolution_4_5_0_200231082608/install_config/profiles/CustomSolution.install.config
+    
+
+### Package - Configuration options
+
+Each package is required to have its own configuration file. This file defines
+at the bare minimum any dependencies for the package along with an optional
+list of environment variables to be written into the delta.profile.
+
+The package configuration file should be named `<PackageName>.install.config`
+and should be placed into the following directory structure inside the
+package:
+
+    
+    
+    install_config/profiles/PackageName.install.config 
+    
+
+The basic package file will contain one line which defines the package
+dependencies. The `CustomSolution` is dependent on `DeltaStream` being
+deployed. So the contents of the file would look like this:
+
+    
+    
+    cat install_config/profiles/CustomSolution.install.config
+    DEP|DeltaStream
+    
+
+The package configuration file allows package specific environment defaults to
+be updated when deploying the package using the install script.
+
+Env Var type | Value | Notes  
+---|---|---  
+port | int | Default value for an environment variable which represents a port. The install script will check if the port is free  
+string | string | Any string which will be assigned to the environment variable.  
+_Note_ cannot contain spaces  
+dir | dir | Create a new directory which the environment variable will point to.  
+For a new directory to be created inside the delta-data directory then it
+should be specified as follows: DELTA_DATA/CustomSolution/hdb  
+  
+#### Environment variable naming
+
+Environment variables within a package should be named as follows:
+
+    
+    
+    <PACKAGENAME>_<VARIABLENAME>
+    
+
+For example Delta Control Port variable is named `DELTACONTROL_PORT`.
+
+The format of the configuration file should be as follows:
+
+    
+    
+    ENV | Variable Name | Variable Type | Variable Default | Update Option (0 or 1)
+    
+
+| Details  
+---|---  
+ENV | Denotes that this line contains an environment variable definition  
+Variable Name | The name of the environment variable (this is written into delta.profile)  
+Variable Type | port, string or dir  
+Variable Default | The default value to be assigned to the variable  
+Update Option | 0 - variable is not prompted for on deploy the default value is taken  
+1 - variable is prompted for during interactive installation (accept-
+defaults=0)  
+  
+See example package configuration file for a dummy CustomSolution package
+below:
+
+    
+    
+    ENV|CUSTOMSOLUTION_TPLOGDIR|dir|DELTA_DATA/CustomSolution /tplog|0
+    ENV|CUSTOMSOLUTION_DEBUGPORT|port|2200|1
+    ENV|CUSTOMSOLUTION_DEBUGMODE|string|NO|1
+    
+
+Using the package configuration file above the user would be prompted only for
+the `CUSTOMSOLUTION_DEBUGPORT` and `CUSTOMSOLUTION _DEBUGNODE` values during
+installation.
+
+The `CUSTOMSOLUTION _TPLOGDIR` would be created automatically inside the
+delta-data/ directory i.e. `delta/delta-data/CustomSolution/tplog`.
+
+## Deploying custom packages
+
+The _KX Delta Platform_ bundles can also be used to deploy a Solution or
+Custom packages.
+
+### Solution packages
+
+These are packages which form part of a solution built on top of _KX Delta
+Platform_. The packages are typically listed in the package ordering lists
+inside the _KX Delta Platform_ install script
+(`scripts/installKxPlatform.sh`). In order to deploy solution packages they
+should be placed into the `packages/` directory inside the bundle prior to
+running the `install.sh` script.
+
+### Custom packages
+
+These are packages which are not yet included inside the package ordering
+lists in the _KX Delta Platform_ install script
+(`scripts/installKxPlatform.sh`). Custom packages must have the same structure
+as KX Delta Platform or Solution packages, They can be deployed by placing
+them inside the `packages/` directory in the bundle then adding the following
+to the install.config file (`scripts/install.config`) prior to running the
+`install.sh` script.
+
+    
+    
+    custom-solution-package-list=MyCustomPackage,MyOtherCustomPackage
+    
+
+The install config (custom-solution-package-list) should contain a comma
+separated list of package names minus any version information.
+
+Once this has been configured the deploy can be run using `./install.sh`.
+
+For more details on the available install options, see the [Package List
+Options](../install_config/#install-package-lists) section of this guide.
+

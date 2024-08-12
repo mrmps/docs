@@ -1,0 +1,53 @@
+https://code.kx.com/insights/api/database/query/qsql.html
+
+# QSQL API - kdb products
+
+Original URL: https://code.kx.com/insights/api/database/query/qsql.html
+
+# QSQL
+
+This API is intended to run on a data access process and execute the command
+sent in from the client.
+
+Note that, by default, this API is only enabled in sandboxes. To enable it in
+non-sandboxes, set the `KXI_ALLOWED_SBX_APIS` in the RCs and DAPs in which you
+want to enable it (see [Database
+configuration](../../../microservices/database/configuration/assembly/database.html#extra-
+apis)).
+
+**Parameter**
+
+Name | Type | Description  
+---|---|---  
+query | string | The qSQL command to run on a target data access process  
+  
+**Response**
+
+The response is dependent on the `query` parameter itself and the result of
+executing it on the target.
+
+For issues with the query or responses checkout the troubleshooting section
+[here](../../../microservices/database/query/troubleshooting.html).
+
+**Application Codes**
+
+AC | Description  
+---|---  
+INPUT | If a non-string is passed in for the `query` argument  
+TYPE | A qSQL statement results in a type error. e.g `"where id=`a"`, when id is an int column  
+LENGTH | A qSQL `length` error. e.g `"where id=1 2"`, when column doesn't have a count of 2  
+  
+## Examples
+
+For these examples assume the table t was created in a target process with
+
+and that a callback function `cb` is set to `{res::(x;y)}` which saves the
+response header and payload to a global
+
+In this example we do a simple select from the target table t for the id of 4.
+Response and application codes are both OK.
+
+Here we run a badly formatted query with a where clause that checks equality
+between a long column and a character resulting in a type error. Response
+payload is null and has a header with an RC of `APP_DB` and an `AC` of `TYPE`.
+

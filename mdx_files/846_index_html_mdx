@@ -1,0 +1,83 @@
+https://code.kx.com/insights/enterprise/entitlements/index.html
+
+# Data entitlements - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/entitlements/index.html
+
+# Data entitlements - BETA
+
+_Data entitlements ensures that data contained within a deployed assembly can
+be accessed**only** by users who are entitled to do so._
+
+Beta - For evaluation and trial use only
+
+Data entitlements is currently in beta.
+
+  * Refer [here to the standard terms](../release-notes/beta.html) related to beta features.
+  * We invite you to use this beta feature and to provide feedback using the [Ideas portal](https://kxbetafeatures.ideas.aha.io/ideas/new).
+  * During deployment, the data entitlements facility is disabled by default, meaning no restrictions are applied and you can query **all** data in a kdb Insights Enterprise deployment.
+  * When you enable the facility, you **do not** have access to assemblies unless listed in the entitlements database as being entitled to query the assembly in question.
+
+`qsql` limitations
+
+Note that `qsql` requests, made either through the `Q` tab (query-environment
+DAPs) in the UI or over REST to `/qsql` (query-environment and prod DAPs),
+**do not** work with entitlements. The `qsql` API bypasses entitlements
+entirely, and enables access to data from any DAP in any assembly regardless
+of entitlements. Therefore, if using entitlements, `qsql` should be disabled.
+To disable `qsql`, do **both** of the following:
+
+  * Query-environment DAPs: Disable query environments entirely by setting `spec.queryEnvironment.enabled` to `false` in the assembly file (see [here](../database/query/sql.html#query-environment)).
+  * Prod DAPs: By default, `qsql` is disabled on prod DAPs. Simply **do not** enable it via the `KXI_ALLOWED_SBX_APIS` environment variable (see [here](../database/configuration/assembly/query.html#environment-variables)). Note that in order to disable `qsql` but enable `SQL`, the `KXI_ALLOWED_SBX_APIS` environment variable should be set to `.kxi.sql`.
+
+_kdb Insights Enterprise_ controls querying of data in assemblies using a
+combination of:
+
+  * **Role based permissions** \- this determines which users can create assemblies and ingest, analyze, and view data. See [here](../security/authentication.html#roles) for details on the roles available.
+
+  * **Data entitlements** \- [if enabled](prerequisites.html#enabling-entitlements), this determines which groups of users are entitled to query specific assemblies.
+
+Users are entitled to query an assembly if an entitlement record has been
+created for the assembly and they are any of the following:
+
+    * A member of a group that is entitled to query the assembly.
+    * An entity owner, which is a user who is assigned as the owner of the assembly.
+    * An entitlement administrator, which is a user with the `insights.entitlements.admin` role.
+
+References to users and assemblies
+
+When users are referenced here these can be either [standard
+users](../security/managing-users.html) or [service
+accounts](../security/managing-service-accounts.html). For more information,
+refer to [Authentication](../security/authentication.html#terminology).
+
+When assemblies are referenced here, this refers to both
+[assemblies](../assemblies/overview.html) deployed via the kdb Insights CLI
+and [databases](../database/configuration/ui/database.html) created from the
+_kdb Insights Enterprise_ UI.
+
+When entitlements are enabled, the list below gives examples of the outcomes
+for users with and without entitlements when they query data in _kdb Insights
+Enterprise_ , assuming they have at least the _Viewer_
+(`insights.role.viewer`) role assigned to them:
+
+  * If a query spans one or more assemblies for which the user is entitled, they receive data from that assembly.
+  * If a query scope selects an assembly for which the user is not entitled, they get a permission error.
+  * If a query spans multiple assemblies, they only receive data from the assemblies for which they are entitled.
+
+## Using entitlements
+
+To use entitlements in _kdb Insights Enterprise_ you need to:
+
+  1. Complete the [prerequisites](prerequisites.html)
+
+This includes:
+
+     * Enabling the data entitlement facility
+     * Using Keycloak to create groups of users
+
+An entitlement is awarded to a group rather than to an individual user, thus
+the need to create groups of users.
+
+  2. Give entitlements to user groups. To do this you can either follow the [quickstart](quickstart.html) guide or use the [configuration](configuration.html) details.
+

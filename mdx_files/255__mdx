@@ -1,0 +1,53 @@
+https://code.kx.com/platform/deployment/ldap_configuration/
+
+# LDAP - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/deployment/ldap_configuration/
+
+# LDAP
+
+The _KX Delta Platform_ supports, LDAP (Lightweight Directory Access Protocol)
+which is an open and cross platform protocol used for directory services
+authentication.
+
+### Enabling LDAP at deploy time
+
+LDAP can be enabled at deploy time if you are using a custom install.config
+file. The following option should be added:
+
+    
+    
+    delta-control-use-ldap=1
+    
+
+This will result in `DELTACONTROL_LDAP` in delta.profile pointing to a
+configuration file called LDAP_EX.txt
+
+    
+    
+    export DELTACONTROL_LDAP=${DELTA_CONFIG}/LDAP_EX.txt
+    
+
+In order to start the deploy you will need to create the file and configure
+the LDAP settings. This is covered in the _KX Control_ documentation.
+
+### Enabling LDAP post deploy
+
+To enable LDAP post deploy, you can add the `DELTACONTROL_LDAP` variable to
+the `delta.profile` manually and point it to the LDAP configuration file on
+disk.
+
+**Linux**
+
+    
+    
+    export DELTACONTROL_LDAP=${DELTA_CONFIG}/LDAP_EX.txt
+    
+
+**Windows**
+
+    
+    
+    set DELTACONTROL_LDAP=%DELTA_CONFIG%/LDAP_EX.txt
+    
+

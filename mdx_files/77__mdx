@@ -1,0 +1,50 @@
+https://code.kx.com/developer/libraries-setup/
+
+# Loading libraries - KX Developer
+
+Original URL: https://code.kx.com/developer/libraries-setup/
+
+# Running libraries
+
+Some of the public libraries in Developer can be run externally outside the
+UI. A separate archive of the libraries is included within the primary
+Developer `.zip` file, named `axlibraries.zip`. A `README.md` is included
+within the `axlibraries.zip` archive with installation instructions.
+
+## Loading in native q
+
+Once the installation is set up, ensure the following environment variables
+are set correctly.
+
+Variable | Location | Optional  
+---|---|---  
+`QHOME` | Directory containing q.k |   
+`QLIC` | Directory of q license file |   
+`AXLIBRARIES_HOME` | Path to the `ax-libraries` directory |   
+`AXIMPORT_PATH` | Colon separated paths from which q files can be imported | ✓  
+  
+Once these variables are set, the libraries can be loaded into a native q
+process in the following way (substituting `<library>` with the library of
+your choice):
+
+    
+    
+    q $AXLIBRARIES_HOME/ws/<library>.q_
+    
+
+**Loading Multiple libraries in Native q**
+
+To load multiple libraries one can use either of the equivalent methods below
+(substituting `<library>` with the library of your choice):
+
+    
+    
+    q
+    q)system "l ",getenv[`AXLIBRARIES_HOME],"/ws/<library>.q_"
+    
+    
+    
+    q
+    q)\l $AXLIBRARIES_HOME/ws/<library>.q_
+    
+

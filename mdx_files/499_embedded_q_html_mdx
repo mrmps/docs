@@ -1,0 +1,39 @@
+https://code.kx.com/pykx/api/pykx-execution/embedded_q.html
+
+# PyKX execution classes - PyKX
+
+Original URL: https://code.kx.com/pykx/api/pykx-execution/embedded_q.html
+
+Bases: `Q`
+
+Interface for q within the current process; can be called to execute q code.
+
+###  __call__
+
+    
+    
+    __call__(query, *args, wait=None, debug=False, skip_debug=False, **kwargs)
+
+Run code in the q instance.
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`query` |  `[Union](https://docs.python.org/3/library/typing.html#typing.Union "typing.Union")[[str](https://docs.python.org/3/library/stdtypes.html#str), [bytes](https://docs.python.org/3/library/stdtypes.html#bytes), [wrappers](../pykx-q-data/wrappers.html#pykx.wrappers "pykx.wrappers").[CharVector](../pykx-q-data/wrappers.html#pykx.wrappers.CharVector "pykx.wrappers.CharVector")]` | The code to run in the q instance. |  _required_  
+`*args` |  `[Any](https://docs.python.org/3/library/typing.html#typing.Any "typing.Any")` | Arguments to the q query. Each argument will be converted into a `pykx.K` object. Up to 8 arguments can be provided, as that is the maximum supported by q. |  `()`  
+`wait` |  `[Optional](https://docs.python.org/3/library/typing.html#typing.Optional "typing.Optional")[[bool](https://docs.python.org/3/library/functions.html#bool)]` | Keyword argument provided solely for conformity with `pykx.QConnection`. All queries against the embedded q instance are synchronous regardless of what this parameter is set to. Setting this keyword argument to `False` results in q generic null (`::`) being returned, so as to conform with `pykx.QConnection`. This conformity enables one to call any `pykx.Q` instance the same way regardless of whether it is a `pykx.EmbeddedQ` or `pykx.QConnection` instance. For cases where the query executing asynchronously (and returning after it has been issued, rather than after is is done executing) is actually important, one can discriminate between `pykx.Q` instances using `isinstance` as normal. |  `None`  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+`[wrappers](../pykx-q-data/wrappers.html#pykx.wrappers "pykx.wrappers").[K](../pykx-q-data/wrappers.html#pykx.wrappers.K "pykx.wrappers.K")` | The value obtained by evaluating the `query` within the current process.  
+  
+**Raises:**
+
+Type | Description  
+---|---  
+`LicensedException` | Attempted to execute q code outside of licensed mode.  
+`[TypeError](https://docs.python.org/3/library/exceptions.html#TypeError)` | Too many arguments were provided - q queries cannot have more than 8 parameters.
+

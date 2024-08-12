@@ -1,0 +1,66 @@
+https://code.kx.com/insights/microservices/database/configuration/advanced/query-scaling.html
+
+# Query scaling - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/database/configuration/advanced/query-scaling.html
+
+# Query scaling
+
+For large volumes of queries or for complex, long-running queries, it may be
+necessary to increase the amount of resources servicing queries to maintain
+desired performance. There are different options available to tune, depending
+on the profile and scale of the queries. Adding more threads can be used to
+speed up individual queries. Adding more replicas can increase parallelism
+when there is a high number of concurrent requests. If the number of replicas
+becomes very high, scaling your routing layer should be considered. Adding
+replicas is also a good practice for increasing query resiliency by adding
+redundant processes.
+
+## Threads
+
+Adding additional threads to a DAP allows for query filtering and aggregation
+to be performed in parallel within a single process. DAP process make use of
+additional threads when they are available.
+
+DAPs are kdb+ processes which are configured to have [secondary
+threads](https://code.kx.com/q/basics/cmdline/#-s-secondary-threads) using the
+`-s` flag provided to the process.
+
+## Replicas
+
+Data Access Processes are individual kdb+ processes, which, while fast in
+executing queries, only have a single main thread. To increase query
+throughput and the number of concurrent queries the system can manage, adding
+additional DAP replicas will give the gateway a greater number of targets with
+which to serve the queries in parallel. The gateway makes use of all replicas
+available when load-balancing query work by default.
+
+## Routing
+
+As the number of DAP replicas increases, it will become necessary to increase
+the number of Resource Coordinators and Service Gateways that are servicing
+queries.
+
+Kubernetes only
+
+Automatic RC discovery is available using Kubernetes label discovery. This
+process must be done manually in Docker.
+
+RCs connect to each other so they can enlist each other for help when the RC
+receiving the request does not contain the required DAPs to be able to
+complete the request on its own. RCs can only connect to each other using
+[Kubernetes labels](https://kubernetes.io/docs/concepts/overview/working-with-
+objects/labels/). The RC pods require [Kubernetes
+RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
+permissions for the "get" and "list" verbs of the "pods" resource. The
+following is a set of example Kubernetes configuration snippets to enable
+label based discovery.
+
+To take advantage of multiple RCs, DAPs should be configured to be associated
+with a specific RC. The ordinal of the RC replica can be used for associating
+DAPs with RCs. RCs will balance the requests across available DAPs. DAP
+[configuration](../assembly/query.html#configuration) needs to be configured
+with `rcEndpoints` in an assembly file or `KXI_SG_RC_ADDR` as an [environment
+variable](../assembly/query.html#environment-variables) to point to the
+correct DAP instance.
+

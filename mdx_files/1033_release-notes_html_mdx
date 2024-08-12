@@ -1,0 +1,54 @@
+https://code.kx.com/insights/microservices/stream-processor/release-notes.html
+
+# Release Notes - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/stream-processor/release-notes.html
+
+# Release Notes
+
+## 1.1.0
+
+This release introduces a number of stability enhancements to the Stream
+Processor.
+
+### New Features
+
+  * Added new machine learning operators. See [machine learning API](../../api/stream-processor/q/ml.html) for details.
+  * Worker and controller pods now support Kubernetes resource controls.
+  * Added a [schema operator](../../api/stream-processor/q/transform.html#qsptransformschema) for best-effort schema conversions.
+  * Added a [`GET /diagnostics`](../../api/stream-processor/rest/worker.html) API to the controller and worker for retrieving diagnostics reports.
+
+### Changes
+
+  * The coordinator now uses Kubernetes state to determine if a pipeline exists.
+  * Worker pod naming has changed. See [`GET /pipeline/worker/{id}`](../../api/stream-processor/rest/coordinator.html) for retrieving worker DNS addresses.
+
+### Artifacts
+
+type | name | location | tag  
+---|---|---|---  
+image | `kxi-sp-coordinator` | `portal.dl.kx.com/kxi-sp-coordinator` | `1.1.0`  
+image | `kxi-sp-controller` | `portal.dl.kx.com/kxi-sp-controller` | `1.1.0`  
+image | `kxi-sp-worker` | `portal.dl.kx.com/kxi-sp-worker` | `1.1.0`  
+image | `kxi-ml` | `portal.dl.kx.com/kxi-ml` | `1.1.0`  
+chart | `kxi-sp` | <https://portal.dl.kx.com/assets/helm/kxi-sp/kxi-sp-1.1.0.tgz> | `1.1.0`  
+  
+## 1.0.0
+
+Initial Stream Processor release. This is the first public release of the
+Insights Stream Processor featuring streaming ingestion from Kafka, and
+Insights RT streams as well as batch ingest from cloud object storage,
+PostgreSQL and SQL Server.
+
+### Artifacts
+
+type | name | location | tag  
+---|---|---|---  
+image | `kxi-sp-coordinator` | `portal.dl.kx.com/kxi-sp-coordinator` | `1.0.1`  
+image | `kxi-sp-controller` | `portal.dl.kx.com/kxi-sp-controller` | `1.0.1`  
+image | `kxi-sp-worker` | `portal.dl.kx.com/kxi-sp-worker` | `1.0.1`  
+image | `kxi-ml` | `portal.dl.kx.com/kxi-ml` | `1.0.1`  
+chart | `kxi-sp` | <https://portal.dl.kx.com/assets/helm/kxi-sp/kxi-sp-1.0.0.tgz> | `1.0.0`  
+  
+### Deprecated APIs
+

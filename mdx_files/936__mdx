@@ -1,0 +1,29 @@
+https://code.kx.com/platform/ds_qr/
+
+# DS_QR - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/ds_qr/
+
+# DS_QR
+
+Delta Query Router process
+
+## Parameters
+
+name | type | default value | description  
+---|---|---|---  
+initialStateFunc | Analytic | dxEmptyFunctionNull | Initial state function  
+chooseTargets | Analytic | dxQRChooseTargets | Used to map service requests to groups of databases. Must have four parameters  
+checkQueue | Analytic | dxQRCheckQueue | Used to check the table of queued requests  
+chooseGateway | Analytic | dxQRChooseGateway | Used to choose gateway for a request  
+parseRequest | Analytic | dxQRParseRequest | Parse incoming request to identify routed requests  
+useFIFO | Boolean | true | Use FIFO mode for de-queuing requests. Only applicable when using default checkQueue analytic dxQRCheckQueue  
+  
+## Configuration parameters
+
+name | type | default value | description  
+---|---|---|---  
+timestampLogging | Config | DS_QR_TIMINGS | Config to manage timestamp logging behavior  
+  
+**See Also:** [Query Router](../qr_overview/)
+

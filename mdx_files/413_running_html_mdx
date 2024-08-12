@@ -1,0 +1,251 @@
+https://code.kx.com/insights/microservices/stream-processor/running.html
+
+# Running - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/stream-processor/running.html
+
+# Running the Stream Processor
+
+_Run and manage Stream Processor images individually, or as part of a group_
+
+[Simple example Docker workflow](quickstart/docker.html)
+
+[Simple example Kubernetes workflow](quickstart/kubernetes.html)
+
+For clarity in the examples below, _environment variables_ are used to
+[configure the pipelines](configuration.html); a `config.yaml` file could be
+used as well.
+
+## Setup
+
+Working from the following project directory:
+
+With the following `spec.q`:
+
+    
+    
+    .qsp.run
+      .qsp.read.fromCallback[`upd]
+      .qsp.window.timer[00:00:05]
+      .qsp.write.toConsole[]
+    
+
+## Running in Kubernetes
+
+To deploy and run in Kubernetes using the provided Coordinator service, follow
+the [Kubernetes configuration and deployment](configuration.html#kubernetes)
+instructions for launching the Coordinator within the cluster. The
+instructions also detail how to deploy and teardown a pipeline once the
+Coordinator service has started.
+
+## Running in Docker Compose
+
+The above examples can be run in Docker Compose with an appropriate Docker
+Compose file (`docker-compose.yaml`).
+
+[Configuration](configuration.html) to add Service Discovery or Monitoring
+
+`docker-compose.yaml` example:
+
+    
+    
+    version: "3.3"
+    services:
+      controller:
+        image: portal.dl.kx.com/kxi-sp-controller:1.10.0
+        ports:
+          - 6000:6000
+        environment:
+          - KDB_LICENSE_B64
+        command: ["-p", "6000"]
+        deploy:
+          restart_policy:
+            condition: on-failure
+    
+      worker:
+        image: portal.dl.kx.com/kxi-sp-worker:1.10.0
+        ports:
+          - 5000
+        environment:
+          - KDB_LICENSE_B64
+          - KXI_SP_SPEC=/app/spec.q
+          - KXI_SP_PARENT_HOST=controller:6000
+        volumes:
+          - .:/app
+        command: ["-p", "5000"]
+        deploy:
+          restart_policy:
+            condition: on-failure
+        depends_on:
+          - controller
+    
+
+With this Docker Compose file, the Controller and Worker can be created at
+once with:
+
+### Multiple Workers in Docker Compose
+
+First, create a YAML file called `templates.yaml` containing all common
+configuration for each Worker service:
+
+    
+    
+    services:
+      worker_common:
+        image: portal.dl.kx.com/kxi-sp-worker:1.10.0
+        ports:
+          - 5000
+        environment:
+          - KDB_LICENSE_B64
+          - KXI_SP_SPEC=/app/spec.q
+          - KXI_SP_PARENT_HOST=controller:6000
+        volumes:
+          - .:/app
+        command: ["-p", "5000"]
+        deploy:
+          restart_policy:
+            condition: on-failure
+    
+
+Now, we can easily create multiple Worker services in `docker-compose.yaml`,
+each with a unique ordinal:
+
+    
+    
+    version: "3.3"
+    services:
+      controller:
+        image: portal.dl.kx.com/kxi-sp-controller:1.10.0
+        ports:
+          - 6000:6000
+        environment:
+          - KDB_LICENSE_B64
+          - KXI_SP_MIN_WORKERS=3
+        command: ["-p", "6000"]
+        deploy:
+          restart_policy:
+            condition: on-failure
+    
+      worker_1:
+        extends:
+          file: templates.yaml
+          service: worker_common
+        environment:
+          - KXI_SP_ORDINAL=1
+        depends_on:
+          - controller
+    
+      worker_2:
+        extends:
+          file: templates.yaml
+          service: worker_common
+        environment:
+          - KXI_SP_ORDINAL=2
+        depends_on:
+          - controller
+    
+      worker_3:
+        extends:
+          file: templates.yaml
+          service: worker_common
+        environment:
+          - KXI_SP_ORDINAL=3
+        depends_on:
+          - controller
+    
+
+Notice that we have added a new environment variable to the Controller,
+`KXI_SP_MIN_WORKERS`. This designates how many Workers the Controller will
+wait for before starting all registered Workers. Also of note is the
+`KXI_SP_ORDINAL` environment variable for each Worker. This ordinal must be
+set to a unique integer for each Worker when using multiple Workers with the
+same Controller. See [Environment Variables](configuration.html#environment-
+variables) for more information about configuring Workers and Controllers with
+environment variables.
+
+## Running separate containers
+
+### Running with one Worker
+
+First, create a `kx` network and a Controller to orchestrate and manage the
+pipeline.
+
+    
+    
+    docker network create kx
+    docker run -it -p 6000:6000 \
+        --network=kx \
+        -e "KDB_LICENSE_B64=$KDB_LICENSE_B64" \     # Set the kdb+ license to use
+        --restart unless-stopped \                  # Restart the Controller if it dies
+        portal.dl.kx.com/kxi-sp-controller:1.10.0 -p 6000
+    
+
+A Controller then needs Workers to orchestrate. We need to know the hostname
+of the Controller.
+
+    
+    
+    CONTAINER ID   IMAGE                   .. PORTS                                       NAMES
+    0d05f4679db2   kxi-sp-controller:1.10.0 .. 0.0.0.0:6000->6000/tcp, :::6000->6000/tcp   cranky_mclaren
+    
+
+Note the container ID of the Controller, and change the `KXI_SP_PARENT_HOST`
+below to the container ID output from that command.
+
+Bind in the project directory to make the spec available.
+
+A Worker can be created with:
+
+    
+    
+    docker run -it -p 5000:5000 \
+        --network=kx \
+        -v "$(pwd)":/app \                           # Bind in the project directory
+        -e KXI_SP_SPEC="/app/spec.q" \               # Point to the bound spec file
+        -e KXI_SP_PARENT_HOST="0d05f4679db2:6000" \  # Point Worker to its Controller
+        -e "KDB_LICENSE_B64=$KDB_LICENSE_B64" \      # Set the kdb+ license to use
+        --restart unless-stopped \                   # Restart the Worker if it dies
+        portal.dl.kx.com/kxi-sp-worker:1.10.0 -p 5000
+    
+
+[Set the kdb+ license](index.html#set-license)
+
+### Running with multiple Workers
+
+Rather than running the pipeline with a single Worker, some pipelines (such as
+those reading from Kafka or callback functions) can be parallelized by
+orchestrating multiple Workers.
+
+To do this, start a new Controller with a greater number of required Workers:
+
+    
+    
+    $ docker run -it -p 6000:6000 \
+        --network=kx \
+        -e "KDB_LICENSE_B64=$KDB_LICENSE_B64" \
+        -e KXI_SP_MIN_WORKERS=3 \                   # Set this pipeline to use 3 Workers
+        --restart unless-stopped \
+        portal.dl.kx.com/kxi-sp-controller:1.10.0 -p 6000
+    
+
+Then launch the required number of Workers. Here we use a loop to set each to
+a known port.
+
+Change `KXI_SP_PARENT_HOST` to the new Controller’s container ID.
+
+    
+    
+    for port in 5001 5002 5003;
+    do
+        docker run -it -p $port:5000 \
+            --network=kx \
+            -v "$(pwd)":/app \
+            -e KXI_SP_SPEC="/app/spec.q" \
+            -e KXI_SP_PARENT_HOST="0d05f4679db2:6000" \
+            -e "KDB_LICENSE_B64=$KDB_LICENSE_B64" \
+            portal.dl.kx.com/kxi-sp-worker:1.10.0 -p 5000
+    done
+    
+
+There will now be three Workers up and running, on ports 5001, 5002, and 5003.
+

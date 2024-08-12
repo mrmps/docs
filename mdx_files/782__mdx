@@ -1,0 +1,326 @@
+https://code.kx.com/platform/cli/
+
+# CLI - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/cli/
+
+# CLI
+
+_KX Control_ 4.6.0 comes with a CLI tool for users to interact with their
+Control installation from a command line terminal.
+
+The CLI provides resources operations ranging from local to cluster wide
+operations.
+
+## Getting started
+
+To run the CLI navigate to _${DELTABIN_HOME}/bin_ From here the user can then
+run `./kxp ...` to communicate with their installation.
+
+    
+    
+    user@dev [bin] > ./kxp instance status
+    
+            process                                    status  host                     port taskset pid
+            ----------------------------------------------------------------------------------------------
+            ds_ms_a.1                                  running dev.firstderivatives.com 3023 1-8     16171
+            ds_qr_a.1                                  running dev.firstderivatives.com 3008 1-8     16070
+            ds_qp_a.1                                  running dev.firstderivatives.com 3007 1-8     16133
+            ds_qm_at_a.1                               running dev.firstderivatives.com 3024 1-8     16208
+            ds_action_tracker_a.1                      running dev.firstderivatives.com 3012 1-8     16212
+            ds_hdb_actiontracker_a.1                   running dev.firstderivatives.com 3018 1-8     16219
+            ds_gw_actiontracker_a.1                    running dev.firstderivatives.com 3014 1-8     16225
+            ds_appServer_a.1                           running dev.firstderivatives.com 0    1-8     16139
+    
+
+Alternatively, the CLI can be rung from any location after sourcing the
+_delta.profile_
+
+    
+    
+    user@dev [~] > cd ${DELTABIN_HOME}
+    user@dev [delta-bin] > source delta.profile
+    
+
+User can then, from any location, make use of the CLI.
+
+    
+    
+    user@dev [delta-bin]  > kxp instance status
+    
+
+## CLI operations
+
+CLI commands follow the structure of
+
+    
+    
+    kxp <resource> <operation> <arguments>
+    
+
+Not all resource operations require arguments to be passed. Further
+information can be seen for each resource operation by passing a `--help/-h`
+argument to the CLI.
+
+    
+    
+    kxp -h
+    kxp <resource> -h
+    kxp <resource> <operation> -h
+    
+
+CLI output can set to either plain text or json format. This can be set in-
+line using the argument `--cli-format=<text|json>`.
+
+Default output format can also be set using the following environment variable
+
+    
+    
+    export DELTACONTROL_CLI_FORMAT=text
+    
+
+### Control
+
+The control resource allows the user to manage the Control Cluster process.
+The CLI user can view the status of the Control processes as well as start and
+stop those local to the CLI.
+
+    
+    
+    kxp control <operation> <arguments>
+    
+
+Operation | Description | Notes  
+---|---|---  
+start | Start the control process | This is a local operation. The CLI will only start the local instance of Control  
+status | Returns running information on the cluster Control processes |   
+stop | Stop the control process | This is a local operation. The CLI will only stop the local instance of Control  
+  
+### Daemon
+
+The daemon resource allows the user to manage the Platform daemon processes.
+The CLI user can view the status of the daemon processes as well as start and
+stop those local to the CLI.
+
+    
+    
+    kxp daemon <operation> <arguments>
+    
+
+Operation | Description | Notes  
+---|---|---  
+start | Start the daemon process | This is a local operation. The CLI will only start the local instance of Control  
+status | Returns running information on the cluster daemon processes |   
+stop | Stop the daemon process | This is a local operation. The CLI will only stop the local instance of Control  
+  
+### Instance
+
+The instance resource allows the user to manage the Platform process
+instances. The CLI user can view Platform instances, their running
+information, as well as stop and start them.
+
+    
+    
+    kxp instance <operation> <arguments>
+    
+
+Operation | Description  
+---|---  
+describe | Return instance configuration details for given process instance name  
+list | List all defined Platform process instances  
+start | Start one or many process instances  
+status | Return running information on all or passed process instance names  
+stop | Stop one or many running process instances  
+  
+### Package
+
+The package resource allows the user to manage the Platform packages. The CLI
+user can view packages available to the Platform, as well as import and export
+packages.
+
+    
+    
+    kxp package <operation> <arguments>
+    
+
+Operation | Description  
+---|---  
+list | List all packages within to the Platform  
+export | Export an existing package from the Platform  
+import | Import a package into the Platform  
+  
+### Service
+
+The service resource allows the user to manage the Platform services. The CLI
+user can view existing services, start and stop service, both local and remote
+to the CLI.
+
+    
+    
+    kxp service <operation> <arguments>
+    
+
+Operation | Description | Notes  
+---|---|---  
+describe | Return service class configuration details |   
+execute | Starts a service on the local server | Local operation only  
+list | List all service classes defined within the Platform |   
+start | Start a service on a designated host | Requires a host name to be provided  
+status | Return running information on all services or names services |   
+stop | Stop one or many services or all under a Service class |   
+  
+### Session
+
+The session resource allows the user to manage the Platform user sessions. The
+CLI user can view active Platform user sessions as well as force a log out of
+those users.
+
+    
+    
+    kxp session <operation> <arguments>
+    
+
+Operation | Description  
+---|---  
+list | List all active user sessions  
+logout | Force logout of one or many sessions or individual user  
+  
+### User
+
+The user resource allows the user to manage the Platform users accounts. The
+CLI user can view and amend user details and status.
+
+    
+    
+    kxp user <operation> <arguments>
+    
+
+Operation | Description  
+---|---  
+list | List all Platform user accounts  
+create | Create a new Platform user account  
+update | Update user account details, excluding password  
+delete | Delete Platform user account  
+describe | View user account details  
+lock | Lock user account, preventing login  
+unlock | Unlock a user account  
+reset | Reset user password  
+login | Login with a valid user to execute passwordCheck  
+passwordCheck | Verify a users password using login guid  
+  
+### Usergroup
+
+The usergroup resource allows the user to manage the Platform user groups. The
+CLI user can view or amend user group policy and members.
+
+    
+    
+    kxp usergroup <operation> <arguments>
+    
+
+Operation | Description  
+---|---  
+list | List all Platform user groups within the Platform  
+describe | View user group policy and members  
+create | Create a new Platform user group  
+update | Update existing user group policy and members  
+delete | Delete existing user group  
+  
+### Workflow
+
+The workflow resource allows the user to manage the Platform instance
+workflows. The CLI user can view, stop and start instance worflows.
+
+    
+    
+    kxp workflow <operation> <arguments>
+    
+
+Operation | Description  
+---|---  
+describe | Describe workflow and instance relationships  
+list | List all Platform workflows  
+start | Start a Platform workflow  
+status | View running information of workflow members  
+stop | Stop Platform workflow  
+  
+### Service Deployment
+
+The service deployment resource allows the user to manage available service
+deployment files. The CLI user can view, start and scale service deployments.
+
+    
+    
+    kxp nodes <operation> <arguments>
+    
+
+Operation | Description  
+---|---  
+running | Describe running information of all service deployment  
+start | Start a service deployment on a node  
+stop | Stop a service deployment on a node  
+      
+    
+    kxp node <operation> <arguments>
+    
+
+Operation | Description  
+---|---  
+status | View running information of a service deployment  
+running | List all running services for service deployment  
+scale | Scale a running Platform service class  
+  
+## Understanding help pages
+
+CLI help pages follow the [docopt](http://docopt.org/) convention for
+describing CLI operations and arguments.
+
+As brief example of the `-h` usage pages and what the documentation is trying
+to illustrate, please see the below:
+
+    
+    
+    user@dev [delta-bin] > kxp service start -h
+    
+    Start a service on a specified host.
+    
+    Takes a service class as a parameter and must specify the host to execute on.
+    
+      Usage:
+          kxp service start -h
+          kxp service start <serviceclass> --host=<hostname> [--option=<args> ...]
+          kxp service start <serviceclass> --host=<hostname> [(--dc_port=<args> | --dc_portrange=<args>)]
+    
+      Options:
+          -h, --help       Show help message
+          --host           (Required) Host to run on
+          --name           Optional name for service
+          --dc_port        Port to assign to service
+          --dc_portrange   Permitted port range for service
+          --dc_taskset     CPU affinity
+          --dc_logfile     Name to be given to service log file
+    
+
+### < argument >
+
+Text between '<' and '>' indicates an argument to the resource operation. In
+the example usage page above, this highlights that this is a required
+_serviceclass_ and _hostname_ are required arguments and must be placed in the
+order presented.
+
+### [ optional ]
+
+Text between '[' and ']' indicates an optional field to the CLI operation.
+With the additional trailing '...', this means that one or many additional
+options are permitted. In the example usage page above, this is showing that
+the use of additional arguments to the CLI operation may be optionally added.
+
+See the _Options_ section for details on these Options.
+
+### ( either this | or this )
+
+Text between '(' and ')' separated by a '|' are mutually exclusive options. In
+the example usage page above, this is showing that the CLI user can either
+pass the option of _dc_port_ or _dc_portrange_ to the CLI operation, but not
+both.
+

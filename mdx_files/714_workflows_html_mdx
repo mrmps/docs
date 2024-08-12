@@ -1,0 +1,754 @@
+https://code.kx.com/insights/core/kurl/workflows.html
+
+# Registration workflows | REST client | kdb Insights Core - kdb products
+
+Original URL: https://code.kx.com/insights/core/kurl/workflows.html
+
+# Registration workflows
+
+## Basic authentication flow
+
+A plain text username and password. Underlying library base64 encodes
+`"user:pass"`.
+
+    
+    
+    .kurl.register (`basic; domain; tenant; `user`pass!(user; pass))
+    
+
+Example:
+
+    
+    
+    .kurl.register (`basic; "http://localhost"; .z.u; `user`pass!(.z.u;"password"))
+    .kurl.sync ("http://localhost/v1/service?test=1";`GET;``tenant!(::;.z.u))
+    
+
+## OAuth2 authentication flow
+
+When building a new application to use single sign on (SSO), you may create a
+client ID and client secret in an identity provider’s online portal.
+
+You will use the information you specify in the portal, along with generated
+IDs returned by the portal, to create an OAuth2 client specification that you
+may package with your application.
+
+When you start up your application, you may start a login flow using Kurl’s
+helper `.kurl.oauth2.startLoginFlow`. Kurl will automatically start a worker
+process called ‘the sidecar‘ on your machine using the port specified in your
+OAuth2 client specification.
+
+When asked for a redirection URI, include a redirection URI
+`http://localhost:port`, where the port is any number you want to use on your
+local machine.
+
+The sidecar will open a browser window at the authentication endpoint listed
+in your client specification.
+
+You will then type in your user account information and sign into the
+authentication endpoint. After successfully logging in, by using HTTP
+redirects, your Web browser will return a token response back to the Kurl
+library. Your personal credentials are never passed through Kurl, or returned
+to us by the browser. The browser gives us only tokens that can be used on
+your behalf.
+
+An OAuth2 login flow:
+
+![OAuth2 Authentication Flow Diagram](imgs/oauth2.png)
+
+The entire OAuth2 Login flow process can be thought of as requesting and
+getting an access token.
+
+Expected server response
+
+Kurl’s `startLoginFlow` can be visualized as a simple callback that triggers
+after getting an access token.
+
+![Start Login Flow Diagram](imgs/startLoginFlow.png)
+
+Several minutes prior to the expiration of the access token, Kurl makes a
+request to the token URI endpoint using the refresh token to acquire a new
+access token.
+
+### OAuth2 client specification
+
+OAuth2 clients must provide the following information. Key names are chosen to
+match Google’s downloadable JSON; if using something else, make the keys
+match.
+
+    
+    
+    client_id       10h    OAuth2 Client ID
+    client_secret   10h    OAuth2 Client Secret
+    auth_uri        10h    SSO providers Authentication endpoint (GET)
+    token_uri       10h    SSO providers Token endpoint (POST)
+    redirect_uris   0h     list of permitted URLs to redirect authentication response to
+    
+
+When providing a specification to Kurl, pass in a dictionary with the above
+information.
+
+Optionally, you may set the ENV `KX_OAUTH2_CLIENT_JSON` to a path to a JSON
+file that has the above specification, and Kurl will read that file in, if the
+dictionary is left blank.
+
+An example JSON client specification is below: Note the extra `"web"` key. The
+title here is not important to Kurl, however for ease of use with Google for
+SSO we will look under whatever the `"first"` key is, because Google inserts a
+key.
+
+    
+    
+    {
+      "web":{
+        "client_id"     : "redacted",
+        "auth_uri"      : "https://accounts.google.com/o/oauth2/auth",
+        "token_uri"     : "https://oauth2.googleapis.com/token",
+        "client_secret" : "redacted",
+        "redirect_uris" : ["http://localhost:1234"]
+      }
+    }
+    
+
+When using Azure or other services, the `auth_uri` and `token_uri` may contain
+identifiers within the URLs themselves
+
+### OAuth2 Login API
+
+Calling the following API will start the login flow:
+
+    
+    
+    .kurl.oauth2.startLoginFlow[domain;client;overrides;callback]
+    
+
+value | type | desc | example  
+---|---|---|---  
+domain | 10h | wildcard for when to use stored information | `"*.googleapis.com"`  
+spec | 99h (or env var) | OAuth2 client specification | see OAuth2 Client Specification  
+overrides | 99h | optional values for authentication | ``scope`access_type`prompt!("openid email";"offline";"consent")`  
+callback | 100h/104h | callback allows you to make a following request | `{[tenant; auth_response] }`  
+  
+The domain is a wildcard that matches requests endpoints the login will be
+valid for. It is _not_ the domain of the OAuth2 endpoint. The OAuth2 endpoint
+should be in the client specification.
+
+Note
+
+In the event of a successful login, the auth_response will be a dictionary,
+else an error message.
+
+### OAuth2 standard access token response
+
+OAuth2 servers should return a [standard
+response](https://www.oauth.com/oauth2-servers/access-tokens/access-token-
+response/).
+
+Kurl supports only token_type `Bearer`, and expects the content to be JSON.
+
+Kurl looks for the following JSON values.
+
+    
+    
+    access_token
+    expires_in      optional, if present must be in seconds
+    refresh_token   optional
+    
+
+### Handling non-standard access token responses
+
+If a server or utility does not return the following keys in JSON, (spelled
+exactly as follows), you must provide the key names to `.kurl.register` so it
+knows how to map the response.
+
+    
+    
+    access_token
+    expires_in      optional, if present must be in seconds
+    refresh_token   optional
+    
+
+For example, suppose we have a utility that prints an access token in camel
+case. This is a practical example Kurl handles when using the access tokens
+for an existing Azure CLI login.
+
+    
+    
+    $ az account get-access-token
+    {
+      "accessToken": "token value here",
+      "expiresOn": "2021-01-10 17:48:18.766268",
+      "subscription": "b574a496-8d3e-4430-b935-19c579ebcc9a",
+      "tenant": "95451270-5f0c-4cee-9d65-1473e3f04320",
+      "tokenType": "Bearer"
+    }
+    
+
+Kurl offers the following optional keys for registering non-standard token
+responses. These keys should be inserted into the `authInfo` of a registration
+input.
+
+All values are symbols or strings, excluding `expires_onformat_len`, which
+should be a positive number.
+
+    
+    
+    access_token_key     title for access_token
+    refresh_token_key    title for refresh_token
+    expires_in_key       title for expires_in
+    expires_on_key       title for expires_on
+    expires_on_format    date format string acceptable by strptime()
+    expires_on_len       maximum length of expires_on to scan
+    
+
+These values tell Kurl the JSON key names to use when refreshing OAuth2
+tokens.
+
+In our above example, Kurl would need the following ‘corrections’.
+
+    
+    
+    rawresponse:`accessToken`expiresOn!
+      ("token value here"; "2021-01-10 17:48:18.766268")
+    
+    kys:`access_token_key`expires_on_key`expires_on_format`expires_on_format_len
+    corrections:kys!("accessToken"; "expiresOn"; "%Y-%m-%d %H:%M:%S"; 19 )
+    
+    authInfo: rawresponse , corrections
+    
+
+Using the above corrections allows Kurl to maintain tokens that need to be
+refreshed now that it knows the titles to use.
+
+### OAuth2 authentication flow with QPacker
+
+When using QPacker with the OAuth2 login flow, ensure the ports of your
+`redirect_uri` are accessible from outside the container running Kurl.
+
+For example, if your client specification file contains the following
+
+    
+    
+    {
+      "web":{
+        "client_id"     : "redacted",
+        "auth_uri"      : "https://accounts.google.com/o/oauth2/auth",
+        "token_uri"     : "https://oauth2.googleapis.com/token",
+        "client_secret" : "redacted",
+        "redirect_uris" : ["http://localhost:1234"]
+      }
+    }
+    
+
+then the sidecar will listen on port 1234 and this port must be exposed by the
+container running `kurl`.
+
+Example of this using Docker:
+
+    
+    
+    # Build and tag a container image containing kurl
+    qp build myapp
+    qp tag myapp 0.0.1
+    
+    # Run the image including qp environment variables and expose port 1234
+    docker run --env-file=qpbuild/.env -it --rm -p 1234:1234 myapp:0.0.1
+    
+
+You may also need to mount the folder containing your client specification
+file into the running container so that `kurl` can access it.
+
+### Remote OAuth2 authentication flow
+
+If you are running Kurl on a machine remotely and want to use OAuth2 then you
+need to specify the redirect URI as part of the `overrides` dictionary
+parameter.
+
+For example, if you are running kurl on a VM called `test.codekx.com` and want
+to run the sidecar on port 1234 this could be specified as
+
+    
+    
+    .kurl.oauth2.startLoginFlow[
+      "*.googleapis.com";
+      `:client.json;
+      `access_type`prompt`redirect_uri!
+            ("offline";"consent";"http://test.codekx.com:1234");
+      {[tenant;auth] show tenant} ]
+    
+
+This value must be an authorized redirect URI. These are generally specified
+in the developer’s console of the identity provider.
+
+For Development
+
+This workflow will expose your machines IP to the web, it is not recommended
+for production use.
+
+For production systems, other authentication methods that rely on system
+indenties, not user indenties should be used.
+
+### AWS authentication
+
+AWS authentication requires an access key ID, secret access key, and a token,
+if one was provided.
+
+These values can be sourced from various AWS services, environment variables,
+or disk.
+
+Capitalized names must exactly match AWS response case and spelling. Lowercase
+values are used by Kurl and named for consistency between authentication
+types.
+
+[Using temporary security credentials with the AWS CLI
+](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_temp_use-
+resources.html#using-temp-creds-sdk-cli)
+
+`AccessKeyId`
+
+    
+
+Amazon Key ID, required
+
+    
+
+e.g. `getenv `AWS_ACCESS_KEY_ID`
+
+`Expiration`
+
+    
+
+String of form `"%Y%m%dT%H%M%SZ"`, optional
+
+    
+
+e.g. `"2020-12-09T23:59:00Z"`
+
+`SecretAccessKey`
+
+    
+
+Key Secret (required)
+
+    
+
+e.g. `getenv `AWS_SECRET_ACCESS_KEY`
+
+`Token`
+
+    
+
+Token for Refresh endpoint, required
+
+    
+
+e.g. `getenv `AWS_SESSION_TOKEN`
+
+`initial_sts_response`
+
+    
+
+Initial XML response returned by STS; required only if using Amazon Secure
+Token Service (STS)
+
+    
+
+e.g. [Example STS
+response](https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRoleWithWebIdentity.html)
+
+`url`
+
+    
+
+URL for library to ask to generate next access key; required only if
+`Expiration` is specified
+
+    
+
+e.g. `"http://169.254.169.254/latest/meta-data/iam/security-
+credentials/rolename"`
+
+`web_token_file`
+
+    
+
+Filename where Amazon updates web token, used by Kubernetes pod integration;
+required only if using Amazon Secure Token Service (STS)
+
+    
+
+e.g. `getenv `AWS_WEB_IDENTITY_TOKEN_FILE`
+
+If you are logged into an EC2 instance, and have assigned an IAM role to an
+EC2 instance when creating the instance, Kurl will automatically discover the
+temporary access credentials.
+
+For listing a EC2 instances metadata, refer to [retrieving instance
+metadata](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-
+data-retrieval.html)
+
+Kurl stores the following information, and you may consider Kurl’s
+relationship with the VM instance read-only.
+
+The VM is responsible for rotating access tokens, and Kurl is simply pointing
+at the value, and reloading the information prior to expiry.
+
+    
+    
+    {
+      "Code" : "Success",
+      "LastUpdated" : "2020-12-09T17:30:48Z",
+      "Type" : "AWS-HMAC",
+      "AccessKeyId" : "redacted",
+      "SecretAccessKey" : "redacted",
+      "Token"      : "redacted",
+      "Expiration" : "2020-12-09T23:59:00Z"
+    }
+    
+
+### AWS user environment
+
+AWS environment variables are one of the authentication inputs automatically
+registered by the library.
+
+    
+    
+    AWS_ACCESS_KEY_ID
+    AWS_SECRET_ACCESS_KEY
+    AWS_SESSION_TOKEN
+    
+
+### AWS STS WebTokens
+
+If you are logged into a Kubernetes pod, the library will automatically use
+`AWS_ROLE_ARN` and `AWS_WEB_IDENTITY_TOKEN_FILE` if they are available.
+
+[Introducing fine-grained IAM roles for service
+accounts](https://aws.amazon.com/blogs/opensource/introducing-fine-grained-
+iam-roles-service-accounts/)
+
+## Google Cloud Platform authentication
+
+If you are logged into an Google Cloud Platform VM instance, and have assigned
+a service account to the VM instance, Kurl will automatically discover the
+temporary access credentials.
+
+[Listing a VM instances metadata for manual
+inspection](https://cloud.google.com/compute/docs/storing-retrieving-
+metadata#default)
+
+Kurl stores the following information, and you may consider its access to the
+VM instance as read-only.
+
+The VM is responsible for rotating access tokens, and Kurl is simply pointing
+at the value, and reloading the information prior to expiry.
+
+`access_token`
+
+    
+
+OAuth2 Access Token, see example below
+
+`expires_in`
+
+    
+
+Expiry in number of seconds, e.g. 2944
+
+`headers`
+
+    
+
+`"Metadata-Flavor: Google"` header, e.g.
+
+    
+
+`enlist[`$"Metadata-Flavor"]!enlist "Google"`
+
+`method`
+
+    
+
+GET, needed to tell Kurl this is not a typical POST endpoint, e.g. ``GET`
+
+`token_uri`
+
+    
+
+Instance metadata URL e.g.
+
+    
+
+`"http://metadata.google.internal/computeMetadata/v1/instance/service-
+accounts/default/token"`
+
+### GCP user environment
+
+If you have installed the Google Cloud CLI Gcloud, the Kurl library will
+automatically use your Cloud CLI login.
+
+[Install the Google CLI](https://cloud.google.com/sdk/docs/install)
+
+Use `gcloud auth login` to sign in to Google.
+
+If you are signed in, Kurl will use the following system command to get your
+login token.
+
+    
+    
+    gcloud auth print-access-token
+    
+
+### GCP single signon
+
+Using Google for single signon can be done by having an administrator create a
+OAuth2 Client ID in Google Cloud Platform.
+
+When created, download the client JSON, and use OAuth2.
+
+### GCP Identity-Aware Proxy
+
+For access to a REST server protected by Google Cloud Platforms Identity-Aware
+Proxy (IAP) refer to:
+
+[Enabling IAP](https://cloud.google.com/iap/docs/enabling-compute-howto)  
+[Programmatic Authentication to
+IAP](https://cloud.google.com/iap/docs/authentication-
+howto#authenticating_from_a_desktop_app)  
+[GCP Identity Aware Proxy example](appendix/gcp_identity_aware_proxy.html)
+
+IAP uses the JSON Web Token (JWT) extension for OAuth2: [RFC
+7519](https://oauth.net/2/jwt/).
+
+Using IAP makes initial requests to sign in as above, followed by a request
+from the signed-in user to access the application.
+
+The initial request to login has _no_ relationship to IAP
+
+You are logging in first, accepting an agreement, and then requesting IAP
+access afterwards, which generates a JWT token.
+
+Kurl provides a built-in convenience function for making this follow-up
+request to get the JWT token for an IAP service `.kurl.oauth2.grantAudience`.
+
+    
+    
+    audience: "IAP ID"
+    baseurl: "your https IAP URL"
+    .kurl.oauth2.startLoginFlow[
+      "https://openidconnect.googleapis.com";
+      spec;
+      `scope`access_type`prompt!("openid email";"offline";"consent");
+      .kurl.oauth2.grantAudience[audience; baseurl; client; callback;] ]
+    
+
+Server domain
+
+Unlike first-party apps, the domain is `openidconnect.googleapis.com` instead
+of the server you ultimately want to access.
+
+The server you want to access is specified to the `grantAudience` callback as
+the `baseurl` parameter.
+
+## Azure authentication
+
+### Azure user environment
+
+If you have [installed the Azure CLI](https://docs.microsoft.com/en-
+us/cli/azure/install-azure-cli) `az`, the Kurl library will automatically use
+your CLI login.
+
+Use `az login` to [sign in](https://docs.microsoft.com/en-
+us/cli/azure/authenticate-azure-cli) to Azure.
+
+If you are logged into the Azure CLI, Kurl will grant itself several access
+tokens.
+
+At the time of writing this covers all Azure services that support Active
+Directory
+
+    
+    
+    az account get-access-token --resource https://management.azure.com
+    az account get-access-token --resource https://vault.azure.net
+    az account get-access-token --resource https://datalake.azure.net
+    az account get-access-token --resource https://database.windows.net
+    az account get-access-token --resource https://eventhubs.azure.net
+    az account get-access-token --resource https://servicebus.azure.net
+    az account get-access-token --resource https://*.asazure.windows.net
+    az account get-access-token --resource https://storage.azure.com
+    
+
+If you want to modify the list Kurl uses set `KX_KURL_AZURE_AD_RESOURCES` to a
+space-separated list of URLs.
+
+    
+    
+    export KX_KURL_AZURE_AD_RESOURCES="https://management.azure.com https://vault.azure.com"
+    
+
+If you are logged into an Azure VM instance, and have assigned a managed
+identity to the VM instance, Kurl will automatically discover the temporary
+access credentials.
+
+For setting up a VM instance to use a managed identity see the following:
+
+[How to use managed identities for Azure resources on an Azure VM to acquire
+an access token](https://docs.microsoft.com/en-us/azure/active-
+directory/managed-identities-azure-resources/how-to-use-vm-token#overview)  
+[Managed identity](https://docs.microsoft.com/en-us/azure/virtual-
+machines/windows/instance-metadata-service?tabs=linux#managed-identity)
+
+### Azure Active Directory
+
+Authentication to Azure to access _most services_ can be done by setting up an
+Azure Active Directory tenant to use OAuth2, and registering with Kurl.
+
+OAuth2 Login API  
+OAuth2 client specification
+
+Some services may support either SharedKey or OAuth2, such as Azure Storage.
+
+[How to optionally use AD](https://docs.microsoft.com/en-
+us/azure/storage/common/storage-auth-aad-
+app?toc=%2Fazure%2Fstorage%2Fblobs%2Ftoc.json&tabs=dotnet#well-known-values-
+for-authentication-with-azure-ad)  
+[Azure services that support Azure AD
+authentication](https://docs.microsoft.com/en-us/azure/active-
+directory/managed-identities-azure-resources/services-support-managed-
+identities#azure-services-that-support-azure-ad-authentication)
+
+### Azure API management
+
+For access to a REST server protected by Azure API management:
+
+[Protect a web API backend](https://docs.microsoft.com/en-us/azure/api-
+management/api-management-howto-protect-backend-with-aad)  
+[Azure API Management Example](appendix/azure_api_management.html)
+
+When using Azure as the service provider and the identity provider, login is
+the same as the first-party case.
+
+If you have enabled the Subscription ID option for the Azure API Management
+service, you must specify the ID when making sync or async requests.
+
+You can find the querystring name and header name for where to specify the ID
+under the _API Settings > Subscription_.
+
+In the console these are displayed with the following defaults
+
+    
+    
+    Header name             Ocp-Apim-Subscription-Key
+    Query parameter name    subscription-key
+    
+    
+    
+    // Example joining on query string
+    .kurl.sync (url,"?subscription-key=xyz";`GET;::)
+    
+
+Subscription ID
+
+The subscription ID under _API > Subscriptions_ is not the same as the
+Subscription ID for your entire organization or company.
+
+It is a subscription ID unique to the client who subscribed to the
+application.
+
+#### Azure shared key
+
+A select few Azure services support Header Signing V2 and require a shared key
+for access, e.g. Azure Storage and Azure Monitor (Logging).
+
+Shared keys allow an application to access a resource and its contained
+entities. It does not allow general access to the Azure platform.
+
+Providing a shared key is done by calling `.kurl.register`.
+
+If you wish to register against a single storage account, a simpler ENV var
+approach can be used.
+
+When registering, two lists of headers need specifying:
+
+`sign_headers`
+
+    
+
+custom `x-ms-` headers Azure wants listed, typically called
+`CanonocalizedHeaders` variable in examples
+
+`sign_values`
+
+    
+
+standard HTTP header names Azure wants the values signed for, typically part
+of the `StringToSign` in examples
+
+The headers and values differ for each service:
+
+[Azure Monitor Authentication](https://docs.microsoft.com/en-us/azure/azure-
+monitor/platform/data-collector-api#authorization)  
+[Azure Storage](https://docs.microsoft.com/en-
+us/rest/api/storageservices/authorize-with-shared-key)
+
+Why does Kurl not detect and supply these for you? It is because some headers
+are optionally omitted from authentication, and we cannot determine what
+headers Microsoft intends to be required and what are not.
+
+value | desc | example  
+---|---|---  
+account_name | alias for ID, the Storage account ID  
+(only applies to storage) | copy from Azure Storage account  
+id | Logging workspace ID, Storage account ID, etc. | see below  
+shared_key | Azure shared key | copy from Azure  
+(called Primary or Secondary key)  
+sign_values | string list of standard headers to include in authentication | `("Content-Length";"Content-Type")`  
+sign_headers | string list of `CanonocalizedHeaders` | `enlist "x-ms-date"`  
+workspace_id | alias for ID, the Logging workspace ID  
+(only applies to logging) | copy from Azure Logging workspace  
+  
+To use an Azure service that supports header signing that is _not_ Logging or
+Storage, use `id`
+
+    
+    
+    Authorization: SharedKey <id will be here in Azure documentation>:<Signature>
+    
+
+[Azure SharedKey for Logging](https://docs.microsoft.com/en-us/azure/azure-
+monitor/platform/data-collector-api#authorization)
+
+[Azure SharedKey for Storage](https://docs.microsoft.com/en-
+us/rest/api/storageservices/authorize-with-shared-key)
+
+#### Azure shared key single storage account
+
+You may set environment variables `AZURE_STORAGE_ACCOUNT` and
+`AZURE_STORAGE_SHARED_KEY` to have kurl perform registration, on your behalf,
+instead of explicitly calling .kurl.register. Setting these variables has the
+same effect as calling register like so:
+
+    
+    
+        account:getenv `AZURE_STORAGE_ACCOUNT;
+        sk:getenv `AZURE_STORAGE_SHARED_KEY;
+        sign_headers:("x-ms-date"; "x-ms-version"; "x-ms-blob-type"; "x-ms-copy-source");
+        sign_values:("Content-Encoding";"Content-Language";"Content-Length";"Content-MD5"; "Content-Type");
+        sign_values,:("Date"; "If-Modified-Since"; "If-Match"; "If-None-Match"; "If-Unmodified-Since"; "Range");
+        credInfo:`account_name`shared_key`sign_headers`sign_values!(
+            account;
+            sk;
+            sign_headers;
+            sign_values);
+        uri:"https://",account,".blob.core.windows.net";
+        .kurl.register (`azure; uri; ""; credInfo);
+    
+
+If you wish to communicate with multiple storage accounts, then you should see
+the above section on shared keys.
+
+If you intend to use _any_ x-ms- headers other than x-ms-date, x-ms-version,
+x-ms-blob-type, x-ms-copy-source, you must register manually, and update
+sign_headers accordingly.
+

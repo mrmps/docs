@@ -1,0 +1,84 @@
+https://code.kx.com/platform/stream/dw_qr_kxc_java/
+
+# KX Connect (Java) - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/stream/dw_qr_kxc_java/
+
+# KX Connect (Java)
+
+This section assumes that you have Java installed in your system. If not,
+install before proceeding further.
+
+Check JAVA installation
+
+  * Check if a valid jdk is on the path by typing `java -version`.
+  * Check if a valid jdk compiler is on the path by typing `javac -version`.
+
+Output should look similarly.
+
+    
+    
+    java -version 
+    openjdk version "1.8.0_222"
+    OpenJDK Runtime Environment (build 1.8.0_222-8u222-b10-1ubuntu1~16.04.1-b10)
+    OpenJDK 64-Bit Server VM (build 25.222-b10, mixed mode)
+    
+    javac -version
+    javac 1.8.0_222
+    
+
+### Folder structure
+
+  * Create a folder `com/fd/connect`.
+  * Later, place the java code in this folder.
+  * Create another folder `lib` in the same layer as `com`.
+
+### Install dependencies
+
+There are required jar files that must added to run the code provided below.
+Take the time now to install what you need and put them in the `lib` folder.
+
+[Dependencies](../dw_qr_kxc_java_appendix/#java-dependencies)
+
+### Code
+
+Provided is an example code of how to authenticate with KX Connect. For
+further detail, refer to the KX Connect documentation or the JS, Python
+examples.
+
+Copy and paste the following code into a file `ConnectSample.java`. If using
+another file name, also change the class name in the code.
+
+[ConnectSample.java](../dw_qr_kxc_java_appendix/#connectsamplejava)
+
+Below includes CSV Export:
+
+[ConnectSampleWithCSV.java](../dw_qr_kxc_java_appendix/#connectsamplewithcsvjava)
+
+KX Connect Document
+
+Details of KX Connect can be found in your deployed system at
+`http://host:port/connect/index.html`
+
+This should include dynamically generated API documentation of your analytics.
+
+### Running code
+
+To run `ConnectSample.java` from your Java root folder.
+
+  * To compile: `javac -cp ".:lib/*" com/fd/connect/ConnectSample.java`
+
+  * To run with default parameters: `java -cp ".:lib/*" com.fd.connect.ConnectSample`
+
+  * To run with override parameters: `java -cp ".:lib/*" com.fd.connect.ConnectSample <host>:<port> <username> <password> <method>`
+
+Setting classpath
+
+When you use the -cp option, it overrides the default classpath (which is
+current directory). Always add in the current directory to the classpath.
+
+If you've coded to print the result out to console, it should look like this:
+
+[![Screenshot](../img/serviceclass/qr_connect_java_result.jpg)](../img/serviceclass/qr_connect_java_result.jpg
+"click to expand")
+

@@ -1,0 +1,113 @@
+https://code.kx.com/insights/enterprise/monitoring/logging.html
+
+# Logging - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/monitoring/logging.html
+
+# Logging
+
+Logging is a standard tool for system operators to gain observability into
+their applications. kdb Insights Enterprise uses standard industry practices
+for logging. Log messages are generated in a structured format and emitted to
+_STDOUT_ where they are consumed by standard logging stacks. Kubernetes
+collects the log messages into files, where log agents consume them and send
+them to a downstream log aggregator.
+
+[Kubernetes logging](https://kubernetes.io/docs/concepts/cluster-
+administration/logging/).
+
+To configure the log level of your application at installation time, use the
+details provided on the [Configure
+logging](../configuration/observability.html#configure-logging) page.
+
+## Logging Stack
+
+kdb Insights Enterprise does not ship with a logging stack, you can choose one
+based on your use-case and preference. The three main cloud providers (GCP,
+AWS, and ACS) have managed Kubernetes services which provide the ability to
+automatically integrate with their logging stacks.
+
+Alternatively, you can use a third-party agent such as `fluent-bit`.
+
+You can configure `fluent-bit` to forward to any of its supported downstream
+targets.
+
+[Install](https://docs.fluentbit.io/manual/installation/kubernetes#installing-
+with-helm-chart)
+
+[Supported targets](https://docs.fluentbit.io/manual/pipeline/outputs)
+
+## KX terraform deploys
+
+If installing your environment with the [KX Terraform
+scripts](../infrastructure/docs/index.html), the kdb Insights Enterprise
+Terraform modules are configured by default to deploy and utilize `fluent-bit`
+for each of the cloud providers.
+
+### Sending logs to other log aggregation systems
+
+The `fluent-bit` configuration is stored on the following files and can be
+updated as required:
+
+    
+    
+    terraform/k8s_config_aws/logging.tf
+    terraform/k8s_config_azure/logging.tf
+    terraform/k8s_config_gcp/logging.tf
+    
+
+## Audit logging
+
+You can use audit logging in kdb Insights and kdb Insights Enterprise to
+identify user changes and state changing actions that may affect the running
+of the system.
+
+Audit logging is available at both a global and per-component level. Enable
+audit logging globally by adding the following setting in your global values
+file:
+
+    
+    
+    global:
+      auditLog:
+          enabled: "true"
+    
+
+You can also enable auditing for an individual component. For example:
+
+    
+    
+    client-controller:
+      auditLog:
+        enabled: "true"
+    
+
+### Audit log message format
+
+All audit log messages have the `"component": "Audit"` tag to separate them
+from standard log messages.
+
+They also contain the `"level"` and `"message"` tags common to all log
+messages, which identify severity and the action to be logged respectively.
+
+The following is an indicative example of an audit log message:
+
+    
+    
+    {"time":"<time>","component":"Audit","level":"INFO","message":"<message>","corr":"<correlation-id>"}
+    
+
+### Correlation ID
+
+All audit logs have a correlation ID which persists throughout the lifetime of
+the event.
+
+Each audit log message can propagate through to multiple different components
+in kdb Insights or kdb Insights Enterprise.
+
+A single audit event can create multiple log messages. Messages relating to
+the same event all share the same correlation ID.
+
+The correlation ID appears in the log as `"corr"` and can be used to precisely
+identify which event a log message refers to.
+

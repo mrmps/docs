@@ -1,0 +1,235 @@
+https://code.kx.com/insights/enterprise/installation/air-gapped-environments.html
+
+# Air-gapped environments - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/installation/air-gapped-environments.html
+
+# Air-gapped environments
+
+Installing or upgrading _kdb Insights Enterprise_ in an air-gapped environment
+requires some changes relative to performing these operations in an internet-
+enabled environment.
+
+The steps are:
+
+  1. Install prerequisites in the air-gapped environment.
+  2. Host the required charts and images in accessible registries.
+  3. Update the install configuration to point at the accessible registries.
+
+## Prerequisites
+
+The prerequisites are the same as a [standard
+installation](insights.html#prerequisites), however, you must ensure the
+required tools are available in the air-gapped environment.
+
+Additionally, ensure you:
+
+## Hosting charts and images
+
+The charts and images are usually downloaded from the internet at deployment
+time, in an air-gapped environment this isn't possible so they must be
+downloaded ahead of time and hosted in registries that are accessible from the
+air-gapped environment.
+
+### Charts
+
+Ensure the _kdb Insights Enterprise_ and kxi-operator charts are available on
+the air-gapped environment.
+
+  1. Download the insights and kxi-operator Helm charts on an internet-enabled machine.
+    
+        helm repo add --username <USERNAME> kx-insights https://portal.dl.kx.com/assets/helm/
+    <enter password>
+    helm fetch kx-insights/insights --version $INSIGHTS_VERSION
+    helm fetch kx-insights/kxi-operator --version $OPERATOR_VERSION
+    
+
+  2. Copy the downloaded tgz files to your offline environment and store them in the same folder:
+    
+        LOCAL_CHARTS=${LOCAL_CHARTS:-local-kx-insights}
+    mkdir $LOCAL_CHARTS
+    cp insights-$INSIGHTS_VERSION.tgz kxi-operator-$OPERATOR_VERSION.tgz repo
+    
+
+### Images
+
+Retrieve a manifest of the images to download and host in an image repository
+that is accessible from the air-gapped environment.
+
+This can be obtained from KX. An example manifest for kdb Insights Enterprise
+version 1.4.2:
+
+Type | Repository | Name | Tag  
+---|---|---|---  
+docker | docker.io | alpine | 3.16  
+docker | docker.io/bitnami | postgresql | 14.5.0-debian-11-r21  
+docker | docker.io/bitnami | keycloak-config-cli | 5.3.1-debian-11-r21  
+docker | docker.io/bitnami | keycloak | 19.0.2-debian-11-r7  
+docker | registry.dl.kx.com | kxi-sm-eod | 1.4.1  
+docker | registry.dl.kx.com | kxi-acc-svc | 1.3.1  
+docker | registry.dl.kx.com | kxi-sg-gw | 1.4.0  
+docker | registry.dl.kx.com | kxi-sg-agg | 1.4.0  
+docker | registry.dl.kx.com | kxi-service-broker | 1.4.0  
+docker | registry.dl.kx.com | kxi-sm-eoi | 1.4.1  
+docker | registry.dl.kx.com | kxi-gui-data | 1.4.0  
+docker | registry.dl.kx.com | kxi-controller | 1.4.0  
+docker | registry.dl.kx.com | kx_helm_test | 0.2.0  
+docker | registry.dl.kx.com | kxi-gui-gateway | 1.4.0  
+docker | registry.dl.kx.com | kxi-sm-dbm | 1.4.1  
+docker | registry.dl.kx.com | kxi-api-gateway | 1.3.1  
+docker | registry.dl.kx.com | kxi-discovery-proxy | 1.4.0  
+docker | registry.dl.kx.com | kxi-rt | 1.4.0  
+docker | registry.dl.kx.com | kxi-da | 1.4.0  
+docker | registry.dl.kx.com | kxi-sp-worker | 1.4.0  
+docker | registry.dl.kx.com | kxi-sm | 1.4.1  
+docker | registry.dl.kx.com | kxi-gui-app | 1.4.1  
+docker | registry.dl.kx.com | kxi-sm-single | 1.4.1  
+docker | registry.dl.kx.com | kxi-sp-python | 1.4.0  
+docker | registry.dl.kx.com | kxi-client-controller | 1.3.1  
+docker | registry.dl.kx.com | kxi-sidecar | 1.4.0-rc.1  
+docker | registry.dl.kx.com | kxi-ml | 1.4.0  
+docker | registry.dl.kx.com | kxi-da-single | 1.4.0  
+docker | registry.dl.kx.com | kxi-package-manager | 1.4.0  
+docker | registry.dl.kx.com | kxi-sp-controller | 1.4.0  
+docker | registry.dl.kx.com | kxi-scratchpad | 1.4.1  
+docker | registry.dl.kx.com | kxi-information-service | 1.3.0  
+docker | registry.dl.kx.com | kxi-eureka-discovery | 1.4.0  
+docker | registry.dl.kx.com | kxi-sp-coordinator | 1.4.0  
+docker | registry.dl.kx.com | kxi-sg-rc | 1.4.0  
+docker | registry.dl.kx.com | keycloak-alpine | 0.0.2  
+docker | registry.dl.kx.com | kxi-operator | 1.4.0  
+  
+## Install
+
+Ensure you have read the [standard install documentation](insights.html)
+before proceeding.
+
+  1. Ensure that all the charts and images are in accessible registries and that the prerequisites have been completed.
+  2. Open a command line window.
+  3. Generate a values file by running:
+
+  4. Edit the values file to reference the accessible image repository by merging the below with the generated values file and replacing `IMAGE_REPOSITORY_URL` with the appropriate URL. 
+    
+        global:
+      image:
+        repository: <IMAGE_REPOSITORY_URL>
+    keycloak:
+      initContainers:
+        - name: init-kx-theme
+          image: <IMAGE_REPOSITORY_URL>/alpine:3.16
+          command: [ 'sh', '-c' ]
+          args:
+            - mkdir -p /shared/kx /shared/kx2/login;
+              cp -rL /kx-theme/kxlogin_theme.tar /shared/kx;
+              cd /shared/kx;
+              tar --strip-components=2 -xvf kxlogin_theme.tar;
+              rm -rf kxlogin_theme.tar;
+              cp /custom-theme/theme.properties /shared/kx2/login;
+              cp /custom-theme/login-update-password.ftl /shared/kx2/login;
+          volumeMounts:
+          - mountPath: /shared
+            name: shared-volume
+          - mountPath: /kx-theme
+            name: kx-theme-volume
+          - mountPath: /custom-theme
+            name: custom-theme-volume
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+      image:
+        registry: <IMAGE_REPOSITORY_URL>
+        repository: keycloak
+        tag: 19.0.2-debian-11-r7
+      keycloakConfigCli:
+        image:
+          registry: <IMAGE_REPOSITORY_URL>
+          repository: keycloak-config-cli
+          tag: 5.3.1-debian-11-r21
+      postgresql:
+        image:
+          registry: <IMAGE_REPOSITORY_URL>
+          repository: postgresql
+          tag: 14.5.0-debian-11-r21
+        auth:
+          existingSecret: kxi-postgresql
+      auth:
+        existingSecret: kxi-keycloak
+    
+
+Image tags
+
+The image tags in the above values are for Insights 1.4.2, if you're
+installing a different version these need to be updated to the appropriate
+version from the images manifest.
+
+  5. Run the install command:
+    
+        kxi install run --filepath values.yaml --version $INSIGHTS_VERSION $LOCAL_CHARTS/insights-$INSIGHTS_VERSION.tgz
+    
+
+## Upgrade
+
+Make sure you have read the [standard upgrade documentation](upgrading.html)
+before proceeding.
+
+  1. Ensure that all the charts and images are in accessible registries and that the prerequisites have been completed. The versions you intend to upgrade to must be accessible.
+  2. Open a command line window.
+
+  3. Retrieve the previously used install configuration with:
+    
+        kxi install get-values > $INSTALL_CONFIG_FILE
+    
+
+  4. Update the resulting file to customise the [install configuration](../configuration/index.html) upon upgrade, including version-specific upgrade considerations. In particular, ensure that all images reference the accessible image repository and the tags are the correct version for the upgrade based on the image manifest.
+
+  5. Run the upgrade command:
+    
+        kxi install upgrade –filepath $INSTALL_CONFIG_FILE --version $INSIGHTS_VERSION $LOCAL_CHARTS/insights-$INSIGHTS_VERSION.tgz
+    
+
+## Rollback
+
+Make sure you have read the [standard rollback
+documentation](upgrading.html#rollback) before proceeding.
+
+  1. Run `kxi install history` to review the release history and choose which revision you want to roll back to:
+    
+        $ kxi install history --show-operator
+    REVISION    UPDATED                     STATUS              CHART                   APP VERSION DESCRIPTION
+    1           Tue Feb 28 14:10:03 2023    deployed            insights-1.3.0          1.3.0       Install complete
+    2           Tue Feb 28 14:16:41 2023    failed              insights-1.4.0-rc.60    1.4.0-rc.60 Upgrade "insights" failed: post-upgrade hooks failed: timed out waiting for the condition
+    3           Tue Feb 28 14:25:55 2023    failed              insights-1.4.0-rc.80    1.4.0-rc.80 Upgrade "insights" failed: post-upgrade hooks failed: timed out waiting for the condition
+    
+    1           Tue Feb 28 14:09:52 2023    superseded  kxi-operator-1.3.1          1.3.1       Install complete
+    2           Tue Feb 28 14:15:37 2023    superseded  kxi-operator-1.4.0-rc.41    1.4.0-rc.41 Upgrade complete
+    3           Tue Feb 28 14:24:54 2023    superseded  kxi-operator-1.4.0-rc.41    1.4.0-rc.41 Upgrade complete
+    
+
+To only see _kdb Insights Enterprise_ revisions omit `--show-operator`
+
+  2. Ensure that version of the `kxi-operator` chart that you are rolling back to is available in `$LOCAL_CHARTS`.
+
+  3. Run `kxi install rollback` with the chosen revisions: 
+    
+        $ kxi install rollback  $INSIGHTS_REVISION --operator-revision $OPERATOR_REVISION --operator-chart $LOCAL_CHARTS/kxi-operator-$OPERATOR_VERSION.tgz
+    Rolling Insights back to version 1.3.0 and revision 1.
+    And operator back to version 1.3.1 and revision 1 [y/N]: y
+    
+    Backing up assemblies
+    No assemblies to back up
+    ...
+    
+
+No explicit revision
+
+If you do not provide an explicit revision, `kxi install rollback` will choose
+the most recent one.
+
+To only rollback _kdb Insights Enterprise_ omit `--operator-revision`
+

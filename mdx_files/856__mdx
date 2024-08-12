@@ -1,0 +1,426 @@
+https://code.kx.com/platform/security/
+
+# Security & permissions - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/security/
+
+# Security and permissions
+
+Permissions are enforced when clients execute requests over IPC. Users are
+assigned roles and entitlements via Control and this dictates what operations
+they can perform on a process.
+
+The permissions enforcement is done in Control code added to the kdb+ IPC
+handlers, i.e. `.z.pg` for sync requests.
+
+Control has permissions enabled by default but instances can be configured to
+have them enabled or disabled.
+
+## Secure parser
+
+_KX Control_ contains a secure parser which when enabled ensures all queries
+are tightly permissioned at a function level to ensure the calling user is
+allowed access to that function and data.
+
+The functionality is disabled by default but can be enabled via an environment
+variable in `delta.profile` by setting `DELTACONTROL_SECURE_PARSER=YES`.
+
+The secure parser handles the parsing and enforcement of incoming requests. It
+inspects the request format and checks whether the calling user is entitled to
+run it.
+
+With the secure parser enabled, users are restricted to calling named APIs
+only. The logic then checks what APIs the user is entitled to call and
+executes or rejects depending on the permissions. If not enabled, a legacy
+query parser is used. However this isn’t the recommended mode as the
+performance and security are not optimal.
+
+Administrators are entitled to call all APIs but also are not restricted to
+API-only. They can execute strings and lambdas.
+
+String and lambda requests are forbidden to non-admin users.
+
+### Example formats
+
+The table below details the different request formats and entitlements
+required for a user to execute.
+
+    
+    
+    (`func;   param1; …; paramN)     Read access on func
+    ("func";  param1; …; paramN)     Read access on func
+    "func    [param1; ;; paramN]"    Administrator only
+    "1+1"                            Administrator only
+    ( { … };  param1; …; paramN)     Administrator only
+    ("{ … }"; param1; …; paramN)     Administrator only
+    
+
+## Lambdas
+
+The secure parser forbids lambdas for non-admin users, however with this
+disabled, they are allowed. To explicitly disable them, set
+`DELTACONTROL_LAMBDA_PERMISSIONED=YES` in the `delta.profile`.
+
+### Control logins
+
+The ability to open direct handles to Control is restricted to permissioned
+users.
+
+For a non-admin to access Control, they must have permission on the `CxLogin`
+entity group.
+
+The restriction only applies to IDE connections or direct IPC handles to
+Control. Connections via the App Server are unaffected.
+
+## Process-level administrator
+
+Users can be configured as administrators on specific process instances. This
+allows users to execute requests unrestricted on specific processes while
+still being restricted across the whole platform. This is set up by giving a
+user `Read/Write` access to the process instance entity. Note that this
+administrator status only applies to the process instance itself, the user may
+not have permission to access Control UI or the process editor in Control UI.
+For more information on the permissions required to access these, see the
+Control UI API permissions section.
+
+[Control UI API permissions](../controlui_api_permissions/#control-ui-api-
+permissions)
+
+## Async requests
+
+Permissions are not enabled on async requests in instances by default. For
+some latency-sensitive use-cases where permissions aren’t a concern, this is
+desired behavior. For other cases, they can be enabled by setting the
+`.pm.async.enabled` instance parameter to `true`.
+
+[Enhanced instance
+configuration](../enhanced_instance_configuration/#enhanced-instance-
+configuration)
+
+## Analyst sandbox permissions
+
+The ability to launch new instances for the Analyst _Create Process Mode_
+requires granting membership to the _CxSandbox_ entity group.
+
+Existing sandbox instances can be launched by users who have permissions for
+the instance, regardless of having _CxSandbox_ membership.
+
+[Analyst sandbox permissions](../analyst_sandbox_permissions/)
+
+Further restriction may be imposed by adding a _CxDaemonAccess_ parameter
+entity.
+
+[Analyst sandbox restriction](../analyst_sandbox_permissions/#cxdaemonaccess)
+
+## New install security
+
+A new install will have the secure parser enabled by default. The
+`deltacomponent` user will also not be an administrator user on a new install.
+These settings ensure a new install of _KX Control_ will be in the most secure
+configuration possible. The environment variables in `delta.profile` will be
+configured to be
+
+    
+    
+    DELTACONTROL_SECURE_PARSER=YES
+    DELTACONTROL_LAMBDA_PERMISSIONED=YES
+    DELTACONTROL_DELTACOMPONENT_ADMIN=NO
+    
+
+To overwrite this and maintain the old behavior the following can be included
+in `install.config` before install `skip-secure-deploy=1` or the
+`delta.profile` can be updated after install and before starting _KX Control_
+with the following:
+
+    
+    
+    DELTACONTROL_SECURE_PARSER=NO
+    DELTACONTROL_LAMBDA_PERMISSIONED=NO
+    DELTACONTROL_DELTACOMPONENT_ADMIN=YES
+    
+
+An upgrade to _KX Control_ will not change the existing settings for these
+environment variables.
+
+## Security and the `deltacomponent` user
+
+The `deltacomponent` user is used within _KX Delta Platform_ to open
+connections between processes, make queries and execute reports. The user can
+be configured to be an administrator user or not. This is governed by the
+`DELTACONTROL_DELTACOMPONENT_ADMIN` environment variable in `delta.profile`.
+Setting its value to `YES` will mean `deltacomponent` is an administrator; if
+it is set to `NO` the user will not be an administrator user.
+
+Requests by administrators bypass permissions, including string or lambda
+ones. For this reason it is more secure to deploy with `deltacomponent` as a
+non-administrator user. New installs of _KX Control_ will have the secure
+parser enabled and the `deltacomponent` user configured to be a non-
+administrator user.
+
+New install security
+
+With the secure parser enabled and `deltacomponent` configured to be a non-
+administrator user, several areas in solution code may need attention to
+ensure _KX Delta Platform_ operates as expected:
+
+### IPC calls
+
+Direct calls to _KX Control_ or between permissioned processes via a handle
+opened as `deltacomponent` or other non-admin user will undergo a permissions
+check. The `deltacomponent` user is only permissioned for a specific list of
+API into Control so any direct calls may fail the permission check. It may be
+necessary to grant `deltacomponent` (or the relevant user) permission to
+whatever API are used in this manner. This could be achieved by adding an
+entity group that `deltacomponent` (or the relevant user) has select
+permission to and adding the API to the group.
+
+If string or lambda queries between processes via a handle opened as
+`deltacomponent` or another non-admin user are being used as part of solution
+code, these will be disallowed when the secure parser is enabled. They should
+be replaced with function calls (i.e. analytics or API) and the relevant user
+granted permission to the functions.
+
+Queries from processes to _KX Control_ using `.ex.prh` or `.ex.prhAsync` are
+executed as `deltacomponent` user. The same restrictions on string or lambda
+queries and unpermissioned API queries will apply to queries made using
+`.ex.prh` or `.ex.prhAsync`. The `deltacomponent` user should be granted
+permission to any API queries used via `.ex.prh` or `.ex.prhAsync`. For
+details of `.ex.prh` and `.ex.prhAsync` see the _Process API_ document
+[here](../api/runtime/#exprh).
+
+### Opening connections
+
+`deltacomponent` has select permission on all process instances, tasks and
+service classes. Opening connections from _KX Control_ to running processes or
+between running processes as `deltacomponent` should be unaffected by any
+change to the administrator status of `deltacomponent`. A handle can be opened
+between _KX Delta Platform_ processes as `deltacomponent` using the process
+API [`.utils.dcc`](../api/ipc/#utilsdcc). To open the handle as
+`deltacomponent` using `.utils.dcc` the following conditions must be met:
+
+  * Process template file is in a allowlist of core Control templates
+  * `.utils.dcc` not being invoked as part of another IPC call (`.z.w` is 0)
+  * If invoked in an IPC call, the remote user (`.z.u`) is also `deltacomponent`
+
+### Gateway queries
+
+If `deltacomponent` is not an administrator user, they will require select
+permission on any gateway queries executed in solution code. To ensure this,
+the queries should be analytics (or API), not strings or lambdas. An entity
+group should be created and `deltacomponent` granted select permission to it.
+The analytics for the gateway queries should be made members of this entity
+group. `deltacomponent` will then be able to execute these analytics as
+gateway queries. Similarly for any calls in solution code that go between
+processes, these should be in functional form and be added to an entity group
+`deltacomponent` has select permission to.
+
+#### Example
+
+A gateway query in string form will fail if the secure parser is on.
+
+![Screenshot](../img/control/gwstringquery.png)
+
+To remedy this an analytic could be created which should be loaded by the
+target process.
+
+![Screenshot](../img/control/analyticquery.png)
+
+Create an entity group and add the new analytic to it.
+
+![Screenshot](../img/control/queryentitygroup.png)
+
+Give the `deltacomponent` user permission to the entity group.
+
+![Screenshot](../img/control/queryentitygrouppermissions.png)
+
+Making the gateway query using the new analytic will now be successful.
+
+![Screenshot](../img/control/gwapiquery.png)
+
+### Reports
+
+The `deltacomponent` user is used to execute reports and is therefore granted
+select permission on all report instances. This alone will not allow solution
+reports to be executed without a permission failure. For any reports that are
+not a part of _KX Delta Platform_ , an entity group should be created and
+`deltacomponent` granted select permission to it. To this entity group should
+be added any report templates, analytics executed as part of the report
+(including action analytics) and config parameters used as part of the report.
+Once `deltacomponent` has select permission on all these entities via the
+entity group, the reports should execute successfully.
+
+#### Example
+
+A new report instance created using an existing report template and report
+analytic, but a new action analytic that takes config as a parameter, fails a
+permission check when the report runs
+
+![Screenshot](../img/control/newreport.png)
+
+![Screenshot](../img/control/reporterror.png)
+
+To overcome this create an entity group and add any report templates, report
+analytics, action analytics and config used as part of the report. In this
+case the new action analytic and config override used need to be added.
+
+![Screenshot](../img/control/reportentitygroup.png)
+
+The `deltacomponent` user should be given access to the entity group.
+
+![Screenshot](../img/control/reportentitygrouppermissions.png)
+
+The report will now run successfully.
+
+![Screenshot](../img/control/reportsuccess.png)
+
+### RDB end of day
+
+One area that may be affected by the secure parser being enabled, and
+`deltacomponent` not being an admin user, is end-of-day actions run on a
+permissioned HDB from the RDB. If this code has been written in string/lambda
+format then this would be disallowed. An example of this might be reloading
+the HDB.
+
+In addition, under the strictest permission conditions, the RDB may not be
+able to use [`.utils.dcc`](../api/ipc/#utilsdcc)) to connect to the HDB. The
+RDB therefore maintains handles to the HDBs configured for the process and
+will attempt to reconnect via a function on the timer if the connections are
+dropped. The handles can be retrieved with the API provided:
+
+#### `.ds.rdb.getHdbHandle`
+
+_Handle to the first HDB_
+
+Syntax: `.ds.rdb.getHdbHandle[]`
+
+Returns the handle to the first HDB configured in the process instance
+parameters for the RDB.
+
+    
+    
+    q).ds.rdb.getHdbHandle[] / returns a single handle
+    12i
+    
+
+#### `.ds.rdb.getHdbHandleList`
+
+_Handles to all HDBs_
+
+Syntax: `.ds.rdb.getHdbHandleList[]`
+
+Returns the handles to all the HDBs configured in the process instance
+parameters for the RDB.
+
+    
+    
+    q).ds.rdb.getHdbHandleList[] / returns a list of handles
+    12 14i
+    
+
+#### `.ds.rdb.getHdbHandleByInst`
+
+_Handle to a HDB_
+
+Syntax: `.ds.rdb.getHdbHandleByInst hdb`
+
+Where `hdb` is the name of a HDB process instance as a symbol, returns the
+handle to it, if it exists.
+
+    
+    
+    q).ds.rdb.getHdbHandleByInst[`ds_hdb_ops_a] /returns handle for the named HDB
+    12i
+    
+
+To ensure end-of-day actions are successful:
+
+  * Code executed on the HDB from the RDB should be in functional form (i.e. analytics or API)
+  * To get the HDB handle on the RDB the API outlined above can be used, the handles are opened as the `deltacomponent` user
+  * Permission any analytics/API for the calling user. If the API above are used, this will be the `deltacomponent` user, so grant `deltacomponent` permission to any analytics/API called on the HDBs
+
+An example of EOD code that could run on the RDB to reload the HDB would be:
+
+    
+    
+      ..
+      // Connect to HDB and reload the dataBase.
+      .log.out[.z.h;"Calling HDB reload Function";()];
+      h:.ds.rdb.getHdbHandle[];
+      $[h>0;
+        [
+          @[neg[h];
+            (`.ds.hdb.reloadDB;`);
+            {.log.error[.z.h;"Failed to run HDB reload - ",x;()];'x}];
+          (neg h)[];
+        ];
+        .log.error[.z.h;"Failed to reload HDB";h]
+      ];
+      ..
+    
+
+The `deltacomponent` user already has permission to `.ds.hdb.reloadDB` so no
+additional action is required to grant the user permission to this API call.
+
+## HTTP requests
+
+As of the 4.5.0 release, not all HTTP requests against permissioned processes
+need to be authenticated with a username and password. The HTTP interface is
+configurable with four different modes.
+
+mode | effect  
+---|---  
+ALLOWLIST | allows allowlist requests and if the request is anything else, we authenticate the credentials from the request  
+ALLOWLISTONLY | only handles allowlist requests and rejects all others  
+AUTHENTICATED | was the default in previous versions of _KX Control_ : all HTTP requests against permissioned processes are authenticated with a username and password  
+DISABLED | rejects all HTTP requests  
+  
+### Configuration
+
+HTTP requests are configured either via an environment variable below, or
+using the `INSTANCE_CONFIG` config parameter.
+
+In the `INSTANCE_CONFIG` config parameter override/DEFAULT `.pm.http.mode` can
+be set to one of the following values tabulated above.
+
+    
+    
+    export DELTACONTROL_HTTP_MODE=[ALLOWLIST|ALLOWLISTONLY|AUTHENTICATE|DISABLED]
+    
+
+[Enhanced instance
+configuration](../enhanced_instance_configuration/#enhanced-instance-
+configuration)
+
+### Modes
+
+By default the HTTP mode is allowlist. An example of this is using load-
+balancers to easily check the leader/follower status of processes without
+needing it to be configured with credentials.
+
+mode | allowlisted | description  
+---|---|---  
+rpl_isLeader | true | Check the leader/follower status of a process  
+rpl_isready | true | Is a process ready to receive requests  
+  
+### Example
+
+An example of requests using the default mode `ALLOWLIST`
+
+    
+    
+    // allowlist request
+    q).Q.hg[":http://dev-ubuntu:4277/rpl_isLeader"]
+    "HTTP/1.1 200 OK\r\n\r\n"
+    "<html>1</html>"
+    
+    // non-allowlisted failing without no authentication.
+    q).Q.hg[":http://dev-ubuntu:4277/?.log.initTime"]
+    "HTTP/1.1 401 Unauthorized\r\nConnection: close\r\nContent-Length: 0\r\nWWW-A..
+    ""
+    
+    //  allowlisted passing with  authentication.
+    q).Q.hg[":http://Administrator:password@dev-ubuntu:4277/?.log.initTime"]
+    "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\nContent-L..
+    "<html>2020.01.29D14:12:49.009070000</html>"
+    
+

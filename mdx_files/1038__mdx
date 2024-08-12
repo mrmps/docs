@@ -1,0 +1,189 @@
+https://code.kx.com/platform/deployment/mem_configuration/
+
+# Memory - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/deployment/mem_configuration/
+
+# Memory
+
+## Linux mmory configuration
+
+The _KX Delta Platform_ allows for the memory footprint of various components
+to be configured either during or post deploy.
+
+The main components and the their Memory configuration options are given
+below:
+
+### Java components
+
+Component | Description | Configuration  
+---|---|---  
+DocGen | Java process used to generate PDF documents as part of the reports framework | KX Control Config  
+Email Server | Java email server used by KX Delta Platform to send emails triggered by alerts | KX Control Config  
+Daemon | Java process used to start process instances on remote nodes | env.sh  
+AppServer | Java Application server run under Tomcat. Provides the UI to KX Delta Platform | delta.profile  
+  
+#### DocGen / email server
+
+The DocGen and Email server are started by KX Control. Their memory settings
+min/max JVM values can be configured via a set of overrides of the
+`DS_LAUNCH_COMMANDLINE_PARAMS` config parameter.
+
+There is an override for each instance delivered with the platform. To change
+the memory characteristics edit the override for your instance and add the
+following:
+
+![Screenshot](../img/memory-config.png)
+
+Using the settings above the ds_report_doc_generator_a process will be launch
+with a min memory value of 512m and a max memory value of 1024 for the Java
+Virtual Machine (JVM).
+
+If the process is launched you should see the following in the log file:
+
+    
+    
+    Memory Setting  found. Setting XMS to 512
+    Memory Setting  found. Setting XMX to 1024
+    
+
+#### Daemon
+
+The Daemon is delivered with KX Control, its memory settings are configured in
+a file called env.sh which can be found as follows:
+
+    
+    
+    $ cd ~/kxinstall/delta-bin
+    $ source delta.profile
+    $ vi $DELTACONTROLJDAEMON_HOME/env.sh
+    
+
+The memory options relate to the Java Virtual Machine which runs the daemon
+
+The values above can be altered using a command line editor and the Daemon
+should be relaunch in order for the changes to take effect.
+
+For example if we set XMS to 512 and XMX to 1024 you should see the following
+in the log
+
+    
+    
+    $ cd ~/kxinstall/delta-bin
+    $ source delta.profile
+    $ cd bin
+    $ ./startDeltaControlDaemon.sh
+    $ vi $FD_LOGDIR/$DELTACONTROLDAEMON_LOGFILE
+    Java Memory Setting not found. Using default of XMS=512
+    Java Memory Setting not found. Using default of XMX=1024
+    
+
+#### AppServer
+
+From release 4.0.2 onwards the memory allocation for the App Server is
+controlled via the following environment variables in the delta.profile.
+
+Environment Variable | Default (Megabytes) | Description  
+---|---|---  
+`APPSERVER_JVM_INITIAL_MEMORY` | 1280 | Initial and minimum heap size for JVM.  
+`APPSERVER_JVM_MAX_MEMORY` | 2048 | Maximum heap size for JVM.  
+  
+##### JVM memory pre-sets
+
+For production deploys of App Server the recommend values for the JVM heap
+sizes are:
+
+  * APPSERVER_JVM_INITIAL_MEMORY = 1280
+  * APPSERVER_JVM_MAX_MEMORY = 8192
+
+These can be achieved by adding the following to the end of either the bundle
+install config (scripts/install.config) or a custom install config (passed in
+via -p).
+
+    
+    
+    #============================================================
+    # New / custom configuration
+    #============================================================
+    tomcat-install-type=2
+    
+
+##### Custom memory allocation
+
+If you wish to tune the memory allocation yourself then you can do this by
+adding the following to the end of either the bundle install config
+(`scripts/install.config`) or a custom install config (passed in via -p).
+
+    
+    
+    #============================================================
+    # New / custom configuration
+    #============================================================
+    app-server-jvm-initial-memory=2560
+    app-server-jvm-max-memory=5120
+    
+
+## Windows memory configuration
+
+The _KX Delta Platform_ allows for the memory footprint of various components
+to be configured either during or post deploy.
+
+The main components and the their Memory configuration options are given
+below:
+
+### Java components
+
+Component | Description | Configuration  
+---|---|---  
+DocGen | Java process used to generate PDF documents as part of the reports framework | KX Control Config  
+Email Server | Java email server used by KX Delta Platform to send emails triggered by alerts | KX Control Config  
+Daemon | Java process used to start process instances on remote nodes | startDeltaControlDaemon.bat  
+AppServer | Java Application server run under Tomcat. Provides the UI to KX Delta Platform | delta.profile.bat  
+  
+#### DocGen / email server
+
+The DocGen and Email server are started by KX Control. Their memory settings
+min/max JVM values can be configured via a set of overrides of the
+DS_LAUNCH_COMMNADLINE_PARAMS config parameter.
+
+There is an override for each instance delivered with KX Delta Platform. To
+change the memory characteristics edit the override for your instance and add
+the following:
+
+![Screenshot](../img/memory-config.png)
+
+Using the settings above the ds_report_doc_generator_a process will be launch
+with a min memory value of 512m and a max memory value of 1024 for the Java
+Virtual Machine (JVM).
+
+If the process is launched you should see the following in the log file:
+
+    
+    
+    Memory Setting  found. Setting XMS to 512
+    Memory Setting  found. Setting XMX to 1024
+    
+
+#### Daemon
+
+The Daemon is delivered with KX Control, its memory settings are configured in
+the start script startDeltaControlDaemon.bat.
+
+The memory options relate to the Java Virtual Machine which runs the daemon
+
+The values above can be altered and will be picked up by a full system
+restart.
+
+#### AppServer
+
+From release 4.0.2 onwards the memory allocation for the App Server is
+controlled via the following environment variables in the delta.profile.bat.
+
+Environment Variable | Default (Megabytes) | Description  
+---|---|---  
+APPSERVER_JVM_INITIAL_MEMORY | 1280 | Initial and minimum heap size for JVM.  
+APPSERVER_JVM_MAX_MEMORY | 2048 | Maximum heap size for JVM.  
+  
+On Windows these variables can be altered in the delta.profile.bat and will be
+picked up by a full system restart.
+

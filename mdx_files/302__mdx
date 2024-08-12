@@ -1,0 +1,54 @@
+https://code.kx.com/platform/stream/time-zone/
+
+# Timezone support - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/stream/time-zone/
+
+# Timezone support
+
+_KX Stream_ provides a set of analytics to convert between timezones and allow
+for daylight-savings time.
+
+The APIs can be added to any process by adding the `DxTZ` analytic group to
+the instance.
+
+The timezone data is stored as a table of offsets from GMT built from a CSV
+file. This file is built from the [IANA timezone
+database](https://www.iana.org/time-zones) and updated with every release.
+
+## `dxTZFromGMT`
+
+Syntax: `dxTZFromGMT[tz;ts]`
+
+Converts timestamp `ts` from GMT to timezone `tz`.
+
+    
+    
+    q)dxTZFromGMT[`$"America/New_York"; 1976.02.01D00:00:00.0]
+    ,1976.01.31D19:00:00.000000000
+    
+
+## `dxTZToGMT`
+
+Syntax: `dxTZToGMT[tz;ts]`
+
+Converts timestamp `ts` to GMT from timezone `tz`.
+
+    
+    
+    q)dxTZToGMT[`$"America/New_York"; 1976.05.01D00:00:00.0]
+    ,1976.05.01D04:00:00.000000000
+    
+
+## `dxTZSwitch`
+
+Syntax: `dxTZSwitch[tz1;tz0;ts]`
+
+Converts timestamp `ts` from timezone `tz0` to timezone `tz1`
+
+    
+    
+    q)dxTZSwitch[`$"Asia/Kolkata"; `$"America/New_York"; 1976.05.01D00:00:00.0]
+    ,1976.05.01D09:30:00.000000000
+    
+

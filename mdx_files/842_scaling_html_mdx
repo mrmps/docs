@@ -1,0 +1,69 @@
+https://code.kx.com/insights/microservices/stream-processor/concepts/scaling.html
+
+# Scaling - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/stream-processor/concepts/scaling.html
+
+# Scaling
+
+Pipelines can be scaled in accordance with the partitioning capabilities of
+[data readers](../../../api/stream-processor/q/readers.html) used. For an
+example using a built-in parallel reader, we demonstrate Kafka below.
+
+    
+    
+    // Read JSON data from a Kafka topic
+    .qsp.read.fromKafka[`topic; "localhost:9092"]
+      // Parse the JSON messages to q data
+      // Messages are expected to have an 'eventTime' timestamp field
+      .qsp.map[.j.k]
+      // Group messages into 5 second windows based on the 'eventTime'
+      // timestamp
+      .qsp.window.tumbling[00:00:05; {x`eventTime}]
+      // Filter out readings over a given threshold
+      .qsp.filter[{[sensors] 100 < sensors`readings}]
+      // Write output results to a configured Reliable Transport endpoint
+      .qsp.write.toRT[]
+    
+
+This pipeline can be deployed as a single Worker, in which case all data will
+flow through one process/container. The associated
+[configuration](../configuration.html) for the pipeline should indicate that
+the `minWorkers` count is 1:
+
+    
+    
+    # config.yaml
+    name: kafka-sensors
+    settings:
+        minWorkers: 1         # This could also be set using the env var
+    
+
+Alternatively, if the stream is partitioned within Kafka, the pipeline can be
+deployed with more than one worker:
+
+    
+    
+    # config.yaml
+    name: kafka-sensors-scaled
+    settings:
+        minWorkers: 10        # This could also be set using the env var
+    
+    
+    
+    docker compose stop
+    docker compose up --scale worker=10
+    
+
+Running the above, ten Workers will be created; they will all register with
+the Controller. When all Workers have registered, the pipeline will negotiate
+with the Kafka brokers to determine how many partitions are available in the
+topic. The Controller will assign partitions (either one partition or a group
+of partitions depending on the number of partitions and Workers) to individual
+Workers. Each Worker will then read from that logical subset of the stream,
+each checkpointing state and progress separately.
+
+If the pipeline reader is partitioned, the partitions assigned to each Worker
+can be seen from the [REST API](../../../api/stream-
+processor/rest/controller.html).
+

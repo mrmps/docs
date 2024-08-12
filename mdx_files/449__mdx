@@ -1,0 +1,61 @@
+https://code.kx.com/platform/control_packagedeploy/
+
+# Package deployment - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/control_packagedeploy/
+
+# Package deployments
+
+To ensure both leader and follower nodes in the cluster are in sync when
+importing packages the import API now records the state change after the
+package import and this in turn keeps nodes in sync.
+
+## Additional considerations
+
+Consider the following scenario
+
+![Screenshot](../img/control/failover_event.png)
+
+The cluster is taken down with Node A coming down first. Node B which is still
+up, experiences some state changes which causes its UID to increment by 2.
+Node B is then taken down.
+
+When the installer is then run on each node it only **imports packages on Node
+A(which it assumes is the leader)**. When the cluster comes up **Node B** ,
+which is **the leader** (has the highest UID) **syncs its state to Node A** ,
+causing the import **changes on Node A to be lost**.
+
+To avoid this, there is a **state file** in the DeltaControlData directory
+where a value of **1 = M** and **0 = S**. The **install script** now uses this
+file exclusively to determine the state on a given node and to decide whether
+to permform an auto import.
+
+## Upgrade path
+
+These changes will have an effect on the upgrade path as the state file will
+not exist prior to the upgrade. In this scenario and in all scenarios where
+**we cannot confirm the state of a node, we will run the import**. As part of
+this change the `delta-package-auto-import` option has been disabled in the
+installer and if it is set to 0 in an `install.config` you will see the
+following logging:
+
+    
+    
+    Warn: delta-package-auto-import=0 invalid
+    Warn: Import settings will be automatically determined
+    
+
+The following rules should be observed when dealing with KX Control clusters:
+
+  * Node with highest UID is the leader, all followers sync state from the leader.
+  * If 2 nodes are brought up and have the same UID then the one which matches the first entry in the `failover.csv` will be the leader (preferred leader).
+  * When preparing for an upgrade the follower nodes should always be brought down first
+  * Before bringing down any node check the `DeltaControlData/cluster/status` or `DeltaControl.log` to confirm its state (leader or follower)
+  * Always ensure that the package import has happened on at least 1 node in the cluster.
+
+Checklist
+
+Don't assume the preferred leader is always the current leader in the cluster.
+
+Shutdown the followers before shutting down the leader.
+

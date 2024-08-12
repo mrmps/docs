@@ -1,0 +1,1532 @@
+https://code.kx.com/developer/libraries/utilities-table/
+
+# Tables - KX Developer
+
+Original URL: https://code.kx.com/developer/libraries/utilities-table/
+
+# Table utilties (`.table`)
+
+## Overview
+
+Table provides a common interface for performing all base kdb table functions
+on any type of table. All table methods can accept handles or tables where the
+parameter is a table unless otherwise specified. Where possible, the table
+module dispatches to the native kdb implementation of the given table
+operation. When the native operation has not been implemented for the desired
+table type, an implementation to achieve the same behavior has been provided.
+
+## Examples
+
+### Writing a splayed table
+
+    
+    
+    t: ([] a: til 100; b: 100?100; c: 100?`5; d: 100?.Q.a);
+    
+    // The trailing slash indicates a splayed table. A table with symbols will be
+    // enumerated into a sym file above the table folder.
+    .table.write[`:db/t/; t];
+    
+    key `:db;
+    /=> `sym`t
+    
+    key `:db/t;
+    /=> `.d`a`b`c`d
+    
+
+### Reading a splayed table
+
+    
+    
+    // Reading a table just requires the path to the table. The table module will determine
+    // the type of the table on disk using the path automatically.
+    
+    .table.read `:db/t;
+    /=> a b  c     d
+    /=> ------------
+    /=> 0 69 lggpn v
+    /=> 1 16 nbdgm g
+    /=> 2 34 olkcm k
+    /=> 3 77 jjkgn k
+    /=> ..
+    
+    
+
+### Writing a partitioned table
+
+    
+    
+    stocks: ([] date: "d"$til 100; sym: 100?`3; open: 100?100f; close:100?100f);
+    
+    // The file handle for a partitioned database contains the path to the database,
+    // the table name and the partition column name. This will write the table to a
+    // database with an enumerated sym file of the contents.
+    //
+    // db/
+    //   sym
+    //   2000.01.01/
+    //     t/
+    //       .d
+    //       sym
+    //       open
+    //       close
+    // ..
+    .table.write[`:db`stocks`date; stocks];
+    
+
+### Reading a partitioned table
+
+    
+    
+    // Reads a partitioned database into memory. This differs from loading the partitioned
+    // database because it does not map the data into memory, it actually reads the data
+    // without changing the process directory.
+    .table.read `:db`stocks
+    
+    
+
+## Handles
+
+Table handles follow a convention to indicate the desired table format. The
+following table outlines the rules for this convention.
+
+format | description | type | example  
+---|---|---|---  
+mem | Memory by Value | table | `([] a: til 10)`  
+hmem | Memory by Reference | symbol | ``myTable`  
+keyed | Keyed Table | keyed table | `([k:til 10] v:10?10)`  
+serial | Serialized Table | symbolic handle | ``:mySerial`  
+skey | Serialized Keyed Table | symbolic handle | ``:myKeyedTable`  
+splay | Splayed Table | symbolic handle | ``:mySerialTable`  
+pmem | Mapped Partitioned | table | `myPartTable`  
+part | Partitioned Table | symbolic list | ``:pdbRoot`table`pcol`  
+  
+## API mapping
+
+The table module is an interface for wrapping native kdb+ table functions to
+handle all table types. The following table is a mapping of the native kdb+
+API to the corresponding .table API
+
+kdb+ API | .table  
+---|---  
+`cols` | `columns`  
+`count` | `rows`  
+`delete` | `drop`  
+`exec` | `vector`  
+`get` | `read`  
+`insert` | `add`  
+`meta` | `schema`  
+`select` | `query`  
+`set` | `write`  
+`update` | `modify`  
+`upsert` | `append`  
+  
+### Functional selects
+
+The table module does not support natural qsql style select statements.
+Instead, all select, delete and update statements must be translated into
+their functional form before being applied to their .table mapping.
+
+    
+    
+    t: ([] a: til 100; b: 100?100; c: 100?`5; d: 100?.Q.a)
+    
+    /=>  a b  c     d
+    /=>  ------------
+    /=>  0 8  aapik j
+    /=>  1 14 aoonc h
+    /=>  2 50 genak g
+    /=>  3 94 hbhif r
+    /=>  4 24 fneig w
+    /=>  ..
+    
+    select c, d from t where a > 50, b < 80
+    
+    /=> c     d
+    /=> -------
+    /=> ndkeb y
+    /=> bimpc b
+    /=> dlcel b
+    /=> kepac e
+    /=> chfbl q
+    /=> ..
+    
+    parse "select c, d from t where a > 50, b < 80"
+    
+    /=> ?
+    /=> `t
+    /=> ,((>;`a;50);(<;`b;80))
+    /=> 0b
+    /=> `c`d!`c`d
+    
+    ?[`t; ((>;`a;50);(<;`b;80)); 0b; `c`d!`c`d]
+    
+    /=> c     d
+    /=> -------
+    /=> ndkeb y
+    /=> bimpc b
+    /=> dlcel b
+    /=> kepac e
+    /=> chfbl q
+    /=> ..
+    
+    .table.query[`t; ((>;`a;50);(<;`b;80)); 0b; `c`d!`c`d]
+    
+    /=> c     d
+    /=> -------
+    /=> ndkeb y
+    /=> bimpc b
+    /=> dlcel b
+    /=> kepac e
+    /=> chfbl q
+    /=> ..
+    
+    
+
+## Format independent functions
+
+The table module abstracts the persisted format away from the desired
+behavior.
+
+    
+    
+    // Create a table with some random data
+    t: ([] a: til 100; b: 100?`5; c: 100?.Q.an; d: 100?10.0)
+    
+    /=> a  b     c d         
+    /=> ---------------------
+    /=> 0  bkljh T 5.078787  
+    /=> 1  lainf r 6.978551  
+    /=> 2  ocalh _ 9.352689  
+    /=> 3  glnni Y 9.081387  
+    /=> 4  dendh F 0.6839882 
+    /=> ..
+    
+    // Try and write that table to disk as a splayed table.
+    // This will throw a type error since the "b" column is 
+    // un-enumerated symbols
+    `:t/ set t;
+    
+    // Using .table.write will automatically enumerate symbols
+    .table.write[`:t/; t];
+    
+    // Select from the splayed table is simple and can be done
+    // by referencing the table path.
+    select a, b, d from `:t where d > 1.0
+    
+    /=> a  b     d       
+    /=> -----------------
+    /=> 0  bkljh 5.078787
+    /=> 1  lainf 6.978551
+    /=> 2  ocalh 9.352689
+    /=> 3  glnni 9.081387
+    /=> 5  fndlj 8.182305
+    /=> ..
+    
+    // This select can also be done in a functional form
+    ?[`:t; enlist (>; `d; 1.0); 0b; `a`b`d!`a`b`d];
+    
+    // .table uses this syntax for performing select operations
+    // so translating the queries is a simple replace.
+    .table.query[`:t; enlist (>; `d; 1.0); 0b; `a`b`d!`a`b`d];
+    
+    // However, editing the table is not quite as simple. This
+    // with throw an error when trying to modify the table on
+    // disk.
+    delete a from `:t;
+    
+    // This is not an issue with .table.drop
+    .table.drop[`:t; (); 0b; enlist `a];
+    
+    // The a column has now been dropped from the on disk table
+    select from `:t;
+    
+    /=> b     c d         
+    /=> ------------------
+    /=> bkljh T 5.078787  
+    /=> lainf r 6.978551  
+    /=> ocalh _ 9.352689  
+    /=> glnni Y 9.081387  
+    /=> dendh F 0.6839882
+    /=> ..
+    
+
+## .table.add
+
+Inserts the given data into an existing table
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+t | [ .table.handle ](../overview-typedefs/#tablehandle) | Base table to upsert into  
+data | table | Table to insert (must have matching schema as base)  
+  
+**Returns:**
+
+**Example:** Adding Data to a Memory Table
+
+    
+    
+     t: ([] x: til 3; y: "abc");
+     r: ([] x: til 3; y: "mno");
+     .table.add[t; r]
+     /=> x y
+     /=> ---
+     /=> 0 a
+     /=> 1 b
+     /=> 2 c
+     /=> 0 m
+     /=> 1 n 
+     /=> 2 o
+    
+
+**Example:** Adding Data to a Splayed On Disk Table
+
+    
+    
+     .table.write[`:t/] ([] x: til 3; y: "abc"; z:`a`b`c);
+     r: ([] x: til 3; y: "mno"; z: `x`y`z);
+     .table.add[`:t/; r]
+     /=> `:t/
+    
+     .table.read[`:t/]
+     /=> x y z
+     /=> -----
+     /=> 0 a a
+     /=> 1 b b
+     /=> 2 c c
+     /=> 0 m x
+     /=> 1 n y
+     /=> 2 o z
+    
+
+## .table.append
+
+Upserts the given data into an existing table. If the handle provided is a
+reference to a table, the table will be updated in place. If the handle
+provided is a literal table, then a new table will be returned.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+t | [ .table.handle ](../overview-typedefs/#tablehandle) | Base table to upsert into  
+data | table | Table to upsert (must have matching schema as base)  
+  
+**Returns:**
+
+**Example:** Appending Data to a Memory Table
+
+    
+    
+     t: ([] x: til 3; y: "abc");
+     r: ([] x: til 3; y: "mno");
+     .table.append[t; r]
+     /=> x y
+     /=> ---
+     /=> 0 a
+     /=> 1 b
+     /=> 2 c
+     /=> 0 m
+     /=> 1 n
+     /=> 2 o
+    
+
+**Example:** Appending Data to a Splayed On Disk Table
+
+    
+    
+     .table.write[`:t/] ([] x: til 3; y: "abc"; z:`a`b`c);
+     r: ([] x: til 3; y: "mno"; z:`x`y`z);
+     .table.append[`:t/; r]
+     /=> `:t/
+    
+     .table.read[`:t/]      
+     /=> x y z
+     /=> -----
+     /=> 0 a a
+     /=> 1 b b
+     /=> 2 c c
+     /=> 0 m x
+     /=> 1 n y
+     /=> 2 o z
+    
+
+## .table.attrsupport
+
+Wraps a table transformation function to preserve table attributes. The
+wrapped function must take a single argument, the table to be modified and
+must return a table. The attributes of the input table are then applied to the
+output table if possible.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+fn | fn (table) → table |   
+  
+**Returns:**
+
+Type | Description  
+---|---  
+fn (table) → table | Function with attribute preservation  
+  
+**Example:** Preserving Attributes
+
+    
+    
+     t: ([] x: `s#til 5);
+     meta t
+     /=> c| t f a
+     /=> -| -----
+     /=> x| j   s
+    
+     meta (::)@'t
+     /=> c| t f a
+     /=> -| -----
+     /=> x| j
+    
+     meta .table.attrsupport[{(::)@'x}] t
+     /=> c| t f a
+     /=> -| -----
+     /=> x| j   s
+    
+
+## .table.column.map
+
+Updates the names of the columns of table t to the new specified columns. This
+function maps the current names of a table to a new set of names.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+t | [ .table.handle ](../overview-typedefs/#tablehandle) | Handle of table to with columns to rename  
+cmap | dict | Column map of old names -> new names  
+  
+**Returns:**
+
+**Throws:**
+
+Type | Description  
+---|---  
+| Errors when source columns do not exist  
+  
+**Example:** Renaming Columns
+
+    
+    
+     t: ([] x: til 5; y: "abcde"; z: `AAPL`GOOG`MSFT`AMZN`YHOO);
+     .table.column.map[t; `x`z!`a`b]
+     /=> a y b   
+     /=> --------
+     /=> 0 a AAPL
+     /=> 1 b GOOG
+     /=> 2 c MSFT
+     /=> 3 d AMZN
+     /=> 4 e YHOO
+    
+
+## .table.column.name
+
+Updates the names of the columns of the given table to the new list of column
+names. This renames the columns based on the index of the column name.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+t | [ .table.handle ](../overview-typedefs/#tablehandle) | Handle of table to with columns to rename  
+cnames | symbol[] | New column names based on index  
+  
+**Returns:**
+
+**Example:** Renaming Columns
+
+    
+    
+     t: ([] x: til 5; y: "abcde"; z: `AAPL`GOOG`MSFT`AMZN`YHOO);
+     .table.column.name[t; `a`b]
+     /=> a b z   
+     /=> --------
+     /=> 0 a AAPL
+     /=> 1 b GOOG
+     /=> 2 c MSFT
+     /=> 3 d AMZN
+     /=> 4 e YHOO
+    
+
+## .table.column.order
+
+Reorders column names to the given order. This operates in the same way as
+xcols except with added support for on disk tables.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+t | [ .table.handle ](../overview-typedefs/#tablehandle) | Handle of table to with columns to rename  
+corder | symbol[] | New column order from left to right  
+  
+**Returns:**
+
+**Example:** Reordering Columns
+
+    
+    
+     t: ([] x: til 5; y: "abcde"; z: `AAPL`GOOG`MSFT`AMZN`YHOO);
+     .table.column.order[t; `y`z`x]
+     /=> y z    x
+     /=> --------
+     /=> a AAPL 0
+     /=> b GOOG 1
+     /=> c MSFT 2
+     /=> d AMZN 3
+     /=> e YHOO 4
+    
+
+**Example:** Reordering Splayed Tables
+
+    
+    
+     t: ([] x: til 5; y: "abcde"; z: `AAPL`GOOG`MSFT`AMZN`YHOO);
+     .table.write[`:t/] t;
+     .table.column.order[`:t/; `y`z`x];
+     .table.read[`:t/]
+     /=> y z    x
+     /=> --------
+     /=> a AAPL 0
+     /=> b GOOG 1
+     /=> c MSFT 2
+     /=> d AMZN 3
+     /=> e YHOO 4
+    
+
+## .table.columns
+
+Returns a list of columns for a given table
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+t | [ .table.handle ](../overview-typedefs/#tablehandle) | Table to return the columns of  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol[] | Columns of the table  
+  
+## .table.create
+
+Creates an empty table either on disk or in memory. If the table being created
+is partitioned then there is one record added so there is at least 1
+partition.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+t | [ .table.handle ](../overview-typedefs/#tablehandle) | Handle of table to create  
+c | (symbol; symbol) | Pairs of column names and types  
+  
+**Returns:**
+
+**Example:** Creating an In Memory Table
+
+    
+    
+     .table.create[::; (`x`int; `y`char; `z`symbol)]
+     /=> x y z
+     /=> -----
+    
+     meta .table.create[::; (`x`int; `y`char; `z`symbol)]
+     /=> c| t f a
+     /=> -| -----
+     /=> x| i    
+     /=> y| c    
+     /=> z| s    
+    
+
+**Example:** Creating a Splayed Table
+
+    
+    
+     .table.create[`:t/; (`a`guid; `b`byte; `c`time; `d`symbol)];
+     meta `:t/
+     /=> c| t f a
+     /=> -| -----
+     /=> a| g    
+     /=> b| x    
+     /=> c| t    
+     /=> d| s 
+    
+
+## .table.drop
+
+Deletes from a table either in memory or on disk using a functional delete.
+Please note that either columns or clause can be present but not both.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+t | [ .table.handle ](../overview-typedefs/#tablehandle) | Handle of table to delete columns from  
+clause | any[] | A functional where clause or () for empty  
+grp | boolean | Unused but part of the functional delete. (Use 0b)  
+aggrs | symbol[] | The columns to delete or () for none  
+  
+**Returns:**
+
+## .table.enum
+
+Enumerates all symbols in a table
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+d | symbol | [ .hsym ](../overview-typedefs/#hsym) | Enumeration location File symbol  
+t | table | Table to enumerate  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+table | The input table with all symbols enumerated  
+  
+## .table.equals
+
+Compares two tables for equality and determines if the tables have the same
+data
+
+**Parameters:**
+
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the tables match  
+  
+## .table.exists
+
+Checks a table exists at the given handle
+
+**Parameter:**
+
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the table exists  
+  
+## .table.file.is
+
+Given a file handle, return if the it is a file
+
+**Parameter:**
+
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the given handle is a file on disk  
+  
+## .table.format
+
+Determines the type of a table using as a symbolic name. The possible table
+types are outline in the table below.
+
+Format | Description | Type | Example  
+---|---|---|---  
+mem | Memory by Value | table | `([] a: til 10)`  
+hmem | Memory by Reference | symbol | ``myTable`  
+keyed | Keyed Table | keyed table | `([k:til 10] v:10?10)`  
+serial | Serialized Table | symbolic handle | ``:mySerial`  
+skey | Serialized Keyed Table | symbolic handle | ``:myKeyedTable`  
+splay | Splayed Table | symbolic handle | ``:mySerialTable`  
+pmem | Mapped Partitioned | table | `myPartTable`  
+part | Partitioned Table | symbolic list | ``:pdbRoot`table`pcol`  
+  
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+t | [ .table.handle ](../overview-typedefs/#tablehandle) | A table handle to check the format of  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol | The symbolic name of the table or ` if unknown  
+  
+## .table.index
+
+A wrapper for .Q.ind to work with any table type
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+t | [ .table.handle ](../overview-typedefs/#tablehandle) | Table to query to query  
+inds | long[] | Desired indices from table  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+table | A table that has only the desired indices  
+  
+## .table.indices
+
+Returns the true indices of a table given a clause to search by
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+t | [ .table.handle ](../overview-typedefs/#tablehandle) | Table to query  
+clause | any[] | A functional where clause  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+long[] | The true indices of the table that met the where clause  
+  
+**Example:** Querying Matches
+
+    
+    
+     t: ([] x: til 3; y: "abc");
+     .table.indices[t] enlist (in; `y; "ac")
+     /=> 0 2
+    
+
+## .table.insertAfter
+
+Inserts into a table after a specific index.
+
+> Note: This has only been implemented for memory tables
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+t | [ .table.handle ](../overview-typedefs/#tablehandle) | Table to insert into  
+data | table | dict | Data to insert  
+n | long | Index to insert before  
+  
+**Returns:**
+
+**See Also:** [ .table.insertAt ](./#tableinsertat)
+
+## .table.insertAt
+
+Inserts into a table after a specific index.
+
+> Note: This has only been implemented for memory tables
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+t | [ .table.handle ](../overview-typedefs/#tablehandle) | Table to insert into  
+data | table | dict | Data to insert  
+n | long | Index to insert at  
+  
+**Returns:**
+
+**Example:** Inserting Into a Table
+
+    
+    
+     t: ([] x: til 4; y: "abcd"; z: `AAPL`GOOG`MSFT`AMZN);
+     .table.insertAt[t; `x`y`z!(5; "e"; `YHOO); 4]
+     /=> x y z   
+     /=> --------
+     /=> 0 a AAPL
+     /=> 1 b GOOG
+     /=> 2 c MSFT
+     /=> 3 d AMZN
+     /=> 5 e YHOO
+    
+
+**Example:** Inserting Multiple Times
+
+    
+    
+     t: ([] x: til 4; y: "abcd"; z: `AAPL`GOOG`MSFT`AMZN);
+     .table.insertAt[t; `x`y`z!(5; "e"; `YHOO); 1 2]
+     /=> x y z   
+     /=> --------
+     /=> 0 a AAPL
+     /=> 5 e YHOO
+     /=> 1 b GOOG
+     /=> 5 e YHOO
+     /=> 2 c MSFT
+     /=> 3 d AMZN
+    
+
+## .table.insertBefore
+
+Inserts into a table before a specific index.
+
+> Note: This has only been implemented for memory tables
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+t | [ .table.handle ](../overview-typedefs/#tablehandle) | Table to insert into  
+data | table | dict | Data to insert  
+n | long | Index to insert after  
+  
+**Returns:**
+
+**See Also:** [ .table.insertAt ](./#tableinsertat)
+
+## .table.keysupport
+
+Add key support to a function that does not support keyed tables and returns a
+function
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+fn | fn | Function to add key support to  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+fn | An equivalent function that handles keyed tables  
+  
+## .table.loadsym
+
+Loads the symbol file and overwrites the already existing enumeration
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+t | [ .table.handle ](../overview-typedefs/#tablehandle) | Handle of table to load symbol file for  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the sym file was loaded successfully  
+  
+## .table.map
+
+Given the path to a table on disk, load it into q. Single-file tables are
+loaded fully into memory, all others are memory-mapped. The table object is
+stored in a global in the current context, and its name is returned.
+
+**Parameter:**
+
+**Returns:**
+
+Type | Description  
+---|---  
+symbol | The loaded table  
+  
+## .table.mappable
+
+Returns if the given table handle can be memory mapped
+
+**Parameter:**
+
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the given table handle can be mapped into memory  
+  
+## .table.mapped
+
+Returns if a given table is mapped or not
+
+**Parameter:**
+
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the given table handle is mapped  
+  
+## .table.modify
+
+Performs an update on the given table. This is equivalent to the q functional
+update except with added support for on disk tables.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+t | [ .table.handle ](../overview-typedefs/#tablehandle) | Handle of table to update  
+clause | any[] | A functional where clause or () for no filter  
+grp | dict | boolean | Functional group by statement or 0b for no grouping  
+aggrs | dict | Update aggregations to apply  
+  
+**Returns:**
+
+## .table.name
+
+Returns a symbol representing the name of this table.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+t | [ .table.handle ](../overview-typedefs/#tablehandle) | Handle of table to determine name of  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol | The name of this table  
+  
+## .table.path
+
+Returns the path to the given table.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+t | [ .table.handle ](../overview-typedefs/#tablehandle) | Handle of table to determine path of  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+[ .hsym ](../overview-typedefs/#hsym) | The location of the given table File symbol  
+  
+## .table.pdb.cast
+
+Given a list of partitions as symbols, return the partition vector as the
+correct type
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+parts | symbol[] | The partitions to cast  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+any[] | The partitions casted to the correct type  
+  
+## .table.pdb.contents
+
+Returns the unfiltered contents of a partitioned database. This is a list of
+all partitions in the pdb regardless of them containing the desired table.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+t | [ .table.handle ](../overview-typedefs/#tablehandle) | Partitioned database handle  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol[] | All partitions in the database  
+  
+## .table.pdb.fill
+
+Adds tables that are missing to a partitioned database.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+t | [ .table.handle ](../overview-typedefs/#tablehandle) | Handle to partitioned database  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol[] | The splayed tables that were created  
+  
+## .table.pdb.format
+
+Determines the partition type given the path to the partitioned table. The
+return is the name of the partition column.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+t | [ .table.handle ](../overview-typedefs/#tablehandle) | Partitioned database handle  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol | One of `date`year`month`int  
+  
+## .table.pdb.handle
+
+Returns a handle for a loaded partitioned table.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+t | [ .table.handle ](../overview-typedefs/#tablehandle) | Partitioned database handle  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol[] | The handle to the partitioned db  
+  
+## .table.pdb.is
+
+Returns if the given handle is a partitioned database that exists in the
+current file system.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+t | [ .table.handle ](../overview-typedefs/#tablehandle) | Partitioned database handle  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the handle is a partitioned table  
+  
+## .table.pdb.load
+
+Loads a partitioned database and returns the given table.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+t | [ .table.handle ](../overview-typedefs/#tablehandle) | Partitioned database handle  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol[] | The loaded tables  
+  
+## .table.pdb.parts
+
+Returns all of the partitions in this partitioned database.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+t | [ .table.handle ](../overview-typedefs/#tablehandle) | Partitioned database handle  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol[] | The partitions in this table  
+  
+## .table.pdb.reload
+
+Reloads a partitioned database or if none are loaded then loads a new one.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+t | [ .table.handle ](../overview-typedefs/#tablehandle) | Partitioned database handle  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+table | The partitioned table  
+  
+## .table.pdb.shandle
+
+Creates a splayed table handle given a partitioned table handle and the
+partition it is for.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+t | [ .table.handle ](../overview-typedefs/#tablehandle) | Partitioned database handle  
+p | symbol | The partition this handle is for  
+  
+**Returns:**
+
+## .table.pdb.splays
+
+Returns the handles for all splays in a pdb.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+t | [ .table.handle ](../overview-typedefs/#tablehandle) | Partitioned database handle  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol[] | Handles to each splay in the pdb  
+  
+## .table.pdb.tables
+
+Returns the names of all tables in a partitioned database.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+t | [ .table.handle ](../overview-typedefs/#tablehandle) | Partitioned database handle  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol[] | All of the tables that exist in the given partitioned database  
+  
+## .table.pdb.vector
+
+Returns the partition vector as its native q type.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+t | [ .table.handle ](../overview-typedefs/#tablehandle) | Partitioned database handle  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+* | The partitions in the correct type  
+  
+## .table.pkey
+
+Applies a primary key to a table. This is equivalent to `xkey` with added
+support for splayed tables.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+t | [ .table.handle ](../overview-typedefs/#tablehandle) | Handle of table to apply keys to  
+k | symbol[] | Key to apply  
+  
+**Returns:**
+
+## .table.pkeys
+
+Return the primary keys from a table. This is the same as `keys` with added
+support for splayed tables.
+
+**Parameter:**
+
+**Returns:**
+
+Type | Description  
+---|---  
+symbol[] | Primary keys  
+  
+## .table.query
+
+Selects the specified criteria from a table without loading the entire table
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+t | [ .table.handle ](../overview-typedefs/#tablehandle) | Handle of table to update  
+clause | any[] | A functional where clause or () for no filter  
+grp | dict | boolean | Functional group by statement or 0b for no grouping  
+aggrs | dict | Select aggregations to apply  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+table | The selected table  
+  
+**Example:** Selecting From a Table
+
+    
+    
+     t: ([] a: til 100; b: 100?100; c: 100?`5; d: 100?.Q.a)
+    
+     /=>  a b  c     d
+     /=>  ------------
+     /=>  0 8  aapik j
+     /=>  1 14 aoonc h
+     /=>  2 50 genak g
+     /=>  3 94 hbhif r
+     /=>  4 24 fneig w
+     /=>  ..
+    
+     select c, d from t where a > 50, b < 80
+    
+     /=> c     d
+     /=> -------
+     /=> ndkeb y
+     /=> bimpc b
+     /=> dlcel b
+     /=> kepac e
+     /=> chfbl q
+     /=> ..
+    
+     parse "select c, d from t where a > 50, b < 80"
+    
+     /=> ?
+     /=> `t
+     /=> ,((>;`a;50);(<;`b;80))
+     /=> 0b
+     /=> `c`d!`c`d
+    
+     ?[`t; ((>;`a;50);(<;`b;80)); 0b; `c`d!`c`d]
+    
+     /=> c     d
+     /=> -------
+     /=> ndkeb y
+     /=> bimpc b
+     /=> dlcel b
+     /=> kepac e
+     /=> chfbl q
+     /=> ..
+    
+     .table.query[`t; ((>;`a;50);(<;`b;80)); 0b; `c`d!`c`d]
+    
+     /=> c     d
+     /=> -------
+     /=> ndkeb y
+     /=> bimpc b
+     /=> dlcel b
+     /=> kepac e
+     /=> chfbl q
+     /=> ..
+    
+
+## .table.read
+
+Returns the value of the given table handle. If the table is by value then
+return the input otherwise get the table.
+
+**Parameter:**
+
+**Returns:**
+
+Type | Description  
+---|---  
+table | Loaded data  
+  
+**See Also:** [ .table.write ](./#tablewrite)
+
+## .table.remove
+
+Deletes a table from memory or on disk. For memory mapped tables, removing the
+table will also delete the table by name from the calling context.
+
+Calling remove is a destructive operation and cannot be undone
+
+**Parameter:**
+
+**Returns:**
+
+## .table.rows
+
+Returns the count of a table either on disk or in memory. If the table is on
+disk then it calculates the size of the table without loading the entire
+table.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+t | [ .table.handle ](../overview-typedefs/#tablehandle) | Handle of table to count records of  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+long | The number of records in the table  
+  
+## .table.schema
+
+Returns the q meta table for the given input.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+t | [ .table.handle ](../overview-typedefs/#tablehandle) | Handle of the table to retrieve the schema of  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+table | Meta table pertaining to the given table  
+  
+## .table.sdb.is
+
+Determines if the given handle is a splayed table.
+
+**Parameter:**
+
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the given handle is a splayed table  
+  
+## .table.sdb.load
+
+Loads a splayed table and returns the table name.
+
+**Parameter:**
+
+**Returns:**
+
+Type | Description  
+---|---  
+symbol | Name of the loaded table  
+  
+## .table.setAttr
+
+Sets an attribute on columns(s) of a table.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+t | [ .table.handle ](../overview-typedefs/#tablehandle) | Handle of table to add attributes to  
+attr_ | symbol | Attribute to apply (`s`g`p or`u)  
+col | symbol | symbol[] | Column name(s) to apply the attribute to  
+  
+**Returns:**
+
+## .table.simplify
+
+Given a table convert all compound values into general lists where each
+element is a list of the standard, non-compound type.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+t | table | The table expand compound data from  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+table | A table of the same shape with all compound columns simplified  
+  
+## .table.sort.asc
+
+Sorts a table in ascending order on the column specified. The table can either
+be in memory or on disk.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+t | [ .table.handle ](../overview-typedefs/#tablehandle) | Table to sort in ascending order  
+c | symbol | Column to sort data on  
+  
+**Returns:**
+
+## .table.sort.desc
+
+Sorts a table in descending order on the column specified. The table can
+either be in memory or on disk.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+t | [ .table.handle ](../overview-typedefs/#tablehandle) | Table to sort in descending order  
+c | symbol | Column to sort data on  
+  
+**Returns:**
+
+## .table.symbolize
+
+Given a table convert all of the enumerated symbolic columns into symbols.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+t | table | A table by value  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+table | A table of the same shape with all enumerated columns converted to symbols  
+  
+## .table.symdir
+
+Returns the path to the sym file directory for a splayed or partitioned table.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+t | [ .table.handle ](../overview-typedefs/#tablehandle) | Table handle to return the handle of  
+  
+**Returns:**
+
+## .table.take
+
+Takes the desired number of rows from a table with no repeat.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+t | [ .table.handle ](../overview-typedefs/#tablehandle) | Table to select from  
+n | long | Number of records to take  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+table | A table with n records  
+  
+## .table.unkey
+
+Removes any keys from a table.
+
+**Parameter:**
+
+**Returns:**
+
+**Example:** Unkey a Table
+
+    
+    
+     t: ([a: til 100; b: 100?100] c: 100?`5; d: 100?100.0)
+     /=> a  b | c     d        
+     /=> -----| ---------------
+     /=> 0  30| fbach 94.52199 
+     /=> 1  96| gokpi 70.92423 
+     /=> 2  27| pkefa 0.2184472
+     /=> 3  27| jjfjn 6.670537 
+     /=> 4  21| cbnki 69.18339 
+     /=> ..
+    
+     .table.unkey t
+     /=> a  b  c     d        
+     /=> ---------------------
+     /=> 0  30 fbach 94.52199 
+     /=> 1  96 gokpi 70.92423 
+     /=> 2  27 pkefa 0.2184472
+     /=> 3  27 jjfjn 6.670537 
+     /=> 4  21 cbnki 69.18339 
+     /=> ..
+    
+
+## .table.vector
+
+Returns a column from the given table as its content vector.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+t | [ .table.handle ](../overview-typedefs/#tablehandle) | Handle of table to read from  
+col | symbol | Name of the column to return  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+any[] | The desired column from t  
+  
+**Example:** Extract a Column From a Splayed Table
+
+    
+    
+     // Create a table with some random data
+     t: ([] a: til 100; b: 100?`5; c: 100?.Q.an; d: 100?10.0)
+    
+     /=> a  b     c d        
+     /=> --------------------
+     /=> 0  agpmi S 1.780839 
+     /=> 1  nfbcj P 3.017723 
+     /=> 2  faebp Q 7.85033  
+     /=> 3  klikn 8 5.347096 
+     /=> 4  pjljc U 7.111716 
+     /=> ..
+    
+     // Write the data to a splayed on disk table
+     .table.write[`:t/; t];
+    
+     // Extract the c column from the on disk table
+     .table.vector[`:t/; `c]
+     /=> "SPQ8Uvzx71g_N3uegQj.."
+    
+
+## .table.write
+
+Similar behavior to `set`, `write` puts the given table data into the output
+location. If the output location is splaying data on disk, the output table
+will be automatically enumerated.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+t | [ .table.handle ](../overview-typedefs/#tablehandle) | Handle of output location  
+table | table | Table to write to disk  
+  
+**Returns:**
+
+**Example:** Writing to a Splayed Table
+
+    
+    
+     // Create a table with some random data
+     t: ([] a: til 100; b: 100?`5; c: 100?.Q.an; d: 100?10.0)
+    
+     /=> a  b     c d         
+     /=> ---------------------
+     /=> 0  bkljh T 5.078787  
+     /=> 1  lainf r 6.978551  
+     /=> 2  ocalh _ 9.352689  
+     /=> 3  glnni Y 9.081387  
+     /=> 4  dendh F 0.6839882 
+     /=> ..
+    
+     // Using .table.write will automatically enumerate symbols
+     .table.write[`:t/; t];
+    
+     // Select from the splayed table is simple and can be done
+     // by referencing the table path.
+     select a, b, d from `:t where d > 1.0
+    
+     /=> a  b     d       
+     /=> -----------------
+     /=> 0  bkljh 5.078787
+     /=> 1  lainf 6.978551
+     /=> 2  ocalh 9.352689
+     /=> 3  glnni 9.081387
+     /=> 5  fndlj 8.182305
+     /=> ..
+    
+

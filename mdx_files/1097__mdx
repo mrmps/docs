@@ -1,0 +1,87 @@
+https://code.kx.com/platform/stream/auditing/
+
+# Auditing - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/stream/auditing/
+
+# Auditing
+
+The _KX Stream_ auditing framework provides a mechanism for auditing a variety
+of user activity including file upload/download activity, exports and queries
+executed. The data is persisted to kdb+ tables and can be searched and
+filtered via two screens on the monitoring dashboards.
+
+## File history auditing
+
+Details of all attempts to upload/download files using the HTML5 dashboard’s
+Upload component are published to persistent storage. The details include the
+username that initiated the request, along with details of the file and also
+if the request was successful. For unsuccessful requests, details of the error
+that occurred are recorded.
+
+![Screenshot](../img/stream/filehistorymonitoring.png)
+
+Publishing of file history audit data requires a Delta messaging server (DMS)
+to be running. If there is no messaging server running or DMS is incorrectly
+configured, file-history audit events are logged to `delta.log` in the
+following format:
+
+    
+    
+    Unpublished file history: <timestamp> | <filename> | <directory> | <host> | <filesize> | Up/downLoad | <userId> | <ip_address>| <clientID> | <success> |
+    
+
+## User action history auditing
+
+User dashboard and query actions are published to the Ops workflow if the
+workflow is running. The _User History_ dashboard screen under Monitoring
+displays a snapshot of user activity, as defined by various API calls that
+have been triggered by the user. There are two user history categories:
+Dashboards and Queries.
+
+### Dashboards actions
+
+This category includes the following actions:
+
+action | occurs when user  
+---|---  
+getDashboard | loads a dashboard  
+setDashboard | saves a dashboard  
+deleteDashboard | deletes a dashboard  
+  
+For each action, the time, user ID, client ID, and the name of the associated
+dashboard are displayed:
+
+![Screenshot](../img/stream/userhistorymonitoringdashboards.png)
+
+### Query actions
+
+This category includes the following actions:
+
+action | occurs when user  
+---|---  
+runQuery | runs a backend query  
+runQueryBA | runs a backend query that returns result as a byte array  
+exportCSV | runs an export query  
+  
+For each action, the time, user ID, client ID, and the associated query (or
+analytic) are displayed:
+
+![Screenshot](../img/stream/userhistorymonitoringquery.png)
+
+### Enabling/disabling of user history auditing
+
+If user-auditing functionality is _not_ required, it can be disabled by
+changing (to `false`) the value of the parameter
+`userHistoryPublishingEnabled` in `services.xml`:
+
+    
+    
+     <!--  Change the following to enable/disable the publication to ops of user history data -->
+     <property name="userHistoryPublishingEnabled"  value="true"/>
+    
+
+Note that file-history auditing cannot be disabled. If there is no Delta
+messaging server running then the file-history details are logged as described
+above.
+

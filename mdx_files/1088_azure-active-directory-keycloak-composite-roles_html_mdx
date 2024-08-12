@@ -1,0 +1,51 @@
+https://code.kx.com/insights/enterprise/azure-marketplace/azure-active-directory-keycloak-composite-roles.html
+
+# Azure Active Directory composite roles - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/azure-marketplace/azure-active-directory-keycloak-composite-roles.html
+
+# Creating AAD Keycloak composite roles (optional post deployment step)
+
+You can create composite roles in Keycloak and link them to Azure Active
+Directory groups.
+
+This may simplify the Keycloak identity provider configuration.
+
+## Prerequisites
+
+To successfully create composite roles in Keycloak you need the following:
+
+The Keycloak admin password and URLs of your _kdb Insights Enterprise_
+deployment.
+
+![KeycloakPassword](images/KeycloakPassword.png)
+
+![URL](images/Urls.png)
+
+### Create kdb Insights Enterprise composite roles
+
+_kdb Insights Enterprise_ uses [Keycloak](https://www.keycloak.org/) as its
+Identity and Access Management component.
+
+Follow the steps below to log into Keycloak and create the necessary roles.
+
+  1. Use the `keycloakUrl` or the `insightsUiUrl` \+ `/auth/` from the section above to navigate to the Keycloak web UI.
+
+![Keycloak](images/Keycloak%20Home%20Page.PNG)
+
+  2. Click on `Administration Console` and log in with the username `user` and the password you provided during the deployment.
+
+![SignIn](images/SignIn.png)
+
+  3. Choose the `Insights` target realm from the top-left realm drop-down.
+
+  4. Click on `Roles` in the left-hand menu then click on the `Add Role` button.
+
+![AddRole](images/Keycloak%20Roles%20Page.PNG)
+
+  5. Enter the Role Name: `<role name>` and click `Save`.
+
+  6. Turn Composite Roles `ON`.
+
+  7. Associate it with the desired roles.
+

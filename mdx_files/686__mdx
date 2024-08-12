@@ -1,0 +1,56 @@
+https://code.kx.com/platform/api/streaming/
+
+# Streaming - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/api/streaming/
+
+# Streaming
+
+This module provides APIs relating to streaming analytics. For full
+documentation with examples, please see the [Streaming
+Analytics](../../streaming_analytics/) documentation.
+
+As of _KX Control_ version 4.2.1, the `streamingapi.q` can be loaded into
+standalone processes. On startup, it will check which mode is running and
+create stub functions accordingly.
+
+## `.sa.pub`
+
+Publish data to a stream.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+uID | long | Stream ID  
+data | table | Data  
+  
+**Example:**
+
+    
+    
+     data:([] time:.z.p; sym:`$"EUR/USD"; price:3?10.0; src:3?`4);
+     .sa.pub[10j; data];
+    
+
+## `.sa.registerfuncs`
+
+Register unsubscription and snapshot functions for a streaming analytic name.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+subF | symbol | Sub function  
+unsubF | symbol | Unsub function  
+snapF | symbol | Snapshot function  
+  
+**Example:**
+
+    
+    
+     .fx.unsub:{ delete from `.fx.subs where id=x };
+     .fx.snapshot:{ select from .fx.cache where id=x };
+     .sa.registerfuncs[`.fx.stream; `.fx.unsub; `.fx.snapshot];
+    
+

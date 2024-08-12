@@ -1,0 +1,109 @@
+https://code.kx.com/dashboards/datepicker/
+
+# Date Picker - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/datepicker/
+
+# Date Picker
+
+![Screenshot](../img/datepicker/datepickerhtmllight.jpg)
+
+Assigns a date input to a [View State Parameter](../viewstateparameters/)
+
+The Date Picker will highlight dates found in the _Data Source_
+
+## Set up
+
+  1. Assign a [view state](../viewstateparameters/) with a data type containing a date to the _Selected Date_ property.
+  2. Optionally set data source with `Date` data
+
+## Basics
+
+![Screenshot](../img/datepicker/datepickerbasics.png)
+
+_Name_
+
+    A name for the component provided by the user. 
+_Label_
+
+    Text label presented with the component in the Dashboard.
+_Data Source_
+
+    
+
+[Data sources](../datasources/) Optionally set a list of valid dates that can
+be chosen by the user. When set, the list of dates in the data source
+identifies the range of dates presented by the date picker component.
+
+Resulting data
+
+The date picker data source must return values of kdb type "date".
+
+_Selected Date_
+
+    A View State Parameter with a data type containing a date
+_Horizontal_
+
+    Horizontal alignment (left, center or right) of date selector inside the component boundaries
+_Vertical_
+
+    Vertical alignment (top, middle, bottom) of date selector inside the component boundaries
+_Tooltip_
+
+    Text description which appears when user mouses over the _Date Picker_
+_Width_
+
+    Pixel width of dropdown
+_Label Width_
+
+    
+
+Pixel width of dropdown _Label_
+
+Tip
+
+If assigned _Label Width_ is narrower than the _Label_ description, text in
+the _Label_ will wrap.
+
+## Validation
+
+The date picker will verify its value to ensure that it is suitable for use
+and present an error label if it is not. This inherent validation occurs as
+the user is typing, when navigating to a different area of the Dashboard, and
+upon initialization. If the value is not valid, the _Selected Date_ property
+will not be updated, and one of the following error labels will appear:
+
+_Invalid date/time_
+
+![Screenshot](../img/datepicker/datepicker_invalid_date.png)
+
+    
+
+An "Invalid date/time" error label will appear when the value does not
+represent an actual calendar day (i.e. '00' for the day) or its time component
+does not represent an actual time (i.e. '99' for the hour). If the value is
+not corrected by the user, the date picker will use the previously held value
+if possible.
+
+_Date out of scope_
+
+![Screenshot](../img/datepicker/datepicker_date_out_of_scope.png)
+
+    
+
+A "Date out of scope" error label will be visible when the date value is not
+in the list of available dates provided by the date picker data source. This
+error will remain visible until the user provides a valid value.
+
+### Date Picker Validation within a Data Form component
+
+    When using a Date Picker component within a Data Form, date picker validation errors such as "Invalid date/time" or "Date out of scope" must be resolved before the data form validation analytic will execute or the data form can be submitted.
+
+## Action
+
+[Actions](../action/)
+
+## Style
+
+[Style](../style/#component-style) for common settings
+

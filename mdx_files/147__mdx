@@ -1,0 +1,709 @@
+https://code.kx.com/analyst/libraries/grammar-of-graphics/
+
+# Introduction - KX Analyst
+
+Original URL: https://code.kx.com/analyst/libraries/grammar-of-graphics/
+
+# Grammar of Graphics in q (`.gg`/`.qp`)
+
+## Basic usage
+
+    
+    
+        // Below will produce a plot matrix from `t` of columns x, y, and z
+    
+        .qp.go[500; 500] .qp.plot[t; `x`y`z; ::]
+    
+
+## Overview
+
+The `.qp` and `.gg` module families provide data visualization capabilities.
+The public interface provides a grammar for specifying how plots should appear
+based largely on the idea of mapping data variables (columns) to positional
+and aesthetic properties (ie, x=`City`, y=`Population`, fill=`Year`). In
+general, `.qp` defines the set of verbs, and `.gg` the objects.
+
+A basic specification consists of a _layer_. A layer is a single set of
+mappings from variables to properties, together with some data and visual
+objects. For example, given a table `tab`, a simple scatter plot could be
+created with a single layer containing mappings from two columns in `tab` to
+_x_ and _y_ positional properties, the scales (_axes_) and coordinate system
+that would be used when displaying the layer, and the data (`tab`) itself.
+This would define a complete _specification_ which can be rendered into a
+scatter plot.
+
+More advanced specifications can be created by _stacking_ individual layer
+specifications to create a single new specification. When displayed, the stack
+of layers will all be rendered onto the same set of axes in the same
+coordinate system.
+
+Building upon the expressiveness of the Grammar of Graphics, verbs have been
+added to the grammar for specifying the arrangement of disjoint specifications
+in order to create a new _arranged_ specification. Any number specifications
+can be arranged vertically, horizontally, etc, creating new specifications,
+which can themselves be arranged. The only limitation is that arrangements
+cannot be used within a stack, but a stack can appear in any arrangement.
+Also, stacks can be stacked themselves.
+
+## Basic visualization
+
+The most basic way to visualize data is to use the high-level `.qp.plot[...]`
+API which takes a table, a list of columns to plot, and a dictionary of
+settings (or generic null).
+
+    
+    
+        t : ([]x:5 * til 45; y: til 45; z: 45?`a`b`c)
+    
+        // A 500px wide by 500px high plot of all columns of t
+        .qp.go[500;500] .qp.plot[t; (); ::]
+    
+        // A plot of only column x
+        .qp.go[500;500] .qp.plot[t; `x; ::]
+    
+        // A plot of x by y
+        .qp.go[500;500] .qp.plot[t; `x`y; ::]
+    
+        // A plot of x, y, AND z
+        .qp.go[500;500] .qp.plot[t; `x`y`z; ::]
+    
+
+In these examples, the `.qp.plot[...]` section creates a _specification_ \-- a
+plot description. The specification is provided to `.qp.go[width; height;
+spec]` which actually renders the plot description and sends it to the Analyst
+environment. In all of the examples below, .qp.go[w;h] should be used on the
+plot specification for it to appear within Analyst.
+
+This is not the only way to create plot specifications. Very customized plots
+can be described by using the _Grammar of Graphics_ rather than the `.qp.plot`
+facility.
+
+## Plot specification
+
+A plot is created from an _arrangement_ of _stacks_ of _layers_.
+
+### Layers
+
+At the most basic level, a single layer can be a plot. A layer is a collection
+of the following properties:
+
+  * data
+  * statistical transform
+  * geometry
+  * aesthetic mappings
+  * scales
+  * coordinate system
+
+The data is the table we want to visualize. A statistical transform can be run
+on the data before visualization to transform the data in any specified way
+(the default transform is the identity, applying no transformation).
+
+The geometry is the visual mark that will be made for each data record. There
+are a number of geometries available (see Creating a Layer), such as `point`,
+`line`, `rect`, etc.
+
+A set of aesthetic mappings map variables from the result of the statistical
+transform to attributes of the plot. Each geometry has a set of required
+mappings and a set of optional mappings. For example, a `point` geometry
+_requires_ `x` and `y` positions to be specified. Optionally, when using a
+`point`, the `fill` colour, the `stroke` colour, the `alpha`, and the `size`
+can also be mapped.
+
+    
+    
+        t: ([]price:1 2 3; volume: 9 8 7; sym:`a`b`c)
+    
+
+For example, if `t` above is the data for a layer, a possible aesthetic
+mapping using a `point` geometry could be (x=`price`, y=`volume`, fill=`sym`).
+
+The scales govern the mapping between data variables and aesthetic properties.
+There are _positional_ and _aesthetic_ scales, for positional and aesthetic
+properties respectively. Positional properties can have scales such as
+`linear`, `log`, `power`, etc. Aesthetic scales can be `gradient`, `circle
+radius`, `line size`, etc.
+
+Finally, a coordinate system for the mapping to occur in must be present in
+the layer as well. By default, the coordinate system is assumed to be
+Rectangular.
+
+#### Creating a layer
+
+In `.qp`, each geometry is a function. Documentation for each available
+geometry can be found under _Geometries_.
+
+The arguments after the first change based on the geometry, and are the
+columns to map to the required aesthetic mappings for the given geometry. For
+example, a `point` geometry requires an `x` and `y` position, so the signature
+for creating a layer with a `point` geometry is:
+
+    
+    
+        .qp.point[t; `price; `volume; ::]
+    
+
+That last argument is a slot for options and customizations. Passing in
+generic null will create a basic layer. Every geometry has this same last
+argument.
+
+#### Customizing a layer
+
+The basic plot can be customized by _joining_ options in place of the last
+argument. The options are all in the `.qp.s` sub-namespace. For example, to
+add a new `fill` mapping with an associated scale:
+
+    
+    
+        .qp.point[t; `price; `volume]
+            .qp.s.aes   [`fill; `sym]
+          , .qp.s.scale [`fill; .gg.scale.colour.cat10]
+    
+
+The generic null is omitted, and a list of joined options are passed instead.
+The first is a new aesthetic mapping using `.qp.s.aes[...]`, which takes the
+aesthetic being mapped to as a symbol, followed by the column name. This is
+joined with a new scale governing the fill aesthetic mapping, using
+`.qp.s.scale[...]`. The scale provided here `.gg.scale.colour.cat10` is one of
+the options for categorical colour scales. It defines 10 distinct colours to
+map to distinct symbols in the data. Other options can be added by joining
+them in the same way.
+
+There are a number of settings available:
+
+  * `.qp.s.aes[aesthetic; column]` \- add a new aesthetic mapping (column to attribute). This should be accompanied by a corresponding scale.
+  * `.qp.s.scale[aesthetic; scale]` \- add a new scale governing the aesthetic mapping. The available scales are:
+    * **Positional Scales**
+      * `.gg.scale.default` \- transform into a default scale for the given data type
+      * `.gg.scale.linear`
+      * `.gg.scale.log`
+      * `.gg.scale.power[degree]`
+      * `.gg.scale.categorical[sortFunction]`
+      * `.gg.scale.date`
+      * `.gg.scale.datetime`
+      * `.gg.scale.minute`
+      * `.gg.scale.month`
+      * `.gg.scale.second`
+      * `.gg.scale.time`
+      * `.gg.scale.timespan`
+      * `.gg.scale.timestamp`
+      * `.gg.scale.weekday`
+    * **Aesthetic Scales**
+      * `.gg.scale.colour.cat10` \- Discrete colours scale of 10 colours
+      * `.gg.scale.colour.cat20` \- Discrete colours scale of 20 colours
+      * `.gg.scale.colour.cat[colours]` \- Discrete colours scale of the given colours
+      * `.gg.scale.gradient[start;end]`
+      * `.gg.scale.gradient2[middleValue;start;middle;end]`
+      * `.gg.scale.alpha[min;max]` \- alpha (opacity) scale
+      * `.gg.scale.circle.area[min;max]`
+      * `.gg.scale.circle.radius[min;max]`
+      * `.gg.scale.line.size[min;max]`
+  * `.qp.s.aggr[aggregation]` \- register an aggregation for heatmaps, histograms
+  * `.qp.s.geom[settings]` \- geometry specific setting dictionary
+  * `.qp.s.labels[labels]` \- labels for `x`,`y`,`fill`,`colour`,`alpha`
+  * `.qp.s.theme[theme]` \- apply a new theme
+  * `.qp.s.stat[statTransform]` \- add or change the statistical transform function
+  * `.qp.s.binx[d; s; p]` \- change the x bin settings for heatmap, histogram
+  * `.qp.s.biny[d; s; p]` \- change the y bin settings for heatmap, histogram
+  * `.qp.s.secondary[label]` \- specify that the layer depends on another within the _same_ frame
+  * `.qp.s.primary[label]` \- specify that the layer can distribute the data to other layers in the _same_ frame
+  * `.qp.s.link[label]` \- register a two-way dependency between this layer and another layer in a _separate_ frame
+  * `.qp.s.textalign[alignment]` \- change the text alignment for text geometries
+  * `.qp.s.coord[coords]` \- change the coordinate system of the frame
+    * **Coordinate Systems**
+      * `.gg.coords.rect` \- regular rectangular/Cartesian coordinates
+      * `.gg.coords.polar` \- polar coordinates
+
+More detail on all of these can be found in their respective qDoc page.
+
+### Stacking layers
+
+Multiple layers can be stacked together to create more interesting plots. For
+example, if there are two tables to visualize:
+
+    
+    
+        tableA : ([]a: 1 2 3; b: 4 5 6)
+        tableB : ([]c: 9 8 7; d: 6 5 4)
+    
+
+And a layer for each table:
+
+    
+    
+        .qp.point[tableA; `a; `b; ::]
+        .qp.line[tableB; `a; `b; ::]
+    
+
+Both layers could be rendered on the same axes by _stacking_ with `.qp.stack
+(...)`:
+
+    
+    
+        .qp.stack (
+            .qp.point[tableA; `a; `b; ::];
+            .qp.line[tableB; `a; `b; ::]
+        )
+    
+
+The positional (`x` and `y`) scales and the coordinate system of the _first_
+layer in the stack will be inherited by all other layers. For example, if both
+layers in the above stack should be plotted in a log-log plot, it is
+sufficient to update only the first specification:
+
+    
+    
+        .qp.stack (
+            .qp.point[tableA; `a; `b]
+                .qp.s.scale [`x; .gg.scale.log]
+              , .qp.s.scale [`y; .gg.scale.log]
+              , .qp.s.coord [.gg.coords.polar];
+            .qp.line[tableB; `a; `b; ::]
+        )
+    
+
+### Arranging layers
+
+Once multiple plots have been constructed, it is possible to arrange the
+individual plots in a single visual display. Both of the plots above could be
+laid out horizontally with:
+
+    
+    
+        .qp.layout[`hori;::] (
+            .qp.point[tableA; `a; `b; ::];
+            .qp.line[tableB; `a; `b; ::]
+        )
+    
+
+Or vertically with:
+
+    
+    
+        .qp.layout[`vert;::] (
+            .qp.point[tableA; `a; `b; ::];
+            .qp.line[tableB; `a; `b; ::]
+        )
+    
+
+Arrangements can be arranged as well, so more complicated arrangements can be
+constructed by composing the arrangements:
+
+    
+    
+        .qp.layout[`vert;::] (
+            .qp.point[tableA; `a; `b; ::];
+            .qp.layout[`hori;::] (
+                .qp.line[tableB; `a; `b; ::];
+                .qp.path[tableB; `a; `b; ::]
+            )
+        )
+    
+
+## Interaction
+
+The images produced are interactive. Points can be interrogated by clicking
+the image. A table of matching records will appear under the image. One such
+table will appear for every layer in the plot clicked (independent arranged
+visuals do not contribute).
+
+A plot can also be zoomed by Ctrl+Click and Dragging a box within a plot. The
+box defines the area to zoom into. The first click _must_ be within the plot
+axes. After releasing the mouse button, a new image will be drawn and served
+to Analyst.
+
+### Specifying dependencies
+
+Two sorts of dependencies exist within `.qp`. The first is between layers in
+independent frames within an arrangement. Consider the following
+specification:
+
+    
+    
+        t : ([]x:5 * til 45; y: til 45; z: 45?`a`b`c)
+    
+        .qp.layout[`vert;::] (
+            .qp.point[t; `x; `y]
+                .qp.s.link[`myid];
+            .qp.line[t; `z; `x]
+                .qp.s.link[`myid])
+    
+
+In the above, there are two layers which would render beside each other
+horizontally. Both layers link the same identifier (`myid`). Because of this,
+whenever one of the layers is drilled into, the other linked layers will
+render the same subset of the data as the layer that was interrogated.
+
+The other concept of a dependency exists within a single frame. This concept
+is useful when a stack of several layers exists where one or more of the
+layers are really a function of another layer, as is the case between a
+scatterplot and a scatterplot smooth (a line drawn through the scatterplot).
+This is depicted in the in the following:
+
+    
+    
+        .qp.stack (
+            .qp.point[t; `x; `y]
+                .qp.s.primary[`myid];
+            .qp.smooth[t; `x; `y; ::]
+                .qp.s.secondary[`myid])
+    
+
+In this example, The scatterplot smooth is a secondary layer, and the scatter
+is a primary layer. Since these use the same identifier, whenever the frame is
+drilled into, only the scatter will be drilled into, and the smooth will be
+given the drilled scatter data so that it is always in sync.
+
+### Rotating aesthetics
+
+Rather than zooming into the same axes, it can often be useful to switch axes
+during a drilldown. For example, in the case of a bar chart with a categorical
+column, whenever the user drills into a category, the result can show the
+subcategories of the first category by mapping the subcategory column in the
+second plot. This can be repeated for however many subcategories exist. This
+is done by simply specifying a list of columns for a single axis as in the
+following:
+
+    
+    
+        sales : ([] province: `Ontario`Ontario`Ontario`Ontario`Quebec`Quebec`Quebec`Quebec;
+                    category: `technology`technology`office`office`technology`office`office`office;
+                    subcategory: `computers`accessories`paper`paper`computers`paper`chairs`chairs);
+    
+        .qp.histogram[sales; `province`category`subcategory; ::]
+    
+
+In the first rendering, a histogram of the `province`s will be renderer.
+Drilling down on a province will result in a histogram of the `categories` in
+the `province`. Then the `subcategories`, and so on.
+
+## Examples
+
+All examples below use the following table:
+
+    
+    
+        t : ([]x:5 * til 45; y: til 45; z: 45?`a`b`c)
+    
+    
+    
+         .qp.go[500;500] .qp.point[t; `x; `y; ::]
+    
+    
+    
+         .qp.go[500;500] .qp.point[t; `x; `y]
+            .qp.s.scale [`y; .gg.scale.log]
+    
+
+  * add a fill aesthetic and scale
+
+    
+    
+        .qp.go[500;500] .qp.point[t;`x;`y]
+            .qp.s.scale [`y; .gg.scale.log]
+          , .qp.s.aes   [`fill; `z]
+          , .qp.s.scale [`fill; .gg.scale.colour.cat10]
+    
+    
+    
+        .qp.go[500;500]
+            .qp.stack (
+                .qp.point[t; `x; `y]
+                    .qp.s.scale [`y; .gg.scale.log]
+                  , .qp.s.aes   [`fill; `z]
+                  , .qp.s.scale [`fill; .gg.scale.colour.cat10];
+                .qp.line[t; `x; `y; ::])
+    
+
+  * vertically align with a heatmap
+
+    
+    
+        .qp.go[500;500]
+            .qp.layout[`vert; ::] (
+                .qp.heatmap[t; `z; `y; ::];
+                .qp.stack (
+                    .qp.point[t; `x; `y]
+                        .qp.s.scale [`y; .gg.scale.log]
+                      , .qp.s.aes   [`fill; `z]
+                      , .qp.s.scale [`fill; .gg.scale.colour.cat10];
+                    .qp.line[t; `x; `y; ::]))
+    
+
+  * statically change the fill colour of the heatmap
+
+    
+    
+        .qp.go[500;500]
+            .qp.layout[`vert; ::] (
+                .qp.heatmap[t; `z; `y]
+                    .qp.s.geom[enlist[`fill]!enlist .gg.colour.FireBrick];
+                .qp.stack (
+                    .qp.point[t; `x; `y]
+                        .qp.s.scale [`y; .gg.scale.log]
+                      , .qp.s.aes   [`fill; `z]
+                      , .qp.s.scale [`fill; .gg.scale.colour.cat10];
+                    .qp.line[t; `x; `y; ::]))
+    
+
+  * horizontally align with a histogram
+
+    
+    
+        .qp.go[500;500]
+            .qp.layout[`hori; ::] (
+                .qp.histogram[t; `z; ::];
+                .qp.layout[`vert; ::] (
+                    .qp.heatmap[t; `z; `y]
+                        .qp.s.geom[enlist[`fill]!enlist .gg.colour.FireBrick];
+                    .qp.stack (
+                        .qp.point[t; `x; `y]
+                            .qp.s.scale [`y; .gg.scale.log]
+                          , .qp.s.aes   [`fill; `z]
+                          , .qp.s.scale [`fill; .gg.scale.colour.cat10];
+                        .qp.line[t; `x; `y; ::])))
+    
+
+  * set the limits on histogram scale to START at 0
+
+    
+    
+        .qp.go[500;500]
+            .qp.layout[`hori; ::] (
+                .qp.histogram[t; `z]
+                    .qp.s.scale [`y; .gg.scale.limits[0 0N] .gg.scale.linear];
+                .qp.layout[`vert; ::] (
+                    .qp.heatmap[t; `z; `y]
+                        .qp.s.geom[enlist[`fill]!enlist .gg.colour.FireBrick];
+                    .qp.stack (
+                        .qp.point[t; `x; `y]
+                            .qp.s.scale [`y; .gg.scale.log]
+                          , .qp.s.aes   [`fill; `z]
+                          , .qp.s.scale [`fill; .gg.scale.colour.cat10];
+                        .qp.line[t; `x; `y; ::])))
+    
+
+  * change the overall theme and add a title
+
+    
+    
+         .qp.go[500;500]
+            .qp.theme[.gg.theme.light]
+            .qp.title["My Example Plot"]
+            .qp.layout[`hori; ::] (
+                .qp.histogram[t; `z]
+                    .qp.s.scale [`y; .gg.scale.limits[0 0N] .gg.scale.linear];
+                .qp.layout[`vert; ::] (
+                    .qp.heatmap[t; `z; `y]
+                        .qp.s.geom[enlist[`fill]!enlist .gg.colour.FireBrick];
+                    .qp.stack (
+                        .qp.point[t; `x; `y]
+                            .qp.s.scale [`y; .gg.scale.log]
+                          , .qp.s.aes   [`fill; `z]
+                          , .qp.s.scale [`fill; .gg.scale.colour.cat10];
+                        .qp.line[t; `x; `y; ::])))
+    
+
+## .gg.cheat.sheet
+
+Render a cheatsheet of objects and signatures of the visualization library
+
+**Example:**
+
+    
+    
+     .gg.cheat.sheet[]
+    
+
+## .gg.display
+
+Displays an initialized GG object using the default GG renderer
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+w | long | width  
+h | long | height  
+gg | dict | initialized GG  
+  
+**Throws:**
+
+Type | Description  
+---|---  
+| "resize error: canvas is not large enough to hold frame components"  
+  
+**See Also:** [ .gg.resizeUsing ](./#ggresizeusing)
+
+## .gg.displayUsing
+
+Display and render using an explicit renderer. A renderer is a
+dictionary/namespace with the following:
+
+  * `atextL : state, settings -> state`
+  * `atextM : state, settings -> state`
+  * `atextR : state, settings -> state`
+  * `circle : state, settings -> state`
+  * `line : state, settings -> state`
+  * `path : state, settings -> state`
+  * `rect : state, settings -> state`
+  * `remove : state -> ()`
+  * `render : state -> any`
+  * `new : w, h -> state`
+
+In each of the above, `state` is anything that the renderer needs to track,
+and `settings` is a dictionary of settings for each geometry. These settings
+have the following keys:
+
+  * `atextL : `pt`fontsize`fillcolour`angle`
+  * `atextM : `pt`fontsize`fillcolour`angle`
+  * `atextR : `pt`fontsize`fillcolour`angle`
+  * `circle : `center`radius`strokecolour`strokewidth`fillcolour`
+  * `line : `x1`y1`x2`y2`strokewidth`fillcolour`
+  * `path : `xs`ys`strokewidth`strokecolour`fillcolour`
+  * `rect : `x`y`w`h`strokewidth`strokecolour`fillcolour`
+
+Stroke-colour and Fill-colour are both byte arrays of the form `0xAARRGGBB`.
+
+When stroke is not used, stroke-width is `0` and stroke-colour is undefined.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+r | dict | render API  
+w | long | width  
+h | long | height  
+gg | dict | initialized GG object  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | Rendered GG  
+  
+**Example:**
+
+    
+    
+     .gg.displayUsing[.myrenderer; 500; 500] .gg.new spec
+    
+
+## .gg.new
+
+Creates a new _initialized_ GG object from a specification tree. The default
+theme is added, or used to extend the root node if it is a theme node itself
+in order to have a fully specified theme for every node in the tree.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+s | table | A specification tree (see .gg.spec)  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | Initialized GG object  
+  
+**Throws:**
+
+Type | Description  
+---|---  
+| Initialization errors  
+  
+**Example:**
+
+    
+    
+         .gg.new .gg.spec.single .gg.layer.new @
+    
+
+## .gg.resize
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+w | long |   
+h | long |   
+gg | [ .gg.ty ](../overview-typedefs/#ggty) | Main GG container  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+[ .gg.ty ](../overview-typedefs/#ggty) | Main GG container  
+  
+**Throws:**
+
+Type | Description  
+---|---  
+| "resize error: canvas is not large enough to hold frame components"  
+  
+**See Also:** [ .gg.resizeUsing ](./#ggresizeusing)
+
+## .gg.resizeUsing
+
+Given a renderer implementation, display an initialized GG object with the
+given width and height.
+
+A new specification tree will be created, and returned as part of the
+resulting GG object. The new specification tree will have every node in the
+tree correctly sized with a origin (w,h), width, and height. Tree nodes for
+all frame components for every layer and stack will be added to the tree. The
+origin of each node will be specified as an absolute location.
+
+As an example, the following uninitialized specification tree:
+
+    
+    
+     Example 1 below
+    
+
+becomes (without padding, styling, etc):
+
+    
+    
+     Example 2 below
+    
+
+The tree is descended starting at the root, drawing each node individually.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+r | dict | renderer implementation  
+w | long | width  
+h | long | height  
+gg | dict | initialized GG object  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | a new GG object with an updated specification tree and output  
+  
+**See Also:** [ .gg.displayUsing ](./#ggdisplayusing)
+
+**Example:** 1
+
+    
+    
+          vert 
+          \_ layer
+    
+
+**Example:** 2
+
+    
+    
+          vert (0,0), 500, 500
+          \_ layer (0,0), 500, 500
+             \_ canvas (50, 0), 450, 450
+             \_ xaxis (50, 450), 450, 50
+             \_ yaxis (0,0), 50, 450
+             \_ ...
+    
+

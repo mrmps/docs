@@ -1,0 +1,166 @@
+https://code.kx.com/insights/core/pgwire.html
+
+# Postgres SQL Interface - kdb products
+
+Original URL: https://code.kx.com/insights/core/pgwire.html
+
+# Postgres SQL Interface (pgwire)
+
+pgwire is a proxy process which implements the Postgres wire protocol (binary
+and text) v3 server. Each Postgres client connection corresponds to a single
+TCP connection to the kdb Insights Core host which should be running s.k_.
+
+pgwire is available for Windows, Linux, or MacOS. It may be deployed on:
+
+  * The client machine alongside the Postgres client (for example: on your Windows desktop that is running the PowerBI or HeidiSQL client).
+
+  * The server machine alongside kdb Insights Core (for example: both the q and pgwire processes are on your Linux server with the DbVisualizer client on your MacOS machine).
+
+## Supported clients
+
+You can use SQL clients like Tableau, HeidiSQL, PowerBI, DBVisualizer or
+Grafana. The query builders within these clients make it very easy for an end
+user to visualise the tables and automatically build the ANSI SQL statements.
+
+The following versions of those clients are supported.
+
+client | version  
+---|---  
+Tableau | 2021.4.1  
+HeidiSQL | 11.3.0.6295  
+PowerBI | 2.95 (July 2021)  
+DBVisualizer | 13.0.2  
+Grafana | 9.0.0  
+  
+Note
+
+As new versions of these popular clients are released we endeavour to add
+support for those newer versions over time.
+
+## Running pgwire
+
+The parameters for running pgwire are as follows:
+
+    
+    
+    pg [-T kdb_timeout][-I interface][-v] listen_port kdb_host kdb_port
+    
+
+properties | description | example  
+---|---|---  
+listen_port | local port | 5434  
+kdb_host | IP Address of the kdb+ database | 10.0.2.2  
+kdb_port | Port of the kdb+ database | 5001  
+-T | Connection timeout (seconds) | 0 (default: 0)  
+-I | Listening interface | 127.0.0.1 (default: 0.0.0.0)  
+-v | verbose logging level, printed to stdout and stderr |   
+  
+## SQL Integration using pgwire
+
+This section describes how to install pgwire and use it to connect Tableau and
+Power BI to a kdb Insights Core database.
+
+### Create a PostgreSQL proxy server
+
+This section details how to use pgwire to create a PostgreSQL proxy server
+which will enable Tableau and Power BI to connect to a kdb Insights Core
+database.
+
+  1. Launch q
+
+    1. Set the q process on a port
+
+    2. Load s.k_
+
+    3. Load the database of your choice
+
+  2. Run pgwire and create a proxy PostgreSQL server
+
+    1. Extract kxsql zip file
+
+    2. Start pgwire
+
+Note
+
+There needs to be a kdb Insights Core server running on kdb_host:kdb_port with
+s.k_ loaded.
+
+Running the command with the example properties would result in pgwire
+providing a proxy PostgreSQL server running on port 5434 of the 'localhost'
+that accesses the kdb Insights Core database available at 10.0.2.2:5001.
+
+### Integration with Tableau
+
+This section details how connect Tableau to the PostgreSQL proxy server,
+created above, allowing Tableau to connect to a kdb+ database.
+
+  1. Download and install the PostgreSQL Driver, as described [here](https://www.tableau.com/support/drivers)
+
+  2. Connect the new PostgreSQL proxy server to Tableau.
+
+    1. Launch the Tableau Desktop
+    2. Under Connect, select the `PostgreSQL database` option
+    3. Enter the following properties:
+
+properties | description | example  
+---|---|---  
+Server | IP address of the proxy PostgreSQL server | 127.0.0.1  
+Port | Port of the proxy PostgreSQL server | 5433  
+Database | Database to connect to | databasefile  
+Authentication: Username | The username on the kdb Insights Core server | username  
+Authentication: Password | If this is not required, you still need to enter at least one character | password  
+Require SSL | SSL Encryption Option | untick  
+    4. Select `Sign In`.
+
+See [PostgreSQL Connector for Tableau](https://docs.microsoft.com/en-us/power-
+query/connectors/postgresql) for additional details on creating the
+connection.
+
+### Integration with Power BI
+
+This section details how connect Power BI to the PostgreSQL proxy server,
+created above, allowing Power BI to connect to a kdb+ database.
+
+  1. Launch Power BI.
+
+  2. Select 'PostgreSQL database' in the Connector selection.
+
+  3. Enter the following:
+
+properties | description | example  
+---|---|---  
+Server | listen_port (as specified in the previous step) | 127.0.0.1:5433  
+Database | field must not be empty, but is ignored by kdb+ proxy PostgreSQL server | db  
+Data Connectivity mode | with Import it does a single retrieval of data and executes all other queries locally. With Direct SQL it goes to kdb Insights Core for each query. | Import or DirectQuery, both are supported  
+  
+See [PostgreSQL Connector for Power BI](https://docs.microsoft.com/en-
+us/power-query/connectors/postgresql) for additional details on creating the
+connection.
+
+  4. Click `OK`
+
+  5. On the Database screen enter your kdb Insights Core credentials:
+
+properties | example  
+---|---  
+User name | kdb Insights Core User Name  
+Password | kdb Insights Core Password  
+level | Leave as default  
+  
+See [here](https://code.kx.com/q/basics/cmdline/#-u-usr-pwd-local) for how to
+set the username and password for kdb Insights Core.
+
+Each postgres client connection corresponds to a single tcp connection to a
+kdb Insights Core host running s.k.
+
+## Logging failed queries
+
+A table can be created that includes all all failed SQL queries.
+
+    
+    
+    .z.pg:{$[$[0=type x;".s.spg"~x 0;0b];$[10h=type r:@[value;.sql.last:0N!x;::];[.sql.err,:enlist`query`error!(x;r);r];r];value x]}
+    
+
+It can also be enhanced to log all queries if an audit trail is required.
+

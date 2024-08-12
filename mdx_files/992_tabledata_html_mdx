@@ -1,0 +1,50 @@
+https://code.kx.com/insights/core/big-query/tabledata.html
+
+# Tabledata - kdb products
+
+Original URL: https://code.kx.com/insights/core/big-query/tabledata.html
+
+# Tabledata
+
+## .com_kx_bq.tabledata.insertAll
+
+Insert data into a BigQuery table
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+args | dict | Arguments required for the tabledata.insertAll method (see .com_kx_bq.disc.getParameters`tabledata.insertAll)  
+tabData | table | Data to insert  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | Response from BigQuery  
+  
+**Example:**
+
+    
+    
+     q).com_kx_bq.query "select * from `cloudpak.kx_bma_bigquery_ds.simple_table`"
+     No rows returned from query
+     q)simple_table:([] longCol:1 2 3 4;dateCol:4#.z.d)
+     q)simple_table
+     longCol dateCol
+     ------------------
+     1       2021.01.21
+     2       2021.01.21
+     3       2021.01.21
+     4       2021.01.21
+     q).com_kx_bq.tabledata.insertAll[`projectId`datasetId`tableId!("cloudpak";"kx_bma_bigquery_ds";"simple_table"); simple_table]
+     kind| "bigquery#tableDataInsertAllResponse"
+     q).com_kx_bq.query "select * from `cloudpak.kx_bma_bigquery_ds.simple_table`"
+     longCol dateCol
+     ------------------
+     4       2021.01.21
+     1       2021.01.21
+     2       2021.01.21
+     3       2021.01.21
+    
+

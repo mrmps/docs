@@ -1,0 +1,153 @@
+https://code.kx.com/platform/logging/
+
+# Logging - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/logging/
+
+# Logging
+
+Log files for q processes running on _KX Control_ , including log files for
+_KX Control_ itself and any daemons, are stored in a directory configured in
+`delta.profile`. The path to this directory is stored as the environment
+variable `FD_LOGDIR` and is derived from the environment variable
+`DELTADATA_HOME`:
+
+    
+    
+    $ export FD_LOGDIR=${DELTADATA_HOME}/DeltaControlData/logdir
+    
+
+The log file for _KX Control_ is `DeltaControl.log` and for the daemon is
+`DeltaControlDaemon.log`. Other processes running on `KX Control` have their
+log-file names and other logging details configured in the configuration
+parameter `DC_LOGGING:DEFAULT` and its overrides. Overrides of `DC_LOGGING`
+named after the process instances to which they apply. The parameter
+attributes of `DC_LOGGING` are:
+
+![Screenshot](../img/control/dclogging.png)
+
+## Logging APIs
+
+API documentation is available for the logging APIs.
+
+[Logging](../api/logging/)
+
+The above link discusses logging using components. This can be useful for
+toggling debug level on a per-component level. This means debug messages are
+available without flooding the log files. Components can be enabled or
+explicitly disabled using instance parameters; **.log.cmp.debugEnabled** and
+**.log.cmp.debugDisabled**.
+
+[Instance parameters](../enhanced_instance_configuration/)
+
+## Log file name configuration
+
+The naming convention of log files for processes running on the Control
+platform is configured in`DC_LOGGING`, as the `logFile` attribute. The log
+file name can contain temporal values which are indicated with codes.
+
+code | value  
+---|---  
+`%Y` | year  
+`%m` | month  
+`%d` | day  
+`%H` | hour  
+`%M` | minute  
+`%S` | second  
+`%U` | millisecond  
+`%N` | nanosecond  
+  
+![Screenshot](../img/control/logfiles.png)
+
+Log precision and console width
+
+The number of decimal places for the time of logged messages is set using the
+`logPrecision` attribute.
+
+The `consoleWidth` attribute is analogous to the console size of a q session,
+and is used to control the maximum number of rows and columns for output.
+
+## Service class configuration
+
+The naming convention of log files for service class that are started from the
+command line, through the `startService`script. Can be configured via the
+environment variable `DELTACONTROL_LOGFILE_SERVICE_FORMAT` which can be set in
+the `delta.profile` file. It is advised that the format should match the value
+of the `logFile` attribute in `DC_LOGGING`
+
+    
+    
+    export DELTACONTROL_LOGFILE_SERVICE_FORMAT="%Y%m%dT%H%M%S%3N"
+    
+
+Linux code | Windows code | value  
+---|---|---  
+`%Y` | %YYYY% | year  
+`%m` | %MM% | month  
+`%d` | %DD% | day  
+`%H` | %HH% | hour  
+`%M` | %MM% | minute  
+`%S` | %SS% | second  
+`%U` |  | millisecond  
+`%3N` |  | nanosecond  
+  
+Service class
+
+When a service class is started from the Control UI or CLI, it will use the
+`DC_LOGGING` config for the log file format. Otherwise if a service is started
+from the command line using the startService script. It will use the value of
+`DELTACONTROL_LOGFILE_SERVICE_FORMAT` in the `delta.profile`.
+
+## Log file rolling
+
+Log files can be configured to roll. Rolling creates a file containing the
+current contents of the log file and sets the log file to be empty. Log file
+rolling is also configured via `DC_LOGGING` and its overrides.
+
+`datePattern`
+
+    Appended to the log file name to create the new file when rolling and can contain the same temporal values as `logFile`
+`rollMode`
+
+    
+
+When rolling occurs:
+
+  * `size`: the log file will roll when it reaches the value of the `rollSize` attribute in megabyte
+  * `daily`: the log file will be rolled at the time configured as `rollTime`.
+
+`rollBy`
+
+    Either \- `process`: each process rolls its own log file \- `DeltaControl`: _KX Control_ itself will roll the log files
+
+On Windows `DeltaControl` mode isn’t supported
+
+## Publishing log messages
+
+It is possible to publish logged-out, warning and error messages, as well as
+to query the log and access log messages when they occur on a process. In
+`DC_LOGGING` the `publishInitAnalytic` is the analytic called at start-up to
+enable this functionality. The analytic `publishAnalytic` publishes the log
+messages to any process configured in `consumerProcesses`.
+
+Which messages are published can be configured in `DC_LOG_PUBLISH:DEFAULT`.
+Additional rows of this parameter can be added to have different behavior for
+different process instances. The parameter attributes of `DC_LOG_PUBLISH` are:
+
+![Screenshot](../img/control/dclogpublish.png)
+
+If `out`, `warn` or `err` are true then out, warn and err log messages
+respectively are published as `dxLog` messages to the consumer processes
+defined in `DC_LOGGING`.
+
+If the `replay` column is true then once a connection between a process and
+the consumer process is made, old log messages from the log file will be
+published to the consumer process.
+
+The `querylog` column configures publishing from `.pm.querylog`. If true, two
+`dxLog` messages are published: one when the query is received by the process,
+and one after the query has executed.
+
+If the accesslog column is true then a `.pm.accesslog` message is published
+when a connection attempt is made to the process.
+

@@ -1,0 +1,652 @@
+https://code.kx.com/insights/microservices/database/deploy/docker.html
+
+# Basic - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/database/deploy/docker.html
+
+# Docker reference deployment
+
+A reference deployment using Docker Compose is provided below.
+
+## Prerequisites
+
+Pulling the images requires a login with:
+
+    
+    
+    docker login portal.dl.kx.com -u <username> -p <password>
+    
+
+## Directory structure
+
+Before running this example, the following directory structure should be
+created:
+
+    
+    
+    db/     # Empty directory where the database will be stored on disk
+    cfg/    # Directory for configuration files
+        assembly.yaml
+        rt_tick_client_lib.q
+    src/    # Directory for custom API code
+        agg/
+            custom.q
+        da/
+            custom.q
+    kdb-tick/   # Clone of kdb-tick for a tickerplant service
+        tick/{r.q, u.q, sym.q}
+        tick.q
+    data/
+        db/    # Storage location for database contents
+        logs/  # Tickerplant logs directory
+    .env
+    docker-compose-sg.yaml
+    docker-compose-da.yaml
+    docker-compose-sm.yaml
+    docker-compose-tp.yaml
+    
+
+Write permissions
+
+The `data/db` and `data/logs` directory on the host _must_ allow write
+permission by the SM and TP containers who run as the user "`nobody`".
+
+  * `kdb-tick/` is cloned from [the KX Github](https://github.com/KxSystems/kdb-tick).
+  * The `sym.q` schema must include the `_prtnEnd` and `_reload` tables, as in:
+
+kdb-tick/tick/sym.q
+
+    
+    
+    / TODO get rid of this redundant file
+    / https://kxl.atlassian.net/browse/KXI-36907
+    
+    // internal tables
+    // with `time` and `sym` columns added by RT client for compatibility
+    (`$"_prtnEnd")set ([] time:"n"$(); sym:`$(); signal:`$(); endTS:"p"$(); opts:());
+    (`$"_reload")set ([] time:"n"$(); sym:`$(); mount:`$(); params:(); asm:`$())
+    (`$"_heartbeats")set ([] time:"n"$(); sym:`$(); foo:"j"$())
+    (`$"_batchIngest")set ([] time:"n"$(); sym: `$(); batchUpdType: `$(); session:`$(); address:`$(); callback:(); merge:"b"$(); datacheck:"b"$());
+    (`$"_batchDelete")set ([] time:"n"$(); sym: `$(); batchUpdType: `$(); session:`$(); address:`$(); callback:(); endTS:"p"$(); filter:(); startTS:"p"$(); table:`$());
+    (`$"_schemaChange")set ([] time:"n"$(); sym: `$(); batchUpdType: `$(); session:`$(); address:`$(); callback:(); changes:());
+    
+    trade:([] time:"n"$(); sym:`$(); realTime:"p"$(); price:"f"$(); size:"j"$())
+    quote:([] time:"n"$(); sym:`$(); realTime:"p"$();
+              bid:"f"$(); ask:"f"$(); bidSize:"j"$(); askSize:"j"$())
+    
+
+## Run
+
+To run, execute the following:
+
+    
+    
+    docker-compose \
+        -f docker-compose-tp.yaml \
+        -f docker-compose-da.yaml \
+        -f docker-compose-sm.yaml \
+        up
+    
+
+## Environment
+
+Each of the Docker Compose files below use a `.env` file specifying the images
+and licenses to be used. Below, the `RELEASE` and `QCE_RELEASE` environment
+variables are configured to point to the latest releases of kdb Insights
+Microservices and kdb Insights respectively. Additionally a license must be
+provided to run this example.
+
+.env
+
+    
+    
+    # Images
+    kxi_sg_gw=$REGISTRY/kxi-sg-gw:$RELEASE
+    kxi_sg_rc=$REGISTRY/kxi-sg-rc:$RELEASE
+    kxi_sg_agg=$REGISTRY/kxi-sg-agg:$RELEASE
+    kxi_sm_single=$REGISTRY/kxi-sm-single:$RELEASE
+    kxi_da_single=$REGISTRY/kxi-da-single:$RELEASE
+    kxi_q=$REGISTRY/qce:$QCE_RELEASE
+    
+    # Paths
+    local_dir="."
+    mnt_dir="/mnt"
+    shared_dir="/mnt/shared"
+    cfg_dir="/mnt/cfg"
+    db_dir="/mnt/data/db"
+    logs_dir="/mnt/data/logs"
+    custom_da_dir="/mnt/src/da"
+    custom_agg_dir="/mnt/src/agg"
+    
+    # Network
+    network_name=kx
+    
+
+## Assembly file
+
+The _Assembly file_ is the main business configuration for the database. Table
+schemas and logical process configuration are defined here. See [assembly
+configuration](../configuration/assembly/database.html#assembly) for more
+information.
+
+cfg/assembly.yaml
+
+    
+    
+    name: fin-example
+    description: Data access assembly configuration
+    labels:
+      region: New York
+      assetClass: stocks
+    
+    tables:
+      _heartbeats:
+        type: splayed_mem
+        columns:
+          - name: time
+            type: timespan
+          - name: sym
+            type: symbol
+          - name: foo
+            type: float
+      trade:
+        description: Trade data
+        type: partitioned
+        blockSize: 10000
+        prtnCol: realTime
+        sortColsOrd: sym
+        sortColsDisk: sym
+        columns:
+          - name: time
+            description: Time
+            type: timespan
+          - name: sym
+            description: Symbol name
+            type: symbol
+            attrMem: grouped
+            attrDisk: parted
+            attrOrd: parted
+          - name: realTime
+            description: Real timestamp
+            type: timestamp
+          - name: price
+            description: Trade price
+            type: float
+          - name: size
+            description: Trade size
+            type: long
+    
+      quote:
+        description: Quote data
+        type: partitioned
+        blockSize: 10000
+        prtnCol: realTime
+        sortColsOrd: sym
+        sortColsDisk: sym
+        columns:
+          - name: time
+            description: Time
+            type: timespan
+          - name: sym
+            description: Symbol name
+            type: symbol
+            attrMem: grouped
+            attrDisk: parted
+            attrOrd: parted
+          - name: realTime
+            description: Real timestamp
+            type: timestamp
+          - name: bid
+            description: Bid price
+            type: float
+          - name: ask
+            description: Ask price
+            type: float
+          - name: bidSize
+            description: Bid size
+            type: long
+          - name: askSize
+            description: Ask size
+            type: long
+    
+    bus:
+      stream:
+        protocol: tp
+        nodes: tp:5010
+        topic: dataStream
+    
+    mounts:
+      rdb:
+        type: stream
+        baseURI: file://stream
+        partition: none
+      idb:
+        type: local
+        baseURI: file:///mnt/data/db/idb
+        partition: ordinal
+      hdb:
+        type: local
+        baseURI: file:///mnt/data/db/hdb
+        partition: date
+    
+    elements:
+      dap:
+        gwAssembly: gw-assembly
+        smEndpoints: sm:20001
+        instances:
+          dap:
+            mountList: [rdb, idb, hdb]
+    
+      sm:
+        description: Storage manager
+        source: stream
+        tiers:
+          - name: stream
+            mount: rdb
+          - name: idb
+            mount: idb
+            schedule:
+              freq: 0D00:10:00 # every 10 minutes
+          - name: hdb1
+            mount: hdb
+            schedule:
+              freq: 1D00:00:00 # every day
+              snap:   01:35:00 # at 1:35 AM
+            retain:
+              time: 2 days
+          - name: hdb2
+            mount: hdb
+            store: file:///mnt/data/db/hdbtier2
+            retain:
+              time: 5 weeks
+          - name: hdb3
+            mount: hdb
+            store: file:///mnt/data/db/hdbtier3
+            retain:
+              time: 3 months
+        disableDiscovery: true  # Disables registering with discovery
+    
+
+## Docker Compose
+
+Each service of the database is deployed here as a separate Docker Compose
+file for clarity. Each of these could be combined into a single Docker Compose
+file instead.
+
+### Service Gateway
+
+The Service Gateway configures the three containers that make up the gateway.
+
+docker-compose-sg.yaml
+
+    
+    
+    networks:
+      kx:
+        name: ${network_name}
+    
+    services:
+      sgrc:
+        image: ${kxi_sg_rc}
+        environment:
+          - KXI_NAME=sg_rc
+          - KXI_PORT=5050
+          - KXI_LOG_FORMAT=text
+          - KXI_LOG_LEVELS=default:info
+          - KDB_LICENSE_B64
+        networks: [kx]
+        volumes:
+          - ${local_dir}:${mnt_dir}
+    
+      sgagg:
+        image: ${kxi_sg_agg}
+        environment:
+          - KXI_NAME=sg_agg
+          - KXI_PORT=5060
+          - KXI_SG_RC_ADDR=sgrc:5050
+          - KXI_CUSTOM_FILE=${custom_agg_dir}/custom.q # Optional for custom APIs
+          - KXI_LOG_FORMAT=text
+          - KXI_LOG_LEVELS=default:info
+          - KDB_LICENSE_B64
+        deploy: # Optional: deploy multiple replicas.
+          mode: replicated
+          replicas: 1
+        networks: [kx]
+        volumes:
+          - ${local_dir}:${mnt_dir}
+    
+      sggw:
+        image: ${kxi_sg_gw}
+        environment:
+          - GATEWAY_QIPC_PORT=5040
+          - GATEWAY_HTTP_PORT=8080
+          - KXI_SG_RC_ADDR=sgrc:5050
+          - KXI_LOG_FORMAT=text
+          - KXI_LOG_LEVELS=default:info
+        deploy: # Optional: deploy multiple replicas.
+          mode: replicated
+          replicas: 1
+        networks: [kx]
+        volumes:
+          - ${local_dir}:${mnt_dir}
+    
+
+### Data Access Processes
+
+A set of Data Access Processes are configured, each of which connect to the
+Resource Coordinator of the Service Gateway launched above.
+
+docker-compose-da.yaml
+
+    
+    
+    networks:
+      kx:
+        name: ${network_name}
+    
+    services:
+      dap:
+        image: ${kxi_da_single}
+        command: -p 5080
+        environment:
+          - KXI_NAME=dap
+          - KXI_SC=dap
+          - KXI_PORT=5080
+          - KXI_RT_LIB=${shared_dir}/rt_tick_client_lib.q
+          - KXI_ASSEMBLY_FILE=${cfg_dir}/assembly.yaml
+          - KXI_SG_RC_ADDR=sgrc:5050
+          - KXI_CUSTOM_FILE=${custom_da_dir}/custom.q # Optional for custom APIs
+          - KXI_LOG_FORMAT=text
+          - KXI_LOG_LEVELS=default:info
+          - KDB_LICENSE_B64
+        volumes:
+          - ${local_dir}:${mnt_dir}
+        networks: [kx]
+    
+
+### Storage Manager
+
+The Storage Manager is configured as a single container, allowing connections
+by Data Access Processes configured above.
+
+docker-compose-sm.yaml
+
+    
+    
+    networks:
+      kx:
+        name: ${network_name}
+    
+    services:
+      sm:
+        image: ${kxi_sm_single}
+        command: -p 20001
+        environment:
+          - KXI_NAME=sm
+          - KXI_SC=SM
+          - KXI_ASSEMBLY_FILE=${cfg_dir}/assembly.yaml
+          - KXI_RT_LIB=${shared_dir}/rt_tick_client_lib.q
+          - KXI_LOG_FORMAT=text
+          - KXI_LOG_LEVELS=default:info
+          - KDB_LICENSE_B64
+        volumes:
+          - ${local_dir}:${mnt_dir}
+        networks: [kx]
+    
+
+### Tickerplant
+
+A standard tickerplant is put in front of the Storage Manager and Data Access
+Process to provide durable data ingestion.
+
+Note
+
+Within _kdb Insights Enterprise_ , the transport used is _kdb Insights
+Reliable Transport_ rather than a tickerplant. This allows for fault-tolerance
+and durable messaging despite potentially unreliable network connections. When
+using a standard tickerplant instead, the interface must adhere to the API
+expected by RT.
+
+docker-compose-tp.yaml
+
+    
+    
+    networks:
+      kx:
+        name: ${network_name}
+    
+    services:
+      tp:
+        image: ${kxi_q}
+        command: tick.q sym ${logs_dir} -p 5010
+        working_dir: ${shared_dir}/kdb-tick
+        environment:
+          - KDB_LICENSE_B64
+        volumes:
+          - ${local_dir}:${mnt_dir}
+        networks: [kx]
+    
+
+## Custom API code
+
+Custom code is entirely optional, but allows creation of custom APIs to reside
+within Data Access Processes and Aggregators. These APIs are then registered
+with the Service Gateway to provide unified access across tiers to clients.
+
+src/da/custom.q
+
+    
+    
+    // Sample DA custom file.
+    
+    // Can load other files within this file. Note that the current directory
+    // is the directory of this file (in this example: /opt/kx/custom).
+    / \l subFolder/otherFile1.q
+    / \l subFolder/otherFile2.q
+    
+    //
+    // @desc Define a new API. Counts number of entries by specified columns.
+    //
+    // @param table     {symbol}            Table name.
+    // @param byCols    {symbol|symbol[]}   Column(s) to count by.
+    // @param startTS   {timestamp}         Start time (inclusive).
+    // @param endTS     {timestamp}         End time (exclusive).
+    //
+    // @return          {table}             Count by specified columns.
+    //
+    countBy:{[table;startTS;endTS;byCols]
+        ?[table;enlist(within;`realTime;(startTS;endTS-1));{x!x,:()}byCols;enlist[`cnt]!enlist(count;`i)]
+        }
+    
+    // Register with the DA process.
+    .da.registerAPI[`countBy;
+        .sapi.metaDescription["Define a new API. Counts number of entries by specified columns."],
+        .sapi.metaParam[`name`type`isReq`description!(`table;-11h;1b;"Table name.")],
+        .sapi.metaParam[`name`type`isReq`description!(`byCols;-11 11h;1b;"Column(s) to count by.")],
+        .sapi.metaParam[`name`type`isReq`description!(`startTS;-12h;1b;"Start time (inclusive).")],
+        .sapi.metaParam[`name`type`isReq`description!(`endTS;-12h;1b;"End time (exclusive).")],
+        .sapi.metaReturn[`type`description!(98h;"Count by specified columns.")],
+        .sapi.metaMisc[enlist[`safe]!enlist 1b]
+        ]
+    
+
+src/agg/custom.q
+
+    
+    
+    // Sample Agg custom file.
+    
+    // Can load other files within this file. Note that the current directory
+    // is the directory of this file (in this example: /opt/kx/custom).
+    / \l subFolder/otherFile1.q
+    / \l subFolder/otherFile2.q
+    
+    //
+    // @desc An override to the default ping aggregation function. Instead of doing a raze,
+    // we just take the min (so true indicates all targets successful).
+    //
+    // @param res   {boolean[]} Results from the DAPs.
+    //
+    // @return      {boolean}   Min of all DAP results.
+    //
+    pingAggOverride:{[res]
+        .sapi.ok min res
+        }
+    
+    
+    //
+    // @desc Agg function that does a plus join on a list of tables.
+    //
+    // @param tbls  {table[]}   List plus-joinable tables.
+    //
+    // @return      {table}     Plus join.
+    //
+    pjAgg:{[tbls]
+        .sapi.ok (pj/)tbls
+        }
+    
+    
+    //
+    // @desc Agg function that does an average daily count by sym.
+    //
+    // @param tbls  {table[]}   List of tables with `` `sym`date`cnt`` columns.
+    //
+    // @return      {table}     Average count by sym
+    //
+    avAgg:{[tbls]
+        res:select sum cnt by sym,date from raze 0!'tbls; / Join common dates
+        .sapi.ok select avg cnt by sym from res / Average
+        }
+    
+    
+    //
+    // In order to be usable, aggregation functions MUST be registered with the Agg process. When registering,
+    // one can also set the aggregation function as the default aggregation function for one or more APIs.
+    // For example, Suppose we had an API defined in the DAPs that peforms a "count by" operation on a table:
+    //
+    // countBy:{[table;startTS;endTS;byCols]
+    //     ?[table;enlist(within;`realTime;(startTS;endTS-1));{x!x,:()}byCols;enlist[`cnt]!enlist(count;`i)]
+    //     }
+    //
+    // We can then register our aggregations functions thusly:
+    //
+    .sgagg.registerAggFn[`pingAggOverride;
+        .sapi.metaDescription["Custom override to .kxi.ping"],
+        .sapi.metaParam[`name`type`description!(`res;1h;"List of booleans indicating ping was successful")],
+        .sapi.metaReturn[`type`description!(-1h;"The worst of all results")];
+        `$()
+        ]
+    
+    .sgagg.registerAggFn[`pjAgg;
+        .sapi.metaDescription["Plus join aggregation"],
+        .sapi.metaParam[`name`type`description!(`tbls;0h;"Tables received from DAPs")],
+        .sapi.metaReturn`type`description!(98h;"The plus join (over) of the tables");
+        `countBy]; // Register as default aggregation function for this API
+    
+    .sgagg.registerAggFn[`avAgg;
+        .sapi.metaDescription["Average join aggregation"],
+        .sapi.metaParam[`name`type`description!(`tbls;0h;"Tables received from DAPs")],
+        .sapi.metaReturn`type`description!(98h;"The average join (over) of the tables");
+        `$()
+        ]
+    
+    //
+    // Note also that an aggregation function can be default aggregation function for multiple APIs. E.g.
+    //  .sgagg.registerAggFn[`myAggFn;();`api1`api2`api3]
+    //
+    
+
+## RT client library
+
+To connect to the tickerplant, both Data Access Processes and the Storage
+Manager are configured with a custom script defining connection details and
+providing the necessary `.rt.*` APIs expected by the services.
+
+cfg/rt_tick_client_lib.q
+
+    
+    
+    // === internal tables without time/sym columns ===
+    .rt.NO_TIME_SYM:`$("_prtnEnd";"_reload";"_batchIngest";"_batchDelete";"_schemaChange")
+    .rt.IS_DICT:`$("_batchIngest";"_batchDelete";"_schemaChange")
+    
+    // === rt publish and push functions ===
+    .rt.push:{'"cannot push unless you have called .rt.pub first"}; // will be overridden
+    
+    .rt.pub:{[topic]
+      if[not 10h=type topic;'"topic must be a string"];
+      h:neg hopen hsym`$getenv `KXI_RT_NODES;
+      .rt.push:{[nph;payload]
+        x:$[98h=type x:last payload; value flip x;99h=type x;enlist each value x;x];
+        if[(t:first payload)in .rt.NO_TIME_SYM; x:(count[first x]#'(0Nn;`)),x];
+        nph(`.u.upd;t;x);}[h;];
+        .rt.push }
+    
+    // === rt update and subscribe ===
+    
+    if[`upd in key `.;  '"do not define upd: rt+tick will implement this"];
+    if[`end in key `.u; '"do not define .u.end: rt+tick will implement this"];
+    
+    if[not type key`.rt.upd; .rt.upd:{[payload;idx] '"need to implement .rt.upd"}];
+    
+    .rt.sub:{[topic;startIdx;uf]
+      if[not 10h=type topic;'"topic must be a string"];
+    
+      //connect to the tickerplant
+      h:hopen hsym`$getenv `KXI_RT_NODES;
+    
+      //initialize our message counter
+      .rt.idx:0;
+    
+      // === tick.q will call back to these ===
+      upd::{[uf;t;x]
+        if[not type x; x:flip(cols .rt.schema t)!x]; // for log replay
+        if[t in .rt.NO_TIME_SYM; x:`time`sym _x];
+        if[t in .rt.IS_DICT; x:first x];
+        uf[(t;x);.rt.idx];
+        .rt.idx+:1; }[uf];
+      .com_kx_secure.addAPI`upd;
+    
+      .u.end:{.rt.idx:.rt.date2startIdx x+1};
+    
+      //replay log file and continue the live subscription
+      if[null startIdx;startIdx:0W]; // null means follow only, not start from beginning
+    
+      //subscribe
+      res:h "(.u.sub[`;`]; .u `i`L; .u.d)";
+      .rt.schema:(!/)flip res 0; // used to convert arrays to tables during log replay
+    
+      //if start index is less than current index, then recover
+      if[startIdx<.rt.idx:(.rt.date2startIdx res 2)+res[1;0];
+        .rt.recoverMultiDay[res[1];startIdx]];
+      .kxbus.triggerReplayEnd[];
+      }
+    
+    //100 billion records per day
+    .rt.MAX_LOG_SZ:"j"$1e11;
+    
+    .rt.date2startIdx:{("J"$(string x) except ".")*.rt.MAX_LOG_SZ};
+    
+    .rt.recoverMultiDay:{[iL;startIdx]
+      //iL - index and Log (as can be fed into -11!)
+      i:first iL; L:last iL;
+      //get all files in the same folder as the tp log file
+      files:key dir:first pf:` vs last L;
+      //get the name of the logfile itself
+      fileName:last pf;
+      //get all the lognameXXXX.XX.XX files (logname is sym by default - so usually the files are of the form sym2021.01.01, sym2021.01.02, sym2021.01.03, etc)
+      files:files where files like (-10_ string fileName),"*";
+      //from those files, get those with dates in the range we are interested in
+      files:` sv/: dir,/:asc files where ("J"$(-10#/:string files) except\: ".")>=startIdx div .rt.MAX_LOG_SZ;
+      //set up upd to skip the first part of the file and revert to regular definition when you hit start index
+      upd::{[startIdx;updo;t;x] $[.rt.idx>=startIdx; [upd::updo; upd[t;x]]; .rt.idx+:1]}[startIdx;upd];
+      //read all of all the log files except the last, where you read up to 'i'
+      files:0W,/:files; files[(count files)-1;0]:i;
+      //reset .rt.idx for each new day and replay the log file
+      {.rt.idx:.rt.date2startIdx "D"$-10#string x 1; -11!x}each files;
+      };
+    
+    //100 billion updates per day - 1e11
+    //30210610*1e11
+    
+

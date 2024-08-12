@@ -1,0 +1,96 @@
+https://code.kx.com/insights/accelerators/fsi/useCases.html
+
+# Using an Accelerator - kdb products
+
+Original URL: https://code.kx.com/insights/accelerators/fsi/useCases.html
+
+# Using the Accelerator
+
+While the specific use case of each accelerator may be different, there will
+be shared common methods of usage.
+
+Any method of data access within the Insights Enterprise platform is valid.
+
+The examples on this page describe access methods hitting pre-built components
+in the Accelerators.
+
+For detailed API information see [API documentation](getTicks.html)
+
+## Request-reply query
+
+Methods for using the in-built get* APIs
+
+### qIPC
+
+Connect to the service gateway and issue a qIPC query
+
+Gateway URL
+
+The gw variable below is defined as an IPC connection to the Service Gateway.
+For example `:insights-qe-gateway:5050 would connect to the query environment
+gateway within an insights namespace.
+
+    
+    
+    // API arguments dictionary.
+    args: (!) . flip (
+        (`table;            `Trade);
+        (`startTS;          2000.01.01D00:00:00);
+        (`endTS;            2000.01.02D00:00:00)
+        );
+    
+    //Options dictionary in the query (none)
+    opts:()!()
+    
+    //issue query to gw handle
+    gw(`getTicks;args;`callback;opts)
+    
+
+### REST
+
+See [Insights Enterprise
+documentation](https://code.kx.com/insights/1.8/enterprise/database/query/rest-
+vs-qipc.html) on query via REST
+
+An example of basic REST call using curl would be
+
+    
+    
+    export INSIGHTS_TOKEN=$(curl --header "Content-Type: application/x-www-form-urlencoded" -d "grant_type=client_credentials&client_id=$INSIGHTS_CLIENT_ID&client_secret=$INSIGHTS_CLIENT_SECRET" "${INSIGHTS_URL}/auth/realms/insights/protocol/openid-connect/token" | jq -r '.access_token');
+    
+
+and then make the REST call using the custom API `.client.testAPI`:
+
+    
+    
+    curl -X POST "${INSIGHTS_URL}/servicegateway/client/testAPI" \
+            -H "Content-Type: application/json" \
+            -H "Accepted: application/json" \
+            -H "Authorization: Bearer $INSIGHTS_TOKEN" \
+            --data "$(jq -n \
+            '{
+                    table   : "Trade",
+                    startTS : "2000.01.01D00:00:00.000000000",
+                    endTS   : "2000.01.02D00:00:00.000000000"
+            }' | jq -cr .)" 
+    
+
+## Dashboard views
+
+Build a dashboard using the in built APIs
+
+for information about dashboard views see [Insights Enterprise
+docs](https://code.kx.com/insights/1.8/enterprise/visualization/quickstart.html)
+
+All of the Accelerator APIs are available in a query under `fsi` as seen below
+
+![Dashboard view query](images/dash_snip.PNG)
+
+## Realtime connectivity
+
+By [customizing a stream processor pipeline](pipeline-admin.html), the output
+of any ingest and transform can be republished to another service e.g. Kafka
+
+see [Insights Enterprise docs on pipeline
+writers](https://code.kx.com/insights/1.8/enterprise/ingest/pipeline/operators/writers.html)
+

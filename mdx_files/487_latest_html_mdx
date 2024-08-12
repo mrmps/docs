@@ -1,0 +1,305 @@
+https://code.kx.com/insights/microservices/release-notes/latest.html
+
+# Latest - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/release-notes/latest.html
+
+# kdb Insights Microservices - Release Notes
+
+This page details the release notes for the latest series of kdb Insights
+Microservices releases. To find the release notes for an older release, refer
+to the [previous releases](previous.html) page.
+
+## 1.10.1
+
+#### Release Date 2024-07-24
+
+###  Fixes
+
+Expand to see the full detail of resolved issues here
+
+**Database**
+
+  * Fixed an issue where [`getData`](../../api/database/query/get-data.html) queries would fail with a type error if the time range of the request landed completely between two IDB partitions. 
+
+  * An embedded assembly Resource Coordinator could become unreachable if its connection with the Service Gateway dropped. 
+
+  * [Batch ingest](../database/storage/batch-ingest.html) has been modified to reduce the amount of RAM required for re-enumeration and sorting during a batch ingest operation. 
+
+  * Fixed an issue where batch ingest in [`directWrite` mode](../../enterprise/ingest/pipeline/operators/writers.html#kdb-insights-database) did not properly apply `primaryKeys` to the data. Prior to this release, the data would not be properly collapsed, resulting in multiple rows for each primary key being persisted to disk. See the following example:
+
+    
+    
+    The data was ingested using batch ingest with `directWrite` mode enabled into table `t` that has primary keys configured as `pk1`, `pk2`
+    
+    pk1 pk2 val
+    -----------
+    a   1   0
+    a   1   1
+    b   1   2
+    b   2   3
+    b   1   4
+    c   4   5
+    
+    Prior to this release, the below data would be persisted to disk in the HDB:
+    
+    pk1 pk2 val
+    -----------
+    a   1   0
+    a   1   1
+    b   1   2
+    b   2   3
+    b   1   4
+    c   4   5
+    
+    The behavior has been fixed to correctly apply the primary keys to the data, meaning that the below rows would now be persisted to the HDB:
+    
+    pk1 pk2 val
+    -----------
+    a   1   1
+    b   1   4
+    b   2   3
+    c   4   5
+    
+
+If tables are configured with primary keys, then after upgrading to 1.10.1,
+you may notice a decrease in the number of records being persisted when
+compared to data in older partitions. This is due to the corrected behavior.
+
+If you have data from a prior release that was ingested via batch ingest with
+`directWrite` mode enabled, it is possible to correct it. For assistance with
+this, contact KX Support.
+
+Note: Memory resource requests and limits should be mapped to
+`KXI_MEM_REQUEST` and `KXI_MEM_LIMIT` environment variables in the Storage
+Manager to optimize batch ingest performance.
+
+**Pipelines**
+
+  * In version 1.10.0, pipelines with an `Apply` node(s) from releases older than version 1.9 would fail on deployment. This has been resolved, and older pipelines that use `Apply` nodes now work as expected without any user action required.
+
+### Artifacts
+
+KX Nexus
+
+The KX Nexus repository will be sunsetted in the future. Nexus links on this
+page are provided as a temporary alternative to the KX Downloads Portal for
+existing users. The KX Downloads Portal is the preferred repository for all
+use cases and KX Nexus links will be removed once the KX Nexus repository is
+decommissioned.
+
+#### Stream Processor
+
+microservice |  Nexus Docker | Downloads Portal Docker  
+---|---|---  
+Controller | registry.dl.kx.com/kxi-sp-controller:1.10.1 | portal.dl.kx.com/kxi-sp-controller:1.10.1  
+Worker | registry.dl.kx.com/kxi-sp-worker:1.10.1 | portal.dl.kx.com/kxi-sp-worker:1.10.1  
+Coordinator | registry.dl.kx.com/kxi-sp-coordinator:1.10.1 | portal.dl.kx.com/kxi-sp-coordinator:1.10.1  
+Worker-Python | registry.dl.kx.com/kxi-sp-python:1.10.1 | portal.dl.kx.com/kxi-sp-python:1.10.1  
+Worker-ML | registry.dl.kx.com/kxi-ml:1.10.1 | portal.dl.kx.com/kxi-ml:1.10.1  
+  
+#### Database
+
+microservice |  Nexus Docker | Downloads Portal Docker  
+---|---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.10.1 | portal.dl.kx.com/kxi-da:1.10.1  
+Single container | registry.dl.kx.com/kxi-da-single:1.10.1 | portal.dl.kx.com/kxi-da-single:1.10.1  
+Storage Manager | registry.dl.kx.com/kxi-sm-single:1.10.1 | portal.dl.kx.com/kxi-sm-single:1.10.1  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.10.1 | portal.dl.kx.com/kxi-sg-gw:1.10.1  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.10.1 | portal.dl.kx.com/kxi-sg-rc:1.10.1  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.10.1 | portal.dl.kx.com/kxi-sg-agg:1.10.1  
+Rollback | registry.dl.kx.com/kxi-db-rollback:1.10.1 | portal.dl.kx.com/kxi-db-rollback:1.10.1  
+  
+#### Reliable Transport
+
+microservice |  Nexus Docker | Downloads Portal Docker | Helm Chart  
+---|---|---|---  
+Reliable Transport | registry.dl.kx.com/kxi-rt:1.10.0 | portal.dl.kx.com/kxi-rt:1.10.0 | [kxi-rt-1.10.0.tgz](https://portal.dl.kx.com/assets/helm/kxi-rt/kxi-rt-1.10.0.tgz)  
+  
+#### Miscellaneous
+
+## 1.10.0
+
+#### Release Date 2024-06-20
+
+The main focus of this kdb Insights 1.10 release is a set of incremental
+updates designed to simplify system administration and streamline user
+experience.
+
+###  New Features
+
+  1. SQL2 now supports joins
+  2. `kxi-python` now supports publish, query and execution of custom APIs
+  3. Stream Processor supports subscribing to the end of an RT stream
+  4. Natural language descriptions included in getMeta descriptions
+  5. Cost Reduction Options for Reliable Transport
+
+### 1\. SQL2 now supports joins
+
+Joins support in SQL2 enables you to combine multiple tables and/or
+dictionaries in your workflows using either INNER, LEFT, RIGHT, FULL, or CROSS
+joins. To find out more about streamlining your data connectivity across
+datasets, [refer to the documentation](../../api/database/query/sql-
+select.html#joins).
+
+### 2\. kxi-python now supports publish, query and execution of custom APIs
+
+The Python interface to kdb Insights Enterprise, `kxi-python`, has been
+extended to allow for publishing to your kdb Insights Enterprise deployment.
+Refer to the [documentation](../../api/kxi-python/index.html) as a guide for
+how to both publish and query data using it. `kxi-python` also now supports
+the execution of custom APIs against your deployment, as shown in this
+[example](../../api/kxi-python/query.html#fetch_custom_apis). These
+enhancements promote a stronger developer experience by significantly
+improving efficiency and streamlining workflows.
+
+### 3\. Stream Processor supports subscribing to the end of an RT stream
+
+This release introduces the ability to subscribe to the end of an RT Stream.
+When configuring the kdb Insights Stream reader, it now provides an `end`
+parameter which will subscribe to the latest position in the stream instead of
+the beginning. This enables late joiners to reduce consumption, thus enhancing
+operational efficiency. Refer to the documentation links to learn more:
+
+`getMeta` descriptions now include natural language descriptions of tables and
+columns in its result, enabling you to attach and retrieve detailed
+descriptions of database structures. Read more in our
+[documentation](../../api/database/query/get-meta.html).
+
+### 5\. Cost Reduction Options for Reliable Transport
+
+An alternative topology for a publisher to choose when sending data to RT has
+been added. This alternative has the advantage of reducing the ingress
+bandwidth to a third of what the default topology requires. This could offer
+significant cost savings where ingress data incurs charges. Refer to the
+[documentation](../rt/publishers.html#ingress-network-bandwidth) for details.
+
+###  Improvements
+
+**Performance Improvements in`getData`**
+
+For queries that span multiple partitions, `getData` has been optimized to
+improve the query execution times.
+
+**End-of-Interval Memory Optimization**
+
+End-of-Interval (EOI) Memory Optimization ensures that large, splayed tables
+are automatically cleared at EOI. This enhances memory efficiency and reduces
+RAM dependency, resulting in accelerated system performance and smoother
+system operations. There is no user configuration required to take advantage
+of this enhancement. See the
+[documentation](../database/configuration/assembly/schema.html#table-types)
+for information on splayed tables.
+
+**getData REST Request Filtering**
+
+REST requests in `getData` now support filtering on time, minute, and timespan
+data type fields.
+
+**Streaming JSON responses over HTTP in the Service Gateway**
+
+The Service Gateway (SG) now supports returning JSON responses in a streaming
+fashion without the need to compress the result. This helps reduce the
+necessary amount of RAM the SG needs in order to handle larger payloads. The
+environment variable `KXI_SG_STREAM_THRESHOLD` will allow you to configure
+your chosen chunk size for splitting up the overall response. This capability
+is automatic in the Service Gateway and does not require any user
+configuration. See the
+[documentation](../database/configuration/routing.html#service-gateway) here
+for more details.
+
+**Stream Processor Kafka Writer**
+
+The SP Kafka Writer now supports an `options` parameter for specifying
+advanced configuration on the Kafka broker connection. Previously, it only
+supported advanced configuration on the topic via the `topicConfig` parameter.
+See the [documentation](../../api/stream-
+processor/python/writers.html#to_kafka) for information.
+
+###  Fixes
+
+Expand to see the full detail of resolved issues here
+
+**Database**
+
+  * For a new system with an empty database, queries would not work after the first end-of-day data writedown if no data had been ingested yet. This issue has been resolved. 
+
+  * Previously, a user would need to manually edit their `par.txt` file if the object storage location information was changed. This has been resolved so that `par.txt` is updated automatically after completing the required restart. 
+
+  * When using nested filters in `getData` on keyed partitioned tables with late data, updates to on-disk data were not being reflected in the output of `getData` if the data had not yet been written to disk. 
+
+  * Importing a database from object storage is now correctly sourcing the database's sym file upon initialization of the Storage Manager. 
+
+  * Fixed an issue whereby `getData` REST queries would produce `inf` instead of a null. This `inf` response would break most JSON parsers. 
+
+  * Prior to 1.10.0, the Service Gateway was configuring the minimum heap size to retain equal to the container requests. This could result in the container holding onto unused memory and not releasing it back to the OS. Additionally, the gateway was not setting an explicit size for off-heap memory used by IO messages, which could result in using a combined total of heap and off heap memory exceeding the container limit.
+
+To avoid both of these issues, set `JAVA_OPTS` explicitly. Use `-Xms` to set
+the minimum heap size to always retain, `-Xmx` to set the maximum heap size,
+and `-XX:MaxDirectMemorySize` to set the maximum size used for IO messages off
+heap. We recommending splitting the container limits equally between heap and
+IO.
+
+Example configuration of 256Mb minimum reserved heap and 2G limit, split into
+1g for heap and direct memory:
+
+    
+        `JAVA_OPTS="-Xms256M -Xms1G -XX:MaxDirectMemorySize=1G"`
+    
+
+**Reliable Transport**
+
+  * Previously, the RT client could fail to recognize a new log file, forcing downstream subscribers into a hung state. This has been resolved. 
+
+**Cloud Readers**
+
+  * A file watcher in Azure reader did not work for test or full deploys. 
+
+**Kubernetes Discovery**
+
+  * Previously, the `KXI_RC_LABEL_SELECTOR` field was not being correctly honored, causing Kubernetes discovery to become non-functional. 
+
+**Security**
+
+  * Various CVEs have been remediated as part of this release.
+
+### Artifacts
+
+KX Nexus
+
+The KX Nexus repository will be sunsetted in the future. Nexus links on this
+page are provided as a temporary alternative to the KX Downloads Portal for
+existing users. The KX Downloads Portal is the preferred repository for all
+use cases and KX Nexus links will be removed once the KX Nexus repository is
+decommissioned.
+
+#### Stream Processor
+
+microservice |  Nexus Docker | Downloads Portal Docker  
+---|---|---  
+Controller | registry.dl.kx.com/kxi-sp-controller:1.10.0 | portal.dl.kx.com/kxi-sp-controller:1.10.0  
+Worker | registry.dl.kx.com/kxi-sp-worker:1.10.0 | portal.dl.kx.com/kxi-sp-worker:1.10.0  
+Coordinator | registry.dl.kx.com/kxi-sp-coordinator:1.10.0 | portal.dl.kx.com/kxi-sp-coordinator:1.10.0  
+Worker-Python | registry.dl.kx.com/kxi-sp-python:1.10.0 | portal.dl.kx.com/kxi-sp-python:1.10.0  
+Worker-ML | registry.dl.kx.com/kxi-ml:1.10.0 | portal.dl.kx.com/kxi-ml:1.10.0  
+  
+#### Database
+
+microservice |  Nexus Docker | Downloads Portal Docker  
+---|---|---  
+Data Access Process (DA) | registry.dl.kx.com/kxi-da:1.10.0 | portal.dl.kx.com/kxi-da:1.10.0  
+Single container | registry.dl.kx.com/kxi-da-single:1.10.0 | portal.dl.kx.com/kxi-da-single:1.10.0  
+Storage Manager | registry.dl.kx.com/kxi-sm-single:1.10.0 | portal.dl.kx.com/kxi-sm-single:1.10.0  
+Gateway | registry.dl.kx.com/kxi-sg-gw:1.10.0 | portal.dl.kx.com/kxi-sg-gw:1.10.0  
+Resource Coordinator | registry.dl.kx.com/kxi-sg-rc:1.10.0 | portal.dl.kx.com/kxi-sg-rc:1.10.0  
+Aggregator | registry.dl.kx.com/kxi-sg-agg:1.10.0 | portal.dl.kx.com/kxi-sg-agg:1.10.0  
+Rollback | registry.dl.kx.com/kxi-db-rollback:1.10.0 | portal.dl.kx.com/kxi-db-rollback:1.10.0  
+  
+#### Reliable Transport
+
+microservice |  Nexus Docker | Downloads Portal Docker | Helm Chart  
+---|---|---|---  
+Reliable Transport | registry.dl.kx.com/kxi-rt:1.10.0 | portal.dl.kx.com/kxi-rt:1.10.0 | [kxi-rt-1.10.0.tgz](https://portal.dl.kx.com/assets/helm/kxi-rt/kxi-rt-1.10.0.tgz)  
+  
+#### Miscellaneous
+

@@ -1,0 +1,153 @@
+https://code.kx.com/dashboards/sunburst/
+
+# Sunburst - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/sunburst/
+
+# Sunburst Chart
+
+![Screenshot](../img/sunburst/sunburst.jpg)
+
+An inner circle surrounded by rings of deeper hierarchy levels. The angle of
+each segment is proportional to a value or divided equally under its parent
+node.
+
+## Set up
+
+  1. Assign a data source.
+
+  2. Set _Breakdown_ with a [view state parameter](../viewstateparameters/) of type `list`, with the categories from your data source.
+
+## _Basics_
+
+![Screenshot](../img/sunburst/sunburstbasics.png)
+
+_Name_
+
+    A name for the component provided by the user. 
+_Data Source_
+
+     [Data sources](../datasources/)
+_Focus_
+
+    A [view state parameter](../viewstateparameters/) for [linking](../viewstateparameters/#linking-components) components
+_Node Click_
+
+    Select between `default`, a fixed sunburst chart displaying all hierarchies as a single entity at all times, or `rootToNode` which redraws the chart based on the selected hierarchial interaction. 
+_Selected Value_
+
+_Selected Value Attribute_
+
+    A [view state parameter](../viewstateparameters/) storing the selected hierarchy level as defined by _Selected Value Attribute_. _Selected Value Attribute_ is one of `name`, `value` or `dataIndex`
+
+## Data
+
+![Screenshot](../img/sunburst/sunburstdata.jpg)
+
+_Breakdown_
+
+    Type `list` [view state parameter](../viewstateparameters/) to define hierarchial levels from the [data source](../datasources/).
+_Weight_
+
+    Dependent (numeric) variable from [data source](../datasources/) to define node size. 
+
+_Color_
+
+option | description  
+---|---  
+`default` | Shared color across node hierarchies  
+`fixed` | One color across all nodes  
+`level` | Different colors at each hierarchial level  
+`visual map` | Gradient color by _Weight_ range,  
+Data column | Selected from the [data source](../datasources/).  
+  
+## Config
+
+![Screenshot](../img/sunburst/sunburstconfig.jpg)
+
+_Radius Inner_
+
+_Radius Outer_
+
+    A _Radius Inner_ value above zero adds a 'doughnut' hole to the Sunburst chart. A _Radius Outer_ value at 100 bounds the sunburst chart to the top and bottom of the component boundaries. 
+
+### Label
+
+_Show_
+
+_Display_
+
+    Toggle to show _Display_ labels for each node value; _Display_ values taken from a column in the [data source](../datasources/).
+_Color_
+
+    Font color for labels
+_Rotate_
+
+_Position_
+
+_Align_
+
+    Set position and alignment of labels.
+
+#### Font
+
+_Radius Outer_
+
+_Radius Inner_
+
+    Font size and font style of node labels. 
+
+#### Format
+
+_Format_
+
+    Format of label 
+_Decimal_
+
+_Hide Trailing Zeroes_
+
+    For numeric _Formats_
+_Date/Time Format_
+
+    For Datetime _Format_
+_Prefix_
+
+_Suffix_
+
+    Add a piece of text, e.g. currency symbol or percentage, before or after the label.
+_Threshold_
+
+    Frequency of node labels. 
+_Fit Text_
+
+    Select between `Shorten Text` or `Overflow` for the fit of labels.
+
+### Visual map
+
+Configuration for visual map of data color options
+
+_Type_
+
+    Select between `continuous` gradient or defined `piecewise`
+_Label Color_
+
+    Font color of _Pieces_ label
+_Min_
+
+_Max_
+
+    Range of visual-map gradient
+_Pieces_
+
+    Number of `piecewise` sections to use for visual map
+
+Display rollover of node values and labels
+
+## Highlight Rules
+
+[Highlight Rules](../highlightrules/)
+
+## Style, Format, Margins
+
+[Style](../style/#component-style)
+

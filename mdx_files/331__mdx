@@ -1,0 +1,159 @@
+https://code.kx.com/platform/saml_login/
+
+# SAML workflow - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/saml_login/
+
+# SAML workflow
+
+From version 4.1.0, _KX Delta Platform_ supports Single Sign On (SSO) via
+Security Assertion Markup Language (SAML).
+
+The SSO procedure authenticates a user’s credentials by way of a third-party
+Identity Provider (IDP). This is done through an exchange of digitally-signed
+XML documents.
+
+## Logging in
+
+To log in using SSO, navigate to the base URL (`https://server:port`), where a
+global platform sign-in option is available.
+
+![Screenshot](../img/control/samllogin.png)
+
+Clicking _Sign in_ redirects you to the IDP. Once authorization is complete,
+the KX application suite becomes available.
+
+![Screenshot](../img/control/samlsplash.png)
+
+From here it is possible to navigate to any permissioned application without
+the need for a further sign in.
+
+Logging in using Service Provider (SP) authentication is still supported. The
+URL for the individual application (e.g. `https://server:port/control`) will
+display the classic SP login splash.
+
+## Logging out
+
+Logging out can be done via either the IDP or the SP.
+
+To configure logging out: from the user-administration dropdown select _Global
+Logout_ for the IDP; _Local Logout_ for the SP.
+
+![Screenshot](../img/control/samllogout.png)
+
+## SSO user and group configuration
+
+User creation and group assignment can be controllled via the KX Delta
+Platform or a 3rd party IDP. It is necessary to ensure the configuration in
+both the _KX Delta Platform_ and the 3rd party IDP is compatible with valid to
+ensure when users authenticate, the _KX Delta Platform_ can appropriately
+assign the necessary permissions with respect to the group information
+provided in the IDP SAML Assertion.
+
+To this end there are four supported _KX Delta Platform_ user & group
+configuration options
+
+### KX Delta Platform controlled user creation and group assignment
+
+Authentication is offloaded to 3rd party IDP, but user and group assignment
+are still managed within the _KX Delta Platform_.
+
+To enable this mode
+
+  * _CONTROL_SSO:DEFAULT_ config parameter should set the value **createUser** to false
+  * The IDP **must not** provide a _groups_ key in the SAML assertion. 
+
+Additional considerations
+
+  * Users must be pre-created in the _KX Delta Platform_ (as user/auth type SAML).
+  * Groups are assigned manually within the _KX Delta Platform_.
+  * A users group assignment **will not** be affected by the configuration in _CONTROL_SSO:DEFAULT_ config parameter
+
+![Screenshot](../img/control/platform-controlled.png)
+
+### KX Delta Platform controlled user creation; IDP controlled group
+assignment
+
+Authentication and group management is offloaded to 3rd party IDP, but user
+creation is managed within _KX Delta Platform_.
+
+To enable this mode
+
+  * _CONTROL_SSO:DEFAULT_ config parameter should set the parameter **createUser** to false 
+  * The IDP should provide a _groups_ key in the SAML assertion containing group information. See IDP group configuration for acceptable group formats
+
+Additional considerations
+
+  * User should be pre-created in KX Delta Platform
+  * User Groups are provided in the IDP SAML assertion and those in the _CONTROL_SSO:DEFAULT_ config parameter
+
+![Screenshot](../img/control/platform-controlled.png)
+
+### IDP controlled user creation; KX Delta Platform controlled group
+assignment
+
+Authentication and user creation is offloaded to 3rd party IDP, but group
+assignment is managed with _KX Delta Platform_.
+
+To enable this mode
+
+  * _CONTROL_SSO:DEFAULT_ config parameter should set the value **createUser** to true
+  * The IDP **must not** provide a _groups_ key in the SAML assertion. 
+
+Additional considerations
+
+  * Users may or may not already exist within the deploy
+  * Groups are assigned to those in _CONTROL_SSO:DEFAULT_ on _user creation_
+  * Subsequent changes to the _CONTROL_SSO:DEFAULT_ have _no affect_ to user group settings
+
+![Screenshot](../img/control/idp-controlled-user.png)
+
+### IDP controlled user creation and group assignment
+
+Authentication, user creation an group assignment is offloaded to 3rd party
+IDP.
+
+To enable this mode
+
+  * _CONTROL_SSO:DEFAULT_ config parameter should set the value **createUser** to true
+  * The IDP SAML assertion should provide a _groups_ key for groups a user is a member of. This will update for each subsequent login to the _KX Delta Platform_.
+
+Additional considerations
+
+  * Users may or may not already exist within the deploy
+  * Groups are assigned to those in the SAML assertion IDP group configuration and those in _CONTROL_SSO:DEFAULT_ groups key config parameter
+  * Any modifications are picked up on next login
+
+### SAML assertion groups key
+
+By default the groups key expected within the SAML assertion is _groups_. This
+can be modified by updating the _CONTROL_SSO:DEFAULT_ config parameter to
+include a key 'groupsKey' with the value which should be used for obtaining
+user group information from the SAML Assertion.
+
+### SAML custom group information parsing
+
+By default the _KX Delta Platform_ supports groups formatted as a CSV in a
+single groups attribute, or as a multi-attribute child value set. If further
+structures need to be supported, this can be provided via a custom analytic
+hook. To do so a custom q process is needed to parse to the SAML assertion.
+
+To configure custom assertion parsing
+
+  * Edit the _${DELTA_WEBAPPS}/ROOT/WEB-INF/classes/saml/securityContext.xml_. Update the _samlAuthenticationProvider_ bean by uncommenting the _customAssertionParse_ property, setting to true. Set the _xmlParseConnection_ property to the instance/connection group to do the parsing, and finally set _xmlParseAnalytic_ as the analytic to do the xml parsing. This analytic will receive the xml SAML assertion to parse out the group information as required.
+  * This process **must** return a dict with with the required groups information. By default this key is _groups_ , but can be customized see IDP group configuration for further info. The value should be a string list containing groups information for the associated user.
+  * A bounce of the _KX Delta Platform_ is required pick up changes.
+
+## Deployment
+
+Full details on how to deploy an SSO environment can be found in the _KX Delta
+Platform Deployment Guide_ , Appendix G.
+
+## SSO users
+
+For SSO users authentication is offloaded to 3rd party IDP. In _KX Control_
+therefore while the _Authentication & Access Control_ tab will be available to
+be seen, all of the fields will be disabled for these users.
+
+![Screenshot](../img/control/idp-controlled-user-ui.png)
+

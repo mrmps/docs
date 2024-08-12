@@ -1,0 +1,216 @@
+https://code.kx.com/insights/core/rest-server/index.html
+
+# REST-server | Library | kdb Insights Core - kdb products
+
+Original URL: https://code.kx.com/insights/core/rest-server/index.html
+
+# REST-server library
+
+_Expose a RESTful interface to a kdb+ based system_
+
+In a nutshell, it allows the developer to map operation/path combinations
+(endpoints) to q functions (handlers). Then when a HTTP request is received it
+matches it to an endpoint, and when one is found, processes the request
+according to its definition, and executes its handler.
+
+The operation is arbitrary, but typically one of HTTP methods defined by REST
+specification: `GET`, `POST` (create), `PUT` (update), or `DELETE`.
+
+The path is the part of the URL that comes after the host and port (e.g.
+`/customers`). It identifies the resource subject of the operation. The path
+is arbitrary and may contain variables (which are treated as parameters to the
+endpoint), for example `/db/{table}/schema` is a valid path that has a
+variable named `table`.
+
+## Usage
+
+To use the library:
+
+  1. Initialize the framework, using the `.com_kx_rest.init` function.
+  2. Register the endpoints, using the `.com_kx_rest.register` function.
+  3. (Optional) On receipt of a request to `.z.ph` or `.z.pp`, forward execution to `.com_kx_rest.process` to process the incoming request and return processing result.
+
+To simplify the examples, we assume a `.rest` namespace exists which aliases
+`.com_kx_rest`:
+
+    
+    
+    / Alias namespace for convenience, typically once at beginning of file
+    .rest:.com_kx_rest
+    
+    .rest.init enlist[`autoBind]!enlist[1b] / Initialize
+    
+    //
+    // Register endpoints
+    //
+    .rest.register[`get;
+      "/customers";
+      "Returns all customers";
+      .db.getAllCustomers;
+      .rest.reg.data[`i;-6h;0b;0;"Offset to first row"],
+        .rest.reg.data[`cnt;-6h;0b;10;"Number of rows to return"] ]
+    
+    .rest.register[`get;
+      "/customers/{id}";
+      "Returns one or more customers by their IDs";
+      .db.getCustomersById;
+      .rest.reg.data[`id;6h;1b;0;"One or more customer IDs"] ]
+    
+
+Above we initialized the framework with `autoBind` option set to `1b`, then
+created two endpoints.
+
+`get /customers`
+
+    
+
+returns all customers. It expects two parameters: `i (integer)` is the offset
+of first row to return, and `cnt (integer)` is the number of rows to return.
+Both parameters are optional, and have default values of `0` and `10`
+respectively. The endpoint is mapped to the `.db.getAllCustomers` function,
+which might be defined:
+
+    
+    
+    .db.getAllCustomers:{
+      x[`arg;`cnt]#select from customers where i>=x[`arg;`i] }
+    
+
+    
+
+The endpoint can be queried as follows:
+
+    
+    
+    curl 'localhost:8080/customers'
+    curl 'localhost:8080/customers?i=10&cnt=10'
+    
+
+`get /customers/{id}`
+
+    
+
+returns one or more customers given their IDs. It expects one parameter: `id
+(integer[])` is an input parameter in the form of a **path variable** (whose
+value is determined at matching time). The endpoint is mapped to the
+`.db.getcustomersById` function, which might be defined:
+
+    
+    
+    .db.getCustomersById:{
+      select from customers where id in x[`arg;`id] // should be in ID order
+    }
+    
+
+## Initialize the REST server framework
+
+The framework is initialized using `.com_kx_rest.init` function. This function
+is overloaded such that it can be called without arguments (e.g.
+`.com_kx_rest.init[]`) to perform minimal initialization, or as a unary (with
+a dictionary argument) to perform further steps (auto-binding to `.z.ph` and
+`.z.pp` in the above example).
+
+When the `autoBind` option is specified as `1b`, an incoming request is
+delegated to the next handler (if applicable) if it cannot be matched to an
+endpoint. Conversely if `autoBind` is not specified (or specified as `0b`),
+then a request that does not match an endpoint is rejected with 404 HTTP code.
+
+Note that when auto-binding is disabled, then it is the application’s
+responsibility to bind `.com_kx_rest.process` to `.z.ph` and `.z.pp`, as well
+as performing any chaining as needed.
+
+## Register the endpoints
+
+An endpoint is registered using `.com_kx_rest.register` function. The
+registration contains the following components:
+
+  * The operation and path of the endpoint
+  * A description summarizing the purpose of the endpoint
+  * The handler function
+  * Optional definition of user input, which includes: path variables, query string, headers, and request body (for post/put based endpoints).
+  * Optional definition of result object
+
+The operation is arbitrary, but typically one of the following: `get` (for
+data retrieval), `post` (to create one or more objects), `put` (to update one
+or more objects), or `delete` (to delete an object).
+
+The path is arbitrary, and may contain variables whose values are determined
+at matching time (e.g. `/db/{tbl}/schema`). The operation and path combination
+uniquely identifies the endpoint.
+
+The handler function is responsible for performing the activity of the
+endpoint. It is explained in the following section.
+
+User input definitions specify the properties of expected input parameters
+which include path-variables and query-string (using `.com_kx_rest.reg.data`),
+headers (using `.com_kx_rest.reg.header`), and JSON-based request body (using
+`.com_kx_rest.reg.body`). For example the request `/db/{x}/{y}/z?i=0&cnt=10`
+has the following input parameters: `x`, `y`, `i`, and `cnt`. You can specify
+the name, data type, necessity, default value, and description of each
+parameter. The framework uses this information to:
+
+  * ensure required parameters are supplied in the request, failing the request if any is missing
+  * parse value using the expected data type
+
+The handler also has access to raw user input, which is useful when some or
+all of the input is not known at registration time.
+
+Output definition specifies the schema of the result (using
+`.com_kx_rest.reg.output`). The definition is currently not used by the
+framework, but it is good practice to specify it for future purposes.
+
+## Request processing
+
+A HTTP request contains the following components:
+
+  * HTTP method
+  * Path
+  * Query string
+  * HTTP headers
+  * Request body (applies to `POST`, `PUT`, and `DELETE`)
+
+The HTTP method generally specifies the REST operation; in kdb+ it is limited
+to `GET` and `POST`. Thus, the framework looks for the operation in the `http-
+method` HTTP header, and if not present defaults to `GET` (for `.z.ph`), or
+`POST` (for `.z.pp`). It is thus important to use a front-end API gateway
+(e.g. AWS HTTP API gateway) that can populate `http-method` HTTP header, and
+convert `PUT`, and `DELETE` HTTP methods to `POST`, leaving `GET` requests as
+they are.
+
+When a request is received, both `operation` and `path` are combined to find a
+matching endpoint, favouring exact matches over ones containing variables
+(e.g. `/a/b/c` vs `/a/{x}/c`).
+
+User input is then processed, distinguishing between the following categories:
+
+  * User input specified using `.com_kx_rest.reg.data` function. These contain path variables (e.g. `id` in `/customers/{id}`) and query-string parameters. Values are parsed according to their datatype. If a parameter is missing from the request, then its default value is used. But if the missing parameter is marked required, then the request fails with 400 HTTP status code (with names of missing required parameters included in the response). Values of input parameters are passed to the handler function as dictionary under `arg` key. it is worth noting that raw input parameters (as they appear in the request) are also passed to the handler function under `rawArg` key.
+
+  * Request body (where applicable) is expected to be in JSON format. It is deserialized into a kdb+ data structure using `.j.k`, and passed to the handler function under `data` key.
+
+  * Request body (in case of `post` or `put` operation) is expected to be in JSON format. If the endpoint has body input specified using the `.com_kx_rest.reg.body` function, then the elements of the defined object are parsed from the input (including nested objects) according to their datatypes and necessity settings. Similar to input parameters, the raw body is passed to the handler under `rawData` key.
+
+  * HTTP headers are are passed untouched to the handler function under `hdr` key.
+
+After input is collected, the handler function is invoked. If the function is
+declared to take arguments with the same names as the endpoint parameters (or
+`body` if endpoint is comprised only of a `body` parameter), then the function
+is variadically invoked with its arguments mapped from the request input.
+Otherwise, the function is invoked as a unary with a dictionary containing the
+following keys:
+
+  * REST operation of the endpoint
+  * The path of the endpoint
+  * Values of processed input parameters
+  * Raw input parameters present in the request
+  * Value of processed body object, which is typically a dictionary if the body is of an object type, but can be of any type as specified by `reg.body` function.
+  * Raw kdb+ form of the request body (if present)
+  * HTTP headers
+
+The handler function is expected to return its response in one of the
+following forms:
+
+  * A kdb+ data structure (typically a dictionary or a table), which is serialized to JSON by the framework before being returned to the client
+  * Result of the `.com_kx_rest.util.response` function, which gives the handler control over the HTTP status code, and content type of the response (available post release 1.0.0)
+  * Result of the `.com_kx_rest.util.httpResponse` function, which gives the handler total control over the response
+  * If there is a problem with input, the handler must call `.util.throw` to signal an error
+

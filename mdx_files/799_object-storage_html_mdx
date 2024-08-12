@@ -1,0 +1,267 @@
+https://code.kx.com/insights/enterprise/database/storage/object-storage.html
+
+# Object storage - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/database/storage/object-storage.html
+
+# Persisting to object storage
+
+kdb Insights Enterprise can persist data to object storage for inexpensive,
+durable, long-term data storage. Persisting to object storage has major cost
+saving implications, and should be considered for older data sets.
+
+Immutable data
+
+Data in object storage cannot be modified. Primarily data that is meant for
+long term storage should go here. If the data is modified/deleted externally,
+you should restart any HDB pods, and drop cache.
+
+Object storage tiers vs mounting an object storage database
+
+An object storage tier is a read-write location and is configured differently
+than a read-only database. See [querying object
+storage](../../../microservices/database/query/object-storage.html) for an
+example of how to query an existing object storage database.
+
+An object storage tier has to be the final tier in your [storage
+configuration](tiers.html#object-storage-tier).
+
+## Authentication
+
+You will need to provide authentication details to access your private
+buckets. Object storage tiers can be configured using environment variables
+for routing details and for authentication. Authentication can also be
+configured using [service
+accounts](https://kubernetes.io/docs/tasks/configure-pod-container/configure-
+service-account/).
+
+### Setting environment variables
+
+## Performance considerations
+
+The layout of your table should be considered before uploading to object
+storage. Neglecting to apply attributes, as well as not sorting symbols or
+partitioning by date can result in any query becoming a linear scan that pulls
+back the whole data set.
+
+Attributes and table layouts are specified in the [`tables` section of the
+assembly](../configuration/assembly/schema.html)
+
+## Deployment
+
+To persist data to cloud storage, you must deploy an assembly with an HDB tier
+that has a `storage` key. This setting will create a [segmented
+database](https://code.kx.com/q/database/segment/) where the HDB loads on-disk
+and cloud storage data together seamlessly.
+
+Data in object storage is immutable, and cannot be refactored after it has
+been written. For this reason, date-based partitions bound for object storage
+can only be written down once per day.
+
+For example, this Storage Manager tier configuration will:
+
+  * Store data in memory for 10 minutes
+  * Keep the last 2 days of data on disk
+  * Migrate data older than 2 days to object storage
+
+    
+    
+    sm:
+      tiers:
+        - name: streaming
+          mount: rdb
+        - name: interval
+          mount: idb
+          schedule:
+            freq: 00:10:00
+        - name: ondisk
+          mount: hdb
+          schedule:
+            freq: 1D00:00:00
+            snap:   01:35:00
+          retain:
+            time: 2 days
+        - name: s3
+          mount: hdb
+          store: s3://examplebucket/db
+    
+
+Mounts
+
+You may see other kdb Insights Enterprise examples referring to `object` type
+mounts. Those mounts are for reading from existing cloud storage. For writing
+your own database to storage, no object mounts are involved, only HDB tier
+settings to make your HDB a segmented database.
+
+For a guide on reading from an existing object storage database see [querying
+object storage](../../../microservices/database/query/object-storage.html)
+
+## Example using explicit credentials
+
+This example assumes your data is published into a topic called `south`.
+
+The name of the example bucket is `s3://examplebucket`, and we want to save
+our database to a root folder called `db`. Our example uses the `AWS_REGION`:
+`us-east-2`. Stream processor and table schema sections have been omitted.
+
+First create a new secret with your `AWS_ACCESS_KEY_ID` and
+`AWS_SECRET_ACCESS_KEY`.
+
+    
+    
+    kubectl create secret generic aws-access-secret\
+        --from-literal=AWS_ACCESS_KEY_ID=${MY_KEY}\
+        --from-literal=AWS_SECRET_ACCESS_KEY=${MY_SECRET}
+    
+
+Now create your assembly, setting `sm.tiers` to write to an S3 store, and
+environment variables for storage.
+
+    
+    
+    spec:
+      env:
+        - name: AWS_REGION
+          value: us-east-2
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: aws-access-secret
+              key: AWS_ACCESS_KEY_ID
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: aws-access-secret
+              key: AWS_SECRET_ACCESS_KEY
+      mounts:
+        rdb:
+          type: stream
+          baseURI: none
+          partition: none
+          dependency:
+            - idb
+        idb:
+          type: local
+          baseURI: file:///data/db/idb
+          partition: ordinal
+        hdb:
+          type: local
+          baseURI: file:///data/db/hdb
+          partition: date
+          dependency:
+            - idb
+      sm:
+       source: south
+        tiers:
+          - name: streaming
+            mount: rdb
+          - name: interval
+            mount: idb
+            schedule:
+              freq: 00:10:00
+          - name: ondisk
+            mount: hdb
+            schedule:
+              freq: 1D00:00:00
+              snap:   01:35:00
+            retain:
+              time: 2 Days
+          - name: s3
+            mount: hdb
+            store: s3://examplebucket/db
+      dap:
+        instances:
+          idb:
+            mountName: idb
+          hdb:
+            mountName: hdb
+          rdb:
+            tableLoad: empty
+            mountName: rdb
+            source: south
+    
+
+The name of the example storage container is `ms://mycontainer`, and we want
+to save our database to a folder within the container called `db`. Our example
+uses the `AZURE_STORAGE_ACCOUNT`: `iamanexample`. This means we will write our
+database to a folder called 'db', inside the container 'mycontainer' for the
+storage account `iamanexample`. Stream processor and table schema sections
+have been omitted.
+
+First create a new secret with your `AZURE_STORAGE_SHARED_KEY`.
+
+    
+    
+    kubectl create secret generic azure-storage-secret --from-literal=AZURE_STORAGE_SHARED_KEY=${MY_KEY}
+    
+
+Now create your assembly, setting `sm.tiers` to write to an Azure store
+container, and environment variables for storage.
+
+    
+    
+    spec:
+      env:
+        - name: AZURE_STORAGE_ACCOUNT
+          value: mystorageaccount
+        - name: AZURE_STORAGE_SHARED_KEY
+          valueFrom:
+            secretKeyRef:
+              name: azure-storage-secret
+              key: AZURE_STORAGE_SHARED_KEY
+      mounts:
+        rdb:
+          type: stream
+          baseURI: none
+          partition: none
+          dependency:
+            - idb
+        idb:
+          type: local
+          baseURI: file:///data/db/idb
+          partition: ordinal
+        hdb:
+          type: local
+          baseURI: file:///data/db/hdb
+          partition: date
+          dependency:
+            - idb
+      sm:
+        source: south
+        tiers:
+          - name: streaming
+            mount: rdb
+          - name: interval
+            mount: idb
+            schedule:
+              freq: 00:10:00
+          - name: ondisk
+            mount: hdb
+            schedule:
+              freq: 1D00:00:00
+              snap:   01:35:00
+            retain:
+              time: 2 Days
+          - name: s3
+            mount: hdb
+            store: ms://mycontainer/db
+      dap:
+        instances:
+          idb:
+            mountName: idb
+          hdb:
+            mountName: hdb
+          rdb:
+            tableLoad: empty
+            mountName: rdb
+            source: south
+    
+
+Apply the assembly using the [kdb Insights CLI](../../assemblies/deploying-
+assemblies.html):
+
+    
+    
+    kxi assembly deploy --filepath object-tier.yml
+    
+

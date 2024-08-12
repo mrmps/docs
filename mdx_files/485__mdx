@@ -1,0 +1,130 @@
+https://code.kx.com/platform/qr_routed/
+
+# Routed requests - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/qr_routed/
+
+# Routed requests
+
+A simple request through the QR targets a single database but often a request
+is required to join data from multiple sources. Many systems use a _Gateway
+(GW)_ as the access point to query each underlying source and returning the
+joined results but having many _GWs_ would jeopardize the QR’s goal of
+managing database availability. If two _GWs_ receive a query at the same time,
+they may both target the same underlying database even if another copy exists
+and is idle.
+
+Routed requests provide the ability for the framework to act as a _GW_ by
+splitting the client request into multiple sub-requests for each database
+required. Each request is scheduled separately, subject to the same routing
+rules, but the individual results are joined on a _QP_ and a single result is
+returned to the client.
+
+Routed requests can be set up in the _KX Control_ configuration against a
+function or analytic name. The solution should create an override of the
+`DS_QR_ROUTINGS` parameter and add a row for the function.
+
+[![Screenshot](../img/control/qr_routing_cfg.png)](../img/control/qr_routing_cfg.png
+"Click to expand")
+
+Warning
+
+The `DEFAULT` override should not be used. Any functions configured there will
+be ignored.
+
+There are a couple of modes of routing and these are described in the next
+sections.
+
+## Routing modes
+
+### Static
+
+This mode configures a function with a static list of targets. In the previous
+screenshot, this corresponds to the `dfxBucketTrade` or `dfxBinnedLatency`
+examples. These have a list of semi-colon delimited values in the `targets`
+column. When a request is submitted for one of these functions, a sub-request
+is created for each of those targets.
+
+### Dynamic
+
+In using this mode, the list of targets isn't pre-configured. The `targets`
+field of the configuration parameter is left blank for the function. The
+`category` to `tag2` columns are populated with metadata about the function.
+When a request is received, this metadata is matched against coverage
+information registered by databases.
+
+By default, the _QR_ behavior will match coverage information against
+metadata. This logic lives in the `dxQRChooseTargets` analytic and is the
+defined in the `ds_qr_[a|b]` instances.
+
+APIs to register coverage data with the _QR_ are detailed in the
+`QueryRouter.Registration` module of the _Template API guide_.
+
+#### Customizations
+
+Info
+
+The dynamic routing behavior can be customized in the `chooseTargets`
+parameter of the `DS_QR` process instances. As of _KX Control_ version 4.6.0,
+the dynamic routing behavior can be customized in the `routingFunc` field of
+the `DS_QR_ROUTINGS` parameter. This corresponds to the `dfxRawTrade` example.
+
+This hook allows solutions to define their own routing rules per analytic. The
+return value dictates where to route the requests and how many sub-requests
+are generated. It supports two return types; symbol list `symbol[]` or nested
+symbol list `symbol[][]`.
+
+The example below shows the two different return types. Both result in two
+sub-requests with the latter specifying a preference order for the targets,
+i.e. if all databases are available, prefer the _B_ side processes.
+
+    
+    
+    // two sub-requests
+    `rdb_a`hdb_a
+    
+    // two sub-requests with targets in preference order
+    (`rdb_b`rdb_a; `hdb_b`hdb_a)
+    
+
+If connection groups and service classes are included in the requested
+targets, the _QR_ will automatically expand them to their underlying databases
+(while still obeying the group mode settings).
+
+    
+    
+    // expansion of `rdbs`hdbs target
+    (`rdb_a`rdb_b; `hdb_a`hdb_b)
+    
+
+### Client override
+
+This mode can be used by a client to override routings defined in the _QR_ and
+explicitly hit a set of databases. To implement this the client should send a
+symbol list of targets (`symbol[]`) instead of a single symbol. If the client
+specifies three targets, three sub-requests will be created.
+
+The following example uses the kdb+ client to illustrate how the client can
+specify the routings. It assumes that the `getTrades` API is setup as routed.
+
+    
+    
+    response:{ 0N!x }
+    
+    // use QR routing
+    .qr.client.sendRequest[(`getTrades; `EURUSD); `; response; ()!()];
+    
+    // override routing to hit RDB only
+    .qr.client.sendRequest[(`getTrades; `EURUSD); enlist `rdb; response; ()!()];
+    
+    // override to hit RDB and HDB
+    .qr.client.sendRequest[(`getTrades; `EURUSD); `rdb`hdb; response; ()!()];
+    
+
+## Aggregations
+
+The _QP_ has a default aggregation analytic defined by the `aggregationFunc`
+in the instances. This is used for all requests without an explicit one
+defined. The `DS_QR_ROUTINGS` parameter allows specific aggregation functions
+to be specified for each routed API.
+

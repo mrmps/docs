@@ -1,0 +1,261 @@
+https://code.kx.com/developer/libraries/grammar-of-graphics-scale-settings/
+
+# Scale settings - KX Developer
+
+Original URL: https://code.kx.com/developer/libraries/grammar-of-graphics-scale-settings/
+
+# Scale settings
+
+## .gg.fmt.date
+
+Format a date value into a multi-line string
+
+**See Also:** [ .gg.scale.format ](./#ggscaleformat)
+
+## .gg.fmt.datetime
+
+Format a datetime into a multiline string
+
+**See Also:** [ .gg.scale.format ](./#ggscaleformat)
+
+## .gg.fmt.month
+
+Format a month into a string
+
+**See Also:** [ .gg.scale.format ](./#ggscaleformat)
+
+## .gg.fmt.timespan
+
+Format a timespan into a multi-line string
+
+**See Also:** [ .gg.scale.format ](./#ggscaleformat)
+
+## .gg.fmt.timestamp
+
+Format a timestamp into a multi-line string
+
+**See Also:** [ .gg.scale.format ](./#ggscaleformat)
+
+## .gg.scale.breaks
+
+Specify the break points (ticks) that should be used for the scale. This will
+override the generated breakpoints for the scale.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+breaks | any[] | list of break points in the domain on the scale  
+s | dict | scale  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | extended scale  
+  
+**Example:** A scale with default breaks
+
+    
+    
+     .gg.scale.linear
+    
+
+**Example:** A scale with explicit breaks at 0 50 60 65 and 100
+
+    
+    
+     .gg.scale.breaks[0 50 60 65 100] .gg.scale.linear
+    
+
+**Example:** A scale with no breaks
+
+    
+    
+     .gg.scale.breaks[()] .gg.scale.linear
+    
+
+## .gg.scale.extend
+
+Turn on/off the auto-extend that certain scales have (i.e., numeric scales)
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+bool | boolean | on or off  
+sc | dict | scale  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | updated scale  
+  
+**Example:** Scale with default extension
+
+    
+    
+     .gg.scale.linear
+    
+
+**Example:** Scale with max and min identical to the data max and min
+
+    
+    
+     .gg.scale.extend[0b] .gg.scale.linear
+    
+
+## .gg.scale.extension
+
+Set the extension on a scale.
+
+The extension is a percent value. The limits of the scale will be extended by
+the given percent of the domain. The effect is an amount of padding between
+the edges of the frame and the chart itself.
+
+Note - the extension will _not_ be disabled when drilling down. The result of
+the drilldown will have the same padding percent.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+p | float | percent (.05 for 5%)  
+s | dict | scale  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | updated scale  
+  
+**Example:** A default scale
+
+    
+    
+     .gg.scale.linear
+    
+
+**Example:** A scale with 3% extension
+
+    
+    
+     .gg.scale.extension[0.03] .gg.scale.linear
+    
+
+**Example:** A scale with 30% extension
+
+    
+    
+     .gg.scale.extension[0.3] .gg.scale.linear
+    
+
+## .gg.scale.format
+
+Add a format function to a scale.
+
+A format function is a function from data values to tick label string.
+
+Note - newlines can appear in the format output by inserting `"\n"` in the
+string.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+f | fn | (scale, value) -> symbol  
+s | dict | scale  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | updated scale  
+  
+**See Also:** [ .gg.scale.breaks ](./#ggscalebreaks)
+
+**Example:** A scale with default tick formats
+
+    
+    
+     .gg.scale.linear
+    
+
+**Example:** A scale with custom breaks and ticks
+
+    
+    
+      .gg.scale.format[{
+         $[10 ~ x;   "ten";
+          100 ~ x;   "one hundred";
+          1000 ~ x;  "one thousand";
+                     ""]
+         }] .gg.scale.breaks[10 100 1000] .gg.scale.linear
+    
+
+## .gg.scale.limits
+
+Specify the limits (maximum and minimum) for a scale. This will override the
+generated limits for the scale. If either limit given is null, the max or min
+will be used as usual. The limits should be in the domain of the scale (float
+for a float scale, long for a long scale, etc).
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+lims | any[] | the max and min data to use for the scale  
+s | dict | an uninitialized scale  
+  
+**Example:** A scale with default limits
+
+    
+    
+     .gg.scale.linear
+    
+
+**Example:** Start a scale at 0 and used generated max value
+
+    
+    
+     .gg.scale.limits[0 0N] .gg.scale.linear
+    
+
+**Example:** Restrict (or extend) a scale to be between 0 and 100
+
+    
+    
+     .gg.scale.limits[0 100] .gg.scale.linear
+    
+
+## .gg.scale.maxChars
+
+Set the max characters that appear in a scale's tick labels
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+n | long | the max number of characters to use  
+s | dict | scale  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | updated scale  
+  
+**Throws:**
+
+Type | Description  
+---|---  
+| "Maximum characters on a scale must be specified in integers"  
+  
+**Example:** Set the scale ticks to truncate after 20 characters
+
+    
+    
+     .gg.scale.maxChars[20] .gg.scale.categorical[]
+    
+

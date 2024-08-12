@@ -1,0 +1,30 @@
+https://code.kx.com/insights/api/database/custom/publish.html
+
+# Publish - kdb products
+
+Original URL: https://code.kx.com/insights/api/database/custom/publish.html
+
+# Publishing data
+
+For use cases where you want to send a message to be processed or to trigger
+an action, you can publish a table into a stream. For example, you may want a
+query to send a message to a [Stream Processor](../../../microservices/stream-
+processor/index.html) to perform an action. Alternatively, you may want to
+publish a record to a different table from a query event. To publish data from
+a custom API, you can be use the `.kxi.publish` API. This function takes two
+arguments:
+
+  * `tn` \- **symbol** \- Table name.
+  * `data` \- **table** \- Table content. The table must be unkeyed and conform to the schema in the assembly.
+
+Additionally the `.kxi.publishRaw` API can be used to publish arbitrary data.
+This function takes a single argument that is the message to publish to the
+stream, however no checks are done on the data, in fact the data does not even
+have to be a table.
+
+The data is published on the `bus` configured in the assembly. Calling this
+function repeatedly with the same data will cause the data to be published
+multiple times. This includes the case when different DAPs publish the same
+data. Therefore you must ensure that the query is routed to the correct DAP to
+avoid duplication.
+

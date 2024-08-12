@@ -1,0 +1,165 @@
+https://code.kx.com/platform/stream/dw_feed/
+
+# Realtime feed - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/stream/dw_feed/
+
+# Realtime feed
+
+One of the ways to populate data in the warehouse is through a feed. In a
+normal system there will be a real feed, usually from an external source; a
+sensor, market adaptor etc. This data is fed through the _TP_ to the other
+subscribers. For the purposes of this guide, a dummy feed will be created in
+place of a real feed of monitoring data.
+
+## Create feed process
+
+The feed will be created as a service using the `DS_RTE` template.
+
+  * Right-click on the workspace tree and select _New > Analytic_ from the context menu.
+  * Give it a name `.mon.initFeed` and add to the `KxWarehouse` package and hit _Save_. Leave the analytic parameters and code as the defaults for now, these will be configured later.
+  * Now create a new service class by right-clicking and selecting _New > Service Class_
+  * Name the process `mon_feed`, set the template to `DS_RTE`, and click _Add_.
+
+[![Screenshot](../img/serviceclass/rte_feed_name.jpg)](../img/serviceclass/rte_feed_name.jpg
+"click to expand")
+
+  * Add a description.
+  * Configure the _Service Parameters_. 
+
+parameter | value  
+---|---  
+messagingServer | DS_MESSAGING_SERVER:DS  
+publishChannel |   
+publishTableList | monCPU, monMem, monDisk  
+subscriptionChannel | NO_TABLES  
+initialStateFunct | `.mon.initFeed`  
+  
+  * In the _Schemas subtab_ , associate the `monCore` group.
+  * Save the service class.
+
+## Writing feed code
+
+In order to create the feed, code needs to be developed to generate and
+publish the feed data. To do this;
+
+  * Run the `mon_feed` service class
+  * Right-click the running service in the _Process Library Status Viewer_
+  * Hit _Connect_ to open an _Analyst_ IDE
+
+[![Screenshot](../img/serviceclass/rte_data_connectide.jpg)](../img/serviceclass/rte_data_connectide.jpg
+"click to expand")
+
+  * In _Analyst_ , a scratchpad should be opened by default, which will allow you to type and execute code.
+  * Copy and paste the following code. This uses a random walk logic to generate mock monitoring data.
+
+    
+    
+    HOST:`$"server_",/:("A","B","C","D");
+    BASE:HOST!20 35 50 65;
+    MV:HOST!4?rand 0.5f;
+    n:5;
+    CBase:MBase:DBase:();
+    
+    .mon.createUsage:{[b]
+      base:BASE,b;
+      usage:HOST!{[host] sums?[n?1.<MV host;neg MV host; MV host]} each HOST;
+      (base HOST) + usage
+     }
+    
+    t: .z.p + 00:00:02 * til n;
+    ts:raze 4#enlist t; 
+    hosts:raze flip n#enlist HOST;
+    
+    CPU:.mon.createUsage[CBase];
+    CBase::last each CPU;
+    CUsage:raze {max(0;min(x;100))} each CPU;
+    
+    MemV:.mon.createUsage[MBase];
+    MBase::last each MemV;
+    MVUsage:raze {max(0;min(x;100))} each MemV;
+    MPUsage:raze {min(x;100)} each (first 1?10f) + MVUsage;
+    
+    Disk:.mon.createUsage[DBase];
+    DBase::last each Disk;
+    DUsage:raze {max(0;min(x;100))} each Disk;
+    
+    CPUData:([] time:ts; sym:hosts; usage:CUsage);
+    memData:([] time:ts; sym:hosts; virtual:MVUsage; physical:MPUsage);
+    diskData:([] time:ts; sym:hosts; usage:DUsage);
+    
+
+  * Highlight the lines you want to execute, right-click, and select _Display_ from the context menu. The keyboard shortcut `ctrl + d` can be used also. 
+
+[![Screenshot](../img/serviceclass/testcode_display.jpg)](../img/serviceclass/testcode_display.jpg
+"click to expand")
+
+  * Execute the lines to create tables individually and see data generated. The result of the operation will appear in the Console at the bottom of the screen.
+
+[![Screenshot](../img/serviceclass/testcode_results.jpg)](../img/serviceclass/testcode_results.jpg
+"click to expand")
+
+  * Once the code to generate the tables is working correctly, use the `.dm.pub` function to publish it to subscribers.
+
+[![Screenshot](../img/serviceclass/testcode_pub.jpg)](../img/serviceclass/testcode_pub.jpg
+"click to expand")
+
+  * To test if this dummy data was published across processes, connect to the `kxw_rdb` and enter `monCPU` in the _Scratchpad_. Display the results and check to see if there is data populated. Repeat this for the other tables; `monMem`, `monDisk`
+
+### Deploying feed code
+
+  * Previously we've manually generated and published data from the `mon_feed` process. To automate this, create an _instruction_ and write a function that generates and publishes data on a timer. Then load the instruction at startup. 
+
+  * Right-click _Analytics Libary_ and select _New Instruction_. 
+
+[![Screenshot](../img/serviceclass/instruction_new.jpg)](../img/serviceclass/instruction_new.jpg
+"click to expand")
+
+  * Name the instruction `.mon.feedLogic`. 
+
+  * In the _Instruction Details_ subtab, give it a description. For example, _Logic to generate and publish random data_
+
+  * Copy and paste the code from the appendix to the _Content_ subtab of your `.mon.feedLogic` instruction and _save_.
+
+[Feed code](../dw_appendix/#monfeedlogic)
+
+  * Next, in the `.mon.initFeed` analytic, copy and paste the code below to the _Content_ subtab.
+
+    
+    
+    // load instruction
+    .al.loadinstruction[`.mon.feedLogic]
+    
+
+  * The `.al.loadinstruction` loads an instruction into a process, like loading a q script.
+
+## Check feed
+
+After creating the feed code, restart the service to check it's working
+correctly.
+
+  * To shutdown, right-click `mon_feed` in the _Process Library Status Viewer_
+  * Select _Stop > Shut Down Q Process_.
+
+[![Screenshot](../img/serviceclass/shutdown_process.jpg)](../img/serviceclass/shutdown_process.jpg
+"click to expand")
+
+  * Run the `mon_feed` service class again and _Connect_ again.
+
+  * Look in the tree on the left, and open the (_.mon_) module and Functions folder. Find the _genData_ analytic. 
+
+[![Screenshot](../img/serviceclass/rte_data_ide_analyticlist.jpg)](../img/serviceclass/rte_data_ide_analyticlist.jpg
+"click to expand")
+
+  * The data creating analytics in _.mon.feedLogic_ is called in the initial state (_.mon.initFeed_), so data should already be generating in three tables.
+
+  * To check that the feed is working correctly end to end, connect to the `kxw_rdb` service and validate that there's data populating in the tables. Once this is confirmed, the feed part of the system is working correctly.
+
+[![Screenshot](../img/serviceclass/rte_data_ide_tablecount.jpg)](../img/serviceclass/rte_data_ide_tablecount.jpg
+"click to expand")
+
+  * An alternative way of looking at the tables is to inspect them as shown below. The _Visual Inspector_ allows users to inspect data values in a table view as well as explore their data graphically.
+
+[![Screenshot](../img/serviceclass/rte_data_ide_tableinspect.jpg)](../img/serviceclass/rte_data_ide_tableinspect.jpg
+"click to expand")
+

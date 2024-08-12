@@ -1,0 +1,166 @@
+https://code.kx.com/insights/enterprise/packaging/package-deploy.html
+
+# Deploying a package - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/packaging/package-deploy.html
+
+# Package deployment
+
+The deploy command enables you to deploy and teardown the database and
+pipeline configuration defined in your package inside kdb Insights Enterprise.
+
+Once a package has been [uploaded](package-upload.html) to kdb Insights
+Enterprise, it is ready for deployment. Run the `deploy` command to bring your
+configurations online.
+
+## Deploy
+
+You can use the help command to provide information regarding the additional
+options.
+
+    
+    
+     Usage: kxi package deploy [OPTIONS] [EXTRA_ARGS]... SOURCE                     
+    
+     Deploy a package to an insights instance.                                      
+     SOURCE: package-name[/version]                                                 
+    
+    ╭─ Options ────────────────────────────────────────────────────────────────────╮
+    │ --hostname,--url                  TEXT   Insights URL                        │
+    │                                          [env var: INSIGHTS_URL]             │
+    │ --realm                           TEXT   Realm                               │
+    │                                          [env var: INSIGHTS_REALM]           │
+    │                                          [default: insights]                 │
+    │ --client-id                       TEXT   Client id                           │
+    │                                          [env var: INSIGHTS_CLIENT_ID]       │
+    │ --client-secret                   TEXT   Client secret                       │
+    │                                          [env var: INSIGHTS_CLIENT_SECRET]   │
+    │ --auth-enabled/--auth-disabled           Will attempt to retrieve bearer     │
+    │                                          token for request                   │
+    │                                          [env var: KXI_AUTH_ENABLED]         │
+    │                                          [default: auth-enabled]             │
+    │ --server-timeout                  FLOAT  Timeout for Insights server calls   │
+    │                                          [env var: INSIGHTS_SERVER_TIMEOUT]  │
+    │                                          [default: 60]                       │
+    │ --db                              TEXT   Deploy an existing package's        │
+    │                                          database (must be defined in the    │
+    │                                          package)                            │
+    │ --pipeline                        TEXT   Deploy an existing package's        │
+    │                                          pipeline (must be defined in the    │
+    │                                          package)                            │
+    │ --rm-existing-data                       Remove the data associated with the │
+    │                                          old deployment                      │
+    │ --env                             TEXT   Inject environment variables to the │
+    │                                          deployed package.                   │
+    │                                          `[component_name:]VAR=value`        │
+    │ --help                                   Show this message and exit.         │
+    ╰──────────────────────────────────────────────────────────────────────────────╯
+    
+
+Most of the parameters shown above are used to initialize the connection with
+kdb Insights Enterprise.
+
+The deploy command can be run as follows:
+
+    
+    
+    kxi package deploy mypackage/1.0.0
+    
+
+This command searches kdb Insights Enterprise for `mypackage`, `version=1.0.0`
+and deploys its contents.
+
+### Inject environment variables
+
+You can inject environment variables when you deploy a package to make small
+changes to settings in your package, for example to increase or decrease an
+application limit.
+
+Inject environment variables during the `deploy` command using the `--env`
+modifier, as in the following example:
+
+    
+    
+    kxi package deploy mypackage/1.0.0 --env mypipeline:myenvar=1
+    
+
+In the above example, kdb Insights Enterprise deploys version 1.0.0 of the
+package named `mypackage` and sets the `myenvar` environment variable to a
+value of 1.
+
+To change the value of `myenvar`, run the deploy command again with the new
+desired value. The command automatically tears down the existing deployment
+and deploys again with the new value.
+
+## Tearing down
+
+The `teardown` command enables you to tear down the database and pipelines
+configuration defined in your package inside kdb Insights Enterprise.
+
+You can use the help command to provide information regarding the additional
+options
+
+    
+    
+     Usage: kxi package teardown [OPTIONS] [EXTRA_ARGS]... DEPLOYMENT_REF           
+    
+     Teardown a deployed packaged running on an insights instance                   
+    
+    ╭─ Options ────────────────────────────────────────────────────────────────────╮
+    │ --hostname,--url                  TEXT   Insights URL                        │
+    │                                          [env var: INSIGHTS_URL]             │
+    │ --realm                           TEXT   Realm                               │
+    │                                          [env var: INSIGHTS_REALM]           │
+    │                                          [default: insights]                 │
+    │ --client-id                       TEXT   Client id                           │
+    │                                          [env var: INSIGHTS_CLIENT_ID]       │
+    │ --client-secret                   TEXT   Client secret                       │
+    │                                          [env var: INSIGHTS_CLIENT_SECRET]   │
+    │ --auth-enabled/--auth-disabled           Will attempt to retrieve bearer     │
+    │                                          token for request                   │
+    │                                          [env var: KXI_AUTH_ENABLED]         │
+    │                                          [default: auth-enabled]             │
+    │ --server-timeout                  FLOAT  Timeout for Insights server calls   │
+    │                                          [env var: INSIGHTS_SERVER_TIMEOUT]  │
+    │                                          [default: 60]                       │
+    │ --rm-data                                Remove the data associated with the │
+    │                                          deployment                          │
+    │ --help                                   Show this message and exit.         │
+    ╰──────────────────────────────────────────────────────────────────────────────╯
+    
+
+The `teardown` command uses the name of the package that has been deployed and
+searches kdb Insights Enterprise for a deployed package with that name.
+
+## Tracking deployments
+
+You can find the status of the running deployments by running the following
+command:
+
+    
+    
+    kxi package remote-list --obj-type=Assembly -otable
+    
+    
+    
+    ╭──────────────────────────────────────┬─────────────────────┬─────────┬───────┬──────────────╮
+    │ id                                   │ name                │ running │ ready │ hasResources │
+    ├──────────────────────────────────────┼─────────────────────┼─────────┼───────┼──────────────┤
+    │ 5c7f6928-2aee-4cbc-92c9-4a3ea9a7ba85 │ apple               │ True    │ False │ True         │
+    │ 307235fb-37fa-4a50-9863-43c5de646788 │ bottle              │ True    │ False │ True         │
+    │ bb57706b-8abe-4a4b-9395-539744b8d32a │ equities            │ True    │ True  │ True         │
+    │ 0bdafca4-935e-438a-b45b-1c7ed84356f2 │ example-data        │ True    │ False │ True         │
+    │ 5fd21b82-b9f3-4854-a432-ac415f02d6fc │ manufacturing       │ False   │ False │ False        │
+    │ 6778d002-bf63-401d-8e36-e495daf7d423 │ orange              │ False   │ False │ False        │
+    │ dcfe8a57-c1b2-47c1-a8eb-49dd93cfc112 │ applepip1           │ False   │ False │ False        │
+    │ c299a760-2dca-468d-8458-31b2e47ec9e7 │ example             │ False   │ False │ False        │
+    │ 533e5bfa-0012-4391-9e14-b5f0857e358e │ python-e2e-ub70     │ False   │ False │ False        │
+    │ b7708364-797a-4d57-9fc1-7a4da4164421 │ sdk-sample-assembly │ False   │ False │ False        │
+    │ f3c0c136-6af3-424c-986d-cfc7fc0e432c │ rich-test           │ False   │ False │ False        │
+    │ b036f6d7-9634-4bc3-8641-84f45c2e3ce8 │ cy-test-dudd        │ False   │ False │ False        │
+    │ 622175dd-0848-42cb-903e-3ec52a09bbc0 │ grape               │ False   │ False │ False        │
+    │ 1143e651-beae-4418-a9ba-70b63667d00d │ uitest              │ False   │ False │ False        │
+    │ 142aea32-b265-4fce-9134-619532edde80 │ sk-test-1           │ False   │ False │ False        │
+    ╰──────────────────────────────────────┴─────────────────────┴─────────┴───────┴──────────────╯
+    
+

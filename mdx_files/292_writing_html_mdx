@@ -1,0 +1,118 @@
+https://code.kx.com/insights/microservices/stream-processor/writing.html
+
+# Writing - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/stream-processor/writing.html
+
+# Writing and debugging
+
+Before deploying a streaming program, authoring and debugging it locally with
+a short feedback loop speeds up development time. To facilitate this, a single
+Worker can be run without a Controller in an interactive mode.
+
+## Local development
+
+qPython
+
+    
+    
+    docker run -it --rm \
+        -e KDB_LICENSE_B64 \
+        -e KXI_SP_INTERACTIVE=true \
+        -e KXI_PROTECTED_EXECUTION=false \
+        -p 5000:5000 portal.dl.kx.com/kxi-sp-worker:1.10.0 -p 5000
+    
+
+Environment variables
+
+Note the environment variables used.
+
+  * `KXI_SP_INTERACTIVE=true` starts the Worker in interactive mode
+  * `KXI_PROTECTED_EXECUTION=false` disables error capture, allowing q to surface the native debugger on any errors
+
+This will start a single Worker and load all requisite libraries, providing a
+q prompt with which you can define a pipeline. For example:
+
+    
+    
+    .qsp.run .qsp.read.fromCallback[`pub] .qsp.write.toConsole[]
+    
+
+This Worker can then be tested by connecting with another local q process and
+targeting the `pub` callback.
+
+    
+    
+    h:hopen 5000
+    h (`pub; enlist til 10)
+    
+
+## Starting a new pipeline
+
+A new pipeline can be created without creating a new container by calling
+`.qsp.teardown[]`.
+
+    
+    
+    .qsp.run .qsp.read.fromCallback[`pub] .qsp.write.toConsole[]
+    .qsp.teardown[]
+    .qsp.run .qsp.read.fromCallback[`pub] .qsp.map[{x*2}] .qsp.write.toConsole[]
+    
+
+Python deployments are currently constrained to a single file on the worker
+image. The Stream Processor Python interface uses
+[PyKX](https://code.kx.com/pykx).
+
+Example `spec.py`
+
+    
+    
+    from kxi import sp
+    import pykx as kx
+    
+    
+    sp.run(sp.read.from_callback('publish') | sp.map(lambda x: x * 2) | sp.write.to_console())
+    
+    kx.q('publish', range(10))
+    
+
+Deploy the test file using a local worker and a volume mount with interactive
+mode enabled.
+
+    
+    
+    docker run -it --rm \
+        -e KDB_LICENSE_B64 \
+        -e KXI_SP_INTERACTIVE=true \
+        -e KXI_PROTECTED_EXECUTION=false \
+        -v `pwd`:/project \
+        -p 5000:5000 portal.dl.kx.com/kxi-sp-python:1.10.0 \
+        -p 5000 --run-pipeline /project/spec.py
+    
+
+Environment variables
+
+Note the environment variables used.
+
+  * `KXI_SP_INTERACTIVE=true` starts the Worker in interactive mode
+  * `KXI_PROTECTED_EXECUTION=false` disables error capture, allowing q to surface the native debugger on any errors
+
+This Worker can then be tested by connecting with another local q process and
+targeting the `pub` callback.
+
+    
+    
+    h:hopen 5000
+    h (`pub; enlist til 10)
+    
+
+## Iterating on a file
+
+If iterating on a file, volume-mount the directory with the file into the
+container and load it at the prompt.
+
+## Deploying
+
+Once the spec file is developed and ready to deploy, follow the running
+guidelines for [running a pipeline](running.html)
+

@@ -1,0 +1,777 @@
+https://code.kx.com/insights/core/qpacker/qpacker.html
+
+# Using QPacker | kdb Insights Core - kdb products
+
+Original URL: https://code.kx.com/insights/core/qpacker/qpacker.html
+
+# Using QPacker
+
+_A packaging utility for deploying kdb+ applications to the cloud_
+
+## Dependencies
+
+Core:
+
+    
+    
+    Linux
+    Docker
+    jq (Linux JSON parser) Version 1.6+
+    zip/unzip
+    cpio
+    OpenSSL
+    
+
+Optional:
+
+## Requirements
+
+Docker should be able to run under your user account without using `sudo`:
+
+Your host should have access to the internet to pull Docker images, or access
+should be configured to allow Docker through a proxy.
+
+Docker must run on the target, not where the target is a container with Docker
+running on the host
+
+## Installation
+
+## Install QPacker
+
+QPacker installers are delivered via
+[Nexus](https://nexus.dl.kx.com/#browse/browse:kx-insights-packages:qpacker):
+
+    
+    
+    └── qpacker
+        ├── qpacker-install-2.0.14-4.0.0.sh
+        ├── qpacker-2.0.14-4.0.0.deb
+        └── qpacker-2.0.14-4.0.0.x86_64.rpm
+    
+
+To install using the shell installer run:
+
+    
+    
+    sh qpacker-install-2.0.14-4.0.0.sh
+    
+
+The installer will also prompt for an installation directory.
+
+    
+    
+    Installation Directory [default /home/user]
+    Installed.
+    
+
+Set your Git username and email:
+
+    
+    
+    git config --global user.name "John Smith"
+    git config --global user.email "jsmith@email.com"
+    
+
+## Uninstall QPacker
+
+To uninstall using the shell installer run:
+
+    
+    
+    sh qpacker-install-2.0.14-4.0.0.sh --uninstall
+    
+
+When uninstalling or replacing, the installer will check `PATH` for `qp`,
+along with default install directories. If not found a normal install will
+proceed.
+
+## Licenses
+
+QPacker requires that a valid kdb+ license file is present in the system.
+
+Copy the license provided as part of the EAP to your `~/.qp.licenses` folder.
+QPacker will look there to determine which license should be used.
+
+Alternatively if you already have a license you wish to use it can be passed
+to `QPacker` via an environment variable containing a base64 encoding of the
+license file, e.g.
+
+kx.lic style license
+
+    
+    
+    export KDB_KXLICENSE_B64=$(base64 -w0 kx.lic)
+    
+
+kc.lic style license
+
+    
+    
+    export KDB_LICENSE_B64=$(base64 -w0 kc.lic)
+    
+
+k4.lic style license
+
+    
+    
+    export KDB_K4LICENSE_B64=$(base64 -w0 k4.lic)
+    
+
+## Images
+
+By default QPacker will build a Docker image for your application. This image
+can then be tagged and pushed to a Docker registry of your choice. The images
+created are set to run as non-root user (`USER nobody`), this means that you
+cannot modify the contents of the container when it is running. If you have
+code running inside the container which needs to write data, then the location
+being written to needs to be volume-mapped into the container at run time.
+
+### `qp run`
+
+Once QPacker has successfully built a Docker image you can run the application
+using `qp run`. This will launch the new container using Docker. The
+configuration for the container will be passed in via the `qpbuild/.env` file,
+which contains a base64-encoded license for kdb+ and the SHA256 hash of the
+Docker container.
+
+Running the containerized application in this way is useful to debug simple
+standalone applications. To run multiple images together, consider using
+Docker Compose or a more fully featured container orchestrator such as
+Kubernetes.
+
+### Docker Compose
+
+To run several images which make up an application, consider using Docker
+Compose. The `basic-tick-system` example provides a sample `docker-
+compose.yml` which shows how volumes can be mapped into the containers and
+ports exposed to the base system.
+
+To run any image you need to provide a license file as a base64-encoded string
+e.g.
+
+    
+    
+    environment:
+          - KDB_KXLICENSE_B64="base64 encoded kx.lic string"
+          - KDB_LICENSE_B64="base64 encoded kc.lic string"
+          - KDB_K4LICENSE_B64="base64 encoded k4.lic string"
+    
+
+## Usage
+
+This usage is also included in the README folder.
+
+`qp` command and options:
+
+Options |  | Description  
+---|---|---  
+build |  | Build a project and all dependencies [default if no args provided]. `qp build` can support more than one arg at a time.  
+| [target] | Specific target(s) to build (e.g. "qp build tp" or "qp build tp gw") if omitted, will default to all.  
+| [-binlinux] | Build in-tree linux and qpk.  
+| [-docker] | Build docker images.  
+| [-linux] | Build linux installers e.g. rpm, deb, sh. Will default to `-binlinux` build if `ui` field is not set in `qp.json`.  
+| [-rpm] | Build rpm+sh.  
+| [-deb] | Build deb+sh.  
+| [-sh] | Build sh code only.  
+| [-dedup] | Enable dependency deduplication.  
+| [-unlocked] | Do not lock q code in qpks or images.  
+run |  | Runs an entrypoint for the project, rebuilding if necessary.  
+| [entrypoint] | Specific entrypoint to run (e.g. "qp run tp") if omitted, will default to 'default'.  
+| [ \-- ] | Pass args through to entrypoint (e.g. "qp run tp -- -p 1234").  
+doctor |  | Analyses the project environment and provides recommendations.  
+clean |  | Clean up any files created by qp that are in the tree.  
+tag |  | Tag a docker image of a built target. Target must exist in qpbuild/.env (e.g. "qp tag gcr.io/cloudpak/tp 1.2.3") To tag all images omit the image name from the url and pass the -all argument (e.g. "qp tag gcr.io/cloudpak 1.2.3 -all")  
+push |  | Push a tagged docker image or a qpk file. image: (e.g. "qp push gcr.io/cloudpak/tp 1.2.3") qpk: (e.g. "qp push gitlab.com/example/my-app/myapp.qpk 0.0.1") NB qpk will be picked up from "./qpbuild/qpk/"  
+pull |  | Pull a pre-built qpk to be used as a dependency in your project.(e.g. "qp pull gitlab.com/example/my-app/myapp.qpk 0.0.1") NB qpk will be placed in current directory  
+  
+`$HOME/.qp.licenses/`
+
+    
+
+Contains KX license information as prompted for on your first run of QPacker.
+If a `k[xc4].lic` license file is here it will be used for all `build` or
+`run` targets.
+
+`.qpignore`
+
+    
+
+Patterns can be used to omit source code and other artefacts from the
+`qpbuild` tree. The `.qpignore` file should be placed in the project root
+directory as a sibling of `qp.json`. `.qpignore` also supports selectively
+ignoring files on a per app basis by using `.qpignore.<appname>`
+
+The supported patterns are detailed in the table below:
+
+Pattern | Description  
+---|---  
+README.md | Ignore `README.md` at all levels in the tree  
+*.sh | Ignore files with `.sh` suffix at all levels in the tree  
+docs/* | Ignore `docs` directory at top level in the tree  
+**/docs | Ignore `docs` at all levels in the tree  
+  
+`QPDOCKER_BASE`
+
+    
+
+This environment variable controls the Linux distro QPacker uses for image
+artefacts. By default this is set to `rockylinux:9`. This can be changed
+before running qp by setting `export QPDOCKER_BASE=ubuntu:20.04` or by setting
+the value in `qp.json`. The distros supported are Centos, Rockylinux and
+Ubuntu.
+
+    
+
+To build a specific dependency under a particular distro, set the following in
+the `qp.json` inside the dependency source tree
+
+    
+    
+    "docker_base_image": [ "rockylinux:9" ]
+    
+
+`QPCUSTOM_BASE`
+
+    
+
+This environment variable can be set to `1` to skip OS package additions when
+using a custom base image.
+
+`QPDOCKER_BUILD_BASE`
+
+    
+
+This environment variable controls the Linux distro QPacker uses for the
+builder containers sobuilder/qpacker/pybuilder. This be changed before running
+qp by setting `export QPDOCKER_BUILD_BASE=ubuntu:20.04.
+
+`KX_KURL_DISABLE_AUTO_REGISTER`
+
+    
+
+To turn off kurl auto registration in a QPacker built image set the following
+in your `qp.json` inside your app definition
+
+    
+    
+    "kurl_disable_auto_register": "1"
+    
+
+`QPDEBUG`
+
+    
+
+To produce debug logging (`set -x`), set environment variable QPDEBUG to 1.
+
+    
+
+You can then capture output to file and to screen via `qp build 2>&1 | tee -a qp.out`.
+
+    
+
+To turn off debug logging either `unset QPDEBUG` or `export QPDEBUG=0`. NB:
+with debug enabled, QPacker will not clean up files in `/tmp` created by the
+build process.
+
+`QPTASKSET`
+
+    
+
+To pass a taskset value through to containers which run q, set the environment
+variable QPTASKSET to taskset value
+
+    
+
+The format should follow the -c mask which specifies a list of processors,
+e.g. `export QPTASKSET=0-3` would result in q being run with the following
+taskset stanza `taskset -c 0-3`.
+
+    
+
+To turn off QPTASKSET use `unset QPTASKSET`.
+
+`QPPRELOAD`
+
+    When passed to a `qp` built application it will cause `LD_PRELOAD` to be exported to the value provided, just before the execution of `kdb+`. 
+    e.g. `QPPRELOAD=/lib/mylib.so` will result in `export LD_PRELOAD=/lib/mylib.so`.
+`QPBUILD_PARALLEL`
+
+    
+
+To turn on, set environment variable QPBUILD_PARALLEL to 1.
+
+    
+
+When set, build configurations with three or more application targets will run
+in parallel.
+
+    
+
+The first app target will setup the build environment and prime the docker
+cache for all resulting images.
+
+    
+
+Each subsequent build will then execute in parallel reducing the overall build
+time.
+
+    
+
+To turn off QPBUILD_PARALLEL use `unset QPBUILD_PARALLEL`.
+
+`QP_DEDUP`
+
+    
+
+To enable dependency deduplication, pass `-dedup` to `qp build` or export
+`QP_DEDUP=1`.
+
+    
+
+The resulting qpks will skip loading any dependencies that were loaded before.
+The name of the dependency is the part after the last path separator. This
+mode only makes a difference if the dependencies were themselves built with
+deduplication and the same dependency appears in more than one place in the
+dependency tree, in which case the first one encountered gets loaded. This
+allows resolution of dependency conflicts by putting the desired version first
+in the dependency list.
+
+`QP_UNLOCKED`
+
+    
+
+To produce unlocked builds, pass `-unlocked` to `qp build` or export
+`QP_UNLOCKED=1`.
+
+    
+
+The resulting qpks and images will contain unlocked q code.
+
+    
+
+The qpk name will have `-unlocked.qpk` suffix and an additional text file
+`unlocked` will be added to the qpk.
+
+    
+
+Images will have an additional Docker label `com.kx.qp.unlocked` with a value
+of `1`.
+
+`QPHELPER_TIMEOUT`
+
+    
+
+To set the timeout for the qp helper containers, qlocker and sobuiler, set the
+following before running qp, export `QPHELPER_TIMEOUT=integer`.
+
+    
+
+The default timeout is 1800 seconds and will result in the container staying
+up for at least 1800 seconds if there are no builds running.
+
+`QPDOCKER_INCLUDE_FILE`
+
+    
+
+In order to add custom content to beginning of Dockerfiles generated by
+QPacker you can set the environment variable `QPDOCKER_INCLUDE_FILE` which
+should point to a file which includes the Docker commands you wish to be
+inserted.
+
+    
+
+The commands will be inserted after the `FROM`, `USER` and `LABELS` sections.
+
+`QPDOCKER_BUILD_ARGS`
+
+    
+
+In order to add custom build args to Dockerfiles generated by QPacker you can
+set the environment variable `QPDOCKER_BUILD_ARGS` which should be a space
+separated string in the format `export QPDOCKER_BUILD_ARGS="ARG1=VALUE1
+ARG2=VALUE2"`.
+
+    
+
+To pass build args to the package manager used in the final image build set
+`QPDOCKER_BUILD_ARGS="QPPGKMR_OPTS=--option"`.
+
+`QPDOCKER_OPTS`
+
+    
+
+In order to add docker args to `docker build` commands executed by QPacker,
+you can set the environment variable `QPDOCKER_OPTS`. For example if you set
+`export QPDOCKER_OPTS="--no-cache"`, this will cause all `docker build` steps
+executed by QPacker as part of `qp build` to build without a docker cache. NB
+build commands will apply to the building of qlocker and sobuilder images as
+well as the application image produced by QPacker.
+
+`QPDOCKER_RUN_OPTS`
+
+    
+
+In order to add docker args to `docker run` commands executed by QPacker, you
+can set the environment variable `QPDOCKER_RUN_OPTS`. For example if you set
+`export QPDOCKER_RUN_OPTS="--cpuset-cpus 2"`, this will cause all `docker run`
+steps executed by QPacker to run on 2 CPU cores. NB run commands will apply to
+the running of qlocker and sobuilder images as well as the application image
+produced by QPacker.
+
+## QPK artefact
+
+### Building
+
+The `qp build` command creates a QPK artefact as an output. It is a ZIP file
+and can be distributed. QPacker can use it in lieu of a dependency in the
+`qp.json` file. The QPK can be found in the `qpbuild/qpk` folder of your
+repository after building. To reset the folder in preparation for a clean
+build, use `qp clean`.
+
+The QPK contains all of the files, but any dependency can also have a
+`.qpignore` file with patterns (much like `.gitignore` might have) used to
+omit source code and other artefacts from the build tree. Files can also be
+ignored on a per app in qp.json basis by using `.qpignore.<appname>`
+
+## `qp.json`
+
+The root directory of every QP project contains a `qp.json` file, with
+metadata for the package: what is it called, dependencies and the location for
+entrypoints for the `qp run` command.
+
+The base level of the `qp.json` will be each component name, under which are
+properties. Properties QPacker parses are:
+
+property | value  
+---|---  
+`entry` | location of the entrypoint for the `qp run` command (string array)  
+`depends` | dependencies of the application (string array).  
+`dynamic_depends` | These dependencies are added to the artefact but not automatically loaded.  
+`docker_base_image` | base image to build the Docker containers `sobuilder/qlocker`, default: `rockylinux:9` (single element string array)  
+`docker_build_image` | base image used for image artefacts. By default this is set to `rockylinux:9` (single element string array)  
+  
+For example, a project has a dependency on `kurl.qpk`. QPacker searches for
+the dependency in
+
+  1. folders relative to the current project directory; failing that
+  2. relative to the directories listed in the `QPPATH` environment variable; failing that
+  3. relative to the installation directory of QPacker itself. 
+
+For example, a project has a dependency on `bq.qpk`. QP searches for the
+dependency in folders relative to the current project directory; failing that,
+relative to the directories listed in the `QPPATH` environment variable;
+failing that, relative to the installation directory of QP itself. The
+`qp.json` file for this application would be
+
+    
+    
+    {
+      "default": {
+        "depends": [ "bq" ],
+        "entry": [ "myapp.q" ]
+      }
+    }
+    
+
+A `qp.json` can contain multiple applications, for example
+
+    
+    
+    {
+      "rdb":{
+        "entry": [ "rdb.q"]
+      },
+      "tp":{
+        "entry": [ "tp.q" ]
+      }
+    }
+    
+
+`QPPATH` separators vary by operating system
+
+`QPPATH` items are separated by colon `:` on Linux and macOS, but by semicolon
+`;` on Windows.
+
+It is designed for use by CI/CD tools, and not for ordinary development.
+
+### Publishing
+
+Substitute `gcr.io/myproject` for Google Cloud, or
+`dkr.ecr.{region}.amazonaws.com` for Amazon, or whatever registry you use.
+
+Software is often built by disparate teams, who may individually have remit
+over a particular component, and package that component for consumption by
+others. QPacker will store all artefacts for a project in a QPK file. While
+this file is intended for binary dependencies, it is also intended to be
+portable across environments. The QPK artefact can be published to the package
+registry on Git using
+
+    
+    
+    qp push gitlab.com/user/my-app/bq.qpk 0.1.0
+    
+
+This could also be added to your CI pipeline as a post-commit hook.
+
+### Downloading
+
+Once the QPK artefact has been published to a registry, other projects can
+pull it for inclusion in their applications. Starting a new project based on
+QPacker and using the REST library can be as simple as:
+
+    
+    
+    mkdir my-app
+    cd my-app
+    echo '{ "default": { "entry": [ "app.q" ], } }' > qp.json
+    qp pull gitlab.com/user/my-app/bq.qpk 0.1.0
+    
+
+## Docker
+
+### Container registry
+
+By default, QPacker generates a Docker image for each application it builds.
+The images can be pushed to Docker Hub-compatible container repositories,
+including private repositories such as [Google Cloud](https://gcr.io) or
+[GitLab](https://gitlab.com). You can use:
+
+    
+    
+    qp tag registry.gitlab.com/user/my-app/bq 0.1.0
+    qp push registry.gitlab.com/user/my-app/bq 0.1.0
+    
+
+### Docker directory permissions
+
+By default `qp build` runs Docker images as the root user and generates output
+(often to `./qpbuild`) which will be owned by root but the permissions will be
+altered via `chmod -R 777`.
+
+For all QPacker-related output to be generated as your own user, configure
+Docker with `userns-remap`:
+
+  1. Get your user id `$ id -u` e.g. `1000`
+  2. Get your users gid `$ id -g` e.g. `1000`
+  3. Edit `/etc/subuid` and add `username:1000:65536`
+  4. Edit `/etc/subgid` and add `username:1000:65536`
+  5. Create or edit `/etc/docker/daemon.json`
+  6. Add (optional for Docker-on-Windows and Docker-on-Mac)
+    
+        {
+        "userns-remap": "username"
+    }
+
+  7. Restart the Docker daemon using `systemctl` or similar
+
+This change will make your current Docker containers inaccessible
+
+## Using QPacker in air-gapped environments
+
+To use QPacker in air-gapped environments where there is no access to the
+internet, prebuild the all builder Docker images `qlocker`, `sobuilder`,
+`rpmbuilder`, `debbuilder`.
+
+The environment used to prepare these images will require access to the
+internet to pull down their dependencies
+
+Once built, the images should be made available to QPacker via an internal
+Docker registry. For QPacker to pick them up automatically, tag them with the
+version number returned by `qp version`.
+
+To simplify this process a `qpacker-images` TGZ is available for download,
+along with each release of QPacker. It contains all the files required to
+build the three builder images, and an example runtime image for the resulting
+QPacker Docker artefacts.
+
+### Package contents
+
+The qpacker-images release tgz expands into the following layout:
+
+    
+    
+    qpacker-images-X.Y.Z-X.Y.Z/
+    ├── build-qpacker-images.sh
+    ├── py/
+    ├── q/
+    ├── run/
+    └── so/
+    
+
+### Build environment
+
+The host used to build the images should be a Linux platform with Docker
+installed and access to the following sites:
+
+### Build preparation
+
+Prepare the build environment by unpacking the `qpacker-images` TGZ and
+changing to the resulting directory.
+
+    
+    
+    tar -xvzf qpacker-images-X.Y.Z-X.Y.Z.tgz
+    cd qpacker-images-X.Y.Z-X.Y.Z
+    
+
+### Custom content
+
+_How custom content, such as environment variables, can be added to the
+beginning of the Dockerfiles used to build the images_
+
+Create a file called `docker.include.txt` inside the `qpacker-
+images-X.Y.Z-X.Y.Z` directory. The contents of this file will be appended to
+each of the Dockerfiles (directly below the `FROM`) used to build `qlocker`,
+`sobuilder`, `rpmbuilder`, `debbuilder` and the runtime image.
+
+For example:
+
+    
+    
+    $ cat docker.include.txt
+    ENV http_proxy=http://myproxy.net:8443
+    ENV http_proxy=http://myproxy.net:8443
+    
+
+This will have the following included in each Dockerfile
+
+    
+    
+    $ cat q/Dockerfile.run
+    FROM rockylinux:9
+    ENV http_proxy=http://myproxy.net:8443
+    ENV http_proxy=http://myproxy.net:8443
+    
+
+### Building
+
+To build the images:
+
+    
+    
+    ./build-qpacker-images.sh
+    
+
+NB sobuilder image will be tagged with the value of `QPDOCKER_BUILD_BASE`
+(default rockylinux:9) which can be overwritten by passing the flag `--docker-
+build-base ubuntu:20.04`.
+
+### Artefacts
+
+On successful execution of the build script there should be a new `dist`
+directory in the tree, containing Docker images saved (via `docker save`) as
+`.tar.gz` files:
+
+    
+    
+    $ ls -1 dist/
+    kxbase_2.0.29.tar.gz
+    qlocker_2.0.29.tar.gz
+    sobuilder_rockylinux-9_2.0.29.tar.gz
+    rpmbuilder_2.0.29.tar.gz 
+    debbuilder_2.0.29.tar.gz 
+    
+
+The images contain the appropriate tag (`2.0.29`) from the version of QPacker
+the `qpacker-images` TGZ was shipped with.
+
+Each tarball contains an image, used by QPacker:
+
+image | description  
+---|---  
+kxbase | Base runtime image: can be used as the base image for the Docker image artefact produced by QPacker  
+qlocker | General-purpose container for QPacker build stages, to obfuscate q code and assemble contents for QPacker’s QPK artefacts  
+sobuilder | Multi-purpose shared-object builder: can build C/C++ shared objects and understands make, cmake, configure etc.  
+rpmbuilder | Container for building rpm installers  
+debbuilder | Containers for building debian installers  
+  
+### Loading images
+
+Each of the images above can be loaded via `docker load` and published to an
+internal Docker registry for use with QPacker.
+
+For QPacker to pick up the image it must be present on the host machine (via
+`docker pull`) and it must also be tagged with the version number from the
+image `.tar.gz` file.
+
+The images are loaded as follows:
+
+    
+    
+    docker load < kxbase_2.0.29.tar.gz
+    docker load < qlocker_2.0.29.tar.gz
+    docker load < sobuilder_rockylinux-9_9.9.9.tar.gz
+    docker load < rpmbuilder_2.0.29.tar.gz
+    docker load < debbuilder_2.0.29.tar.gz
+    
+
+This results in the following entries in the local Docker images cache:
+
+    
+    
+    $ docker images
+    REPOSITORY                           TAG      IMAGE ID       CREATED          SIZE
+    kxbase                               2.0.29   f81c9b14aa78   16 minutes ago   62.7MB
+    sobuilder-rockylinux-9               2.0.29   09a66bbdde41   16 minutes ago   255MB
+    qlocker                              2.0.29   718b7c994724   19 minutes ago   222MB
+    rpmbuilder                           2.0.29   9aff5fb10b3b   16 minutes ago   526MB
+    debbuilder                           2.0.29   09a66bbdde41   16 minutes ago   139MB
+    
+
+These images can then be retagged and pushed into another Docker registry, and
+QPacker can use them provided the `TAG` matches the version returned via `qp
+version`.
+
+For example, for a registry `registry.mycompany.com/kx/qpacker/` the tag and
+push commands would be:
+
+    
+    
+    docker tag kxbase:2.0.29 \
+      registry.mycompany.com/kx/qpacker/kxbase:2.0.29
+    docker push registry.mycompany.com/kx/qpacker/kxbase:2.0.29
+    
+    docker tag sobuilder-rockylinux-9:2.0.29 \
+      registry.mycompany.com/kx/qpacker/sobuilder-rockylinux-9:2.0.29
+    docker push registry.mycompany.com/kx/qpacker/sobuilder-rockylinux-9:2.0.29
+    
+    docker tag qlocker:2.0.29 \
+      registry.mycompany.com/kx/qpacker/qlocker:2.0.29
+    docker push registry.mycompany.com/kx/qpacker/qlocker:2.0.29
+    
+    docker tag rpmbuilder:2.0.29 \
+      registry.mycompany.com/kx/qpacker/rpmbuilder:2.0.29
+    docker push registry.mycompany.com/kx/qpacker/rpmbuilder:2.0.29
+    
+    docker tag debbuilder:2.0.29 \
+      registry.mycompany.com/kx/qpacker/debbuilder:2.0.29
+    docker push registry.mycompany.com/kx/qpacker/debbuilder:2.0.29
+    
+
+This image is then picked up by QPacker on any host that has pulled the image
+into its image cache:
+
+    
+    
+    $ docker pull registry.mycompany.com/kx/qpacker/kxbase:2.0.29
+    $ docker pull registry.mycompany.com/kx/qpacker/sobuilder-rockylinux-9:2.0.29
+    $ docker pull registry.mycompany.com/kx/qpacker/qlocker:2.0.29
+    $ docker pull registry.mycompany.com/kx/qpacker/rpmbuilder:2.0.29
+    $ docker pull registry.mycompany.com/kx/qpacker/debbuilder:2.0.29
+    $ qp build
+    ... [output trimmed]
+    INFO  | Build   | Using pre-built image qlocker:2.0.29
+    INFO  | Build   | Using pre-built image sobuilder-rockylinux-9:2.0.29
+    INFO  | Build   | Using pre-built image rpmbuilder:2.0.29
+    INFO  | Build   | Using pre-built image debbuilder:2.0.29
+    
+
+To use the pre-built `kxbase` image, set:
+
+    
+    
+    export QPDOCKER_BASE="registry.mycompany.com/kx/qpacker/kxbase:2.0.29"
+    
+
+The resulting image should be built on top of the `kxbase` image.
+

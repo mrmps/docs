@@ -1,0 +1,219 @@
+https://code.kx.com/dashboards/trade/
+
+# Trade - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/trade/
+
+# Trade
+
+The Trade component displays the book depth for a specific asset symbol.
+
+This includes:
+
+  * a graphical/vertical bar chart view that shows market data and calculated statistics
+  * an option to highlight price tick changes 
+
+## Set up
+
+1 Assign a _Data Connection_ configured for streaming. Use the html5eval
+connection as a sample if available.
+
+2 Assign list of asset _Symbols_ for the trade panel dropdown.
+
+Sample Query
+
+    
+    
+    ([]
+        sym:`$("EUR/USD";"EUR/CHF";"EUR/GBP");
+        pipsize:(0.0001 0.0001 0.0001)
+    )
+    
+
+3 Setup _Panels_ options.
+
+Sample JSON
+
+    
+    
+    [{"aggregation":"Exact","highlight":"On","id":1,"order":0,"priceLevel":6,"pipSize":0.0001,"sym":"EUR/USD"}]
+    
+
+![Screenshot](../img/trade/tradewindow.jpg)
+
+## Basics
+
+![Screenshot](../img/trade/tradesettings.png)
+
+_Name_
+
+    A name for the component provided by the user. 
+_Data Connection_
+
+     [Connection](../datasources/#connections) for Trading Panel Subscriptions. See _Overview_ for more details.
+_Symbols_
+
+    A [data source](../datasources/) of asset symbols, `sym` and `pipsize`; The list of asset symbols are available in the Trade panel dropdown. 
+column | type | description  
+---|---|---  
+sym | symbol | asset symbol.  
+pipsize | float | determines the pre, major and minor part of the price quote.  
+  
+Sample Query
+
+    
+    
+    ([]
+        sym:`$("EUR/USD";"EUR/CHF";"EUR/GBP");
+        pipsize:(0.0001 0.0001 0.0001)
+    )
+    
+
+_Panels_
+
+    Stores user settings as JSON in a [view state parameter](../viewstateparameters/).
+
+Sample JSON
+
+    
+    
+    [{"aggregation":"Exact","highlight":"On","id":1,"order":0,"priceLevel":6,"pipSize":0.0001,"sym":"EUR/USD"},
+     {"aggregation":"Exact","highlight":"On","id":2,"order":0,"priceLevel":6,"pipSize":0.0001,"sym":"EUR/CHF"},
+     {"aggregation":"Exact","highlight":"On","id":3,"order":0,"priceLevel":6,"pipSize":0.0001,"sym":"EUR/GBP"}
+    ]
+    
+
+parameter | setting  
+---|---  
+aggregation | 'Exact', 'One Level' or 'Two Level'  
+highlight | 'On' or 'Off' for color highlight  
+id | numeric reference  
+order | listing order for the panels starting from '0' for top left, then across.  
+pipsize | Corresponds to `pipsize` from _Symbols_ data source; determines the pre, major and minor part of the price quote.  
+priceLevel | Corresponds to the number of prices returned from the API  
+sym | Corresponds to `sym` from _Symbol_ data source.  
+  
+_Quote Up_
+
+_Quote Down_
+
+    Define highlight color for price rise and price drop
+_Number of Cells_
+
+    The number of cells/bars displayed on the bid and ask side of the book
+_Weighted Average_
+
+    Displays either the VWAP (Volume Weighted Average Price) or TWAP (Time Weighted Average Price)
+
+## Configure
+
+**Step 1**. Add a trade panel to the workspace
+
+![Screenshot](../img/trade/newtradepanel.jpg)
+
+**Step 2**. Select symbol from the dropdown
+
+![Screenshot](../img/trade/selectsymbol.jpg)
+
+**Step 3**. Define price aggregation level, use of highlight and price level
+(default: 6)
+
+![Screenshot](../img/trade/tradeconfiguration.jpg)
+
+### Aggregation
+
+setting | description  
+---|---  
+Exact | Default; lowest pip granularity. Each price level/vertical bar represents the next pip  
+One-Level | Aggregates pips into sets of 10. For example, if best bid is 1.38497 - the price level will be reflected as 1.384**90** and all available prices between 1.38490 and 1.38497 will aggregate at the 1.38490 level. The second bid level would be at 1.384**80** , which aggregates all available prices between 1.38480 and 1.38489. Correspondingly, if the best ask or offer is at 1.38498, then all prices at 1.38498, 1.38499 and 138500 aggregate at the offer level of 1.38**500** with the next offer level at 1.385**10** aggregating prices between 1.38501 and 1.38510.  
+Two-level | Aggregate pips into sets of 100. A best bid of 1.38497 would aggregate into the 1.38**400** level, including all prices between 1.38400 and 1.38497. A best offer at 1.38498 would aggregate 1.38498 to 1.38500 at 1.38**500**. The next offer of 1.38**600** includes all offer prices between 1.38501 and 1.38600.  
+  
+## Style
+
+[Style](../style/#component-style) for common settings
+
+_Bar Color_
+
+    Define background color for Graph bars
+_Bar Text Color_
+
+    Define font color for Graph bars
+_Bar Font Size_
+
+    Define font size for Graph bars
+_Default Text Color_
+
+    Define font color for price table
+_Default Font Size_
+
+    Define font size for price table
+_Minor Price Font Size_
+
+    Define font size for minor Price font in the quote box
+_Major Price Font_
+
+    Define font size for major Price font in the quote box
+_Pre-Major Price Font Size_
+
+    Define font size for pre major Price font in the quote box
+
+_Number of cells_ :The maximum number of trading panel cells. For infinte
+number of panels, set the property to 0
+
+_Highlight Change Duration_ :The length of time for the highlight (set in
+milliseconds)
+
+Trade Panel API
+
+## Subscriptions
+
+Each trade panel requires a subscription to a streaming analytic. The analytic
+returns a detailed book depth for a specific asset symbol
+
+_Overview_ The trading panel can subscribe to one of the following streaming
+analytics:
+
+  1. book
+  2. book1Agg
+  3. book2Agg
+
+_Analytic Parameters_
+
+type | description  
+---|---  
+list | list of subscribing syms  
+level | the price level for subscribing sym  
+  
+_Analytic Type_
+
+_Analytics Description_
+
+The following are descriptions of each of required streaming analytics:
+
+analytics | description  
+---|---  
+**book (Exact)** | lowest pip granularity and default option. Each price level/vertical bar represents the next pip  
+**book1Agg (One-Level)** | aggregates prices into sets of 10 pips. For example, if the best bid is 1.38497, the price level will be reflected as 1.38490 and all prices between 1.38490-1.38497 will be aggregated into the same level. The second best bid would be 1.38480 and represent prices from 1.38480 - 1.38489. Similarly, if the best offer was 1.38498, prices from 1.38498 - 1.38500 would aggregate to 1.38500. The second best offer level would be 1.38510.  
+**book2Agg(Two-Level)** | aggregates prices into sets of 100 pips. For example, if the best bid is 1.38497, the price level will be reflected as 1.38400 and all prices between 1.38400-1.38497 will be aggregated into the same level. The second best bid would be 1.38300 and represent prices from 1.38300 - 1.38399. Similarly, if the best offer was 1.38498, prices from 1.38498 - 1.38500 would aggregate to 1.38500. The second best offer level would be 1.38600.  
+  
+_Subscription key_
+
+For each of the trading panel subscriptions, it's keys are defined as follows:
+[aggregration Type]_[sym]_[panel Id]
+
+  * aggregration Type : type of aggregration (book, book1Agg or book2Agg)
+  * sym : the asset symbol 
+  * panel id : the unique id of the panel
+
+_Return Type_
+
+column | type | description  
+---|---|---  
+sym | symbol | Asset symbol  
+MDEntrySize | long | Market Data Entry Size  
+MDEntryPx | float | Market Data Entry Price  
+MDEntryType | byte | Market Data Entry Type.(0 Bid , 1 Offer)  
+FloorCode | int | Floor codes participating at each price level  
+MDVWAP | float | Market Data VWAP (Volume weighted average price)  
+MDTWAP | float | Market Data TWAP (Time weighted average price)
+

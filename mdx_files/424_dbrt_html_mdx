@@ -1,0 +1,174 @@
+https://code.kx.com/insights/microservices/database/deploy/dbrt.html
+
+# Database - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/database/deploy/dbrt.html
+
+# Docker Reference Deployment
+
+This section provides a reference deployment using Docker Compose. The
+deployment includes additional steps to publish data to the database before
+querying it back.
+
+This is aimed at developers who wish to develop APIs that can be ran against
+their data. kdb Insights supports several interfaces, including:
+
+  1. C
+  2. Java
+  3. q
+  4. Python
+
+## Prerequisites
+
+To run this deployment, ensure that you have Docker installed with the Docker
+Compose extension.
+
+Additionally, ensure that you place your kdb license into the provided `lic`
+folder. Your license must have the appropriate feature flags for running kdb
+Insights.
+
+If you do not have, credentials to access the KX Docker registry, a kdb
+license, or you are unsure if your license has the required feature flags,
+please contact sales@kx.com.
+
+## Quickstart
+
+Log in to the [KX download portal](https://portal.dl.kx.com) to download the
+bundle. The bundle contains the `compose.yaml` and `.env` files that include
+the relevant images to stand up the database service. To access these images
+you must log in a docker registry.
+
+    
+    
+    docker login portal.dl.kx.com -u <user> -p <password>
+    
+
+### Download
+
+    
+    
+    version=1.10.0
+    curl -L  https://portal.dl.kx.com/assets/raw/kxi-db/$version/kxi-db-$version.tar.gz -o kxi-db.tar.gz
+    
+
+### Launch
+
+To start the kdb Insights Database, run the following command:
+
+    
+    
+    tar -xvf kxi-db.tar.gz
+    cd kxi-db/
+    docker compose up
+    
+
+Running this command starts the kdb Insights Database with a collection of
+sample schemas included in the `config/assembly.yaml` configuration file. If
+you need to introduce additional schemas, add them to this configuration file.
+
+If you are using a Linux-based operating system, create the `data` folder
+manually and adjust the permissions to ensure it is readable by the container.
+
+    
+    
+    mkdir -p data/logs/rt data/db
+    chmod -R 777 data
+    
+
+## Publishing and Querying Data
+
+Below are examples that demonstrate how developers can publish data using kdb
+Insights through its interfaces.
+
+### Publish
+
+To publish data using the kdb Insights Command Line Interface (CLI), run the
+following command:
+
+    
+    
+    export KXI_C_SDK_APP_LOG_PATH=$(pwd)  ## useful for debug logging, defaults to /tmp
+    kxi publish --mode rt --file-format csv --table taxi --data config/taxi.csv --endpoint :localhost:5002
+    
+
+For further details on how to configure the CLI, see the [kdb Insights Command
+Line Interface](https://code.kx.com/insights/enterprise/cli/index.html)
+overview.
+
+To publish data using Python, run the following command:
+
+    
+    
+    docker compose -f config/docker-clients/compose-publish.yaml up
+    
+
+To publish data using Java, run the following command:
+
+    
+    
+    docker compose -f config/docker-clients/compose-java-ingest.yaml up
+    
+
+To publish data using q, run the following commands:
+
+Download the [`rt.qpk`](https://portal.dl.kx.com/assets/raw/rt/), this
+provides a set of APIs that can be used to publish and subscribe to a RT
+stream.
+
+    
+    
+    version=1.10.0
+    curl -L  https://portal.dl.kx.com/assets/raw/rt/$version/rt-$version.qpk -o rt.tar.gz
+    unzip rt.tar.gz
+    
+
+Start a q session and publish the data using the RT publish API.
+
+    
+    
+    $ cd rt/
+    $ q startq.q
+    q)params:(`path`stream`publisher_id`cluster)!("/tmp/rt";"data";"pub1";enlist(":127.0.0.1:5002"))
+    q)p:.rt.pub params
+    q)show taxi:("SPPHEEEEEEEES";enlist",")0: hsym`$"../config/taxi.csv"
+    q)p(`.b; `taxi; update pickup:.z.p,dropoff:.z.p+0D00:15:00.0 from taxi)
+    
+
+### Query
+
+To query data using the kdb Insights Command Line Interface (CLI), run the
+following command:
+
+    
+    
+    kxi query --sql "SELECT * FROM taxi"
+    
+
+For further details on how to configure the CLI, see the [kdb Insights Command
+Line Interface](https://code.kx.com/insights/enterprise/cli/index.html)
+overview.
+
+To query data using Python, run the following command:
+
+    
+    
+    docker compose -f config/docker-clients/compose-query.yaml up
+    
+
+To query data using REST, make a GET request with the following:
+
+    
+    
+    curl -X GET -H 'Content-Type: application/json' http://localhost:8080/data -d '{"table":"taxi"}'
+    
+
+To query data using q-based queries, use the following:
+
+    
+    
+    q)h:hopen 5050  // the SG has a tcp port forwarded locally on this port
+    q)h(`.kxi.getData;enlist[`table]!enlist`taxi;`;()!())
+    q)h(`.kxi.qsql; enlist[`query]!enlist"select vendor,pickup,dropoff from taxi";`;()!())
+    q)h(`.kxi.sql; enlist[`query]!enlist"select * from taxi";`;()!())
+    
+

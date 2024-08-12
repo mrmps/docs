@@ -1,0 +1,383 @@
+https://code.kx.com/platform/deployment/securing_tomcat/
+
+# Securing Tomcat/AppServer - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/deployment/securing_tomcat/
+
+# Securing Tomcat/AppServer
+
+Apache Tomcat is deployed as the Web Application server of choice for
+Dashboards.
+
+By default the Tomcat instance is configured to serve content over HTTP but it
+can be configured on deploy to use HTTPS (SSL) instead.
+
+The steps required to enable HTTPS/SSL are described in this section.
+
+### Java keystore
+
+In order to enable SSL on the Tomcat deploy you must provide a Java Keystore
+which contains the required certificates, You can generate a keystore using
+the following instructions from the Tomcat docs
+[here](https://tomcat.apache.org/tomcat-9.0-doc/ssl-howto.html).
+
+## Tomcat SSL configuration - Linux
+
+### Tomcat configuration
+
+To install and configure SSL/TLS support on Tomcat, you need to follow these
+steps.
+
+    
+    
+    $JAVA_HOME/bin/keytool -genkey -alias tomcat -keyalg RSA
+    
+
+Specify a secure password.
+
+#### Bundle deploy
+
+If you are deploying your environment using the Bundle installer you can
+enable HTTPS at deploy time by selecting option 2 here:
+
+    
+    
+    +-----------------------------------------------------------+
+     [1] HTTP
+     [2] HTTPS
+    +-----------------------------------------------------------+
+     Select App Server Deploy Type [1-2]: 2
+    
+
+You will then be prompted for the location of your java keystore and the
+password using whilst generating the keystore.
+
+    
+    
+    Tomcat Java Keystore [/home/kxplatform/.keystore]:
+    Tomcat Java Keystore Password [changeit]:
+    
+
+Then the HTTP and HTTPS ports for the Web Server.
+
+    
+    
+    App Server HTTPS port [8443]:
+    App Server HTTP port [8080]:
+    
+
+**Note** : The HTTP connector will forward connections to the HTTPS connector
+when enabled.
+
+#### Custom deploy
+
+If you are a custom install config change the app-server-install-type to 2,
+add the `tomcat-keystore-file` and `tomcat-keystore-password` and update the
+path to the keystore and the keystore password.
+
+    
+    
+    #============================================================
+    # Tomcat / app server options
+    #============================================================
+    app-server-install-type=2
+    tomcat-keystore-file=~/.keystore
+    tomcat-keystore-password=changeit
+    
+
+### Tomcat HTTPS with APR connector
+
+Tomcat can be configured to use the Apache Portable Runtime (APR) based Native
+library which uses SSL Certificates instead of the standard Java Keystore.
+
+**Note** : This option is only available when using a custom install config
+
+The APR library and associated dependencies must be deployed on your host
+before using this option. See Tomcat documentation
+[here](https://tomcat.apache.org/tomcat-9.0-doc/apr.html).
+
+With the library in place you will require the following certificates and key
+files:
+
+Name | Description  
+---|---  
+server-crt.pem | Server Certificate file  
+server-key.pem | Server Key file  
+ca.pem | Certificate Authority file  
+  
+The files above should be referenced in your install.config file as follows:
+
+    
+    
+    tomcat-ssl-cert-file=/path/to/server-crt.pem
+    tomcat-ssl-key-file=/path/to/server-key.pem
+    tomcat-ssl-ca-cert-file=/path/to/ca.pem
+    
+
+**Note** : In order to enable the installation of this connector the following
+must also be set:
+
+    
+    
+    app-server-install-type=2
+    tomcat-use-apr-connector=1
+    
+
+Once the install has completed the connector in the Tomcat server.xml should
+look something like this:
+
+    
+    
+    $ vi delta-bin/software/Tomcat_9_0_4/apache-tomcat-9.0.4/conf/server.xml
+    
+    <Connector port="${tomcat.secure.port}"
+                   protocol="org.apache.coyote.http11.Http11AprProtocol"
+                   maxThreads="${tomcat.connector.max.threads}"
+                   maxHttpHeaderSize="65536"
+                   useSendfile="false"
+                   compression="on"
+                   compressionMinSize="2048"
+                   connectionTimeout="20000"
+                   SSLEnabled="true"
+                   sslEnabledProtocols="+TLSv1.1,+TLSv1.2"
+                   SSLCertificateFile="/path/to/server-crt.pem"
+                   SSLCertificateKeyFile="/path/to/server-key.pem"
+                   SSLVerifyClient="optional"
+                   scheme="https"
+                   secure="true"
+                   ciphers="TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA256,TLS_RSA_WITH_AES_256_CBC_SHA" />
+    
+
+### Tomcat HTTPS with kdb+ TLS
+
+If you are deploying with TLS enabled for kdb+ and HTTPS enabled for Tomcat
+there are additional considerations. For both of these to work the install
+script needs to export the cert used for the HTTPS connector out of the
+keystore defined below:
+
+    
+    
+    $ vi delta-bin/software/Tomcat_9_0_4/apache-tomcat-9.0.4/conf/server.xml
+    
+    <Connector port="${tomcat.secure.port}" protocol="HTTP/1.1"
+        maxThreads="${tomcat.connector.max.threads}" maxHttpHeaderSize="65536"
+        scheme="https" SSLEnabled="true" secure="true"
+        keystoreFile="/home/user/.keystore" keystorePass="changeit"
+        clientAuth="false" sslProtocol="TLS"...
+    
+
+If you have created the keystore using the instructions above the certificate
+extracted will have the alias “tomcat”. The install log will contain:
+
+    
+    
+    [importHTTPSCert] keytool -export -alias tomcat -keystore /home/user/.keystore -rfc -file <install>/delta-bin/config/tomcat.cer -srcstorepass changeit -deststorepass changeit
+    
+    Certificate stored in file <install>/delta-bin/config/ssl-certs/tomcat.cer
+    
+
+If you are using a keystore which contains a different alias for the key, the
+install will fail and you will see the following:
+
+    
+    
+    [importHTTPSCert] keytool -export -alias tomcat -keystore /home/user/.keystore -rfc -file <install>/delta-bin/config/tomcat.cer -srcstorepass changeit -deststorepass changeit
+    keytool error: java.lang.Exception: Alias <tomcat> does not exist
+    
+
+With the alias changed you should see:
+
+    
+    
+    [importHTTPSCert] keytool -export -alias MYALIAS -keystore /home/user/.keystore -rfc -file <install>/delta-bin/config/tomcat.cer -srcstorepass changeit -deststorepass changeit
+    
+    Certificate stored in file <install>/delta-bin/config/ssl-certs/tomcat.cer
+    
+
+The connector cert is then imported into the keystore used by the AppServer
+for TLS (delta-bin/config/tls-cets/keystore.jks)
+
+    
+    
+    [importHTTPSCert] keytool -import -alias tomcat -keystore <install>/delta-bin/config/tls-certs/keystore.jks -rfc -file <install>/delta-bin/config/ssl-certs/tomcat.cer -srcstorepass changeit -deststorepass changeit -noprompt
+    
+    Certificate was added to keystore
+    
+
+Which is then passed into the Tomcat process via the Java
+-javax.net.ssl.trustStore property.
+
+    
+    
+    $ ps uxwww | grep apache
+    ...
+    -DdeltaControl.tls=ON
+    -Djavax.net.ssl.trustStore=<install>/delta-bin/config/tls-certs/keystore.jks
+    -Djavax.net.ssl.trustStorePassword=changeit
+    
+
+## Tomcat SSL configuration - windows
+
+### Tomcat configuration
+
+Tomcat by default is configured with a http connector. An SSL connector is
+required
+
+To add the SSL connector open `%CATALINA_HOME%\conf\server.xml` and create a
+new `<Connector>` definition below the current http one
+
+    
+    
+    <Connector port="${tomcat.secure.port}"
+                protocol="HTTP/1.1"
+                maxThreads="1000"
+                scheme="https"
+                SSLEnabled="true"
+                secure="true"
+                keystoreFile="<FullPathToKeyStoreFile>"
+                keystorePass="<PasswordProvidedGeneratingKeyStore>"
+                clientAuth="false"
+                sslProtocol="TLS"
+                connectionTimeout="20000"
+                server="*****"
+                sslEnabledProtocols="TLSv1,TLSv1.1,TLSv1.2"
+                ciphers="TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA256,TLS_RSA_WITH_AES_256_CBC_SHA"
+                compression="on"
+                compressionMinSize="2048"
+                compressableMimeType="text/html,text/plain,application/xml,text/css,text/js,text/xml,application/x-javascript,application/javascript,text/javascript,application/json,application/xml+rss" />
+    
+
+Ensure that both the `keystoreFile` and `keystorePass` have been updated in
+the server.xml to the full path to the keystore and password you entered when
+running the command in step 1. The server.xml file will look similar to below
+but must be your own path and password:
+
+    
+    
+    keystoreFile="C:\user\test\keystore"
+    keystorePass="password"
+    clientAuth="false"
+    sslProtocol="TLS"
+    connectionTimeout="20000"
+    
+
+Modify http connector to redirect to SSL
+
+    
+    
+    <Connector port="${tomcat.port}" protocol="HTTP/1.1" maxThreads="1000" server="*****"
+                   compression="on"
+                   compressionMinSize="2048"
+                   compressableMimeType="text/html,text/plain,application/xml,text/css,text/js,text/xml,application/x-javascript,application/javascript,text/javascript,application/json,application/xml+rss"
+                   connectionTimeout="20000"
+                   redirectPort="${tomcat.secure.port}" />
+    
+
+Modify `web.xml` to only all HTTPS connections, open
+`%CATALINA_HOME%\conf\web.xml` and append the `<security-constraint>` to the
+'Default Session Configuration' within the web.xml:
+
+    
+    
+    <security-constraint>
+            <web-resource-collection>
+                <web-resource-name>HTTPSOnly</web-resource-name>
+                <url-pattern>/*</url-pattern>
+            </web-resource-collection>
+            <user-data-constraint>
+                <transport-guarantee>CONFIDENTIAL</transport-guarantee>
+            </user-data-constraint>
+        </security-constraint>
+        <security-constraint>
+            <web-resource-collection>
+                <web-resource-name>HTTPSOrHTTP</web-resource-name>
+                <url-pattern>*.ico</url-pattern>
+                <url-pattern>/img/*</url-pattern>
+                <url-pattern>/css/*</url-pattern>
+            </web-resource-collection>
+            <user-data-constraint>
+                <transport-guarantee>NONE</transport-guarantee>
+            </user-data-constraint>
+        </security-constraint>
+    
+
+## Tomcat URLs
+
+When deployed with SSL, Tomcat will use the `TOMCAT_SECURE_PORT` value as the
+port for the HTTPS/SSL connector. The HTTP port (`TOMCAT_PORT`) will redirect
+to the HTTPS/SSL port.
+
+**HTTP URL**
+
+    
+    
+    http://<server>:<TOMCAT_PORT>/
+    
+
+e.g.
+
+    
+    
+    http://kxplatform:8080/
+    
+
+**HTTPS URL**
+
+    
+    
+    https://<server>:<TOMCAT_SECURE_PORT>/
+    
+
+e.g.
+
+    
+    
+    https://kxplatform:8443/
+    
+
+## AppServer filters - content-security-policy
+
+By default the feature is turned off and requires the following manual steps
+to activate:
+
+  1. Update env variable `APPSERVER_CONTENT_SECURITY_POLICY` in `delta.profile`. Default value is _OFF_. To enable Content-Security-Policy header, set to ON. To enable Content-Security-Policy-Report-Only header, set to REPORTONLY.
+  2. Edit `web.xml` (in `$TOMCAT_HOME/latest/conf` directory) to include xml defining the Content Security Policy Header Filter. (Example xml is given below).
+  3. In `$TOMCAT_HOME/latest/lib` directory, run
+
+    
+    
+    mkdir -p com/fd/server/filters
+    
+
+  1. Copy the file `webapps/ROOT/WEB-INF/classes/com/fd/server/filters/ContentSecurityPolicyHeaderFilter.class` to the filters directory created in previous step.
+  2. Restart Appserver.
+
+Example XML (note this is an example and end-user needs to determine the
+correct settings to use for their own deployment).
+
+    
+    
+    <!-- Content Security Policy Header
+        Behavior is determined by value of env variable APPSERVER_CONTENT_SECURITY_POLICY.
+        If "ON", the header "Content-Security-Policy" will be written with the value defined in this config.
+        If "REPORTONLY", the header "Content-Security-Policy-Report-Only" will be set with the value defined in this config.
+        Otherwise no header will be set by this filter.
+    -->
+    <filter>
+        <filter-name>ContentSecurityPolicyHeaderFilter</filter-name>
+        <filter-class>com.fd.server.filters.ContentSecurityPolicyHeaderFilter</filter-class>
+        <init-param>
+        <param-name>value</param-name>
+        <param-value>
+            default-src 'self'; connect-src 'self' wss:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://www.google.com https://csi.gstatic.com; img-src 'self' data: https://maps.googleapis.com https://maps.gstatic.com https://csi.gstatic.com http://maps.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://www.google.com; font-src 'self' https://fonts.gstatic.com; frame-src 'self'; object-src 'self'
+        </param-value>
+        </init-param>
+        <async-supported>true</async-supported>
+    </filter>
+    <filter-mapping>
+        <filter-name>ContentSecurityPolicyHeaderFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+        <async-supported>true</async-supported>
+    </filter-mapping>
+    
+

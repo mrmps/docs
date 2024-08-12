@@ -1,0 +1,696 @@
+https://code.kx.com/developer/libraries/profiler/
+
+# Profiler - KX Developer
+
+Original URL: https://code.kx.com/developer/libraries/profiler/
+
+# Function run time and memory profiler (`.profile`)
+
+## Overview
+
+The `.profile` module provides an api for investigating memory use and run
+time for q/kdb+.
+
+## Basic usage
+
+    
+    
+    .profile.go["func 1";::]
+    
+
+## Running the profiler
+
+The profiler is run using the binary function `.profile.go`. The parameters
+are listed, in order, below:
+
+argument | type | description  
+---|---|---  
+expression | string | A string representing a q expression with the function to be profiled  
+userSettings | dictionary | A dictionary to specify the settings for the profiler run  
+  
+The `expression` argument must be a string that represents a q expression. The
+expression must begin with a function that can be profiled, followed by any
+code necessary for constructing the arguments to the function. The first
+function in the expression is the only function that will be profiled. Any
+functions that are used to construct the arguments to this function will not
+be profiled. The function to be profiled cannot be called as part of a binary
+`.` or `@` expression. If the expression contains multiple statements
+(separated by semi-colons or by newlines followed by non-whitespace characters
+in the first column) then only the first statement will be profiled.
+
+There are 10 settings available to the profiler. These are:
+
+  * context
+  * functions
+  * contexts
+  * ignoreFunctions
+  * ignoreContexts
+  * spaceOrTime
+  * protectedRun
+  * trace
+  * subtractChild
+  * logAnon
+
+These settings are detailed below. To modify settings from their default
+values, provide a dictionary of the modified settings as the `userSettings`
+argument. If a dictionary lacks a setting as one of its keys, the default
+value will be used. If only default settings are desired, use generic null
+(`(::)`) as the `userSettings` argument.
+
+The profiler will search through the call graph for the given function and
+locate all functions that are called by said function. It will then run
+through the main function and record the runtime and memory usage for each
+function in the call graph that is accessible by the profiler. The profiler
+can only look at rewriteable functions; thus, any locked functions are off
+limits to the profiler, and will not appear in the output table from the
+profiler. Locked contexts must be _pulled_ into your workspace to view the
+results of profiling those functions. The `.profile` context cannot be
+profiled.
+
+There are a few circumstances where the profiler must replace function calls
+in a function with references to global functions. For example, if `logAnon`
+mode is set, then anonymous functions in a function must be replaced with
+global functions. In addition, recursive function calls using `.z.s` must be
+replaced with the original function name to allow profiling.
+
+The necessary modifications will increase the global variable count of the
+function, potentially exceeding the global variable limit for q functions. If
+this limit is exceeded, then the function will not be re-written, an error
+message will be printed to the screen, and the function will not be included
+in the profiler results table.
+
+Under the hood, the profiler rewrites functions to add profiling logic to log
+the runtime and memory usage. As such, any functions called during the
+profiler execution should not themselves overwrite any globally defined
+functions that the user wants to profile. Doing so can prevent subsequent
+profiling of that function. Furthermore, using `value` or similar functions to
+access a function's definition is not guaranteed to produce the same result
+when profiling because the rewritten function will be accessed as opposed to
+the original function.
+
+Under most circumstances, the profiler will be able to run recursive function
+projections (i.e. a function projection that calls itself recursively).
+However, due to the implementation of the profiler, this necessitates the
+creation of a temporary copy of the function lacking the projected arguments
+that must be called from the function using a global variable. As stated
+above, this could cause the global reference limit to be exceeded, preventing
+profiling of the function.
+
+Recursive calls to function projections are logged with the name of the
+projected function. See examples for more details.
+
+The profiler cannot be run on multithreaded functions. Thus, all calls to
+`peach` are replaced with calls to `each`. If the user wants a given function
+to still make calls to `peach`, then that function must be excluded from the
+profiling operation by using the `ignoreFunctions` setting.
+
+The profiler cannot be run on any k functions (even k functions defined by the
+user) because such functions are not considered to be rewriteable.
+Furthermore, profiling on-disk functions is prohibited.
+
+## Settings
+
+The second argument to the profiler is a dictionary of settings. The for any
+settings not present in the dictionary, the default settings will be used. To
+use all of the default settings, provide generic null as the `userSettings`
+argument. The available profiler settings are described below:
+
+* * *
+
+### context
+
+**Type:** symbol
+
+**Default:** The current execution context (found by calling `system "d"`)
+
+The context that the function should be executed in. The default value is the
+execution context where the `.profile.go` is called. If the function is
+located in a context other than its execution context, then the function name
+in the string argument to `.profile.go` must be the fully qualified name of
+the function.
+
+* * *
+
+### functions
+
+**Type:** symbol[]
+
+**Default:** ()
+
+A list of functions that the user also wants to analyze when profiling. Under
+most circumstances, the profiler should be able to locate all functions in the
+call graph for the given function. However, there are some situations where
+functions will be missed. For example, when a function is called from a string
+evaluated with `system` or `value`.
+
+If a function is not automatically located by the profiler, it can be
+explicitly included by listing it in the `functions` setting list. Including a
+function in this setting will cause all functions in the call stack of that
+function to be profiled as well. The names of the supplied functions are their
+names in the global context.
+
+The presence of a function in the `ignoreFunctions` list will take precedence
+over its inclusion in the `functions` setting list or in the list of functions
+called by the included function.
+
+The presence of a function in the `functions` setting list will take
+precedence over its presence in the `ignoreContexts` list. In other words,
+functions in the `functions` list and all functions in their call stacks will
+be profiled regardless of the contents of the `ignoreContexts` list.
+
+* * *
+
+### contexts
+
+**Type:** symbol[]
+
+**Default:** ()
+
+A list of contexts whose functions the user also wants to profile. Similar to
+the `functions` setting, a list of contexts may be provided to find functions
+that the profiler would otherwise be unable to locate. The presence of a
+function as a result of the `ignoreContexts` list will take precedence over
+its inclusion in the `contexts` list.
+
+* * *
+
+### ignoreFunctions
+
+**Type:** symbol[]
+
+**Default:** ()
+
+A list of functions that the user does not want to profile. The names of the
+supplied functions are their names in the global context.
+
+If a function is in both the `functions` list and the `ignoreFunctions` list,
+it will not be profiled. Child functions that are called by any functions in
+the `ignoreFunctions` list will still be profiled, with the exception of
+anonymous functions defined within the functions in the `ignoreFunctions` list
+(if `logAnon`mode is on).
+
+* * *
+
+### ignoreContexts
+
+**Type:** symbol[]
+
+**Default:** ()
+
+A list of contexts whose functions the user does not want to profile. If a
+context appears in both the `contexts` list and the `ignoreContexts` list, the
+context's functions will not be profiled. If a function appears in both the
+`functions` list and `ignoreContexts` list, the function will be profiled.
+
+* * *
+
+### spaceOrTime
+
+**Type:** symbol
+
+**Default:** both
+
+A symbol to set whether the profiler profiles memory usage (`space`), runtime
+(`time`), or both (`both`). Profiling only memory or runtime will reduce
+profiler overhead.
+
+* * *
+
+### protectedRun
+
+**Type:** boolean
+
+**Default:** 0b (off)
+
+Indicates whether the profiler should be run in a mode where functions that
+throw errors are logged in the results. This is useful when the call stack
+includes functions that contain internal catch statements and will still
+return a valid result even if a child function throws an error. This mode
+introduces additional runtime and space usage overhead costs for each function
+call.
+
+* * *
+
+### trace
+
+**Type:** boolean
+
+**Default:** 0b (off)
+
+Indicates whether the profiler should log function IDs during execution, thus
+allowing the profiler to create a call tree for the function execution. This
+mode causes the profiler to run slower because the overhead time and space for
+each function call increases by approximately 1 microsecond and 80 bytes. This
+mode is necessary to allow one to calculate the TMC and SMC, and it allows
+construction of a tree of the function call. This mode is automatically
+activated if `subtractChild` mode is on.
+
+* * *
+
+### subtractChild
+
+**Type:** boolean
+
+**Default:** 0b (off)
+
+Indicates whether the profiler should subtract the run time and memory usage
+of child functions. Switching to this mode will not affect any of the results
+from the table (i.e. the time and space measurements will be the same as if
+the user ran `trace` mode), though it will increase the time taken to process
+the results table. This mode automatically activates `trace` mode.
+
+* * *
+
+### logAnon
+
+**Type:** boolean
+
+**Default:** 0b (turn off analysis)
+
+Indicates whether the profiler should analyze anonymous functions that are
+defined within another function. Since anonymous functions do not have names
+in the global namespace, the profiler assigns each function a name that begins
+with the name of the parent function followed by the string " anon", followed
+by a number which indicates which anonymous function is being logged. The
+number starts at zero for the first anonymous function, and increases
+monotonically for each subsequent anonymous function.
+
+For example, the first anonymous function in the parent function `.foo.a`
+would be `.foo.a anon0`. If an anonymous function itself defines anonymous
+functions, each of those will have the name of its parent, followed by its
+another `anon` string and an id number. For example, if `.foo.a anon0`
+contained an anonymous function, that function would be named `.foo.a anon0
+anon0`.
+
+If identical functions are defined twice in the parent function, they will
+appear as separate entries in the results table. To view which function's
+names correspond to which anonymous functions, call `.profile.viewAnons`. This
+will return a dictionary of the anonymous functions stored in order of their
+appearance in the parent function. Functions whose name contains the signifier
+for an anonymous function (i.e. " anon" followed by a digit) cannot be
+profiled. Functions defined as strings (.e.g. calling `system` or `value`)
+will not be included in the profiling even if `logAnon` mode is on. Any
+anonymous functions defined in functions from the `ignoreFunctions` list will
+not be profiled even if `logAnon` mode is on.
+
+## Output
+
+Different profiler settings will generate different output tables. Every
+profiler results table is grouped by function name. The number of calls to
+each function is always reported. For a other result fields, the average, min,
+and max values for each are shown. The total time is only reported if `trace`
+or `subtractChild` modes are on, as without the trace the reported values may
+be incorrect for functions that recursively call themselves. The types of
+result fields are listed below:
+
+field | description  
+---|---  
+Space | The memory space in bytes that was used during the function execution.  
+SMC | Stands for Space Minus Children. This is the space used by the given function minus the space used by the child function with the largest memory use. This calculation represents the maximum possible memory used exclusively by the parent function. The real memory usage could be less if the memory used by child functions does not overlap, and therefore this value should be interpreted with caution.  
+Time | The time (reported as a timespan) for the run. The timespan datatype reports a number with a nanosecond scale, though the precision of this number can vary depending on the machine running the profiler.  
+TMC | Stands for Time Minus Children. This is the run time for the given function execution minus the sum of the run times for all the child functions.  
+  
+If `trace` or `subtractChild` mode is on, then the raw runtime and space
+measurements for each function will be reported in addition to the average,
+min and max results. Furthermore, TMC and SMC results are only reported, if
+`subtractChild` mode is on.
+
+The output table when the `spaceOrTime` setting is `both` shows both space and
+time measurements. The output table when the setting is `space` shows only the
+space measurements, while the output table when the setting is `time` only
+shows time measurements.
+
+If either `trace` or `subtractChild` mode is on, then an id (a long) is
+reported for each function, along with the id for the parent and child
+functions. These ids allow the user to construct a directed graph for the
+function call by running the visual inspector on the unkeyed and ungrouped
+table. The profiled function at the top of the stack (i.e. the first function
+in the string argument to `.profile.go`) has a parent id of 0, and an id of 1.
+Ids increase monotonically in the order that functions are called. If
+`protectedRun` mode is off, then it is possible that not all function ids from
+0 to the maximum function id will appear in the results, since functions that
+throw errors will be assigned ids but will not be logged.
+
+### Profiling overhead
+
+By its nature, logging time and space data with the profiler requires some
+overhead. This overhead is included in the reported results. Each function
+call in the profiler will log slightly more space and a slightly longer
+runtime than it actually took to run the function.
+
+Overhead costs are minimized for profiling a single metric (either space or
+time) without `protectedRun` mode and without logging IDs (which occurs if
+`trace` or `subtractChild` mode is on). Conversely, overhead costs are
+maximized by running both types of profiles with `protectedRun` mode and
+`trace` mode on. Turning `logAnon` mode on will increase the time for the
+profiler to execute because a greater number of functions are being measured.
+
+Functions at different locations on the call stack tend to exhibit slightly
+different overhead. Functions at the end of a call branch (i.e. functions with
+no child functions) measure less overhead time than parent functions because
+they only measure the time for function execution, not any of the overhead
+needed to log the data. Space overhead does not follow the same pattern; child
+functions at the end of the call stack also exhibit overhead space.
+
+When running the time profiler without `protectedRun` mode and without logging
+the ID of each function, the overhead time for parent functions is
+approximately 2 microseconds. Running the time profiler with the ID logger
+active adds an additional microsecond. Child functions at the end of a call
+branch have little overhead time (less than a microsecond) when run with the
+time profiler.
+
+When running the space profiler without `protectedRun` mode, parent functions
+have space overhead of roughly 600 bytes, and child functions at the end of a
+call stack may have less than 600 bytes overhead. Running the time profiler
+with `protectedRun` mode adds approximately 6 microseconds of addition
+runtime, though this appears to depend on the function. Approximately 600-1000
+bytes of additional space is typically added while in `protectedRun` mode,
+though again, this seems to depend on the function.
+
+### Multithreading issues
+
+The profiler cannot profile multithreaded functions. Multithreading is allowed
+within functions that are profiled. However, a function that is being profiled
+(i.e. having its runtime and memory usage logged) cannot be called in a
+multithreaded fashion. This is because the function will attempt to log its
+profiling results in a separate thread, which does not have access to the
+global variables where the results are recorded.
+
+As such, the profiler replaces calls to `peach` with calls to `each`. However,
+there are specific circumstances where q will call `peach` behind the scenes,
+or where multithreading may still occur. Such situations may cause the
+profiler to throw an error.
+
+The profiler will not locate and replace `peach` if it is found in a string.
+If such a string contains valid q and is called by `system` or `value`, then
+`peach` will be used. This may cause the profiler to throw an error.
+
+The function `.Q.fc` uses multithreading if possible. `.Q.fc` is not replaced
+by the profiler, and as such may cause the profiler to throw an error if run
+on a named global function or if `logAnon` mode is on.
+
+Select statements of the form `select .. by sym,.. from t where sym in ..,..`
+use `peach` to achieve multithreading if run on tables with the g (grouped) or
+p (parted) attributes. This will cause the profiler to throw an error if any
+functions defined within the select statement are profiled. For example, the
+following function runs a select statement that makes calls to peach because
+the table has a column with the g attribute.
+
+    
+    
+    // @returns {Type} Enter a return description here...
+    .example.multithreading : {
+        t:([] a: til 10000; b: `g#10000?`a`b`c);
+        select a:{x+1} each a by b from t where b in `a`b
+        }
+    
+
+There are at least three solutions to the above mentioned issues. The simplest
+is to set the number of secondary threads to zero. Alternatively, if the
+function in the multithreaded call is an anonymous function then `logAnon`
+mode can be set to off. However, this would also prevent any profiling of
+other anonymous functions. Finally, if the function is a named global
+function, then the function that is run in parallel can be excluded from
+profiling by including it in the `ignoreFunctions` settings parameter.
+
+## Visualization
+
+The function `.profile.display.go` will output a Graphics Window that displays
+an overview of the profiler results. The function takes the same arguments as
+`.profile.go`. To ensure proper display of the visual, the user settings will
+be overridden to turn `debug` mode off, `subtractChild` mode on, and perform
+both space and time profiling with the `spaceOrTime` setting set to `both`.
+
+The graphical output of this function will display four charts. These are
+listed below:
+
+visual | description  
+---|---  
+Call Tree Weighted By Time | This is a tree showing the call stack for the expression. Each node in the tree is given a weight based on the time spent executing that node.  
+Call Tree Weighted By Time - Children | This is a tree showing the call stack for the expression. Each node in the tree is given a weight based on the time spent executing that node minus the time spent executing it's children.  
+Call Tree Weighted By Space | This is a tree showing the call stack for the expression. Each node in the tree is given a weight based on the memory usage required to execute the node.  
+Timeline Coloured By Space | This is a timeline of the expression execution, where each bar is coloured by the memory required for the execution.  
+  
+In the Analyst workspace, it is possible to profile expressions by right-
+clicking on the line or highlighted expression, then clicking profile in the
+dropdown menu. This will open up a separate window for profiling, which will
+provide access to the above mentioned visuals.
+
+## Examples
+
+Shown below is an example of how to run the profiler, along with sample
+output. Here, the profiler is run on the function `.example.a`:
+
+    
+    
+    .example.a : {.example.b 10;
+              .example.b 20;
+              .example.b 100;
+              .example.b 500};
+    .example.b : {do[`int$x * 5.474; cos each til 1000]};
+    
+    .profile.go[".example.a[]";::];
+    
+
+The output for this function may resemble the following table but exact
+runtimes will likely differ:
+
+    
+    
+    /=> name      | calls avgTime              minTime              maxTime              avgSpace minSpace maxSpace
+    /=> ----------| -----------------------------------------------------------------------------------------------
+    /=> .example.a| 1     0D00:00:00.621272000 0D00:00:00.621272000 0D00:00:00.621272000 42320    42320    42320
+    /=> .example.b| 4     0D00:00:00.155312750 0D00:00:00.009994000 0D00:00:00.493024000 41200    41200    41200
+    
+
+Shown below are examples of how to modify the settings of profiling run by
+creating dictionaries of the altered settings. The following dictionary would
+allow modification of the execution context when running the profiler:
+
+    
+    
+    newSettings : enlist[`context]! enlist ".foo"
+    
+
+The following dictionary would modify multiple settings:
+
+    
+    
+    newSettings : `spaceOrTime`protectedRun`context!(`time;1b;".foo")
+    
+
+All possible results columns are shown in the following example, again using
+the .example.a function:
+
+    
+    
+    .profile.go[".example.a[]";enlist[`subtractChild]!enlist 1b];
+    
+    /=> name      | calls totalTime            avgTime              minTime              maxTime              avgSpace minSpace maxSpace totalTMC             avgTMC               minTMC               maxTMC               avgSMC minSMC maxSMC id      parents children                              time                                                                                space                   TMC                                                                                 SMC
+    /=> ----------| -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    /=> .example.a| 1     0D00:00:00.585301000 0D00:00:00.585301000 0D00:00:00.585301000 0D00:00:00.585301000 42768    42768    42768    0D00:00:00.000032000 0D00:00:00.000032000 0D00:00:00.000032000 0D00:00:00.000032000 1568   1568   1568   ,1      ,0      ,2 3 4 5                              ,0D00:00:00.585301000                                                               ,42768                  ,0D00:00:00.000032000                                                               ,1568
+    /=> .example.b| 4     0D00:00:00.585269000 0D00:00:00.146317250 0D00:00:00.009474000 0D00:00:00.464586000 41200    41200    41200    0D00:00:00.585269000 0D00:00:00.146317250 0D00:00:00.009474000 0D00:00:00.464586000 41200  41200  41200  2 3 4 5 1 1 1 1 (`long$();`long$();`long$();`long$()) 0D00:00:00.009474000 0D00:00:00.018493000 0D00:00:00.092716000 0D00:00:00.464586000 41200 41200 41200 41200 0D00:00:00.009474000 0D00:00:00.018493000 0D00:00:00.092716000 0D00:00:00.464586000 41200 41200 41200 41200
+    
+
+If the profiler results table is unkeyed and ungrouped using the function
+below, it can be analyzed by the visual inspector to construct a network of
+the function call. Note that `.profile.format.network` can only be run if
+`trace` or `subtractChild` mode is on (since function IDs are only returned to
+the user in that situation):
+
+    
+    
+    .profile.format.network .profile.go[".example.a[]";enlist[`subtractChild]!enlist 1b];
+    
+
+The profiler results can also be visualized with `.profile.display.go`. This
+will create a variety of tree plots to allow visualization of the call tree of
+the profiler run. These trees show the runtime and space used by each function
+call. In addition, a timeline is reported in these results. The profiler will
+automatically be run with `subtractChild` mode, the `spaceOrTime` setting
+configured to `both`, and `debug` mode off.
+
+    
+    
+    .profile.display.go[".example.a[]";::];
+    
+
+It is possible to profile anonymous functions using the `logAnon` setting.
+Here, the profiler is run on the function `.example.a`, and the anonymous
+functions follow the naming convention described above:
+
+    
+    
+    .example.a : {{}[];{{}[]}[];};
+    .profile.go[".example.a[]";enlist[`logAnon]!enlist 1b];
+    
+    /=> name                  | calls avgTime              minTime              maxTime              avgSpace minSpace maxSpace
+    /=> ----------------------| -----------------------------------------------------------------------------------------------
+    /=> .example.a            | 1     0D00:00:00.000046000 0D00:00:00.000046000 0D00:00:00.000046000 3808     3808     3808
+    /=> .example.a anon0      | 1     0D00:00:00.000010000 0D00:00:00.000010000 0D00:00:00.000010000 1680     1680     1680
+    /=> .example.a anon1      | 1     0D00:00:00.000020000 0D00:00:00.000020000 0D00:00:00.000020000 2672     2672     2672
+    /=> .example.a anon1 anon0| 1     0D00:00:00.000009000 0D00:00:00.000009000 0D00:00:00.000009000 1712     1712     1712
+    
+
+It is possible to profile function projections, even those that make recursive
+calls. The convention under those circumstances is to report the recursive
+calls (using `.z.s`) with the name of the projected function. Notice below
+that `.example.a` is called six times due to the recursive function
+invocation.
+
+    
+    
+    .example.a : {[x;y] $[x > 0;.z.s[x-1;y];y]}[5];
+    .profile.go[".example.a[]";enlist[`logAnon]!enlist 1b];
+    
+    /=> name      | calls avgTime              minTime              maxTime              avgSpace minSpace maxSpace
+    /=> ----------| -----------------------------------------------------------------------------------------------
+    /=> .example.a| 6     0D00:00:00.000043500 0D00:00:00.000010000 0D00:00:00.000077000 4936     1904     7936
+    
+
+As discussed above, the profiler introduces some overhead runtime and memory
+usage to every function call. This is particularly a problem for functions
+with very short runtime, where the overhead makes a higher percentage of the
+actual function's runtime and memory usage.
+
+To illustrate the problem, in the example below, `notLong` is called one
+million times, while `actuallyLong` is called once. The million runs of
+`notLong` takes approximately 0.5 seconds. However, the profiler will measure
+a total time of approximately 4 seconds for all million function calls.
+
+    
+    
+    .example.actuallyLong: {do[1000; cos each til 10000]};
+    .example.toFloat: {`float$x};
+    .example.notLong: {.example.toFloat x};
+    
+    .example.foo: {
+        .example.actuallyLong[];
+        .example.notLong each til 1000000;
+        };
+    
+    t: .profile.go[".example.foo[]";enlist[`spaceOrTime]!enlist `time];
+    
+    select name, totalTime : calls * avgTime from t;
+    / => name                  totalTime
+    / => ------------------------------------------
+    / => .example.actuallyLong 0D00:00:01.734772000
+    / => .example.foo          0D00:00:07.541464000
+    / => .example.notLong      0D00:00:04.308000000
+    / => .example.toFloat      0D00:00:01.435000000
+    
+
+## .profile.default
+
+Creates the default settings object for the profiler
+
+**Returns:**
+
+## .profile.flamegraph
+
+Profile an expression, and return the result as a flamegraph gg spec
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+init | string | An expression to initialize the evaluation process  
+expr | string | An expression to profile  
+ctx | string | The context to evaluate the expression in  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+table | A gg spec  
+  
+## .profile.go
+
+Runs the profiler and returns a table of results. The results table always has
+the name and calls columns, and may have additional columns depending on the
+settings.
+
+Present if `spaceOrTime` is `time` or `both` and the `trace` or
+`subtractChild` settings are true \- totalTime - The total runtime for all
+calls to a function Present if `spaceOrTime` is `space` or `both` and the
+`trace` or `subtractChild` settings are true \- space - The memory usage for a
+function These are present if the `trace` or `subtractChild` setting is true
+\- id - A list of longs to uniquely identify every function call. The first
+function call has an id of 1, and the ids of subsequent function calls
+increase monotonically \- parents - The parent function's id of each function
+call. The root function has a parent id of 0 \- children - A list of the ids
+of the child functions called by a given function These are present if
+`spaceOrTime` setting is `space` or `both` and the `subtractChild` setting is
+true \- SMC - The memory usage for a function minus the maximum memory usage
+of the function's child functions \- avgSMC - The average SMC for a function
+\- maxSMC - The maximum SMC for a function \- minSMC - The minimum SMC for a
+function These are present if `spaceOrTime` setting is `time` or `both` and
+the `subtractChild` setting is true \- time - The runtime for a function \-
+TMC - The runtime for a function minus the total runtime of the function's
+child functions \- totalTMC - The total TMC for all calls to a function \-
+avgTMC - The average TMC for a function \- maxTMC - The maximum TMC for a
+function \- minTMC - The minimum TMC for a function These are present if
+`spaceOrTime` setting is `space` or `both` \- avgSpace - The average memory
+usage for the function \- maxSpace - The maximum memory usage for the function
+\- minSpace - The minimum memory usage for the function These are onyl present
+if `spaceOrTime` setting is `time` or `both` \- avgTime - The average runtime
+for the function \- maxTime - The max runtime for the function \- minTime -
+The min runtime for the function
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+expr | string | The expression to profile  
+sts | dict | A dictionary of the user defined settings for the profiling  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+[ .profile.ty.summarizedResults ](../overview-typedefs/#profiletysummarizedresults) | Depending on the mode, a table is returned with columns from a subset of the summarizedResult table.  
+  
+**Example:** Run the profiler
+
+    
+    
+     This will run the profiler with default settings
+    
+     .profile.go["func[]";::]
+    
+     This will run the time profiler with trace mode active
+    
+     .profile.go["func[]";`spaceOrTime`trace!(`time;1b)]
+    
+
+## .profile.sampling
+
+A programmatic way of running the sampling profiler
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+init | string | An expression to initialize the evaluation process  
+expr | string | The code to evaluate  
+ctx | string | The context to evaluate in  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+table | The time spent in each function  
+  
+## .profile.viewAnons
+
+Returns a dictionary containing all anonymous functions that were modified
+during the profiling. This allows the user to correlated function names in the
+profiler results table to the actual functions.
+
+**Returns:**
+
+Name | Type | Description  
+---|---|---  
+<returns> | dict | A dictionary where the keys are symbols corresponding to function names and the values are the anonymous functions themselves.  
+<returns>. | fn | Repeatable;
+

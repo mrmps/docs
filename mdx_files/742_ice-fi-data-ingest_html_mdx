@@ -1,0 +1,61 @@
+https://code.kx.com/insights/accelerators/fsi/ice-fi-data-ingest.html
+
+# ICE Fixed Income Data Ingestion - kdb products
+
+Original URL: https://code.kx.com/insights/accelerators/fsi/ice-fi-data-ingest.html
+
+# ICE Fixed Income Accelerator Data Ingestion
+
+There are several pipelines in the KX Fixed Income Accelerator to ingest data,
+they are outlined briefly below.
+
+Commands to update the s3/blob storage location of the files which these
+pipelines target for ingestion can be found in the [quickstart guide](ice-
+fixed-income-quickstart.html#quick-start-guide).
+
+## Reference Data Ingestion
+
+Pipelines for ingest of COREREF and CROSSREF reference files. These pipelines
+are:
+
+  * icecorereference 
+  * icecrossreference
+
+These pipelines ingest the data to the `Instrument` table in Insights
+Enterprise. Ingestion of COREREF and CROSSREF files, along with ratings and
+sector information detailed below, is necessary to fully populate the Fixed
+Income Overview and Drilldown Insights Views.
+
+## Ratings Data Ingestion
+
+A pipeline to ingest APEX GSM data (ratings and sector information):
+
+This pipeline uses the ISIN number ingested from the CROSSREF ICE reference
+file to join the APEX GSM data to the existing reference data in the
+`Instrument` table. As such, the ISIN numbers should already be populated in
+the `Instrument` table before the `iceratings` pipeline is run.
+
+## Historic replay data ingest
+
+A pipeline to ingest historic data using ICE REPLAY files to the `Quote` table
+in Insights Enterprise:
+
+  * icehistoricreplayfixedincome
+
+This pipeline should be used if it is necessary to ingest replay (historic)
+data.
+
+## Realtime Data ingest
+
+To ingest realtime data into the KX Fixed Income Accelerator, follow the steps
+outlined in the [quickstart guide](ice-fixed-income-quickstart.html#quick-
+start-guide).
+
+## Generating bar data
+
+A pipeline to generate bar data from the `Quote` table:
+
+The historic elements of the Fixed Income Overview and Drilldown Insights
+Views require bar data in order to be populated. Refer to the [Historic Fixed
+Income Data](ice-fi-historic-data.html) documentation.
+

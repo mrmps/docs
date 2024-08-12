@@ -1,0 +1,75 @@
+https://code.kx.com/platform/enhanced_instance_configuration/
+
+# Enhanced instance configuration - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/enhanced_instance_configuration/
+
+`.trp.mode` | symbol | trap, debug, trace | Error trapping mode  
+`.trp.errMode` | int | 0-2 | Error trapping mode (`E`)  
+`.z.zd` | int[] | n/a | Compression defaults  
+`.qr.cacheTimeQP` | int | 120 | Specifies interval (secs) for QP to cache results for disconnected clients  
+`.qr.client.enable` | boolean | false | Enables the process as a QR client  
+`.qr.db.enabled` | boolean |  | Enables the process to register as a database with running QRs  
+`.qr.client.name` | symbol |  | QR client name  
+`.qr.client.registerHB` | boolean | false | If set to true, QR will disconnect client after heartbeat timeout  
+`.qr.client.heartbeatFreq` | int |  | Heartbeat frequency between process and QR  
+`.dm.cb.connect` | symbol |  | Callback when a connection made to another process  
+`.dm.cb.addSub` | symbol |  | Callback when a subscription is added to a publisher  
+`.dm.cb.connected` | symbol |  | Callback when connection to another process is confirmed  
+`.dm.cb.deleteSub` | symbol |  | Callback when a subscription is removed from a publisher  
+`.dm.cb.disconnect` | symbol |  | Callback when a connection is dropped  
+`.dm.cb.receiveConn` | symbol |  | Callback when a connection is received from another process  
+`.dm.cb.receiveReconn` | symbol |  | Callback when a process is reconnected to  
+`.dm.cb.reconnect` | symbol |  | Callback when a process makes a reconnection  
+`.dm.cb.subConfirm` | symbol |  | Callback when subscription confirmed  
+`.dm.cb.subDeleted` | symbol |  | Callback when receiving subscription delete  
+`.dm.cb.connectionFailed` | symbol |  | Callback when a connection or reconnection fails  
+`.log.precision` | int |  | Set the display precision `\P`  
+`.log.tsPrecision` | int |  | Log message timestamp precision  
+`.log.consoleSize` | int[] |  | Set the q console size `\c` (height,width)  
+`.dm.i.retryInterval` | int | 10000 | Interval between reconnect attempts (milliseconds)  
+`.dm.i.retryTimeout` | int | 500 | _hopen_ connection timeout (milliseconds)  
+`.dm.i.retries` | int | 10 | Max retries  
+`.dm.i.initRetryTimeout` | long | 30000 | _hopen_ connection timeout (milliseconds)  
+`.dm.i.initRetryMode` | symbol | off, timeout, retry | Retry connection mode  
+`.dm.i.retryPriority` | int | 0 | For connections established via messaging, if connection drops, the process with lower priority will attempt the reconnection  
+`.pm.async.enabled` | boolean | false | Enable permissions on async queries  
+`.pm.async.logEnabled` | boolean | false | Enable query logging of async queries  
+`.pm.sync.disabled` | boolean | false | Disable permissions on sync queries  
+`.pm.sync.logDisabled` | boolean | false | Disable query logging on sync queries  
+`.pm.http.disabled` | boolean | false | Disable permissions on http get queries  
+`.pm.http.logEnabled` | boolean | false | Enable query logging of http get queries  
+`.px.cln.startTime` | time | 00:00:00.0 | Time to run instance table clean-up  
+`.px.cln.frequency` | int | 24 | Interval between clean-up runs (hours)  
+`.px.cln.table` | string |  | Specifies the tables, number of hours to keep and min number of rows before clean-up. Can add multiple _.px.cln.table_ rows to manage multiple tables.  
+`.replay.registerTimeout` | long | 0 | Specifies a timeout value for the HDB  
+`.al.preStartupInstructions` | symbol[] |  | List of instructions to load on start-up of an instance (before the template code)  
+`.al.startupInstructions` | symbol[] |  | List of instructions to load on start-up of an instance (after the template code)  
+`.qr.poll.byUser` | boolean | true | Enable unique QR polling queries by user  
+`.qr.runGC` | boolean | true | Enable garbage collecting on the QR when running housekeeping  
+`.page.gc` | boolean | true | Garbage collect when clearing paging cache  
+`.qr.useUDS` | boolean | true | Use UDS for connections to QR and QP on localhost  
+`.dm.i.regHostMode` | symbol |  | Override default registration host with messaging server. More info [here](../troubleshooting/#host-resolution)  
+`.ex.i.regHostMode` | symbol |  | Override default registration host with _Control_. More info [here](../troubleshooting/#host-resolution)  
+`.log.cmp.debugEnabled` | symbol[] |  | Logging components to enable debug for by default  
+`.log.cmp.debugDisabled` | symbol[] |  | Logging components to explicitly disable debug for  
+`.dm.buff.i.start` | symbol |  | TP buffering start callback  
+`.dm.buff.i.end` | symbol |  | TP buffering end callback  
+`.pkg.setVersionInstruction` | symbol |  | Instruction executed on process instance before analytics and schema loaded  
+`.qr.qpHeartbeatFreq` | integer | 30 | QP to QR heartbeat interval  
+`.qr.qpHeartbeatTimeout` | integer | 45 | QP to QR heartbeat timeout  
+`.qr.cleanupFreq` | integer | 3600 | Interval between clean-up tasks  
+`.qr.rpl.startupTimeout` | integer | 0 | Specifies interval (secs) to start a QR as a follower before reconnecting with other peers  
+`.qr.errorTrapRequest` | boolean | false | Return the callback error to the client if an error occurs in the QR  
+`.at.createCheckQueues` | symbol |  | Analytic that runs on the action tracker GW when a case is created to validate the linked queues  
+`.at.createRoleCheck` | boolean | false | Enable checking user roles when creating action tracker items  
+`.dm.i.reconnFreq` | integer | 10000 | Interval between reconnect attempts (milliseconds) from client to MS when connection dropped  
+`.dm.i.openTimeout` | long | 250 | _hopen_ connection timeout (milliseconds) from client to MS when connection dropped  
+`.qr.reconnFreq` | integer | 1000 | Interval between reconnect attempts (milliseconds) from client to QR/QP and QP to QR when opening connection and when connection dropped  
+`.qr.openTimeout` | integer |  | _hopen_ connection timeout (milliseconds) from client to QR/QP and QP to QR when opening connection and when connection dropped  
+`.rpl.reconnFreq` | integer | 10000 | Interval between reconnect attempts (milliseconds) between MS processes or between QR processes in replication cluster  
+`.rpl.openTimeout` | integer |  | _hopen_ connection timeout (milliseconds) between MS processes or between QR processes in replication cluster  
+`.af.override` | symbol |  | Override name of `DS_AF_*` config parameters subscribed to for analytic framework structures, i.e. `.af.*` tables. If this is not present, will use the override matching instance name or the DEFAULT override. Can be overwritten using `.af.getAF*` API  
+`.pl.r.reconnDelay` | boolean | false | When connection to _Control_ is lost on a process, delay executing the reconnect function by the reconnection attempt interval  
+`.analyst.enabled` | boolean | true | Enable/disable analyst
+

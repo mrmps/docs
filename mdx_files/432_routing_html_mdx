@@ -1,0 +1,628 @@
+https://code.kx.com/insights/enterprise/database/query/routing.html
+
+# Routing - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/database/query/routing.html
+
+# Routing
+
+This page describes the logic by which the Resource Coordinator (RC)
+distributes a request across one or more Data Access Processes (DAPs).
+
+## Routing flowchart
+
+The following flowchart gives a high-level overview of the RC's routing logic.
+Each node in the flowchart is described in detail in the sections below.
+
+![routing flowchart](images/rc-routing.png)
+
+## Distinguished parameters
+
+kdb+ Insights reserves distinguished parameters that, unless otherwise
+specified, affect routing. The parameters are referenced throughout this page,
+but we summarize them here for convenience.
+
+parameter | description  
+---|---  
+`labels` | A dictionary describing DAP labels to target. See Match labels.  
+`scope` | A dictionary describing what RC and/or DAPs to target. See [scope](scope.html).  
+`startTS` | **Inclusive** start time of the request. See Time.  
+`endTS` | **Exclusive** end time of the request. See Time.  
+`inputTZ` | [Timezone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) of `startTS` and `endTS` (default: UTC).  
+`outputTZ` | [Timezone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) of the final result (`.kxi.getData` only). No effect on routing.  
+`table` | Table to target. See Table.  
+  
+## Match scope
+
+If `scope.assembly` is not specified, this step is skipped. If
+`scope.assembly` is specified, then the RC restricts the request to only those
+DAPs whose assembly matches the assembly name specified by `scope.assembly`.
+
+## Match labels
+
+The RC compares the requested labels to the labels of all its DAPs, and those
+of the DAPs of its peer RCs, to determine the list of candidate label sets for
+the request (see [Purviews](purviews.html)). If a requested set of labels is
+not covered by any assembly/DAP, the request fails (see
+[Troubleshooting](troubleshooting.html)). Note the following:
+
+  * Any label key not specified in the request arguments defaults to all known label values for that key under the specified label constraints. For example, suppose the known set of label keys in the RC is `foo` and `bar` with the following known values:
+
+`foo` | `bar`  
+---|---  
+`a` | `x`  
+`a` | `y`  
+`a` | `z`  
+`b` | `x`  
+`b` | `z`  
+  
+If a request specifies `labels:enlist[`foo]!enlist`a`, but does not specify
+values for ``bar`, then the RC defaults ``bar` to ``x`y`z`. If a request,
+however, specifies `labels:enlist[`foo]!enlist`b`, then the RC defaults ``bar`
+to ``x`z`, because there is no ``foo`bar!`b`y`.
+
+  * A request can specify multiple label values for each key. The candidate label sets are the cross product of the values. For example, if the request specifies `labels:`foo`bar!(`a`b;`x`y`z)`, the candidate label sets are:
+
+`foo` | `bar`  
+---|---  
+`a` | `x`  
+`a` | `y`  
+`a` | `z`  
+`b` | `x`  
+`b` | `y`  
+`b` | `z`  
+
+Once the candidate label sets are specified, the RC determines which ones to
+target based on the `table` parameter in the request arguments. See Table.
+
+Note that if both `labels` and `scope` are specified, the RC filters DAPs
+based on both. In particular, if the requested labels do not match the
+specified assembly's labels, the request fails. It is therefore not advisable,
+nor necessary, to use `labels` if using `scope`.
+
+## Table
+
+In the request arguments, `table` is a distinguished parameter. If included,
+the RC routes the request based on the specified table's properties. Firstly,
+it restricts candidate DAPs to only those that contain the specified table.
+Then, it checks the following properties from the assembly configuration
+file(s):
+
+    
+    
+    tables:
+      myTable:
+        type: partitioned # {partitioned|splayed}
+        isSharded: true # {true|false} - Optional, default is false (non-partitioned tables only)
+        # ...
+    
+
+  * If the table's `type` is `partitioned`, then the table is sharded across multiple label sets and distributed across multiple tiers (RDB/IDB/HDB). The RC distributes across all candidate label sets, and across time (i.e. tiers) within each label set (see Time).
+  * If the table's `type` is not `partitioned` and `isSharded` is `true`, then the table is sharded across multiple label sets and replicated across DAPs within a set. The RC distributes across all candidate label sets, but chooses only one DAP per set among the [feasible](../glossary.html#feasible-dap) DAPs. If no DAPs are feasible for one or more label sets, those request portions are queued (see [Queueing, retries, and timeouts](queueing.html)), whereas portions of the request that have feasible DAPs are dispatched immediately.
+  * If the table's `type` is not `partitioned` and `isSharded` is `false`, then the table is replicated across all DAPs that contain the table. The RC distributes the request to exactly one feasible DAP from any of the candidate label sets. If no DAPs are feasible, the request is queued (see [Queueing, retries, and timeouts](queueing.html)).
+
+Note
+
+You define table properties in each assembly's configuration file. For
+assemblies with the same label set, you must define table properties
+consistently for each table, otherwise errors may occur. For assemblies that
+share a table but have different label sets, there are no such restrictions,
+as this may be desirable in more complex set systems. Any query targeting a
+table across multiple assemblies that have different table properties will
+fail. See [Troubleshooting](troubleshooting.html) for details.
+
+If `table` is not specified in the request arguments, then the RC routes the
+request using the same strategy as for partitioned tables, i.e. it distributes
+across all candidate labels sets, and across time within each label set.
+
+## Time
+
+If the request targets a partitioned table, or `table` is not specified in the
+request arguments, then the RC distributes the request across time within each
+label set. Time can be constrained using the `startTS` and `endTS` request
+parameters. If not specified, these default to `-0Wp` and `0Wp`, respectively.
+
+Within a label set, the RC aims to distribute the requested time range across
+DAPs while avoiding any overlaps (so as to not duplicate data in the
+response). It does this by doing the following iteratively:
+
+  1. Intersect outstanding requested time interval(s) with time ranges from [feasible](../glossary.html#feasible-dap) DAPs.
+  2. Of the DAPs with nontrivial intersection, choose the one with the largest intersection (if there are multiple largest, choose one at random).
+  3. Remove assigned time interval(s) from outstanding interval(s).
+  4. Repeat from step 1 until no time intervals remain or no feasible DAPs remain. If any time intervals remain, they are queued (see [Queueing, retries, and timeouts](queueing.html)).
+
+The above process is illustrated in the following diagrams.
+
+![time-distribution-1](images/rc-time-distr-1.png)
+
+In this diagram, DAP 2 covers the largest interval of the request time range,
+so it is chosen first. DAP 1 is assigned whatever remains on the left. On the
+right, DAP 4 covers more of the request than DAP 3, so it is chosen to cover
+what remains of the request. The entire request can be assigned, and hence
+nothing needs to be queued.
+
+![time-distribution-2](images/rc-time-distr-2.png)
+
+In this diagram, a section of the request is not covered by any DAP. The RC
+sends the portions it can to DAPs 1 and 2, and queues the remaining portion
+that it is unable to allocate at this time.
+
+## Examples
+
+For the following examples, suppose we have an kdb Insights set up to collect
+utilities usage (electrical, gas, and water, depending on jurisdiction) of
+households across major Canadian cities. Data is sharded by `city` (`toronto`,
+`montreal`, `ottawa`, `vancouver`), `sensorType` (`electric`, `gas` for all
+cities, `water` for `montreal` and `ottawa` only). Moreover, since `toronto`
+has larger data loads, `toronto` assemblies further subdivide data by `area`
+(`to` for Toronto proper, and `gta` for the greater Toronto area). Assembly
+names shall be `<city|area>_<sensorType>`.
+
+    
+    
+    name: to_electric
+    labels:
+      city: toronto
+      sensorType: electric
+      area: to
+    
+    name: gta_electric
+    labels:
+      city: toronto
+      sensorType: electric
+      area: gta
+    
+    ...
+    
+    name: montreal_electric
+    labels:
+      city: montreal
+      sensorType: electric
+    
+    name: ottawa_gas
+    labels:
+      city: ottawa
+      sensorType: gas
+    ...
+    
+
+Moreover, suppose that for legal reasons, `gas` data in jurisdiction of the
+city of `ottawa` must have a redundant assembly. The label are the same (since
+they offer the same data), but the redundant assembly has a unique name:
+
+    
+    
+    name: ottawa_gas_backup
+    labels:
+      city: ottawa
+      sensorType: gas
+    
+
+Furthermore, suppose all assemblies have a set of common tables: `trace`,
+`sensor`, `uom`. Assemblies with `sensorType=gas`, however, contain an
+additional table that is `gas`-specific: `pressure`. Schema properties
+(relevant to routing) are:
+
+    
+    
+    schema:
+      trace:
+        description: time-series sensor data
+        type: partitioned
+        ...
+      sensor:
+        description: metadata for each sensor
+        type: splayed
+        isSharded: true
+        ...
+      uom:
+        description: units of measure (conversions, billing rates, etc...)
+        type: basic
+        isSharded: false
+        ...
+      # Gas only.
+      pressure:
+        description: pressure readings
+        type: partitioned
+        ...
+    
+
+In addition, suppose `toronto`, `montreal` and `ottawa` are often queried
+together, and `toronto` and `vancouver` are often queried together, but there
+are relatively few queries that query both `vancouver` and `montreal` or
+`ottawa`. Therefore, we chose to set up a 2 RC system with `montreal` and
+`ottawa` DAPs connecting to `rc-0`, `vancouver` DAPs connecting to `rc-1`, and
+`toronto` DAPs spread across both RCs. Moreover, sup
+
+The division of label sets across both RCs is thus:
+
+`city` | `sensorType` | `area` | `RC`  
+---|---|---|---  
+`toronto` | `electric` | `to` | `rc-0`  
+`toronto` | `electric` | `gta` | `rc-0`  
+`toronto` | `gas` | `to` | `rc-0`  
+`toronto` | `gas` | `gta` | `rc-0`  
+`montreal` | `electric` |  | `rc-0`  
+`montreal` | `gas` |  | `rc-0`  
+`montreal` | `water` |  | `rc-0`  
+`ottawa` | `electric` |  | `rc-0`  
+`ottawa` | `gas` |  | `rc-0`  
+`ottawa` | `water` |  | `rc-0`  
+`toronto` | `electric` | `to` | `rc-1`  
+`toronto` | `electric` | `gta` | `rc-1`  
+`toronto` | `gas` | `to` | `rc-1`  
+`toronto` | `gas` | `gta` | `rc-1`  
+`vancouver` | `electric` |  | `rc-1`  
+`vancouver` | `gas` |  | `rc-1`  
+  
+Finally, suppose that at a given moment in time, `rc-0` has the following DAPs
+registered:
+
+`dap` | `city` | `sensorType` | `area` | `available` | `refVintage` | `startTS` | `endTS` | `assembly`  
+---|---|---|---|---|---|---|---|---  
+`dap-0-0` | `toronto` | `electric` | `to` | `1b` | `100` | `-0Wp` | `2022.11.22D` | `to_electric`  
+`dap-0-1` | `toronto` | `electric` | `to` | `1b` | `99` | `-0Wp` | `2022.11.22D` | `to_electric`  
+`dap-1-0` | `toronto` | `electric` | `to` | `1b` | `100` | `2022.11.22D` | `2022.11.22D12` | `to_electric`  
+`dap-1-1` | `toronto` | `electric` | `to` | `1b` | `100` | `2022.11.22D` | `2022.11.22D12` | `to_electric`  
+`dap-2-0` | `toronto` | `electric` | `to` | `1b` | `100` | `2022.11.22D12` | `0Wp` | `to_electric`  
+`dap-2-1` | `toronto` | `electric` | `to` | `1b` | `100` | `2022.11.22D12` | `0Wp` | `to_electric`  
+`dap-3-0` | `toronto` | `electric` | `gta` | `1b` | `110` | `-0Wp` | `2022.11.22D` | `gta_electric`  
+`dap-3-1` | `toronto` | `electric` | `gta` | `1b` | `110` | `-0Wp` | `2022.11.22D` | `gta_electric`  
+`dap-4-0` | `toronto` | `electric` | `gta` | `1b` | `110` | `2022.11.22D` | `2022.11.22D10` | `gta_electric`  
+`dap-4-1` | `toronto` | `electric` | `gta` | `1b` | `110` | `2022.11.22D` | `2022.11.22D11` | `gta_electric`  
+`dap-5-0` | `toronto` | `electric` | `gta` | `0b` | `110` | `2022.11.22D10:30` | `0Wp` | `gta_electric`  
+`dap-5-1` | `toronto` | `electric` | `gta` | `1b` | `110` | `2022.11.22D10:30` | `0Wp` | `gta_electric`  
+`dap-6-0` | `toronto` | `gas` | `to` | `1b` | `120` | `-0Wp` | `2022.11.22D` | `to_gas`  
+`dap-7-0` | `toronto` | `gas` | `to` | `1b` | `120` | `2022.11.22D` | `2022.11.22D12` | `to_gas`  
+`dap-8-0` | `toronto` | `gas` | `to` | `1b` | `120` | `2022.11.22D12` | `0Wp` | `to_gas`  
+`dap-9-0` | `toronto` | `gas` | `gta` | `1b` | `130` | `-0Wp` | `2022.11.22D` | `gta_gas`  
+`dap-10-0` | `toronto` | `gas` | `gta` | `1b` | `130` | `2022.11.22D` | `0Wp` | `gta_gas`  
+`dap-11-0` | `montreal` | `electric` |  | `1b` | `200` | `-0Wp` | `2022.11.22D` | `montreal_electric`  
+`dap-11-1` | `montreal` | `electric` |  | `1b` | `200` | `-0Wp` | `2022.11.22D` | `montreal_electric`  
+`dap-12-0` | `montreal` | `electric` |  | `1b` | `200` | `2022.11.22D` | `2022.11.22D12` | `montreal_electric`  
+`dap-12-1` | `montreal` | `electric` |  | `1b` | `200` | `2022.11.22D` | `2022.11.22D12` | `montreal_electric`  
+`dap-13-0` | `montreal` | `electric` |  | `1b` | `200` | `2022.11.22D12` | `0Wp` | `montreal_electric`  
+`dap-13-1` | `montreal` | `electric` |  | `1b` | `200` | `2022.11.22D12` | `0Wp` | `montreal_electric`  
+`dap-14-0` | `montreal` | `gas` |  | `1b` | `210` | `-0Wp` | `2022.11.20D` | `montreal_gas`  
+`dap-14-1` | `montreal` | `gas` |  | `1b` | `210` | `-0Wp` | `2022.11.20D` | `montreal_gas`  
+`dap-15-0` | `montreal` | `gas` |  | `1b` | `210` | `2022.11.20D` | `0Wp` | `montreal_gas`  
+`dap-15-1` | `montreal` | `gas` |  | `1b` | `210` | `2022.11.20D` | `0Wp` | `montreal_gas`  
+`dap-16-0` | `montreal` | `water` |  | `1b` | `220` | `-0Wp` | `2022.11.20D` | `montreal_water`  
+`dap-17-0` | `montreal` | `water` |  | `1b` | `220` | `2022.11.21D` | `2022.11.22D` | `montreal_water`  
+`dap-18-0` | `montreal` | `water` |  | `1b` | `220` | `2022.11.22D12` | `0Wp` | `montreal_water`  
+`dap-19-0` | `ottawa` | `electric` |  | `1b` | `300` | `-0Wp` | `2022.11.22D` | `ottawa_electric`  
+`dap-20-0` | `ottawa` | `electric` |  | `1b` | `300` | `2022.11.22D` | `2022.11.22D12` | `ottawa_electric`  
+`dap-21-0` | `ottawa` | `electric` |  | `1b` | `300` | `2022.11.22D12` | `0Wp` | `ottawa_electric`  
+`dap-22-0` | `ottawa` | `gas` |  | `1b` | `310` | `-0wp` | `2022.11.22D` | `ottawa_gas`  
+`dap-23-0` | `ottawa` | `gas` |  | `1b` | `310` | `2022.11.22D` | `0Wp` | `ottawa_gas`  
+`dap-24-0` | `ottawa` | `water` |  | `0b` | `320` | `-0Wp` | `2022.11.22D` | `ottawa_water`  
+`dap-25-0` | `ottawa` | `water` |  | `1b` | `319` | `2022.11.22D` | `2022.11.22D12` | `ottawa_water`  
+`dap-26-0` | `ottawa` | `water` |  | `1b` | `320` | `2022.11.22D12` | `0Wp` | `ottawa_water`  
+`dap-27-0` | `ottawa` | `gas` |  | `1b` | `310` | `-0wp` | `2022.11.22D` | `ottawa_gas_backup`  
+`dap-28-0` | `ottawa` | `gas` |  | `1b` | `310` | `2022.11.22D` | `0Wp` | `ottawa_gas_backup`  
+  
+Unless otherwise specified, assume that the [reference
+vintage](../glossary.html#reference-vintage) for common label sets is no
+higher in `rc-1` than in `rc-0`.
+
+### Example 1
+
+    
+    
+    // Routes to (dap-1-0 or dap-1-1).
+    `table`labels`startTS`endTS!(`trace;`city`sensorType`area!`toronto`electric`to;2022.11.22D;2022.11.22D06)
+    
+
+The request targets a single label set, which `rc-0` is able to satisfy. The
+table specified is partitioned, thus the RC takes time into consideration. It
+routes to either `dap-1-0` or `dap-1-1`, which are both able to completely
+service the query.
+
+### Example 2
+
+    
+    
+    // Routes to (dap-1-0 or dap-1-1) and (dap-2-0 or dap-2-1).
+    `table`labels`startTS!(`trace;`city`sensorType`area!`toronto`electric`to;2022.11.22D)
+    
+
+This is similar to Example 1, but `endTS` is not specified, thus it defaults
+to `0Wp`. The request must be distributed across multiple DAPs; the RC routes
+to either `dap-1-0` or `dap-1-1` for the `[2022.11.22D;2022.11.22D12)`
+portion, and to either `dap-2-0` or `dap-2-1` for the `[2022.11.22D12;0Wp)`
+portion.
+
+### Example 3
+
+    
+    
+    // Maps to dap-0-0 and (dap-1-0 or dap-1-1) and (dap-2-0 or dap-2-1).
+    enlist[`labels]!enlist`city`sensorType`area!`toronto`electric`to
+    
+
+The request targets a single label set. No table is specified, thus the RC
+routes the request as though it is a request for a partitioned table, i.e. the
+request is routed across time. No time is specified, thus `startTS` and
+`endTS` default to `-0Wp` to `0Wp`, respectively. The RC routes to either
+`dap-1-0` or `dap-1-1` for the `[2022.11.22D;2022.11.22D12)` portion, and to
+either `dap-2-0` or `dap-2-1` for the `[2022.11.22D12;0Wp)` portion. Since
+`dap-0-1` is not feasible (its `refVintage` lags compared to other DAPs in
+this label set), the only feasible DAP for the `[-0Wp;2022.11.22D)` portion is
+`dap-0-0`.
+
+### Example 4
+
+    
+    
+    // Routes to dap-4-1 and dap-5-1 and dap-9-0.
+    `table`labels`startTS!(`trace;enlist[`area]!enlist`gta;2022.11.22D)
+    
+
+The request targets all label sets where `area=gta`, i.e.
+``city`sensorType`area!`toronto`electric`gta` and
+``city`sensorType`area!`toronto`gas`gta`. Since the table is partitioned, we
+also distribute across time. No `endTS` is provided, so it defaults to `0Wp`.
+
+For the first label set, the RC routes the `[2022.11.22D10:30;0Wp)` portion of
+the request to `dap-5-1`, and the `[2022.11.22D;2022.11.22D10:30)` portion to
+`dap-4-1`. Note that the RC chooses `dap-5-1` over `dap-5-0` because `dap-5-0`
+is unavailable. Moreover, since `dap-5-0` has the largest intersection with
+the request, the RC chooses to send as much of the request as possible to it
+before considering other DAPs. What remains thereafter is the portion from
+`[2022.11.22D;2022.11.22D10:30)`. The RC chooses `dap-4-1` since it can
+service the entire remaining portion (`dap-4-0` is thus not considered).
+
+For the second label set, the RC routes to `dap-9-0` since it can service the
+entire time range.
+
+### Example 5
+
+    
+    
+    // Routes to (dap-3-0 or dap-4-0 or dap-4-1 or dap-5-1) and (dap-9-0 or dap-10-0).
+    `table`labels!(`sensor;enlist[`area]!enlist`gta)
+    
+
+The request targets all label sets where `area=gta`, i.e.
+``city`sensorType`area!`toronto`electric`gta` and
+``city`sensorType`area!`toronto`gas`gta`. The table is not partitioned, but is
+sharded. Therefore, we send to one feasible DAP in both label sets. For the
+first label set, the RC routes to either `dap-3-0`, `dap-4-0`, `dap-4-1`, or
+`dap-5-1` (`dap-5-0` is unavailable). For the second label set, the RC routes
+to either `dap-9-0` or `dap-10-0`.
+
+### Example 6
+
+    
+    
+    // Routes to any one DAP other than dap-0-1 and dap-5-0 and dap-25-0 and dap-26-0.
+    enlist[`table]!enlist`uom
+    
+
+The request targets a non-partitioned, non-sharded table. All label sets
+contain this table, thus the RC can send to any one of its feasible DAPs. The
+only non-feasible DAPs are `dap-0-1`, `dap-25-0` (since their [reference
+vintages](../glossary.html#reference-vintage) are lagging), `dap-5-0`, and
+`dap-24-0` (since they are unavailable).
+
+Since the RC contains DAPs that can service this request, it chooses to send
+to one of its DAPs, rather than send to `rc-1` even if `rc-1` could satisfy
+the request also.
+
+### Example 7
+
+    
+    
+    // Routes to dap-0-0 or dap-1-0 or dap-1-1 or dap-2-0 or dap-2-1 or dap-3-0 or dap-3-1 or
+    // dap-4-0 or dap-4-1 or dap-5-1 or dap-6-0 or dap-7-0 or dap-8-0 or dap-9-0 or dap-10-0.
+    `table`labels!(`uom;enlist[`city]!enlist`toronto)
+    
+
+This is similar to Example 6, but we explicitly request only label sets where
+`city=toronto`. The RC routes to any one feasible DAP under this constraint.
+
+### Example 8
+
+    
+    
+    // Routes to rc-1.
+    `table`labels!(`uom;enlist[`labels]!enlist`vancouver)
+    
+
+This is similar to Example 6, but we explicitly request only label sets where
+`city=vancouver`. This RC does not have any such label sets. Hence, it sends
+the request to `rc-1`, and `rc-1` determines how to route to its DAPs once it
+receives the request.
+
+### Example 9
+
+    
+    
+    // Routes to (dap-11-0 or dap-11-1) and (dap-12-0 or dap-12-1) and (dap-13-0 or dap-13-1) and
+    // dap-19-0 and dap-20-0 and dap-21-0.
+    `table`labels!(`trace;`city`sensorType!(`montreal`ottawa;`electric))
+    
+
+The request targets a partitioned table; it targets label sets where
+(`city=montreal` or `city=ottawa`) and `sensorType=electric`. Thus, the
+targeted label sets are ``city`sensorType!`montreal`electric` and
+``city`sensorType!`ottawa`electric` (note the `area` label does not apply).
+The time range is not specified, thus `startTS` and `endTS` default to `-0Wp`
+and `0Wp`, respectively.
+
+For the first label set, the RC routes the `[-0Wp;2022.11.22D)` portion to
+`dap-11-0` or `dap-11-1`, the `[2022.11.22;2022.11.22D12)` portion to
+`dap-12-0` or `dap-12-1`, and the `[2022.11.22D12;0Wp)` portion to `dap-13-0`
+or `dap-13-1`.
+
+Similarly, for the second label set, the RC routes the `[-0Wp;2022.11.22D)`
+portion to `dap-19-0`, the `[2022.11.22D;2022.11.22D12)` portion to
+`dap-20-0`, and the `[2022.11.22D12;0Wp)` portion to `dap-21-0`.
+
+### Example 10
+
+    
+    
+    // Routes to (dap-11-0 or dap-11-1 or dap-12-0 or dap-12-1 or dap-13-0 or dap-13-1) and
+    // (dap-16-0 or dap-17-0 or dap-18-0) and (dap-19-0 or dap-20-0 or dap-21-0) and dap-26-0.
+    `table`labels!(`sensor;`city`sensorType!(`montreal`ottawa;`electric`water))
+    
+
+The request targets a non-partitioned, sharded table; it targets label sets
+where (`city=montreal` or `city=ottawa`) and (`sensorType=electric` or
+`sensorType=water`). Thus, the target label sets are the cross product:
+``city`sensorType!`montreal`electric`, ``city`sensorType!`montreal`water`,
+``city`sensorType!`ottawa`electric`, ``city`sensorType!`ottawa`water`. The RC
+routes to one feasible DAP per label set.
+
+For the first label set, the RC routes to `dap-11-0`, `dap-11-1`, `dap-12-0`,
+`dap-12-1`, `dap-13-0`, or `dap-13-1`.
+
+For the second label set, the RC routes to `dap-16-0`, `dap-17-0`, or
+`dap-18-0`.
+
+For the third label set, the RC routes to `dap-19-0`, `dap-20-0`, or
+`dap-21-0`.
+
+For the fourth label set, only `dap-26-0` is feasible (`dap-24-0` is
+unavailable, and `dap-25-0`'s ref vintage lags behind its peers).
+
+### Example 11
+
+    
+    
+    // Routes to dap-16-0 and dap-17-0 and dap-18-0 and dap-26-0. Portions of the request are queued.
+    `table`labels!(`trace;`city`sensorType!(`montreal`ottawa;`water))
+    
+
+The request targets a partitioned table; the target label sets are
+``city`sensorType!`montreal`water` and ``city`sensorType!`ottawa`water`. The
+time range is not specified, thus `startTS` and `endTS` default to `-0Wp` and
+`0Wp`, respectively.
+
+For the first label set, the RC routes the `[-0Wp;2022.11.20D)` portion to
+`dap-16-0`, the `[2022.11.21D;2022.11.22D)` portion to `dap-17-0`, and the
+`[2022.11.22D12;0Wp)` portion to `dap-18-0`. That leaves two outstanding
+portions that it cannot assign to any DAP: `[2022.11.20D;2022.11.21D)` and
+`[2022.11.22D;2022.11.22D12)`. These portions are queued.
+
+For the second label set, `dap-24-0` is unavailable, and `dap-25-0`'s ref
+vintage lags behind its peers, hence the RC can only route the
+`[2022.11.22D12;0Wp)` portion to `dap-26-0`. This leaves one outstanding
+portion that it cannot assign to any DAP: `[-0Wp;2022.11.22D12)`. This portion
+is queued.
+
+The queued portions are held by the RC. The RC attempts to assign queued
+entries to DAPs as they register/become feasible and intersect with the queued
+entries. See ([Queueing, retries, and timeouts](queueing.html)).
+
+### Example 12
+
+    
+    
+    // Routes to dap-6-0 and dap-9-0 and (dap-15-0 or dap-15-1) and (dap-22-0 or dap-27-0).
+    `table`startTS`endTS!(`pressure;2022.11.21D;2022.11.22D)
+    
+
+The request targets a partitioned table, but does not explicitly specify
+labels. However, since the `pressure` table only appears in label sets where
+`sensorType=gas`, the RC limits to just those label sets:
+``city`sensorType`area!`toronto`gas`to`,
+``city`sensorType`area!`toronto`gas`gta`, ``city`sensorType!`montreal`gas`,
+and ``city`sensorType!`ottawa`gas`. In all cases, a single DAP is able to
+service the entire time range: `dap-6-0` and `dap-9-0` and (`dap-15-0` or
+`dap-15-1`) and (`dap-22-0` or `dap-27-0`), respectively).
+
+### Example 13
+
+    
+    
+    // Routes to (dap-0-0 or dap-1-0 or dap-1-1 or dap-2-0 or dap-2-1) and
+    // (dap-3-0 or dap-3-1 or dap-4-0 or dap-4-1 or dap-5-1) and
+    // sends "vancouver" portion to rc-1.
+    `table`labels!(`sensor;`city`sensorType!(`toronto`vancouver;`electric))
+    
+
+The request targets a non-partitioned, sharded table; it targets all label
+sets where `city=toronto` or `city=vancouver`:
+``city`sensorType`area!`toronto`electric`to`,
+``city`sensorType`area!`toronto`electric`gta`, and
+``city`sensorType!`vancouver`electric`.
+
+For the first label set, the RC sends to any one feasible DAP within the label
+set: `dap-0-0`, `dap-1-0`, `dap-1-1`, `dap-2-0`, or `dap-2-1` (`dap-0-1`'s
+[reference vintage](../glossary.html#reference-vintage) is lagging).
+
+Similarly, for the second label set, the RC sends to any one feasible DAP
+within the label set: `dap-3-0`, `dap-3-1`, `dap-4-0`, `dap-4-1`, or `dap-5-1`
+(`dap-5-0` is unavailable).
+
+For the third label set, the RC does not have any DAPs with label
+`city=vancouver`. Hence, it sends this portion of the request to `rc-1`, which
+takes care of distributing to its own DAPs.
+
+### Example 14
+
+For this example, suppose that `rc-1` reports that the [reference
+vintage](../glossary.html#reference-vintage) for label set
+``city`sensorType`area!`toronto`gas`gta` is `131` (i.e. higher than the
+reference vintage of all DAPs within `rc-0`).
+
+    
+    
+    // Queued.
+    enlist[`labels]!enlist`city`sensorType`area!`toronto`gas`gta
+    
+
+Ordinarily the request could be routed to `dap-9-0` or `dap-10-0`. However,
+since `rc-1` reports the reference vintage for this label set is `131`, then
+`rc-0` concludes that its DAPs for this label set are lagging. The request is
+queued until the DAPs report a higher reference vintage (or new DAPs with a
+higher reference vintage register with it).
+
+### Example 15
+
+    
+    
+    // Routes to (dap-22-0 or dap-27-0) and (dap-23-0 or dap-28-0).
+    enlist[`labels]!enlist`city`sensorType!`ottawa`gas
+    
+
+This is similar to Example 3. The request is routed to a single label set, but
+may mixed and matched between the two redundant assemblies (`ottawa_gas` and
+`ottawa_gas_backup`).
+
+### Example 16
+
+    
+    
+    // Routes to dap-27-0 and dap-28-0.
+    enlist[`scope]!enlist enlist[`assembly]!enlist`ottawa_gas_backup
+    
+
+This is similar to Example 15, but using `scope` instead of `labels` to
+specifically target `ottawa_gas_backup` rather than `ottawa_gas`.
+
+### Example 17
+
+    
+    
+    // Routes to dap-27-0 and dap-28-0.
+    `labels`scope!(enlist[`city]!enlist`ottawa;enlist[`assembly]!enlist`ottawa_gas_backup)
+    
+
+This request is functionally no different that Example 16. The `scope` forces
+the RC to target `ottawa_gas_backup`. The labels, though redundant, are
+consistent with the labels of the `ottawa_gas_backup` assembly.
+
+### Example 18
+
+    
+    
+    // Query fails.
+    `labels`scope!(enlist[`city]!enlist`toronto;enlist[`assembly]!enlist`ottawa_gas)
+    
+
+The query fails, since the labels (`city: toronto`) do not match the labels of
+the `ottawa_gas` assembly.
+

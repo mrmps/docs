@@ -1,0 +1,183 @@
+https://code.kx.com/insights/api/openapi/q-client-generation.html
+
+# q client generation - kdb products
+
+Original URL: https://code.kx.com/insights/api/openapi/q-client-generation.html
+
+# q client generation
+
+We have created a standalone `q` client generator based on [Swagger
+Codegen](https://github.com/swagger-api/swagger-codegen).
+
+The following will be a walkthrough of how you can use this to create a `q`
+client SDK from an OpenAPI specification using this client generator.
+
+There are methods of using this generator
+
+  * Running a jar natively on a machine with Java installed
+  * Running as a docker image
+
+The respective commands to run the generator using these methods are
+
+  * `java -jar kxi-openapi-codegen-<version>-shaded.jar <command line args>`
+  * `docker run --rm -v $PWD:/opt/kx registry.dl.kx.com/kxi-openapi-codegen:<version> <command line args>`
+
+In the example commands in this walkthrough we will refer to this generically
+as `gen-cmd` for 'generator command' and you can replace this with the
+appropriate version of the command, either native or docker, from above.
+
+The docker command mounts in a volume so that the files created by the
+generator can be accessible from outside the container, when generating
+clients the `-o` flag should point to somewhere inside the mounted volume.
+
+This generator supports both the same versions of the OpenAPI specification as
+the equivalent `swagger-codegen-cli` version, to view this version use
+
+## Generating a client
+
+In this example we will use the Petstore example from
+https://petstore.swagger.io/.
+
+We can generate a client from the Petstore swagger.json using
+
+    
+    
+    # Note: For the example -o is under /opt/kx to match the volume mounted into the docker container
+    # If running locally, this could be any path
+    $ gen-cmd generate -l q -i https://petstore.swagger.io/v2/swagger.json -o /opt/kx/qpetstore
+    
+
+Note
+
+Currently, generating a client from a specification via URL only supports JSON
+specifications. If you want to use a YAML specification you must download the
+file locally and reference that file with `-i`
+
+This will generate a q SDK for the Petstore API in the folder `qpetstore`.
+
+Inside `qpetstore`, there is a README that explains how to setup the SDK for
+use. We will run through these steps here
+
+### Setup the client
+
+    
+    
+    # Note: When using Docker, qpetstore will be owned by root so 
+    # you may need to change ownership for these commands to succeed
+    
+    $ cd qpetstore
+    $ chmod +x setup.sh
+    $ ./setup.sh
+    
+
+### Build and run he client
+
+Using qpacker to build the client
+
+This will load a `.com_kx_api` namespace
+
+    
+    
+    q)key `.com_kx_api
+    ``home`modelHome`basePath`cfg`setBasePath`init`headerName`request`getArgsFrom..
+    
+
+You can initialise the generated library with
+
+    
+    
+    q).com_kx_api.init[`.pets]
+    
+
+This loads the generated code into the `.pets` namespace.
+
+    
+    
+    q)key .pets
+    ``help`addPet`deletePet`findPetsByStatus`findPetsByTags`getPetById`updatePet`..
+    
+
+Each path in the OpenAPI specification will have a corresponding function. The
+`help` dictionary will tell you what parameters are given function takes.
+These are groups by the `tags` field from the OpenAPI spec.
+
+    
+    
+    q).pets.help`pet
+    operation         arg                dataType
+    ---------------------------------------------
+    addPet            body               pet     
+    deletePet         petId              Long    
+    deletePet         apiKey             String  
+    findPetsByStatus  status             #any    
+    findPetsByTags    tags               #any    
+    getPetById        petId              Long    
+    updatePet         body               pet     
+    updatePetWithForm petId              Long    
+    updatePetWithForm name               String  
+    updatePetWithForm status             String  
+    uploadFile        petId              Long    
+    uploadFile        additionalMetadata String  
+    uploadFile        file               byte[]  
+    
+
+Each function takes two dictionary parameters `args` and `opts`.
+
+`args` is a dictionary of the arguments required for the HTTP request. For
+example, for `findPetsByStatus` we would use `args` like
+
+    
+    
+    q).pets.findPetsByStatus[enlist[`status]!enlist `available; ()!()]
+    "[{\"id\":9223127596080634282,\"category\":{\"id\":0,\"name\":\"string\"},\"n..
+    
+
+Another example would be
+
+    
+    
+    q).j.k .pets.getPetById[enlist[`petId]!enlist 9223127596080634282; ()!()]
+    id       | 9.223128e+18
+    category | `id`name!(0f;"string")
+    name     | "fish"
+    photoUrls| ,"string"
+    tags     | +`id`name!(,0f;,"string")
+    status   | "available"
+    
+
+`opts` is a dictionary of options that exist within the generated API itself
+and are not directly part of the OpenAPI specification.
+
+The list of options that are supported are
+
+  * `useAsync`: To indicate you want to use an async request.
+  * Any other options that can be passed as part of the `options` parameter in the [kurl requests API](https://code.kx.com/insights/core/kurl/kurl.html#requests-api)
+
+We could make the same `getPetById` call as before using an async request as
+follows
+
+    
+    
+    q).pets.getPetById[enlist[`petId]!enlist 9223127596080634282; `useAsync`callback!(1b; {show x})]
+    200i
+    "{\"id\":9223127596080634282,\"category\":{\"id\":0,\"name\":\"string\"},\"na..
+    
+
+To make a request that requires a body you must pass this as part of the
+`body` key in the `args` parameter and this must be in the raw format expected
+by the server - most likely a JSON object.
+
+## Useful tips
+
+If you are generating a client for an OpenAPI specification that doesn't
+define a list of `servers` you can set the base path of the API using
+`.com_kx_api.basePath`.
+
+In our Petstore example this is automatically set by the generator.
+
+    
+    
+    q).com_kx_api.basePath
+    "https://petstore.swagger.io/v2"
+    
+

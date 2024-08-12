@@ -1,0 +1,1179 @@
+https://code.kx.com/dashboards/canvascharts/
+
+# Canvas Chart - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/canvascharts/
+
+# Canvas Chart
+
+A custom chart builder using HTML Canvas.
+
+## Set up
+
+  1. Add a layer, select the chart type from the dropdown.
+
+  2. Assign the _data source_ to use.
+
+  3. Define the _X-Axis ID_ and _Y-Axis ID_ to plot from your _data source_
+
+  4. Add x axis and y axis labels, and set the _Format_ for each axis.
+
+  5. Un-check _OffsetGridLines_ to position a line at the zero value of the y-axis. 
+
+  6. Use highlight rules to create a color differential in your displayed values; e.g. between positive and negative values. 
+
+  7. Map view states to _Min_ and _Max Viewstate_ to track the viewable range of the chart. 
+
+## Basics
+
+![Screenshot](../img/canvas/canvasbasics.png)
+
+_Name_
+
+    A name for the component provided by the user. 
+_Selected_
+
+    A [View State Parameter](../viewstateparameters/) to store the X-axis value at the selected position; e.g time or date 
+_Focus_
+
+     [Linking](../viewstateparameters/#linking-components)
+_Hover_
+
+    A [View State Parameter](../viewstateparameters/) which stores the X-axis value contingent on where the hover bar is on the chart; e.g. time or date
+_Transpose_
+
+    
+
+Check to switch data from Y- to X-axis and X- to Y-axis.
+
+Horizontal Bar Chart
+
+To create a Horizontal Bar Chart, create a standard Bar Chart but check the
+_Transpose_ box.
+
+![Screenshot](../img/canvas/horizontalchartbar.jpg)
+
+Note, there is no Zoom support for Horizontal Bar Chart.
+
+_Sort By_
+
+    Defines the sort order for the x-axis, by either the data source index or the x-axis values
+
+## Layers
+
+![Screenshot](../img/canvas/layerselect.jpg)
+
+Create a Line, Bar, Bubble, Violin, Box Plot, Waterfall or Candlestick chart
+
+### Basics
+
+![Screenshot](../img/canvas/canvasbasics2.jpg)
+
+_Data Source_
+
+     [Data sources](../datasources/)
+_Name_
+
+    Name used as the chart legend label
+_Enabled_
+
+    Toggles display of the data layer on the chart. Can be tied to a [View State Parameter](../viewstateparameters/).
+_Legend Enabled_
+
+    Toggles display of data legend. 
+_Background Color_
+
+_Background Opacity_
+
+_Border Color_
+
+_Border Opacity_
+
+_Border Width_
+
+    Color, opacity and width for Line, Bar or Bubble charts; opacity has a value between 0 (transparent) and 100 (full opacity). _Border Width_ is in pixels. 
+    
+
+Line charts do not require _Background Color_ or _Background Opacity_.
+
+Change layer order
+
+Use a click-and-drag to rearrange the orders of the layer on the chart. The
+last layer will be the top layer.
+
+![Screenshot](../img/canvas/dragdroplayer.jpg)
+
+### Axes
+
+![Screenshot](../img/canvas/axescanvas.jpg)
+
+_X-Axis ID_
+
+    Select from defined Axes. 
+_X-Axis Data_
+
+    Select from [Data source](../datasources/) defined in Basics
+_Y-Axis ID_
+
+    Select from defined Axes. 
+_Y-Axis Data_
+
+    Select from [Data Source](../datasources/) defined in Basics
+_Radius Data_
+
+_Radius Scaling_
+
+    Select from [Data Source](../datasources/) the variable to define which attribute to use for bubble scaling, then adjust the scaling variable to define bubble size.
+    ![Screenshot](../img/canvas/radiusdata.jpg)
+    
+
+[![Screenshot](../img/canvas/bubblecanvas.jpg)](../img/canvas/bubblecanvas.jpg
+"Click to expand")
+
+Radius
+
+_Radius Data_ and _Radius Scaling_ are only used by Bubble charts. Values less
+than zero will not display on the chart.
+
+_Min_
+
+_Q1_
+
+_Median_
+
+_Q3_
+
+_Max_
+
+    
+
+Used for Box Plot. Set column variables in order from lowest _Min_ to highest
+_Max_
+
+    
+
+![Screenshot](../img/canvas/boxplotaxes.jpg)
+
+    
+
+![Screenshot](../img/canvas/boxplottype.jpg)
+
+_Open_
+
+_Close_
+
+_High_
+
+_Low_
+
+    Used only by Candlestick charts; select data columns which correspond to each. 
+
+### Interpolation
+
+Relevant to Line layers only
+
+![Screenshot](../img/canvas/interpolatecanvas.jpg)
+
+_Interpolation_
+
+    
+
+Select from dropdown
+
+type | effect  
+---|---  
+Linear | ![Screenshot](../img/canvas/linearcanvas.jpg)  
+Cubic | ![Screenshot](../img/canvas/cubiccanvas.jpg) Also requires changes to _Line Tension_  
+Monotone | ![Screenshot](../img/canvas/monotonecanvas.jpg)  
+Stepped | ![Screenshot](../img/canvas/steppedcanvas.jpg)  
+_Line Tension_
+
+    Inbuilt algorithm used to smooth curve from discrete data points for `Cubic` line charts; integer value 
+_SteppedLine_
+
+    Switch between Stepped chart types; `before` and `after`
+
+### Line
+
+![Screenshot](../img/canvas/canvasline.jpg)
+
+_Show Line_
+
+    Check to display / hide line chart
+_SpanGaps_
+
+    Where there is missing data, check to connect isolated points
+_Fade to Transparent_
+
+    Where a fill color is employed, a transparency gradient will be applied to the layer
+_Fill_
+
+    
+
+![Screenshot](../img/canvas/linefillcanvas.jpg)
+
+fill | description  
+---|---  
+`nofill` | No color fill  
+`Layer n` | For color fill between charted line and selected layer. Uses _BackgroundColor_  
+`origin` | For color fill between chart line and X-axis  
+`+n` | For color fill between current layer and `n` layers below  
+_Dash Width_
+
+_Dash Gap_
+
+    Convert from a solid to a dashed line. 
+
+### Points
+
+Relevant to Line layers only
+
+![Screenshot](../img/canvas/pointsline.jpg)
+
+_Hit Radius_
+
+_Background Color_
+
+_Border Color_
+
+_Border Opacity_
+
+_Border Width_
+
+_Radius_
+
+_Background Opacity_
+
+    Define visual styling of line point; a _PivotRadius_ of zero will hide the point. 
+_Style_
+
+    Choose between `cross`, `circle`, `crossRot`, `dash`, `line`, `rect`, `rectRounded`, `rectRot`, `star`, `triangle`, `downTriangle`.
+_Hover Background Color_
+
+_Hover Background Opacity_
+
+_Hover Border Color_
+
+_Hover Border Opacity_
+
+_Hover Border Width_
+
+_Hover Radius_
+
+    Define visual style of line point rollover.
+
+### Bars
+
+![Screenshot](../img/canvas/canvasbars.jpg)
+
+_Bar Width Type_
+
+    Dropdown select between `percentage`, `manual bar thickness`
+_BarPercentage_
+
+_Category Percentage_
+
+    Defines width of bars, and intra-bar space when `percentage` is selected. 
+_Bar Thickness_
+
+_Max Bar Thickness_
+
+    Defines width of bar, and maximum width of bars (in pixels) when `manual bar thickness` is selected. 
+_Hover Background Color_
+
+_Hover Background Opacity_
+
+_Hover Border Color_
+
+_Hover Border Opacity_
+
+_Hover Border Width_
+
+    Define visual style of bar rollover
+
+### Bubbles
+
+![Screenshot](../img/canvas/bubblescanvas2.jpg)
+
+_Hover Background Color_
+
+_Hover Backgroun Opacity_
+
+_Hover Border Color_
+
+_Hover Border Opacity_
+
+_Hover Border Width_
+
+_Hover Radius_
+
+    Define visual style of bubble rollover
+_Icon Override_
+
+    ![Screenshot](../img/canvas/bubblescustomicon.jpg)
+    Define point style from a list of icons 
+_PointStyle_
+
+    ![Screenshot](../img/canvas/pointstyle.jpg)
+    Choose between `cross`, `circle`, `crossRot`, `dash`, `line`, `rect`, `rectRounded`, `rectRot`, `star`, `triangle`.
+
+### Box Plot
+
+_Hover Background Color_
+
+_Hover Backgroun Opacity_
+
+_Hover Border Color_
+
+_Hover Border Opacity_
+
+_Hover Border Width_
+
+    Define visual style of Box plot rollover
+_Bar Width Type_
+
+    Dropdown select between `percentage`, `manual bar thickness`
+_BarPercentage_
+
+_Category Percentage_
+
+    Defines width of bars, and intra-bar space when `percentage` is selected. 
+_Bar Thickness_
+
+_Max Bar Thickness_
+
+    Defines width of bar, and maximum width of bars (in pixels) when `manual bar thickness` is selected. 
+
+### Violin
+
+_Hover Background Color_
+
+_Hover Backgroun Opacity_
+
+_Hover Border Color_
+
+_Hover Border Opacity_
+
+_Hover Border Width_
+
+    Define visual style of Violin rollover
+_Bar Width Type_
+
+    Dropdown select between `percentage`, `manual bar thickness`
+_BarPercentage_
+
+_Category Percentage_
+
+    Defines width of bars, and intra-bar space when `percentage` is selected. 
+_Bar Thickness_
+
+_Max Bar Thickness_
+
+    Defines width of bar, and maximum width of bars (in pixels) when `manual bar thickness` is selected. 
+
+![Screenshot](../img/canvas/violinChart.jpg)
+
+### Candlestick
+
+![Screenshot](../img/canvas/candlestickcanvas.jpg)
+
+_Use OHLC_
+
+    Sets OHLC bar or candlestick
+
+![Screenshot](../img/canvas/candlesticktypes.jpg)
+
+_Bear Color_
+
+    Set color for down day candles
+_Bull Color_
+
+    Set color for up day candles
+_Neutral Color_
+
+    Set color for flat days
+_Border Color_
+
+    Set color of candlestick sides
+
+![Screenshot](../img/canvas/candlestickcharts.jpg)
+
+_Bar Width Type_
+
+    Dropdown select between `percentage`, `manual bar thickness`
+_BarPercentage_
+
+_Category Percentage_
+
+    Defines width of bars, and intra-bar space when `percentage` is selected. 
+_Bar Thickness_
+
+_Max Bar Thickness_
+
+    Defines width of bar, and maximum width of bars (in pixels) when `manual bar thickness` is selected. 
+
+### Waterfall
+
+_Bar Increase Color_
+
+_Bar Decrease Color_
+
+    Define visual style of the Waterfall bar increase and decrease colours based on the previous bar value
+
+![Screenshot](../img/canvas/waterfallChart.jpg)
+
+### Regex for Data
+
+_Regular Expressions_ can also be used to define Axes instead of a data source
+column. For example, a Y-axis plot to show all column data except the `Date`
+column:
+
+![Screenshot](../img/canvas/regexyaxis.jpg)
+
+### Highlight rules
+
+[Highlight Rules](../highlightrules/)
+
+#### Line Chart
+
+To display a Highlight Rule for a Canvas Line Chart, first set _Radius_ above
+zero, then adjust _Border Width_. Highlights will only occur at points.
+
+![Screenshot](../img/canvas/pointsdisplay.jpg)
+
+### Action
+
+[Actions](../action/)
+
+### Labels
+
+![DataLabels](../img/canvas/data-labels.png)
+
+    
+
+Data labels can be added to any layers and will place labels next to
+datapoints/bars as desired. The options for this are as follows.
+
+_Enabled_
+
+    Turns on or off data labels, can be tied to viewstate. 
+_Label Color_
+
+    Color of Label Text 
+_Label Frequency_
+
+    Label will be applied to every nth data point where n is the label frequency. 
+_Align_
+
+    
+
+The align option defines the position of the label relative to the anchor
+point position and orientation. Its value can be expressed either by a number
+representing the clockwise angle (in degree) or by one of the following string
+presets:
+
+position | description  
+---|---  
+`center` | The label is centered on the anchor point (default).  
+`start` | The label is positioned before the anchor point, following the same direction  
+`end` | The label is positioned after the anchor point, following the same direction  
+`right` | The label is positioned to the right of the anchor point (0°)  
+`bottom` | The label is positioned to the bottom of the anchor point (90°)  
+`left` | The label is positioned to the left of the anchor point (180°)  
+`top` | The label is positioned to the top of the anchor point (270°)  
+    
+
+The offset represents the distance (in pixels) to pull the label away from the
+anchor point. This option is not applicable when align is 'center'. Also note
+that if align is 'start', the label is moved in the opposite direction. The
+default value is 4.
+
+_Anchor_
+
+    An anchor point is defined by an orientation vector and a position on the data element. The orientation depends on the scale type (vertical, horizontal or radial). The position is calculated based on the anchor option and the orientation vector.
+    
+
+Supported values for anchor:
+
+anchor | description  
+---|---  
+`center` | Element center (default)  
+`start` | Lowest element boundary  
+`end` | Highest element boundary  
+_Offset_
+
+    The offset represents the distance (in pixels) to pull the label away from the anchor point. This can be specified as a single number (e.g. 4) or an x,y coordinate (e.g. 4,10).
+_Label Rotation_
+
+    This option controls the clockwise rotation angle (in degrees) of the label, the rotation center point being the label center. The default value is 0 (no rotation)
+_Label Show Overlap_
+
+    The display option can be used to prevent overlapping labels.
+_Label Template_
+
+    Define data to display
+
+Must return a string, HTML not supported.
+
+Select data to display with the Template Editor - Basic or Advanced mode.
+Existing data and view states can be displayed. Handlebar helpers can be used
+for formats.
+
+![Screenshot](../img/canvas/labeltemplate.jpg)
+
+_Font_ -> _Bold_
+
+    Makes Label bold 
+_Font_ -> _Size_
+
+    Adjust font size in px. 
+
+## X axes
+
+Click ![Screenshot](../img/canvas/xaxesbutton.jpg) to add additional X-axis
+labels
+
+![Screenshot](../img/canvas/xaxescanvas.jpg)
+
+### XAxis n
+
+Dropdown menu to select axes type between `category`, `linear`, `logarithmic`
+and `time`. Available properties contingent on selected axis type.
+
+_Display_
+
+    Check to display X-axis labels
+_Stacked_
+
+    
+
+When using a `bar` chart, bars will be stacked.
+
+![Screenshot](../img/canvas/stackedcanvas.jpg)
+
+_Position_
+
+    Defines axes position; select between `top` and `bottom` of chart area for X axes. 
+_Center_
+
+    For `linear` selection, center axis at defined value. 
+
+### Gridlines
+
+![Screenshot](../img/canvas/canvasgridlines.jpg)
+
+_OffsetGridLines_
+
+    Check to shift charted category data from centre alignment to left-alignment
+_GridLinesColor_
+
+_GridLinesOpacity_
+
+    Define visual style of chart gridlines; opacity has a value between 0 (transparent) and 100 (opaque). 
+
+### Title
+
+![Screenshot](../img/canvas/titlelabels.jpg)
+
+_Display_
+
+    Check to display X-axis description label
+_LabelString_
+
+    Descriptive level for X axis
+_FontFamily_
+
+_FontSize_
+
+_FontStyle_
+
+_FontColor_
+
+_Font Opacity_
+
+    Set font styling parameters for X-axis label. Opacity has a value between 0 (transparent) and 100 (opaque). 
+
+### Labels
+
+![Screenshot](../img/canvas/canvaslabels.jpg)
+
+Configure X-axis tick labels
+
+_Display_
+
+    Check to display X-axis labels
+_Begin at Zero_
+
+    X-axis includes zero when enabled; otherwise chart will fit available data. Available for non-`time` axis selections.
+_Reverse_
+
+    Reverses order of chart axis. Available for `linear` and `logarithmic` axis selections.
+_Offset_
+
+    For `linear` and `time` selection, adds buffer to start and end of chart to display in full, the first and last data point.
+_Hide Trailing Zeroes_
+
+    Do not display zeroes at the end of numeric data. Available for `linear` and `logarithmic` axis selections.
+_Format_
+
+    Format of Y axis: `General`, `Number`, `Smart Number`, or `Datetime`. Available for non-`time` axis selections.
+_Decimal Places_
+
+    Precision of numeric data for `Number` and `Smart Number`. Available for non-`time` axis selections.
+_Date/Time Format_
+
+    Where `Datetime` is selected, define time format to use: `YYYY-MM-DD`, `YYYY-MMM-DD`, `YYYY-MMMM-DD`, `YYYY-MM`, `YYY-MMM`, `YYYY-MMMM`, `MMM-DD`, `MMM Do`, `YYY-MM-DD HH:mm:ss`, `YYYY-MM-DD hh:mm:ss`, `YYYY-MM-DD kk:mm:ss`, `hh:mm:ss`, `kk:mm:ss`, `hh:mm:ss:SS`, `mm:ss` or `mm:ss:SS`. Available for non-`time` axis selections.
+_Min Rotation_
+
+_Max Rotation_
+
+    Adjust alignment of tick labels
+_Fixed Axis Width_
+
+    Defines distance between Canvas Chart component edge and axis. Useful when aligning neighboring charts.
+_Step Size_
+
+    Sets the grid-line distance between tick labels (numeric).
+_Prefix_
+
+_Suffix_
+
+    Character text added before or after label; e.g. a `$` prefix or a `%` suffix. Available for non-`time` axis selections. 
+_Font Family_
+
+_Font Size_
+
+_Font Style_
+
+_Font Color_
+
+_Font Opacity_
+
+    Select font for use in axis labels. Choice of font style between `normal`, `italic`, `oblique`, `initial` and `inherit`. Opacity is a value between 0 (transparent) and 100 (opaque). 
+_Filter Unique_
+
+    Removes duplicate labels when present in the data for `category` data. 
+
+### Time Formats
+
+Time Formats for when `X-Axis` set to `time`
+
+Match the required time format for time-based X-axis data.
+
+![Screenshot](../img/canvas/timeformatcanvas.jpg)
+
+_Distribution_
+
+_Break_
+
+_TriggerBreak_
+
+    `Smart`, `Linear` or `Series` definition. `Smart` distribution collapses time to remove null time intervals; e.g. between marked trading hours 
+_Force Time Unit_
+
+    
+
+Select from `year`, `quarter`, `month`, `week`, `day`, `hour`, `minute`,
+`second`, `millisecond`, as defined in the following parameters.
+
+parameter | default  
+---|---  
+`Year` | `YYYY`  
+`Quarter` | `[Q]Q - YYYY`  
+`Month` | `MMM YYYY`  
+`Week` | `II`  
+`Day` | `MMM D`  
+`Hour` | `hA`  
+`Minute` | `h:mm a`  
+`Second` | `h:mm:ss a`  
+`Millisecond` | `h:mm:ss SSS a`  
+_Tooltip Format_
+
+    currently not in use (replaced by aforementioned options)
+_IsoWeekday_
+
+    Use ISO weekday format for X-axis time display
+_Round_
+
+    Round time to the nearest _Force Time Unit_ scale. 
+_Show Major units_
+
+    If true, major ticks are generated. Each major tick represents a new parent time period (based on the child minor ticks). Minor ticks are shown by default. 
+
+### Range
+
+Available for `linear` and `logarithmic` axis types.
+
+![Screenshot](../img/canvas/labelrange.jpg)
+
+Use data boundaries to define X-axis range
+
+_Use Min/Max_
+
+    Defines axis range by minimum and maximum values in plotted data
+_Reset on Change_
+
+    When _Min/Max_ is set as a boolean control and _Soft Range_ is enabled, will re-scale axis when _Min/Max_ is true.
+_Use Soft Range_
+
+    Best fit within a suggested _Min_ and _Max_ value; e.g. for dynamic range charts
+_Use Data Range_
+
+    Use existing data to define _Min/Max_ range. Uncheck to manually set.
+_Suggested Min_
+
+_Suggested Max_
+
+    Will best fit chart by _Suggested Min/Max_ values. 
+_Min_
+
+_Max_
+
+    
+
+Define minimum and maximum values to chart.
+
+Hard range
+
+Charted data outside of the set _Min_ and _Max_ range will not be displayed.
+If all data falls outside the set range, the chart will be blank.
+
+_Use Soft Range_
+
+    Best fit within a suggested _Min_ and _Max_ value; e.g. for dynamic range charts
+
+## Y axes
+
+Add multiple Y-axes by clicking ![Screenshot](../img/canvas/yaxesbutton.jpg)
+
+![Screenshot](../img/canvas/yaxiscanvas.jpg)
+
+### YAxis n
+
+Dropdown menu to select axes type between `category`, `linear`, `logarithmic`
+and `time`. Available properties contingent on selected axis type.
+
+_Display_
+
+    Check control to display Y-axis labels
+_Stacked_
+
+    
+
+Check control to parse bars in a Y-axis stack
+![Screenshot](../img/canvas/stackedyaxis.jpg)
+
+Stacked Y-axis with Line Fill
+
+Stacking stacks lines in numeric order. Line 1 will be the first (highest)
+line down to the last and lowest line, closest to origin X-axis. Line fill
+will change accordingly. For example, a line fill with or without Y-axes
+stacking enabled:
+
+[![Screenshot](../img/canvas/yaxesstackline.jpg)](../img/canvas/yaxesstackline.jpg
+"Click to expand")
+
+_Position_
+
+    Position Y-axis label to the `left` or `right` of chart area.
+_Center_
+
+    Set center value for `linear` Y-axis. 
+
+### Gridlines
+
+![Screenshot](../img/canvas/canvasgridlines.jpg)
+
+_OffsetGridLines_
+
+    Shift charted category data from center alignment to left-alignment
+_GridLinesColor_
+
+_GridLinesOpacity_
+
+    Visual style of gridlines
+
+### Title
+
+![Screenshot](../img/canvas/titlelabels.jpg)
+
+_Display_
+
+    Check to display X-axis description label
+_LabelString_
+
+    Label description
+_Font Family_
+
+_Font Size_
+
+_Font Style_
+
+_Font Color_
+
+_Font Opacity_
+
+    Select font for use in axis labels. Choice of font style between `normal`, `italic`, `oblique`, `initial` and `inherit`. Opacity has a value between 0 (transparent) and 100 (opaque).
+
+### Labels
+
+![Screenshot](../img/canvas/canvaslabels.jpg)
+
+_Display_
+
+    Display Y-axis labels
+_Begin at Zero_
+
+    Axis data starts at zero. Available for non-`time` axis selections.
+_Reverse_
+
+    
+
+Reverse order of labels from bottom-up to top-down. Available for `linear` and
+`logarithmic` axis selections.
+
+![Screenshot](../img/canvas/reverseyaxes.jpg)
+
+_Offset_
+
+    For `linear` and `time` selection, adds buffer to start and end of chart to display in full, the first and last data point.
+_Hide Trailing Zeroes_
+
+    Do not display zeroes at the end of numeric data. 
+_Format_
+
+    Format of Y axis: `General`, `Number`, `Smart Number`, or `Datetime`. Available for non-`time` axis selections.
+_Date/Time Format_
+
+    Where `Datetime` is selected, define time format to use: `YYYY-MM-DD`, `YYYY-MMM-DD`, `YYYY-MMMM-DD`, `YYYY-MM`, `YYY-MMM`, `YYYY-MMMM`, `MMM-DD`, `MMM Do`, `YYY-MM-DD HH:mm:ss`, `YYYY-MM-DD hh:mm:ss`, `YYYY-MM-DD kk:mm:ss`, `hh:mm:ss`, `kk:mm:ss`, `hh:mm:ss:SS`, `mm:ss` or `mm:ss:SS`. Available for non-`time` axis selections.
+_Decimal Places_
+
+    Precision of numeric data for `Number` and `Smart Number`. Available for non-`time` axis selections.
+_Min Rotation_
+
+_Max Rotation_
+
+    Rotation of y-axis labels. 
+_Fixed Axis Width_
+
+    Distance between Y axis and the edge of the component (used when making room for Y-axis labels).
+_Step Size_
+
+    Sets the grid-line distance between tick labels (numeric).
+_Prefix_
+
+_Suffix_
+
+    Character text added before or after label; e.g. a `$` prefix or a `%` suffix. Available for non-`time` axis selections. 
+_Font Family_
+
+_Font Size_
+
+_Font Style_
+
+_Font Color_
+
+_Font Opacity_
+
+    Font qualities; style, size, color and opacity for the axis label.
+
+### Range
+
+Available for `linear` and `logarithmic` axis types.
+
+![Screenshot](../img/canvas/labelrange.jpg)
+
+Use data boundaries to define the X-axis range
+
+_Use Min/Max_
+
+    Defines axis range by minimum and maximum values in plotted data
+_Reset on Change_
+
+    When _Min/Max_ is set as a boolean control and _Soft Range_ is enabled, will re-scale axis when _Min/Max_ is true.
+_Use Soft Range_
+
+    Best fit within a suggested _Min_ and _Max_ value; e.g. for dynamic range charts.
+_Use Data Range_
+
+    Use existing data to define _Min/Max_ range. Un-check to manually set.
+_Suggested Min_
+
+_Suggested Max_
+
+    Will best-fit chart by _Suggested Min/Max_ values. 
+_Min_
+
+_Max_
+
+    
+
+Define minimum and maximum values to chart.
+
+Hard range
+
+Charted data outside of the set _Min_ and _Max_ range will not be displayed.
+If all data falls outside the set range, the chart will be blank.
+
+## Animations
+
+Transition animations when switching data in chart
+
+_Enable_
+
+    Check to enable animations
+_Hover Events_
+
+    By default the chart highlights all bubbles, points and bars that lie along the same x-axis. You can toggle this setting to disable highlighting on the chart. Crosshairs and Tooltips will still function the same. This option should also be checked in charts with large amounts of data, as it will decrease the number of times the chart will have to update while hovering. 
+_Interaction Mode_
+
+    Hovering Mode gives you the option of changing the way the chart highlights points. By default (x), points with the same x value will also be highlighted. You can change with to (y) where points with the same y value will get highlighted, dataset where the entire dataset will be highlighted, or point where only points you are hovering over will be highlighted. 
+
+## Overlay
+
+Defines use of tooltips and their positioning
+
+![Screenshot](../img/canvas/canvasoverlay.jpg)
+
+_Show Crosshairs_
+
+_Show Tooltip_
+
+    Check to show crosshair and tooltip on chart.
+_Tooltips Intersect_
+
+    When intersect is selected, only bubbles, points or bars that are hovered over are shown in a potential tooltip. Lines do not count as points and will not trigger a tooltip, therefore line points must have a radius in order to be hoverable. 
+    
+
+Due to limitation of the chart engine, highlight always appears based on the
+x-axis location
+
+_Tooltips Prefer Intersect_
+
+    When tooltip prefer intersect is selected, the tooltip will try populate itself with things that are being hovered on. If nothing is being hovered on, the tooltip will populate with items in the closest x-value. 
+    Set visual criteria for tooltip; intersect places tooltip at crosshair.
+_Crosshairs Color_
+
+    Define color for crosshair line. 
+_Tooltip Background Opacity_
+
+    Opacity of Tooltip Background. 
+_Tooltip Font Size_
+
+    Fontsize in px of Tooltip Text. 
+_Align Tooltip with Edge_
+
+    Enable to position tooltip along left chart axis. 
+_Use Custom Tooltip_
+
+_Custom Tooltip_
+
+    
+
+Examples:
+
+    
+    
+    <table>
+      <thead>
+        <tr style="padding-right: 10px;">
+          <th> {{xLabel}} </th>
+          <th/>
+        </tr>
+      </thead> 
+      {{#each points}}
+        <tr>
+          <td> 
+            <svg height="12" width="12">
+              <rect height="12" width="12"
+                style="fill: {{colors.backgroundColor}}; 
+                  stroke-width: 3; stroke: {{colors.borderColor}};" />
+            </svg> 
+            {{layerName}}: 
+          </td>
+          <td style="padding-right: 10px; text-align: left;">
+            {{layerData}}
+          </td>
+        </tr> 
+      {{/each}}
+    </table>
+    
+
+    
+
+To group together layers with the same name, modify the template as follows:
+
+    
+    
+    <table>
+      <thead>
+        <tr style="padding-right: 10px;">
+          <th>{{ xLabel }}</th>
+        </tr>
+      </thead> 
+      {{#groupByLayer}} 
+        {{#each layers }}
+          <tr>
+            <td> 
+              <svg height="12" width="12">
+                <rect height="12" width="12" 
+                  style="fill: {{colors.backgroundColor}}; 
+                  stroke-width:3; stroke: {{colors.borderColor}};"> />
+              </svg> 
+              {{ layerName }}: 
+            </td> 
+            {{#each layerPoints}}
+            <td style="text-align: left;"> 
+              {{data}} 
+            </td> 
+            {{/each}} 
+        </tr> 
+        {{/each}}
+      {{/groupByLayer}} 
+    </table>
+    
+
+    
+
+To display selected layers, set the `names` attribute in `#filterLayers` to a
+comma-separated list of layers to display; for example, to show `Layer 1` and
+`Layer 3` use:
+
+    
+    
+    <table>
+      <thead>
+        <tr style="padding-right: 10px;">
+          <th> {{xLabel}} </th>
+          <th/>
+        </tr>
+      </thead> 
+      {{#filterLayers names="Layer 1,Layer 3"}}
+        {{#each points}}
+          <tr>
+            <td> 
+              <svg height="12" width="12">
+                <rect height="12" width="12" 
+                  style="fill: {{colors.backgroundColor}}; 
+                    stroke-width: 3; stroke: {{colors.borderColor}};" />
+              </svg> 
+              {{layerName}}: 
+            </td>
+            <td style="padding-right: 10px; text-align: left;">
+              {{layerData}}
+            </td>
+          </tr> 
+        {{/each}}
+      {{/filterLayers}}
+    </table>
+    
+
+_Crosshairs Color_
+
+    Define hex color code reference for crosshair color. 
+
+[Templates](../template/)
+
+## Zoom & Pan
+
+![Screenshot](../img/canvas/zoomandpanmenu.jpg)
+
+_Scroll Zoom_
+
+_Drag Zoom_
+
+_Pan_
+
+    
+
+Check to enable respective behaviors. Pan and Drag Zoom are both triggered by
+mouse movement, therefore icons in the top right corner of the chart appear
+allowing you to toggle between the two. Scroll zoom is activates with mouse
+wheel movement.
+
+Zoom and pan
+
+A pan is typically done after a zoom when there is data ‘off screen’ to see.
+To pan, click on the hand icon in the top-right of the chart.
+
+![Screenshot](../img/canvas/zoomandpanaction.jpg)
+
+_Reset Viewstates Only_
+
+    Check to reset only _Min/Max Viewstates_ this prevents the values of the viewstates being passed into the chart. This can be used for server side zooming, where additional aggregation occurs on the server to return the correct resolution of data. 
+_Fill color_
+
+_Fill Opacity_
+
+    Color and opacity of highlight zoom region
+_Min Viewstate_
+
+_Max Viewstate_
+
+    [View State Parameters](../viewstateparameters/) for range values made on adjustment in the chart
+_Default Min Viewstate_
+
+_Default Max Viewstate_
+
+    Default [View State Parameters](../viewstateparameters/) min and max range for when a chart loads.
+_Viewstate Update Delay_
+
+    Length of time (in seconds) between when an adjustment in chart viewable area is then passed to _Min/Max Viewstates_. This only occurs for panning and scroll zooming, drag zoom's values are passed to the viewstates instantaneously .
+_Snap to Data_
+
+    Selection will move to nearest valid data point
+_Rounding for Y-axis_
+
+    Select `none`, `nice` or `min/max`. Best fits y-axis scale according to data range of zoomed data.
+
+## Legend
+
+![Screenshot](../img/canvas/canvaslegend.jpg)
+
+Defines the data legend labels
+
+_Display_
+
+    Toggle to display chart labels.
+_Position_
+
+    Define where Legends are set: `bottom`,`top`,`left`, `right` or `top-inline`.
+_Icon Width_
+
+_Icon Padding_
+
+    Set parameters of the area used to display Legends; _width_ controls point size.
+_Label color_
+
+_Label Font Size_
+
+    Define Style of Legend text.
+_Align_
+
+    Set position of Legends, choose between `start`, `center` or `end`.
+_Legend Display Type_
+
+    Select between `default`, `scroll`, `layer group` or `layer new line`; layer groups and lines will aggregate legends where wild card is used in the layer. 
+_New Layer Threshold_
+
+    Define the number of items to display per `layer new line` of _Legend Display Type_.
+_Reverse Order_
+
+    Reverses order of labels from left-to-right to right-to-left.
+_Use Point Style_
+
+    Enable use of chart points or use block color.
+
+Legends toggle display
+
+Users can click on legends to toggle display of the corresponding chart data.
+Hidden data is marked with strikethrough on its legend/s.
+
+## File export
+
+[Export](../publish/#file-export)
+
+## Style, Format, Margins
+
+[Style](../style/#component-style)
+

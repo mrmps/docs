@@ -1,0 +1,89 @@
+https://code.kx.com/insights/enterprise/packaging/package-udfs.html
+
+# UDFs - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/packaging/package-udfs.html
+
+# Package User-Defined functions
+
+User-Defined functions (UDFs) are functions written in Python or q which are
+defined as named functions for use in a Stream Processor pipeline or the
+Scratchpad.
+
+Motivation of UDFs
+
+The addition of UDFs is motivated by the need to define analytics in a
+streaming context while abstracting the underlying implementation logic and
+language used to define the UDF. This can be particularly useful in
+organizations with limited numbers of either q or Python developers who wish
+to make the most of their development resources by allowing experts in these
+languages to define functionality that can be used by anyone in the
+organization.
+
+Within _kdb Insights Enterprise_ , UDFs are supported for use in the
+following:
+
+  * A Stream Processor pipeline - as the input to any of the **Function** nodes that support code, allowing you to specify persisted custom logic to be associated with a pipeline via:
+
+  * In the Scratchpad section of the Query Window you can:
+
+For examples of their usage see the _kdb Insights Enterprise_ quickstart guide
+[here](../../enterprise/packaging/quickstart.html).
+
+### Defining a UDF
+
+You can define UDFs within packages using comments in q and decorators in
+Python. These constructs provide an association between the configuration of a
+UDF and the function linked with the UDF.
+
+  1. Create a file that contains the UDF definition
+
+The definition of the `@udf.*` decorators are as follows:
+
+value | description | required | default  
+---|---|---|---  
+`name` | The name by which the underlying UDF will be known when referenced by _kdb Insights Enterprise_ | `yes` | `N/A`  
+`description` | A user supplied description allowing you to discern the motivation for the UDF | `no` | `""`  
+`tag` | User specified tag to provide a domain context that this UDF was designed for. For example fx, crypto, iot. It is purely descriptive, in order to help group UDFs. | `no` | `""`  
+`category` | A user specified category/list of categories which can be used to define where the UDF is to be deployed. For example `@udf.category(["map", "filter"])` to define usage within a `map` and `filter` node of a Pipeline. | `no` | `""`  
+  2. Update the package to reference the UDF using either of the following two methods:
+
+There is currently no manual way to update a package to reference a UDF.
+
+This command searches all files for `@udf` definitions and writes them to a
+`udfs` file.
+
+The following provides examples of fully defined UDFs within each language:
+
+### UDF Constraints
+
+The definition of your UDFs comes with the following constraints:
+
+  * When loaded, UDFs only load the file within which they are defined. This means that when you are defining UDFs, it is important to ensure that all logic required to execute the UDF is defined within the file.
+  * A UDF must take two or more parameters with a maximum of eight parameters supported.
+  * If defined in q, the function which is to be defined as a UDF must be presented beneath the relevant comment block to which it is associated with its full namespace definition, namely:
+  * All keywords used to define UDFs within a package must be added to the `udfs` section in the packages manifest file. This is important for deployment as any UDFs defined using keywords that are not listed in the manifest file are not retrievable.
+
+### Loading files within packages
+
+The process of adding code into your packages requires the ability to load
+code contained within other files within the package. Loading one file from
+another **should not** be completed using relative or absolute paths. Instead,
+the loading of files internal to your packages should be completed through use
+of the
+[`kxi.packages.packages.load_file`](../../api/packaging/python/packages.html#kxi.packages.packages.load_file)
+and
+[`.kxi.packages.file.load`](../../api/packaging/q/packages.html#kxipackagesfileload)
+functions for Python and q respectively. These functions load files relative
+to the root of the package being loaded or the package within which a UDF is
+being loaded. The use of the relative path from root can then be used to pin
+all loading from.
+
+Examples of their usage within package files are as follows:
+
+Locked files
+
+To facilitate the use of locked files, by default the loading functionality
+attempts to load the locked version of all files first, followed by the
+loading of unlocked files.
+

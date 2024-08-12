@@ -1,0 +1,93 @@
+https://code.kx.com/insights/enterprise/azure-marketplace/azure-login.html
+
+# Azure Login - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/azure-marketplace/azure-login.html
+
+# Login
+
+Connectivity when using Private IP addresses
+
+If you have chosen Private IP address connectivity as part of the deployment
+of kdb Insights Enterprise, refer to [Azure security](security.html#private-
+ip-address) for more information about how to enable users to access the UI
+and the API endpoint. Then follow the steps below.
+
+KX Nexus
+
+The KX Nexus repository will be sunsetted in the future. Nexus links on this
+page are provided as a temporary alternative to the KX Downloads Portal for
+existing users. The KX Downloads Portal is the preferred repository for all
+use cases and KX Nexus links will be removed once the KX Nexus repository is
+decommissioned.
+
+## Create kdb Insights Enterprise users
+
+Using a successful deployment:
+
+  1. Select the deployment in the Azure Portal under **Managed applications**.
+
+  2. Click on **Parameters and Outputs** in the left-hand navigation menu.
+
+![Managed deployment output](images/managed_output.png)
+
+  3. Copy the `keycloakUrl` output value and navigate to this URL in a new browser tab.
+
+kdb Insights Enterprise uses [Keycloak](https://www.keycloak.org/) as its
+Identity and Access Management component. To give users the access they
+require, follow one of the guides below:
+
+Refer to the documentation on Keycloak and the [role based
+permissions](../security/authentication.html#roles) to determine the level of
+permisions each user requires.
+
+If you want to give users the ability to reset their password via email you
+need to configure the [reset password
+service](../configuration/security.html#reset-password-service).
+
+## Login to kdb Insights Enterprise
+
+When the deployment is complete and users have been created, they can follow
+the steps below to login to kdb Insights Enterprise:
+
+  1. Select the deployment in the Azure Portal under **Managed applications**.
+
+  2. Click on **Parameters and Outputs** in the left-hand navigation menu.
+
+![Managed deployment output](images/managed_output.png)
+
+  3. Copy the `kdbInsightsEnterpriseUrl` value and navigate to this URL in a new browser tab.
+
+![KXUi](images/SignIn.png)
+
+  4. Log in with the username and password created in the [General Configuration](installing-kx-insights-platform-on-azure.html#general-configuration) step of the installation process or the credentials set in the section above.
+
+  5. You are then directed to the kdb Insights Enterprise user interface.
+
+![KXUi](images/insights_ui.jpg)
+
+  6. For an introduction to the User Interface, refer to [kdb Insights Enterprise Overview](../user-interface/ui-overview.html).
+
+There are additional tools and services available on the KX Downloads Portal,
+such as the kdb Insights Enterprise [Language
+Interfaces](https://portal.dl.kx.com/assets/raw/) and the [kdb Insights
+CLI](https://portal.dl.kx.com/assets/pypi/). Both the [Language
+Interfaces](https://nexus.dl.kx.com/#browse/browse:kxi-package-public) and the
+[kdb Insights CLI](https://nexus.dl.kx.com/#browse/browse:kxi-pypi-public) are
+available through the KX Nexus repository until Nexus is removed in the
+future.
+
+Azure namespaces
+
+Remember! Cluster resources created using the Azure Marketplace are
+preconfigured to use various namespaces. In most cases, when running `kubectl`
+commands referenced in the documentation, remember to include the `-n
+insights` argument, to make sure all resources under the "insights" namespace
+appear, as well.
+
+If you already have a KX license and an existing application, you can use the
+[RT Bridge](../../microservices/rt/sdks/rt-bridge.html) to ingest data into
+_kdb Insights Enterprise_ on Azure.
+
+## Further Reading
+

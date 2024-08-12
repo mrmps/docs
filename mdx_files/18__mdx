@@ -1,0 +1,289 @@
+https://code.kx.com/platform/api/reporting/
+
+# Reporting - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/api/reporting/
+
+# Reporting
+
+This module allows processes to programmatically trigger reports. When enabled
+the process will;
+
+  * connect to the QR framework
+  * pull report instance definitions and actions from _Control_.
+  * allow the process to execute reports on the report generator
+
+To enable the client functionality, use `.rpt.client.enable`. This takes a
+callback function to be executed when the _QR_ registration is complete. Once
+this happens, the client will be able to execute reports.
+
+## `.rpt.client.enable`
+
+Enables reporting client functionality. Registers with the _QR_ framework and
+loads reports from _Control_.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+callback | symbol | fn | Function or lambda called after registration  
+  
+**Example:**
+
+    
+    
+     .rpt.client.enable[{[] rptsAvailable::1b}]
+    
+
+## `.rpt.client.getInstance`
+
+Get report instance definition
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+instance | symbol | Report  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | Report details  
+  
+**Example:**
+
+    
+    
+     .rpt.client.getInstance[`DS_FX_DAILY_DATA_TODAY]
+     /=> report             | `DS_FX_DAILY_DATA
+     /=> process            | `ds_gw_fx_eval
+     /=> freq               | (`D;1i)
+     /=> startTime          | 2010.01.01T22:00:00.000
+     /=> endTime            | 2014.02.07T14:15:09.000
+     /=> timeout            | 0i
+     /=> action             | `dxReportSaveToCSV`dxReportSaveToPDF
+     /=> instancedescription| ""
+     /=> processtype        | `instance
+     /=> lastRun            | 2018.07.13D09:38:21.420568000
+     /=> analytic           | `dgwfxGetDailyData
+     /=> description        | "generate daily data"
+     /=> reportprocess      | `ds_gw_fx_eval
+     /=> reportprocesstype  | `instance
+     /=> reportaction       | `symbol$()
+     /=> paramnames         | `symList`startDate`endDate
+     /=> usedefaults        | 000b
+     /=> paramvalues        | ("ALL";"today";"today")
+     /=> actionparamnames   | (`csvpath`csvfilename;`reportoverride`filepath`filename`filetype)
+     /=> actionusedefaults  | (00b;0000b)
+     /=> actionparamvalues  | (("ENV=DELTADATA_HOME=/DeltaFxEvalData/reports";"DAILYDATA_TODAY_$STARTDATE$");("DeltaReportDocDefinitions:dynamicReportNoJRXML";"ENV=DELTADATA_HOME=/DeltaFxEvalData/reports";"DAILYDATA_TODAY_$STARTDATE$";"pdf"))
+     /=> hostport           | (`sddev.firstderivatives.com;6092i)
+     /=> nextRun            | 0Nz
+    
+
+## `.rpt.client.getInstances`
+
+Gets the details of a several report instances.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+instance | symbol[] | Report instance names  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+table | Multiple rows of `.rpt.client.instances` table  
+  
+**Example:**
+
+    
+    
+     meta .rpt.client.getInstances[`DS_FX_DAILY_DATA_TODAY`DS_FX_BUCKET_DATA_WEEK]
+     /=> c                  | t f a
+     /=> -------------------| -----
+     /=> reportinstance     | s    
+     /=> report             | s    
+     /=> process            | s    
+     /=> freq               |      
+     /=> startTime          | z    
+     /=> endTime            | z    
+     /=> timeout            | i    
+     /=> action             | S    
+     /=> instancedescription| C    
+     /=> processtype        | s    
+     /=> lastRun            | p    
+     /=> analytic           | s    
+     /=> description        | C    
+     /=> reportprocess      | s    
+     /=> reportprocesstype  | s    
+     /=> reportaction       | S    
+     /=> paramnames         | S    
+     /=> usedefaults        | B    
+     /=> paramvalues        |      
+     /=> actionparamnames   |      
+     /=> actionusedefaults  |      
+     /=> actionparamvalues  |      
+     /=> hostport           |      
+     /=> nextRun            | z    
+    
+
+## `.rpt.client.runDict`
+
+Runs a report instance with specific parameters and actions. Parameters to the
+report and actions can be specified to override the defaults. Can optionally
+override the report target and timeout values.
+
+The `dict` parameter format is described below (R - required, O - optional);
+
+key | required | description  
+---|---|---  
+params | Y | same as `.rpt.client.runActions`  
+actions | Y | same as `.rpt.client.runActions`  
+target | N | connection or instance name  
+timeout | N | report timeout  
+  
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+instance | symbol | Report  
+dict | dict | Report parameters  
+opts | dict | _QR_ options  
+callback | symbol | fn | Functional callback  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+long | Run ID  
+  
+**Example:**
+
+    
+    
+     params:`startDate`symList`endDate!("today"; "ALL"; "tomorrow")
+     actions:([] action:`dxReportSaveToCSV`dxReportSaveToCSV; pname:`csvfilename`csvpath; param:("DAILYDATA_TODAY_$STARTDATE$"; "ENV=DELTADATA_HOME=/DeltaFxEvalData/reports"))
+     callback:{.log.out[.z.h; "ran report instance"; ()]}
+     .rpt.client.runDict[`DS_FX_DAILY_DATA_TODAY; `params`actions`target`timeout!(params; actions; `ds_gw_fx_eval; 30i); ()!(); callback]
+     .rpt.client.runDict[`DS_FX_DAILY_DATA_TODAY; `params`actions!(params; actions); ()!(); callback]
+    
+
+## `.rpt.client.run`
+
+Runs a report instance. Uses the default report parameters and actions.
+
+  * `opts` \- optional parameter for dictating how the _QR_ handles the request. See [.qr.client.sendRequest](../queryrouter/#qrclientsendrequest) for more info
+  * `callback` \- function or lambda to execute when report is accepted or rejected. Should take a single parameter.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+instance | symbol | Report  
+opts | dict | _QR_ options  
+callback | symbol | fn | Functional callback  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+long | Run ID  
+  
+**Example:**
+
+    
+    
+     .rpt.client.run[`DS_FX_DAILY_DATA_TODAY; ()!(); {.log.out[.z.h; "ran report instance"; x]}]
+    
+
+## `.rpt.client.status`
+
+Check the status of a run ID
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+rptId | long | ID  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+table | Run details  
+  
+**Example:**
+
+    
+    
+     .rpt.client.status[1j]
+     /=> time        | 2018.08.09D02:02:02.979915000
+     /=> instance    | `DS_FX_DAILY_DATA_TODAY
+     /=> params      | ()
+     /=> actions     | ()
+     /=> actionparams| ()
+     /=> status      | `success
+     /=> reason      | ""
+    
+    
+
+## `.rpt.client.updateTarget`
+
+Updates the target database or connection where reports run.
+
+By default reports will be sent to the `ds_report_generator` connection group.
+If using a different target, this API will update it.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+target | symbol | New target  
+  
+**Example:**
+
+    
+    
+     .rpt.client.updateTarget[`ds_report_generator]
+    
+
+## .rpt.client.runActions
+
+Runs a report instance with specific parameters actions. Parameters to the
+report and actions can be specified to override the defaults.
+
+  * `opts` \- optional parameter for dictating how the _QR_ handles the request. See [.qr.client.sendRequest](../queryrouter/#qrclientsendrequest) for more info
+  * `callback` \- function or lambda to execute when report is accepted or rejected. Should take a single parameter.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+instance | symbol | Report  
+params | dict | Report parameters  
+actions | table | Report actions  
+actions.action | symbol |   
+actions.pname | symbol |   
+actions.param | char |   
+opts | dict | _QR_ options  
+callback | symbol | fn | Functional callback  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+long | Run ID  
+  
+**Example:**
+
+    
+    
+     params:`startDate`symList`endDate!("today";"ALL";"tomorrow")
+     actions:([]action:`dxReportSaveToCSV`dxReportSaveToCSV;pname:`csvfilename`csvpath;param:("DAILYDATA_TODAY_$STARTDATE$";"ENV=DELTADATA_HOME=/DeltaFxEvalData/reports"))
+     callback:{.log.out[.z.h;"ran report instance";first exec instance from .rpt.client.requests where id=first exec id from x]}
+     .rpt.client.runActions[`DS_FX_DAILY_DATA_TODAY; params; actions;()!(); callback]
+    
+

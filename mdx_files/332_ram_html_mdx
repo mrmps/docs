@@ -1,0 +1,168 @@
+https://code.kx.com/insights/licensing/ram.html
+
+# Licensing - kdb products
+
+Original URL: https://code.kx.com/insights/licensing/ram.html
+
+# Licensing for self-managed deployments
+
+The self-service licensing model previously in use for KX products has been
+deprecated. Contact your sales representative if you have questions about
+this, and wish to discuss moving to the new model.
+
+The methods for auditing RAM capacity are described in the following sections:
+
+Self-managed customers are required to run the reporting to gather max RAM
+capacity. To assist in this reporting, guidance below describes how to extract
+the RAM capacity for each target environment.
+
+The scripts provided below are examples, and may need adaptation for your
+deployment environment, including where cgroups have been set up outside of
+the context of full orchestration.
+
+Please refer to the links in this page for guidance and raise a ticket on the
+[support
+portal](https://kxsupport.atlassian.net/servicedesk/customer/portal/22) for
+assistance in setting this up, if required.
+
+Obligations for self-reporting customers on existing arrangements remain
+unchanged.
+
+## Physical Hosts/ Named VMs
+
+The method used to extract your provisioned RAM depends on the operating
+system as described in the following examples.
+
+### Unix
+
+Run `free -m` in a shell session and review the output. For example:
+
+![Unix Provisioned RAM](img/licensing-unix-free-ram.png)
+
+Record `total` as the provisioned RAM.
+
+### Windows
+
+Access - Control Panel | System & Security | System | Installed RAM
+
+Record `Installed RAM` as the provisioned RAM.
+
+![Windows Provisioned RAM](img/licensing-win-free-ram.png)
+
+### MacOS
+
+Access - Activity Monitor | Memory | Physical Memory
+
+![MacOS Provisioned RAM](img/licensing-mac-free-ram.png)
+
+Record the RAM displayed as the provisioned RAM, in this example, 24GB.
+
+## Orchestrated environments
+
+### Overview
+
+For Kubernetes and Docker orchestrated environments, the required information
+may be extracted using the sample script described below.
+
+These are the prerequisites:
+
+  * jq and bc need to be installed
+  * uuidgen needs to be installed, to create a unique UUID for each run
+  * The running user must be able to run kubectl and/or docker exec, as this mode is used to access the RAM information
+
+### Orchestration method
+
+### RAM Capacity
+
+  * Max RAM usage (in bytes) is extracted from the pod’s cgroup metric `memory.max_usage_in_bytes` in the case of cgroups version 1, and `memory.peak` in the case of cgroups version 2.
+
+### Kubernetes
+
+Using the example script below, the following information is gathered:
+
+  * RunId
+  * Date/Time
+  * Namespace
+  * Pod
+  * Container
+  * Max RAM (GiB)
+
+#### Script
+
+The owner of the cgroup must not be root in control group v2 implementations.
+The memory.peak value is not available if it is owned by root. [Control Group
+v2](https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v2.html).
+
+The following script can be saved as `extract-max-RAM-k8s-namespace.sh`
+
+    
+    
+    #!/bin/bash
+    set -ue
+    NS=$(kubectl config view --minify -o jsonpath='{..namespace}')
+    SCALE=3
+    RUNID=$(uuidgen)
+    echo "RunId,Date/Time,Namespace,Pod,Container,Max RAM (GiB)"
+    for POD in $(kubectl get pods -n $NS --no-headers | grep "Running" | awk '{print $1}'); do
+            for CONTAINER_IMAGE in $(kubectl get pods $POD -n $NS -o json | jq -r '.spec.containers[] | "\(.name)|\(.image)"'); do
+                    DATETIME=$(date '+%Y-%m-%d %H:%M:%S')
+                    CONTAINER="$(echo $CONTAINER_IMAGE | cut -d\| -f1)"
+                    if [[ "$(kubectl exec -it $POD -n $NS -c $CONTAINER -- stat -fc %T /sys/fs/cgroup/)" != "cgroup2fs" ]]; then
+                       MAX_RAM_CGROUP="/sys/fs/cgroup/memory/memory.max_usage_in_bytes"
+                    else
+                       MAX_RAM_CGROUP="/sys/fs/cgroup/memory.peak"
+                    fi
+                    RAM_MAX_USAGE_B="$(kubectl exec -it $POD -n $NS -c $CONTAINER -- cat $MAX_RAM_CGROUP | tr -d '\r')"
+                    RAM_MAX_USAGE_MiB=$(bc <<< "scale=$SCALE;($RAM_MAX_USAGE_B/(1024 * 1024))")
+                    RAM_MAX_USAGE_GiB=$(bc <<< "scale=$SCALE;($RAM_MAX_USAGE_MiB/1024)")
+                    echo "$RUNID,$DATETIME,$NS,$POD,$CONTAINER,$RAM_MAX_USAGE_GiB"
+            done
+    done
+    
+
+#### Output
+
+The output produced is as follows:
+
+![Kubernetes RAM Capacity](img/licensing-k8s-ram.png)
+
+### Docker
+
+Using the script below the following information is gathered:
+
+  * RunId
+  * Date/Time
+  * Container
+  * Max RAM (GiB)
+
+#### Script
+
+The following script can be saved as `extract-max-RAM-docker.sh`
+
+    
+    
+    #!/bin/bash
+    set -eu
+    SCALE=3
+    RUNID=$(uuidgen)
+    echo "RunId,Date/Time,Container,RAM Max Usage (GiB)"
+    for CONTAINER in $(docker ps --format '{{.Names}}'); do
+        DATETIME=$(date '+%Y-%m-%d %H:%M:%S')
+        if [[ "$(docker exec -it $CONTAINER stat -fc %T /sys/fs/cgroup/)" != "cgroup2fs" ]]; then
+            MAX_RAM_CGROUP="/sys/fs/cgroup/memory/memory.max_usage_in_bytes"
+        else
+            MAX_RAM_CGROUP="/sys/fs/cgroup/memory.peak"
+        fi
+        RAM_MAX_USAGE_B="$(docker exec -it $CONTAINER cat $MAX_RAM_CGROUP | tr -d '\r')"
+        RAM_MAX_USAGE_MiB=$(bc <<< "scale=$SCALE;($RAM_MAX_USAGE_B/(1024 * 1024))")
+        RAM_MAX_USAGE_GiB=$(bc <<< "scale=$SCALE;($RAM_MAX_USAGE_MiB/1024)")
+        echo "$RUNID,$DATETIME,$CONTAINER,$RAM_MAX_USAGE_GiB"
+    done
+    
+
+#### Output
+
+The output produced is as follows:
+
+![Docker RAM Capacity](img/licensing-docker-ram.png)
+

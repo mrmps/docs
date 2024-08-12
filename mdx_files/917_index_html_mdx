@@ -1,0 +1,103 @@
+https://code.kx.com/insights/enterprise/database/deploy/index.html
+
+# Deploying - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/database/deploy/index.html
+
+# Deploy/teardown/cleanup a database
+
+_This section describes how to deploy, tear-down and cleanup a database using
+the kdb Insights Enterprise UI._
+
+Deploying a database allocates compute and storage for data in a database.
+Once a database has been deployed, the database exists in your install.
+Tearing down the database does not delete any of the data that is stored
+within the database. To delete the data backing a database, you must clean up
+the database.
+
+## Deploying a database
+
+To deploy a database you can do one of the following:
+
+  * Click on the Database name in the left hand menu and click **Deploy** in the database editor screen.
+
+![Deloy from Database screen](images/ui/deploy/deploy-button-database-
+screen.png)
+
+  * Click on the three dots beside the database name, in the left hand menu, and click **Deploy**
+
+![Deploy from left-hand menu](images/ui/deploy/deploy-left-menu.png)
+
+In both cases, the [Resource
+Summary](../configuration/ui/resources.html#resource-summary) dialog opens. If
+you are happy with resources click **Deploy** to proceed. If you want to
+adjust the resources you can do so on the
+[**Resources**](../configuration/ui/resources.html) tab.
+
+![Resource Summary on Deploy](images/ui/resources/resource-summary-deploy.png)
+
+To see the status of a deployment, hover over the status icon for the database
+in the Overview screen, or on the left hand panel. To begin with the message
+says **Initializing** after which it shows the status of each of the
+components being deployed.
+
+![Deployment status](images/ui/deploy/deploying2.png)
+
+The components are described in the following table:
+
+Component | Description  
+---|---  
+**Mount** | When a database is mounted, it is available for use. Mount(s) can be an [hdb](../glossary.html#hdb), [idb](../glossary.html#idb) or [rdb](../glossary.html#rdb).  
+**Aggregator** | Aggregates responses from DAPs.  
+**Resource Coordinator** | Makes routing decisions based on DAP data purviews and availability.  
+**Storage** | Indicates when the database is ready to store data. If any changes have been made to the schema, before you deploy, the Storage component displays an indicator of the status of those updates. See [modifying a schema](../configuration/ui/schema.html#modifying-a-schema) for further details.  
+**Data Access** | Data stored on the database is ready to be queried.  
+**Stream** | The database is ready to receive event data; for example real-time prices.  
+**Pipeline** | Data [pipelines](../../ingest/pipeline/index.html) (if any) associated with the database are now active.  
+**Query Environment** | Data is ready to be queried using the Query tab in the UI.  
+  
+![Deployment status](images/ui/deploy/deploying2.png)
+
+Once the database has been deployed and is ready for data and queries, the
+status icon shows a green checkbox. Hovering over the icon shows the state of
+each component is **Ready**.
+
+![Deployment complete](images/ui/deploy/deployed.png)
+
+Errors in deployments
+
+If a component in a database fails to start, an error is shown in the
+deployment status tooltip. If there is an error in your deployment, open the
+logs for the assembly by clicking **View Logs**. This opens the [diagnostics
+logs](../../troubleshooting/diagnostics.html) for the database.
+
+## Tearing down a database
+
+To stop a running database click Other Actions and then click **Teardown**.
+
+![Teardown button](images/ui/deploy/teardown-button.png)
+
+This stops any running database components, without deleting any resources.
+When you click **Teardown** , a dialog gives you an option to clean up the
+database which deletes all user data associated with the database.
+
+![Teardown database](images/ui/deploy/teardown-dialog.png)
+
+## Cleaning up a database
+
+To delete all data associated with a database, first teardown the database,
+then click Other Actions and **Clean Up**. This deletes all resources
+associated with the database.
+
+![Clean up button](images/ui/deploy/cleanup-button.png)
+
+You will be asked to confirm the clean up. Click **Clean Up** again to
+confirm.
+
+![Clean up warning](images/ui/deploy/cleanup-dialog.png)
+
+Data loss
+
+Performing a database clean up is a permanent operation. This operation cannot
+be undone.
+

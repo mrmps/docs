@@ -1,0 +1,157 @@
+https://code.kx.com/insights/enterprise/configuration/observability.html
+
+# Observability - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/configuration/observability.html
+
+# Observability
+
+This section we will show you how to configure the application observability;
+logging and metrics.
+
+## Configure logging
+
+You can configure the log level of your application at installation time using
+the values below. _kdb Insights Enterprise_ uses log components as a way to
+identify the origin of a log message. The `routings` object allows you to set
+the log level for different components with `DEFAULT` applying to anything
+that's not set explicitly.
+
+    
+    
+    global:
+      logging:
+        routings:
+          DEFAULT: INFO
+          InfoService: DEBUG
+    
+
+The example above sets all components to `INFO` with the exception of the
+`InfoService` component, which is set to `DEBUG`.
+
+See details [here](../monitoring/logging.html#logging-stack) on logging stacks
+to deploy.
+
+## Configure metrics
+
+_kdb Insights Enterprise_ generates
+[metrics](../monitoring/metrics.html#metrics-reference.md) and includes pre-
+packaged [alerts](../monitoring/alerts-reference.html) and [monitoring
+dashboards](../monitoring/dashboards-reference.html) to allow you to check
+system performance and quickly identify potential issues. You can monitor data
+flows, component errors, and a variety of other metrics.
+
+By default these are disabled for _kdb Insights Enterprise_ since the
+application does not deploy with the _Prometheus_ stack. See details
+[here](../monitoring/metrics.html#deploying-prometheus) on how to deploy the
+_Prometheus_ stack.
+
+To enable metrics, alerts and dashboards for your deployment, update your Helm
+_values_ file and set `global.metrics.enabled` to `true`.
+
+This is created as part of the [install
+setup](../installation/insights.html#installing-kdb-insights-enterprise).
+
+    
+    
+    global:
+      metrics:
+        enabled: true
+        serviceMonitor:
+          enabled: true
+          interval: 30s
+          additionalLabels:
+            release: kx-prom
+    
+
+Release names **must** match
+
+The `global.metrics.serviceMonitor.additionalLabels.release` parameter **must
+match** the _Helm_ release name `$RELEASE_NAME` from the previous section when
+_Prometheus_ was installed.
+
+When you have updated the values file, run `kxi install run --filepath
+values.yaml` to apply the change.
+
+This deploys _Prometheus_ [Service Monitor](https://github.com/prometheus-
+operator/prometheus-operator/blob/main/Documentation/api.md#servicemonitor)
+resources, which scrape _kdb Insights Enterprise_ components and publish
+metrics to the backend.
+
+### Enable _Prometheus_ scraping
+
+There are two methods of enabling _Prometheus_ scraping:
+
+  * _Prometheus_ ServiceMonitors
+  * pod annotations
+
+#### ServiceMonitors
+
+The `global.metrics.serviceMonitor` object configures the use of the
+_Prometheus_ _ServiceMonitor_ object within the application. With this mode
+enabled, the application will create a set of _ServiceMonitor_ resources,
+which _Prometheus_ uses to scrape metrics.
+
+variable | type | example | default  
+---|---|---|---  
+`global.metrics.serviceMonitor.enabled` | `bool` | `true` | `false`  
+`global.metrics.serviceMonitor.interval` | `int` | `30s` | `10s`  
+`global.metrics.serviceMonitor.additionalLabels.release` | `string` | `kx-prom` | `""`  
+  
+  * `enabled` \- enables the _ServiceMonitor_ mode
+  * `interval` \- metrics polling interval
+  * `additionalLabels.release` \- this is a label to match your _Prometheus_ deployment name.
+
+#### Pod annotations
+
+The other method of enabling the scaping metrics is to use pod annotations
+instead of using _ServiceMonitors_. This is useful in situations where the
+_Prometheus_ operator cannot be used, or another approach is preferred.
+
+The values file below shows the required configuration.
+
+    
+    
+    global:
+      metrics:
+        enabled: true
+        useAnnotations: true
+        serviceMonitor:
+          enabled: false
+    
+
+Setting `global.metrics.useAnnotations` to `true` will add _Prometheus_
+annotations to the application pods. These annotations will be prefixed with
+`prometheus.io`.
+
+### Disabling alerts and dashboards
+
+To scrape metrics but disable both the install of alerts and dashboards,
+include the following in the metrics section of your Helm _values_ file:
+
+    
+    
+    kxi-monitoring:
+      enabled: false
+    
+
+To disable alerts but enable dashboards, include the following in the metrics
+section of your Helm _values_ file:
+
+    
+    
+    kxi-monitoring:
+      metrics:
+        alerts: false
+    
+
+To disable dashboards but enable alerts, include the following in the metrics
+section of your Helm _values_ file:
+
+    
+    
+    kxi-monitoring:
+      grafana:
+        dashboards: false
+    
+

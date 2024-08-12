@@ -1,0 +1,233 @@
+https://code.kx.com/insights/microservices/database/query/logging.html
+
+# Logging - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/database/query/logging.html
+
+# Logging
+
+The query path in kdb Insights and Enterprise is as follows (see
+[Overview](index.html)):
+
+  1. A Gateway (GW) receives the request and sends to a Resource Coordinator (RC).
+  2. The RC receives the request and sends to other RCs and/or to Data Access Processes (DAPs).
+  3. DAPs execute their request individual portions and send their partial responses to an Aggregator (Agg).
+  4. Agg awaits responses from all DAPs. Once all responses are in, it aggregates and sends the response back to the GW.
+  5. The GW returns the response to the caller.
+
+Each process logs various messages at each step of the query path. In this
+page, we go through all relevant log messages for a successful query. For non-
+successful queries, refer to [Troubleshooting](troubleshooting.html) for steps
+to follow when attempting to debug.
+
+## Pre-request logs
+
+Before a request can be successfully executed, all processes must connect and,
+in some cases, register as available with the RC. The logs can be used to
+verify that all handshaking has been done successfully. Details on how to
+configure connections between each process can be found in [resiliency
+configuration](resilience.html#configuration).
+
+### Gateway to resource coordinator
+
+The GWs open connection(s) to their configured RC(s). The log messages
+surrounding this depend on the configured [GW-RC connection
+method](resilience.html#gateway).
+
+Once the GW establishes a connection with an RC, it checks that the RC is
+ready to receive requests (the RC is ready if it has at least one Agg
+registered, see Aggregator to resource coordinator).
+
+    
+    
+    [pool-2-thread-1] DEBUG com.kx.sg.tasks.CoordinatorTask - Checking if coordinator=10.244.0.64:5050 is ready for service
+    [pool-2-thread-1] DEBUG com.kx.sg.tasks.CoordinatorTask - Coordinator 10.244.0.64:5050 is ready for service
+    
+
+### Data access process to resource coordinator
+
+DAPs open a connection to their RC. The log messages surrounding this depend
+on the configured [DAP-RC connection method](resilience.html#data-access-
+process).
+
+Once the RC is found, the DAP establishes a connection to the RC. The DAP may
+emit one or more `WARN` messages if the RC has not come up yet.
+
+    
+    
+    [rdb] INFO  DA Attempting connection to RC...
+    [rdb] DEBUG DA Opening connection to rc at :sg-rc-0.sg-rc.default.svc:5050
+    [rdb] WARN  DA Error opening connection to rc at :sg-rc-0.sg-rc.default.svc:5050 err=...
+    [rdb] WARN  DA Failed connection retry to RC, retrying in 0D00:00:05...
+    ...
+    [rdb] DEBUG DA Opening connection to rc at :sg-rc-0.sg-rc.default.svc:5050
+    [rdb] INFO  DA Connected to RC on 9
+    [rdb] DEBUG DA RC connection table: `rc`addr`handle`retry [1]: (`sg-rc-0.sg-rc.default.svc:5050,`:sg-rc-0.sg-rc.default.svc:5050,9i,1b)
+    
+
+Once the connection is established, the DAP registers with the RC. The RC
+accepts the registration (if valid) and establishes heartbeating .
+
+    
+    
+    [KXI-SG-RC-sg-rc-0] DEBUG SGRC DAP registration details, handle=11 asm=canada instance=rdb addr=:da-rdb-canada-0:5080 avail=... refVintage=... purview=...
+    [KXI-SG-RC-sg-rc-0] TRACE SGRC DAP registration details, handle=11 metadata=...
+    [KXI-SG-RC-sg-rc-0] INFO  SGRC Registering valid DAP, handle=11 asm=canada instance=rdb addr=:da-rdb-0:5080
+    [KXI-SG-RC-sg-rc-0] DEBUG SAPIHB Adding heartbeat, handle=11
+    
+
+Note that in the registration details is a field `avail=...`, which specifies
+the DAP's [availability](../glossary.html#available-dap). If `avail=Y`, the
+DAP is ready to service queries immediately. If `avail=N`, the DAP is still
+waiting on a readiness condition. A log message of the following form should
+appear some time later.
+
+    
+    
+    [KXI-SG-RC-sg-rc-0] DEBUG SGRC Received DAP update, handle=11 dets=[=`;avail=1b]
+    
+
+### Aggregator to resource coordinator
+
+Aggregators open a connection to their RC.
+
+Once the RC is found, or if it is configured via environment variable, the
+aggregator connects to the RC, establishes heartbeating , and registers with
+the RC. Note that the aggregator may emit one or more `WARN` messages if the
+RC has not come up yet.
+
+    
+    
+    [KXI-SG-AGG-sg-agg-0-0] INFO  SGAGG Attempting to register with RC, hp=:sg-rc-0.sg-rc.default.svc:5050
+    [KXI-SG-AGG-sg-agg-0-0] WARN  SGAGG Unable to hopen to, proc=RC addr=:sg-rc-0.sg-rc.default.svc error=...
+    [KXI-SG-AGG-sg-agg-0-0] WARN  SGAGG Unable to connect to RC
+    ...
+    [KXI-SG-AGG-sg-agg-0-0] INFO  SGAGG Connected to RC, handle=7
+    [KXI-SG-AGG-sg-agg-0-0] DEBUG SAPIHB Adding heartbeat, handle=7
+    [KXI-SG-AGG-sg-agg-0-0] INFO  SGAGG Sending metadata to RC, handle=7
+    [KXI-SG-AGG-sg-agg-0-0] TRACE SGAGG Sending to RC: (`.sgrc.registerAgg;`10.244.0.241;5070i;...
+    
+
+The RC accepts the registration and establishes its own heartbeating.
+
+    
+    
+    [KXI-SG-RC-sg-rc-0] INFO  SGRC Registering Agg, host=10.244.0.241 port=5070 handle=7
+    [KXI-SG-RC-sg-rc-0] DEBUG SAPIHB Adding heartbeat, handle=7
+    
+
+## Request logs
+
+To each request request, we associate a _log correlator_. This correlator
+appears in every log message related to the request (unless noted otherwise),
+which allows users to easily search through logs to trace their request at
+each point along the query path. The log correlator can be set explicitly by
+the caller as an [optional
+argument](../../../api/database/api/header.html#request-header) . If not
+specified, the log correlator is a random GUID assigned by the GW at request
+time. In this case, the user does not know the log correlator ahead of time,
+but it can be found in the [response
+header](../../../api/database/api/header.html#response-header).
+
+The following sections describe the log messages emitted by the various
+processes along the query path. Note that all logging is at the `DEBUG` or
+`TRACE` levels in order to prevent logging from having a performance impact on
+production systems. In general, sensitive information is only logged at the
+`TRACE` level, not at the `DEBUG` level. In the sections below, we use a call
+to `.kxi.getData` with log correlator `logExample`.
+
+### Gateway
+
+The GW logs messages on receipt of a request from a caller, then on receipt of
+the response from the Agg.
+
+> **_Note_** : If specifying `logCorr` in the request `opts`, the will display
+> it. If undefined, it uses the unique GUID (the _correlator_) assigned to the
+> request.
+    
+    
+    [pool-2-thread-8] DEBUG com.kx.sg.tasks.RCRequestBuilder - Requesting .kxi.getData, request=52ae6a7e-935a-46c2-a360-6d971b5a94d7
+    ...
+    [pool-2-thread-10] DEBUG com.kx.sg.tasks.ResponderTask - Responding to request=52ae6a7e-935a-46c2-a360-6d971b5a94d7
+    [pool-2-thread-10] TRACE com.kx.sg.tasks.ResponderTask - Responding to qipc client for request=52ae6a7e-935a-46c2-a360-6d971b5a94d7
+    [pool-2-thread-10] DEBUG com.kx.sg.tasks.ResponderTask - Responded to request=52ae6a7e-935a-46c2-a360-6d971b5a94d7
+    
+
+### Resource coordinator
+
+The RC logs messages related to the state and routing of the request. In the
+case that a request can be immediately allocated to DAPs, logs for an incoming
+request are as follows. Note that the only parameters displayed at the `DEBUG`
+level are `startTS` and `endTS`, whereas the full list of parameters is
+displayed at the `TRACE` level.
+
+    
+    
+    [KXI-SG-RC-sg-rc-0] DEBUG SGRC {logExample} Received request for resources, api=.kxi.getData args=[startTS=2021.02.28D00:00:00.000000000;endTS=2021.03.02D00:00:00.000000000]
+    [KXI-SG-RC-sg-rc-0] TRACE SGRC {logExample} Request: hdr=[rcvTS=2022.12.15D21:01:43.535000000;corr=c74b66f3-b547-4be1-bb5c-e611568ab007;protocol=`gw;logCorr="logExample";client=`:10.244.0.144:30000;api=`.kxi.getData;timeout=30000] args=[table=`trade;startTS=2021.02.28D00:00:00.000000000;endTS=2021.03.02D00:00:00.000000000;filter=,("=";`sym;`ABC)]
+    [KXI-SG-RC-sg-rc-0] DEBUG SGRC {logExample} Getting resources
+    [KXI-SG-RC-sg-rc-0] DEBUG SGRC {logExample} Selected agg to service request, agg=:10.244.0.146:5070
+    [KXI-SG-RC-sg-rc-0] DEBUG SGRC {logExample} Allocating resources, client=:10.244.0.144:30000 daps=`:da-hdb-canada-5dbbf9f78-dfcfl:5100`:da-rdb-canada-577fd89557-b2gfh:5080`:da-idb-canada-766c6bdbfb-jjh5s:5090
+    [KXI-SG-RC-sg-rc-0] TRACE SGRC {logExample} Sending to DAPs, rcs=+`dap`hdr`args`pvID`rpID`refVintage!(`:da-hdb-0:5100`:da-rdb-canada-0:5080`:da-idb-0:5090;...
+    
+
+In the case that a portion of the request must be
+[queued](queueing.html#queueing), the RC emits the following logs when
+queueing and dequeueing the request portion.
+
+    
+    
+    [KXI-SG-RC-sg-rc-0] DEBUG SGRC {logExample} Enqueuing 1 request portion
+    [KXI-SG-RC-sg-rc-0] DEBUG SGRC {logExample} Storing new request in allocating status
+    ...
+    [KXI-SG-RC-sg-rc-0] TRACE SGRC {logExample} Attempting dequeue, dap=:da-hdb-0:5100 q=[idx=0;corr=52ae6a7e-935a-46c2-a360-6d971b5a94d7;api=`.kxi.getData;ts=2022.12.15D21:02:35.014882200;rpID=0;anyPV=0b;pvID=1;ogStartTS=2021.02.28D00:00:00.000000000;startTS=2021.02.28D00:00:00.000000000;ogEndTS=2021.03.01D00:00:00.000000000;endTS=2021.03.01D00:00:00.000000000;refVintage=2022121500000000039]
+    [KXI-SG-RC-sg-rc-0] DEBUG SGRC {logExample} Dequeueing request, dap=:da-hdb-0:5100 q=[idx=0;corr=76a7c250-c0be-40be-b589-37cff4075a06;api=`.kxi.getData;ts=2022.12.15D21:02:35.014882200;rpID=0;anyPV=0b;pvID=1;ogStartTS=2021.02.28D00:00:00.000000000;startTS=2021.02.28D00:00:00.000000000;ogEndTS=2021.03.01D00:00:00.000000000;endTS=2021.03.01D00:00:00.000000000;refVintage=2022121500000000039]
+    [KXI-SG-RC-sg-rc-0] TRACE SGRC {logExample} Sending to DAP, rcs=[dap=`:da-hdb-0:5100;...
+    [KXI-SG-RC-sg-rc-0] DEBUG SGRC {logExample} Switching request status from allocating to executing
+    
+
+Once the request is distributed, DAPs respond with "partial response"
+notifications and the Agg responds with a "complete response" notification.
+Note that these may appear in any order.
+
+    
+    
+    [KXI-SG-RC-sg-rc-0] DEBUG SGRC {logExample} Received partial response, dap=:da-rdb-0:5080 rc=0 ac=0 ai=
+    [KXI-SG-RC-sg-rc-0] DEBUG SGRC {logExample} Received partial response, dap=:da-hdb-0:5100 rc=0 ac=0 ai=
+    [KXI-SG-RC-sg-rc-0] DEBUG SGRC {logExample} Received partial response, dap=:da-idb-0:5090 rc=0 ac=0 ai=
+    [KXI-SG-RC-sg-rc-0] DEBUG SGRC {logExample} Received complete response, rc=0 ac=0 agg=:10.244.0.146:5070
+    
+
+### Data access processes
+
+The DAPs print log messages related to executing the API on the database.
+
+    
+    
+    [rdb] DEBUG DA {logExample} Executing .kxi.getData
+    [rdb] DEBUG LOG {logExample} GetData called for table=trade at timestamps=2021.03.01D11:59:59.500000001 2021.03.02D00:00:00.000000000
+    [rdb] DEBUG DA {logExample} Completed .kxi.getData, rc=0 ac=0 ai=
+    [rdb] DEBUG DA {logExample} Sending response to aggregator, agg=:10.244.0.146:5070
+    
+
+### Aggregator
+
+The Agg prints log messages on receipt of partial responses from the DAPs and,
+once all responses have been received, it logs details about the aggregation.
+
+    
+    
+    [KXI-SG-AGG-sg-agg-0-0] DEBUG SGAGG {logExample} Received partial response
+    [KXI-SG-AGG-sg-agg-0-0] TRACE SGAGG {logExample} Checking request status, counts=[pl=1;hdr=...
+    [KXI-SG-AGG-sg-agg-0-0] DEBUG SGAGG {logExample} Received partial response
+    [KXI-SG-AGG-sg-agg-0-0] TRACE SGAGG {logExample} Checking request status, counts=[pl=2;hdr=...
+    [KXI-SG-AGG-sg-agg-0-0] DEBUG SGAGG {logExample} Received partial response
+    [KXI-SG-AGG-sg-agg-0-0] TRACE SGAGG {logExample} Checking request status, counts=[pl=3;hdr=...
+    [KXI-SG-AGG-sg-agg-0-0] DEBUG SGAGG {logExample} All portions/responses received, triggering aggregation
+    [KXI-SG-AGG-sg-agg-0-0] DEBUG SGAGG {logExample} Aggregating, api=.kxi.getData aggFn=.sgagg.getData numResp=3
+    [KXI-SG-AGG-sg-agg-0-0] DEBUG SGAGG {logExample} Finished aggregation, rc=0 ac=0 ai=
+    [KXI-SG-AGG-sg-agg-0-0] DEBUG SGAGG {logExample} Completing request
+    [KXI-SG-AGG-sg-agg-0-0] DEBUG SGAGG {logExample} Sending response to client, addr=:10.244.0.144:30000
+    [KXI-SG-AGG-sg-agg-0-0] TRACE SGAGG {logExample} Sending to RC: (`.sgrc.onComplete;...
+    
+

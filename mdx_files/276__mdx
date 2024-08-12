@@ -1,0 +1,148 @@
+https://code.kx.com/platform/api/odbc/
+
+# ODBC - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/api/odbc/
+
+# ODBC
+
+The APIs in this module relate to using kdb+ as an ODBC client. This
+functionality is described in full
+[here](http://code.kx.com/q/interfaces/q-client-for-odbc/). The required
+scripts, `.so` and `.dll` files are bundled with Control so downloading them
+isn't required.
+
+Target DSN and required drivers must be setup on the server
+
+## `.odbc.close`
+
+Closes an ODBC connection
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | int | Connection handle  
+  
+**Example:**
+
+    
+    
+     .odbc.close[h]
+    
+
+## `.odbc.eval`
+
+Evaluates an SQL expression against a target handle
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+x | int | Connection handle  
+y | string | SQL query  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+table | SQL results set  
+  
+**Example:**
+
+    
+    
+     sel:"select CompanyName,Phone from Customers where City='London'"
+     .odbc.eval[h;sel]
+     /=> CompanyName             Phone
+     /=> ----------------------------------------
+     /=> "Around the Horn"       "(171) 555-7788"
+     /=> "B's Beverages"         "(171) 555-1212"
+     /=> "Consolidated Holdings" "(171) 555-2282"
+     /=> ..
+    
+
+## `.odbc.load`
+
+Loads the entire target database
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | string | symbol | ODBC connection string  
+  
+**Example:**
+
+    
+    
+     .odbc.load `northwind
+     tables[]
+     /=> `Categories`Customers`Employees`OrderDetails`Orders`Products`Shippers`Supplie..
+     Shippers
+     /=> ShipperID| CompanyName        Phone
+     /=> ---------| -----------------------------------
+     /=> 1        | "Speedy Express"   "(503) 555-9831"
+     /=> 2        | "United Package"   "(503) 555-3199"
+     /=> 3        | "Federal Shipping" "(503) 555-9931"
+    
+
+## `.odbc.open`
+
+Opens an ODBC connection to a target data source
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | string | symbol | ODBC connection string  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+int | Connection handle  
+  
+**Example:**
+
+    
+    
+     h:.odbc.open `northwind   
+    
+
+## `.odbc.tables`
+
+Lists the tables in the database
+
+**Returns:**
+
+Type | Description  
+---|---  
+symbol[] | List of tables  
+  
+**Example:**
+
+    
+    
+     .odbc.tables h
+     /=> `Categories`Customers`Employees`Order Details`Orders`Products...
+    
+
+## `.odbc.views`
+
+Lists the views in the database
+
+**Returns:**
+
+Type | Description  
+---|---  
+symbol[] | List of views  
+  
+**Example:**
+
+    
+    
+     .odbc.views h
+     /=> `Alphabetical List of Products`Category Sales for 1997`Current...
+    
+

@@ -1,0 +1,193 @@
+https://code.kx.com/platform/api/ldap/
+
+# LDAP - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/api/ldap/
+
+# LDAP
+
+This module contains functions for performing searches against an LDAP server.
+They are designed to be called on an LDAP-enabled environment to download
+object attributes for building reports.
+
+**Notes:**
+
+  * Environment must be LDAP enabled
+  * Connection to server must be already established (i.e. by a user having logged in)
+  * Filter length is restricted to 4095 chars
+
+For more information on LDAP support, please refer to the _KX Control_
+documentation.
+
+## `.pm.ldap.endSearchSession`
+
+Terminates an active LDAP search session
+
+**Returns:**
+
+Type | Description  
+---|---  
+Boolean | Successful termination of search session  
+  
+**Example:**
+
+    
+    
+     .pm.ldap.endSearchSession[]
+     /=> 1b
+    
+
+## `.pm.ldap.filteredSearch`
+
+**Deprecated** :
+
+Used to search the LDAP server for specific objects and extract associated
+attributes. Generally used to find users or groups. The search starts from a
+base location and looks for specific objects based on the _filter_ parameter.
+The specified _attributes_ are then returned for each object.
+
+The `baseDN` parameter is optional and will be filled with the `globdn`
+parameter if not specified.
+
+A search session must be initialized before use.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+baseDN | string | Base location to search  
+filter | string | Search filter for objects  
+attributes | string | Attributes to fetch  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+table | Table of objects and attributes  
+  
+**Example:** Extract name and mail for users under _ou=FDL,dc=fd,dc=com_
+
+    
+    
+     filter:"&(objectClass=user)(objectCategory=person)";
+     .pm.ldap.filteredSearch["DC=domain,DC=com"; filter; `cn`mail]
+     /=> cn        mail
+     /=> -------------------------
+     /=> John Doe  jdoe@domain.com
+     /=> ..
+    
+
+**Example:**
+
+    
+    
+     filter:"&(objectClass=user)(objectCategory=person)(|(memberOf=CN=London,OU=Groups,OU=Users And Groups,DC=domain,DC=com)(memberOf=CN=Proxy,OU=IT,OU=Groups,OU=Users And Groups,DC=domain,DC=com))";
+     .pm.ldap.filteredSearch["DC=domain,DC=com"; filter; `cn`mail`distinguishedName]
+     /=> cn        distinguishedName                                                 mail
+     /=> -------------------------------------------------------------------------------------------
+     /=> John Doe  CN=John Doe,OU=Users,OU=Users And Groups,OU=FDL,DC=domain,DC=com  jdoe@domain.com
+     /=> ..
+    
+
+## `.pm.ldap.getGroupUsers`
+
+**Deprecated** :
+
+This API can be used to download all users that are members of specified
+groups. Example use-case would be to compare group members on the server
+against those in Control. Can narrow-down users that haven't ever logged in.
+
+For Active Directory, the `attribute` should usually be `memberOf` and `bind`
+should be `sAMAccountName`.
+
+A search session must be initialized before use.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+baseDN | string | Base location to search  
+filter | string | Search filter for objects  
+attribute | symbol | Attribute that describes group membership.  
+groups | symbol[] | List of groups to check membership of. If not specified, will use the configured groups in Control.  
+bind | symbol | Attribute to extract. Will default to configured bind value.  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+table | Table of _bind_ attributes for each user  
+  
+**Example:**
+
+    
+    
+     grps:`$("CN=London,OU=Groups,OU=Users And Groups,DC=domain,DC=com";"CN=Proxy,OU=IT,OU=Groups,OU=Users And Groups,DC=domain,DC=com")
+     filter:"&(objectClass=user)(objectCategory=person)"
+     .pm.ldap.getGroupUsers["DC=domain,DC=com"; filter; `memberOf; grps; `sAMAccountName]
+     /=> sAMAccountName
+     /=> --------------
+     /=> "jdoe"
+     ..
+    
+
+## `.pm.ldap.initSearchSession`
+
+Initiate a LDAP search session. Requires credentials for user who is permitted
+to carry out searches on target server.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+u | Symbol | Username  
+p | string | User password  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+Boolean | Successful initialization of search session  
+  
+**Example:**
+
+    
+    
+     .pm.ldap.initSearchSession[`searchUser; "searchPass"]
+     /=> 1b
+    
+
+## `.pm.ldap.runSearch`
+
+Wrapper arround ldapSearch A search session must be initialized before use.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+baseDn | symbol | The base of the subtree to search from  
+scope | long | LDAP search depth  
+filter | string | Search filter to apply  
+attrs | symbol[] | Set of attributes to include in the result  
+attrsOnly | integer | Should be set to a non-zero value if only attribute descriptions are wanted  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | Search results  
+  
+**Example:** Extract name and mail for users under _OU=FDL,DC=FD,DC=com_
+
+    
+    
+      baseDn:`$"OU=Users,OU=Users And Groups,OU=FDL,DC=FD,DC=com";
+      filter:"(&(objectClass=*)(objectCategory=person))";
+      attributes:`cn`mail
+     .pm.ldap.runSearch[baseDn; 2; filter; attributes; 0]
+    
+     /=> ReturnCode| 0i
+     /=> Entries   | +`DN`Attributes!(("CN=User Name,OU=Users,....
+     /=> Referrals | ()
+    
+

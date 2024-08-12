@@ -1,0 +1,77 @@
+https://code.kx.com/platform/stream/dw_qr_appendix/
+
+# General - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/stream/dw_qr_appendix/
+
+# Appendix
+
+## API.monPublic.getMem
+
+    
+    
+    {[param]
+    
+      // set default values for parameters
+      def:`start`end`syms!("p"$.z.d-2; .z.p; "s"$());
+    
+      // if parameters are sent, override default values
+      param: def,param;
+    
+      start: $[null param`start; def`start; param`start];
+      end: $[null param`end; def`end; param`end];
+      syms: $[all null param`syms; def`syms; param`syms];
+    
+      // should add a date clause for HDB
+      wclause:();
+      if[count syms;
+        wclause:wclause, enlist (in; `sym; enlist syms);
+      ];
+      wclause:wclause, enlist (within; `time; (start; end));
+    
+      cls: .schema.cols[`monMem] except `date`int;
+      :`time xasc ?[`monMem; wclause; 0b; cls!cls] 
+     }
+    
+
+## API.monPublic.getMemBucket
+
+    
+    
+    {[param]
+      // set default values for parameters
+      def:`start`end`syms`bucket!("p"$.z.d-2; .z.p; "s"$(); 5);
+    
+      // if parameters are sent, override default values
+      param: def,param;
+    
+      start: $[null param`start; def`start; param`start];
+      end: $[null param`end; def`end; param`end];
+      syms: $[all null param`syms; def`syms; param`syms];
+      bucket: $[null param`bucket; def`bucket; param`bucket];
+    
+      aggc:`virtual`physical;
+      bcls:`sym`time!(`sym; (xbar; bucket * 0D00:01; `time));
+      scls:aggc!flip (avg; aggc);
+    
+      wclause:();
+      if[count syms;
+        wclause:wclause, enlist (in; `sym; enlist syms);
+      ];
+      wclause:wclause, enlist (within; `time; (start; end));
+    
+      :`time xasc 0!?[`monMem; wclause; bcls; scls]
+     }
+    
+
+## `.mon.initGW`
+
+    
+    
+    {[]
+     .z.ws:{ value .j.k -9!x;  };
+     .z.wo:{ -1 "WS opened ",string[x] };
+     .z.wc:{ -1 "WS closed ",string[x] };   
+     }
+    
+

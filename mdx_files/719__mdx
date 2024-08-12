@@ -1,0 +1,253 @@
+https://code.kx.com/platform/api/email/
+
+# Email - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/api/email/
+
+# Email
+
+Library of functions for sending emails, working with mail templates and
+recipients.
+
+The send APIs require the JAVA email engine to be running. See the _KX
+Control_ Email Engine section for more information on setting up this process.
+
+## `.email.getRecipients`
+
+Email recipients can be provided as users, email addresses or distribution
+lists. The API resolves them all to a corresponding list of email addresses.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+targets | symbol[] | List of emails, users and distribution lists  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol[] | Email addresses  
+  
+**Example:**
+
+    
+    
+     .email.getRecipients[list]
+     /=> `platformusers@kx.com`usersupport@kx.com
+     .email.getRecipients[list,users,emails]
+     /=> `platformusers@kx.com`usersupport@kx.com`deployadmin@kx.com`releaseadmin@kx.com
+    
+
+## `.email.getTemplateNames`
+
+Gets list of templates
+
+**Returns:**
+
+Type | Description  
+---|---  
+symbol[] | Template names  
+  
+**Example:**
+
+    
+    
+     .email.getTemplateNames[]
+     /=> `DS_AT_NewItem`DS_AT_Reassign`DS_AT_Timeout`DS_AT_Transition`FX_SPREAD_TEMPLATE`PasswordReset`Pas..
+    
+
+## `.email.getTemplateReplace`
+
+Gets the details for a template. Can optionally replace tags in the email
+subject and body with tag values
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+template | symbol | Template name  
+dict | dict | Dictionary of tags to replace in template text  
+  
+**Returns:**
+
+Name | Type | Description  
+---|---|---  
+<returns> | dict | Template details with tags replaced from dict parameter  
+<returns>.subject | string |   
+<returns>.body | string |   
+  
+**Example:**
+
+    
+    
+     .email.getTemplate[`PasswordReset]
+     /=> subject| "$SYSTEM$ Password Reset"
+     /=> body   | "Hi $USER$,<br>\r<br>\rYour password has been reset, please login with your new credentials<br>\rPassword: $..
+    
+     .email.getTemplateReplace[`PasswordReset; `user`system!(`Administrator; `ControlForKx)]
+     /=> subject| "ControlForKx Password Reset"
+     /=> body   | "Hi Administrator,<br>\r<br>\rYour password has been reset, please login with your new credentials<br>\rPass..
+    
+
+## `.email.getTemplate`
+
+Gets the email subject and body for a template
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+n | symbol | Template name  
+  
+**Returns:**
+
+Name | Type | Description  
+---|---|---  
+<returns> | dict | Subject and body details  
+<returns>.subject | string |   
+<returns>.body | string |   
+  
+**Example:**
+
+    
+    
+     .email.getTemplate[`PasswordReset]
+     /=> subject| "$SYSTEM$ Password Reset"
+     /=> body   | "Hi $USER$,<br>\r<br>\rYour password has been reset, please login with your new credentials<br>\rPassword: $..
+    
+
+## `.email.getTemplates`
+
+Get table of email details.
+
+**Returns:**
+
+Name | Type | Description  
+---|---|---  
+<returns> | table | Table of template details  
+<returns>.name | symbol |   
+<returns>.subject | string |   
+<returns>.body | string |   
+  
+**Example:**
+
+    
+    
+     .email.getTemplates[]
+     /=> name                         subject                                                            body                 ..
+     /=> ---------------------------------------------------------------------------------------------------------------------..
+     /=> DS_AT_NewItem                "[Delta Action Tracker] Issue [$ID$] - $ACTIONTRACKER$ updated"    "$USER$ updated issue..
+     /=> DS_AT_Reassign               "[Delta Action Tracker] Issue [$ID$] - $ACTIONTRACKER$ reassigned" "$USER$ reassigned is..
+     /=> ..
+    
+
+Sends an email while replacing any tag values in template contents. Tags
+should be included in the contents as upper-case names between dollar signs
+\$STOCK\$. These will be matched against the keys of the dictionary parameter
+and corresponding values will replace the tags. Dictionary keys will be
+converted to upper-case when being matched.
+
+Tip
+
+See `.email.send` and `.email.getTemplateReplace` for parameter formats and
+tag examples.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+dict | dict | Email parameters  
+data | dict | Dictionary of tags and values  
+  
+**Example:**
+
+    
+    
+     dict:`to`cc`bcc`subject`body!(`$("kxsupport@kx.com";"SupportList"); "s"$(); "s"$(); "Alert raised for $SYM$"; "Credit alert raised - $PERCENTAGE$% utilisation");
+     .email.sendTags[dict; `sym`percentage!(`EURUSD;95.5)]
+    
+
+## `.email.sendTemplate`
+
+Sends an email using the subject and body from a template. The mail subject
+and body will be taken from the template so are not required. Will also
+replace any tag values as with `.email.sendTags`.
+
+Tip
+
+See `.email.send` and `.email.getTemplateReplace` for parameter formats and
+tag examples.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+template | symbol | Template name  
+dict | dict | Email parameters  
+data | dict | Dictionary of tags and values  
+  
+**Example:**
+
+    
+    
+     dict:`to`cc`bcc`html!(`$("kxsupport@kx.com";"SupportList"); "s"$(); "s"$(); 0b);
+     .email.sendTemplate[`emailLogRecovery; dict; `sym`component`time`summary`detail!(`EURUSD; "Log Replay"; .z.p; "Failed to replay"; ([]ind:til 10))]
+    
+
+## `.email.send`
+
+Sends an email. The argument table describes the required values.
+
+key | type | description  
+---|---|---  
+`to`,`cc`,`bcc` | symbol[] | List of recepients. _Must be at least one recipient_. Can be a mix of email addresses, user names and distribution lists  
+`source` | symbol | Used to override the default _from_ address  
+`reply` | symbol | Used to specify a _reply to_ address  
+`subject`,`body` | string | Email contents  
+`html` | boolean | Treat contents as HTML  
+`files` | (see example) | Used to pass attachments directly by value. Contains the filename and bytestream  
+`filenames` | (see example) | Used to pass attachments by reference using full filepath.  
+  
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+dict | dict | Email parameters  
+  
+**Example:**
+
+    
+    
+     dict:`to`cc`bcc`subject`body!(`$("kxsupport@kx.com";"SupportList"); "s"$(); `Administrator; "Alert raised for EURUSD"; "Credit alert raised - 95% utilisation");
+     .email.send[dict]
+    
+
+**Example:**
+
+    
+    
+     data:read1 hsym `$getenv[`HOME],"/file.txt";
+     attachments:`files`filenames!(((`file.txt; data); (`file2.txt; data)); ("ENV=HOME=/file.txt";"ENV=HOME=/file.txt"));
+     dict:`to`cc`bcc`subject`body!(`$("kxsupport@kx.com";"SupportList"); "s"$(); `Administrator; "Alert raised for EURUSD"; "Credit alert raised - 95% utilisation");
+     .email.send[dict,attachments]
+    
+
+## `.email.snmp`
+
+Sends a SNMP trap message. Takes a dictionary of key-value pairs.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+dict | dict | SNMP parameters  
+  
+**Example:**
+
+    
+    
+     dict:`alert`data!("Alert raised for EURUSD"; "Credit alert raised - 95% utilisation");
+     .email.snmp[dict]
+    
+

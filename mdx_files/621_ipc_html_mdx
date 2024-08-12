@@ -1,0 +1,86 @@
+https://code.kx.com/pykx/api/ipc.html
+
+# IPC - PyKX
+
+Original URL: https://code.kx.com/pykx/api/ipc.html
+
+Evaluate a query on the connected q process over IPC.
+
+**Parameters:**
+
+Name | Type | Description | Default  
+---|---|---|---  
+`query` |  `[Union](https://docs.python.org/3/library/typing.html#typing.Union "typing.Union")[[str](https://docs.python.org/3/library/stdtypes.html#str), [bytes](https://docs.python.org/3/library/stdtypes.html#bytes), [CharVector](pykx-q-data/wrappers.html#pykx.wrappers.CharVector "pykx.wrappers.CharVector"), [K](pykx-q-data/wrappers.html#pykx.wrappers.K "pykx.wrappers.K")]` | A q expression to be evaluated. |  _required_  
+`*args` |  `[Any](https://docs.python.org/3/library/typing.html#typing.Any "typing.Any")` | Arguments to the q query. Each argument will be converted into a `pykx.K` object. Up to 8 arguments can be provided, as that is the maximum supported by q. |  `()`  
+`wait` |  `[Optional](https://docs.python.org/3/library/typing.html#typing.Optional "typing.Optional")[[bool](https://docs.python.org/3/library/functions.html#bool)]` | Whether the q server should execute the query before responding. If `True`, Python will wait for the q server to execute the query, and respond with the results. If `False`, the q server will respond immediately to the query with generic null (`::`), then execute them at some point in the future. Defaults to whatever the `wait` keyword argument was for the `SecureQConnection` instance (i.e. this keyword argument overrides the instance-level default). |  `None`  
+  
+**Raises:**
+
+Type | Description  
+---|---  
+`[RuntimeError](https://docs.python.org/3/library/exceptions.html#RuntimeError)` | A closed IPC connection was used.  
+`[QError](exceptions.html#pykx.exceptions.QError "pykx.exceptions.QError")` | Query timed out, may be raised if the time taken to make or receive a query goes over the timeout limit.  
+`[TypeError](https://docs.python.org/3/library/exceptions.html#TypeError)` | Too many arguments were provided - q queries cannot have more than 8 parameters.  
+`[ValueError](https://docs.python.org/3/library/exceptions.html#ValueError)` | Attempted to send a Python function over IPC.  
+  
+**Examples:**
+
+    
+    
+    q = pykx.SecureQConnection(host='localhost', port=5002, tls=True)
+
+Call an anonymous function with 2 parameters
+
+    
+    
+    q('{y+til x}', 10, 5)
+
+Execute a q query with no parameters
+
+    
+    
+    q('til 10')
+
+Call an anonymous function with 3 parameters and don't wait for a response
+
+    
+    
+    q('{x set y+til z}', 'async_query', 10, 5, wait=False)
+
+Call an anonymous function with 3 parameters and don't wait for a response by
+default
+
+    
+    
+    q = pykx.SecureQConnection(host='localhost', port=5002, wait=False, tls=True)
+    # Because `wait=False`, all calls on this q instance are not responded to by default:
+    q('{x set y+til z}', 'async_query', 10, 5)
+    # But we can issue calls and wait for results by overriding the `wait` option on a per-call
+    # basis:
+    q('{x set y+til z}', 'async_query', 10, 5, wait=True)
+
+Call a PyKX Operator function with supplied parameters
+
+    
+    
+    q(kx.q.sum, [1, 2, 3])
+
+Call a PyKX Keyword function with supplied paramters
+
+    
+    
+    q(kx.q.floor, [5.2, 10.4])
+
+Automatically reconnect to a q server after a disconnect.
+
+    
+    
+    >>> conn = kx.SecureQConnection(port=5001, reconnection_attempts=0)
+    >>> conn('til 10')
+    pykx.LongVector(pykx.q('0 1 2 3 4 5 6 7 8 9'))
+    >>> conn('til 10')
+    WARNING: Connection lost attempting to reconnect.
+    Failed to reconnect, trying again in 0.5 seconds.
+    Connection successfully reestablished.
+    pykx.LongVector(pykx.q('0 1 2 3 4 5 6 7 8 9'))
+

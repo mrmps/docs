@@ -1,0 +1,27 @@
+https://code.kx.com/platform/stream/dw_intraday_hdb/
+
+# Intraday database - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/stream/dw_intraday_hdb/
+
+# Intraday database
+
+The intraday historical database (_IHDB_) is used to store intraday data of
+the current day. Generally this is used for tables with large data volumes.
+Data saved in the _IHDB_ will already be partitioned by sym and sorted by
+time. At the end of day, all data will be written down to the _HDB_ and
+deleted from the _IHDB_.
+
+[![Screenshot](../img/serviceclass/ihdb_name.jpg)](../img/serviceclass/ihdb_name.jpg
+"click to expand")
+
+parameter | value  
+---|---  
+Directory | ENV=DELTADATA_HOME=/KxWarehouseData/intraday/latest  
+  
+There are date partitions within the intraday directory but data always
+resides in latest directory.
+
+[![Screenshot](../img/serviceclass/intraday_dir.jpg)](../img/serviceclass/intraday_dir.jpg
+"click to expand")
+

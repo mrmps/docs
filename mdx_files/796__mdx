@@ -1,0 +1,204 @@
+https://code.kx.com/platform/alerts/
+
+# Alerts - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/alerts/
+
+# Alert Management
+
+The alert framework provides a mechanism to generate alerts based on the data
+flowing through the system. An alert is a message, which is published into the
+system and can be used to generate another event, such as triggering an email.
+The main benefit of the alert framework is that it provides the tools required
+to generate alerts on streaming data, thereby making it easier for
+inexperienced programmers.
+
+The alert editor is used to define alert criteria / alert instances and
+actions to be taken when alerts are triggered.
+
+![Screenshot](../img/control/alert_definition.png)
+
+## Configuring a new alert
+
+An Alert can be created by picking _New > Alert_ from the _File_ menu. When
+prompted, assign the new alert a unique name and include in it any package
+needed.
+
+tab | description  
+---|---  
+Alert Definition | Defining simple string / numerical alert properties.  
+Alert Columns | Set schema / configparam properties to publish, match, key, tag1 and tag2.  
+Alert Trigger | Set alert trigger analytic / query.  
+Entitlements | Permissioning of the alert.  
+Revisions | All changes which have been made to the alert. Right-clicking will allow a group to be reverted to a previous state.  
+  
+_Alert_ _Name_ : A drop-down list of pre-defined alerts.
+
+_Description_ : A text description of the alert.
+
+_Trigger_ _Table_ : A table which contains the data to configure alerts.
+Updates from this table will trigger an alert based on the trigger conditions
+set. For example, to monitor bid and ask prices select a quote table as the
+trigger table. Once the process has been set, a dropdown list of all tables
+available on that process will be shown. Pressing the Lookup Data button will
+show sample data for the trigger table. Required.
+
+_Lookup_ _Table_ : A table specifying criteria for an alert to fire. Lookup
+tables can be either schema from the process or configuration parameters from
+KX Control. The lookup table must have at least one column in common with the
+trigger table. Pressing the Lookup Data button displays data in the lookup
+table. Optional.
+
+_Alert_ _Type_ : Defines how frequently the alert should be fired. The options
+are: \- `All`: publish every time an alert is triggered \- `On State Change`:
+publish when an alert is triggered and only when it changes state \- `On True
+State Change`: publish when alert is triggered and when the state changes to
+`true`
+
+_Post_ _Alert_ _Analytic_ : An analytic to be run after an alert has been
+triggered.
+
+## Predefined alerts
+
+name | description  
+---|---  
+dmxGenericFileChangeAlert | Generic file change alert. Can be set to trigger on changes to files monitored by the RDB OPS process dmxFiles table.  
+dmxGenericFileGrowthAlert | Alert to monitor expected file growth.  
+dmxGenericFileSizeThresholdAlert | Alert to trigger if files are not within their allocated size thresholds.  
+dmxGenericFileSystemUsageAlert | Alert to monitor each drive and create notifications based on percentage usage.  
+dmxGenericFileSizeAlert | Alert to trigger on excessive file sizes returned from the file monitor.  
+dmxGenericInstanceAlert | Generic instance alert, used for monitoring active process instances.  
+dmxGenericJobAlert | Alert triggered if a monitored job failed.  
+dmxGenericJobDurationAlert | Alert triggered if a monitored job took longer than average to run.  
+dmxGenericJobScheduledAlert | Alert triggered if a monitored job did not run in the scheduled time window.  
+dmxGenericLogAlert | Generic log alert used for flagging error patterns.  
+dmxGenericLogScrapeAlert | Generic alert for notification of err/warning messages in scraped logs.  
+dmxGenericPIDResidentAlert | Alert triggered if a monitored process exceeds memory usage thresholds.  
+dmxGenericProcessCPUUsageAlert | Alert to trigger on process CPU usage.  
+dmxGenericServerAlert | A generic alert to be run on the server statistics table.  
+dmxGenericServerCPUAlert | A generic alert to be run on the server statistics table.  
+dmxGenericServerMinLoadAlert | Alert to monitor min load stats of a server.  
+dmxGenericServerStateAlert | Generic alert to monitor active servers.  
+  
+## Alert columns
+
+(Required) Columns from the Trigger and Lookup Tables to be used in the alert;
+checking Publish means data from the column will be published with the alert
+to the data column in dxAlert. (You must publish at least one column.)
+
+![Screenshot](../img/control/alert_columns.png)
+
+_Match_
+
+    Use column to join the alert data with the Lookup Table. (Must be present in both tables.)
+_Alert Key_
+
+    Use column to create a unique identifier for the alert. (Default is a sym or symbol column, if present.)
+_Tag 1/Tag 2_
+
+    Use column to enrich data in the `dxAlert` table, e.g. for `CPU Usage` set `tag1` as `logicalName` and `tag2` as `breachLevel`, making `dxAlert` a clearer view of the error
+
+## Alert triggers
+
+the trigger conditions that determine when an alert will be triggered.
+
+![Screenshot](../img/control/alert_trigger.png)
+
+control | effect  
+---|---  
+Trigger Message | The message to be displayed when the trigger is reached and the alert is generated.  
+Available Tags | The trigger message can include tagged data which is selected from the available tags list here. The tag value will be placed in the triggered message.  
+Editor | Analytic- / Query Builder.  
+Analytic | Analytics associated with the alert group AlertAnalytics can be used to define the trigger condition for an alert. This view is read-only, the analytic is pre-defined in _KX Control.  
+Analytic Description | A description of the report. This is read-only.  
+Analytic Parameters | The report parameters are listed here. These will change depending on the analytic selected. This is read-only and cannot be changed here. It can be changed in the Alert Instance Editor to enable the additional parameters to the alert. Use Default.  
+  
+Advanced users only
+
+The Query Builder Editor is for advanced users only. A standard user, should
+use an Analytic
+
+## Alert instances
+
+The Alert Instance Editor enables creation of individual instances for each
+alert. Each instance can be configured differently.
+
+![Screenshot](../img/control/alert_instance_definition.png)
+
+To create a new Alert Instance select the _\+ New Alert Instance_ button at
+the top right of the editor. Choose a unique name and optionialy add to an
+existing package.
+
+_Alert Instance Name_ : A unique name for the alert instance.
+
+_Alert_ : Select the alert this instance will be based on.
+
+  * `dmxFile System Usage`: file system usage 
+  * `dxmInstanceAlert`: instance down 
+  * `dmxLogAlert`: incoming log message 
+  * `dmxPIDResidentMemory`: process resident memory: when memory increases beyond a configured level
+  * `dmxServer1MinLoad`: 1-min load level 
+  * `dmsServerCPU`: max CPU on server 
+  * `dmxServerMemory`: maximum memory usage on server
+  * `dmxServerStateAlert`: server down
+
+_Process_ : The process in which the alert is registered: must be running and
+must support alerts.
+
+_Lookup Override_ : A table or configurable parameter used for comparing data:
+must have at least one column in common with the trigger table so that they
+can be joined in the alert. The value specified here overrides the lookup
+table selected in the alert this instance is based on. Use the Lookup Data
+button to view details of the table/configurable parameter.
+
+_Active_ : Check for the alert to be active.
+
+_Persist_ : Determines whether or not the alert is persisted to KX Control so
+that it can be loaded into the process each time it is started. If this is not
+checked the alert will exist only until the process is terminated.
+
+_Max Frequency_ : The maximum frequency that an alert can be fired in terms of
+1/x seconds.
+
+_Persist_ : Determines whether or not the alert is persisted to KX Control so
+that it can be loaded into the process each time it is started. If this is not
+ticked the alert will exist only until the process is terminated.
+
+## Notifications editor
+
+Set up email notifications to be sent when alerts are triggered. Associate the
+notification with alert instances and specify their frequency and recipients.
+
+![Screenshot](../img/control/alert_instance_notifications.png)
+
+_Notification_ : Select a notification from the drop-down list of existing
+notifications. Or click New and create a new notification. Or remove a
+notification from the list by selecting it and clicking Delete.
+
+_Update Type_ : Options are:
+
+  * `On True`: send notification on alert `triggered=true`
+  * `On False`: send notification on alert `triggered=false`
+  * O`n First True`: send notification when the alert first sets `triggered=true`
+  * `On First False`: send notification when the alert first sets `triggered=false`
+  * `On Change`: send notification when the alert `triggered` value differs the previous value
+  * `On All`: send notification regardless of the alert `triggered` state
+
+_Time Since Last_ : The delay from when an email notification is sent until
+the next notification is sent.
+
+_Subject_ : Email Subject
+
+_Body_ : Email Content
+
+## Email recipients
+
+![Screenshot](../img/control/alert_email_recipients.png)
+
+Edit the list of email contacts. Check the Include box for the notifications
+to be sent to a recipient. To create a new email recipient select the _\+ New
+Email Recipient_ button at the top right of the notifications editor. If
+permissioned, the user will be directed to edit the config parameter
+_DS_EMAIL_ADDRESSES_ where a new recipient can be added to the parameter
+values.
+

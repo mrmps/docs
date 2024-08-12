@@ -1,0 +1,36 @@
+https://code.kx.com/platform/ds_launch/
+
+# DS_LAUNCH - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/ds_launch/
+
+# DS_LAUNCH
+
+External Application Launcher provides the ability to start external
+applications from Delta Control including applications that include the Delta
+Control API.
+
+## Parameters
+
+The below table details the _DS_LAUNCH_ template parameters.
+
+name | type | default value | description  
+---|---|---|---  
+workingDirectory | Symbol | .(for current directory) | Specifies the working directory of the external application  
+command | Symbol |  | Command to run external application  
+parameterText | Symbol |  | Input parameters required by external application  
+blockOnCommand | Boolean | false | If this is false then & is added to the end of the command line. The user should always set this to false  
+runInBackground | Boolean | true | This adds nohup to the start of the command  
+  
+## Configuration Parameters
+
+name | type | default value | description  
+---|---|---|---  
+parameterConfig | Configuration Parameter | DS_LAUNCH_COMMANDLINE_PARAMS | This provides parameter names and values  
+  
+## Launch
+
+  * Process runs a system command to change into the directory of the external application.
+  * Sets launch behavior as assigned in input parameters
+  * System call is made to run command to start external application.
+

@@ -1,0 +1,196 @@
+https://code.kx.com/insights/api/machine-learning/q/analytics/api/online/kmeans.html
+
+# Sequential K Means - kdb products
+
+Original URL: https://code.kx.com/insights/api/machine-learning/q/analytics/api/online/kmeans.html
+
+# Sequential K-Means
+
+Sequential K-means clustering is a modification to the traditional K-means
+method where the algorithm acts upon subsets of supplied data sequentially
+rather than in a single batch. This is important in two capacities:
+
+  1. It allows clusters and their associated centroids to be discerned without loading an entire dataset into memory.
+  2. It allows streaming/online updates to a model to be made thus providing the ability to react to changes in underlying supplied data
+
+Both traditional and sequential K-means are initialized in the same manner -
+utilizing [K-means++](https://en.wikipedia.org/wiki/K-means%2B%2B) or random
+assignment.
+
+Within sequential K-means, a sample point xt is used to update the closest
+cluster center from a value ct-1 to ct using the formula:
+
+\\[c_t=c_{t-1}+a(x_t-c_{t-1})\\]
+
+Where
+
+Parameter | Description  
+---|---  
+\\(a\\) | Learning rate (0<a<1) defining how quickly a model changes based on new information.  
+  
+The `a` value above controls the rate at which the concept of forgetfulness
+within the algorithm is applied. Forgetful K-means describes a method by which
+K-means clustering can be modified to account for changes to the position of
+clusters over time, unlike traditional K-means the introduction of a forgetful
+component allows the model to evolve and react to new information. This is a
+balance between prioritising recent information vs the past.
+
+The `forgetful` option provided with this implementation controls how this
+algorithm operates, if set to true `1b` then the learning rate `a` is used in
+the above formula as a floating point value, if however `forgetful` is set to
+`0b` then the value `a` in the above formula is set to `1/(n+1)` where `n` is
+the number of points in cluster ct-1.
+
+By default in the below implementation the algorithm operates as a `forgetful`
+implementation with a learning rate of `0.1`
+
+## `.ml.online.clust.sequentialKMeans.fit`
+
+_Fit a Sequential K-means model_
+
+    
+    
+    .ml.online.clust.sequentialKMeans.fit[X;df;k;centers;config]
+    
+
+**Parameters:**
+
+name | type | description  
+---|---|---  
+`X` | `any` | Input/training data of N dimensions.  
+`df` | `symbol` | Distance function used in clustering. This must be one of `edist` or `e2dist` denoting the [euclidean distance](https://en.wikipedia.org/wiki/Euclidean_distance) and euclidean squared distance respectively.  
+`k` | `long` | The number of clusters.  
+`centers` | `dictionary|null` | Initial cluster centers. If null, initial centers are calculated using k++/random initialisation. If dictionary, must contain `num` and `centroids` which define the number of points in a cluster and the cluster location often calculated from a previous 'fit' phase.  
+`config` | `dictionary` | Any modifications to be applied during the fitting process of Sequential K-means (See here for more details).  
+  
+In the above function, the following are the optional entries for `config`:
+
+name | type | description | default  
+---|---|---|---  
+`init` | boolean | Cluster centroid initialization - K-means++/randomization (`1b/0b`) | `1b`  
+`a` | float | Learning rate | `0.1`  
+`forgetful` | boolean | Forgetful/normal sequential K-Means (`1b/0b`) | `1b`  
+  
+**Returns:**
+
+type | description  
+---|---  
+`dictionary` | All information collected during the fitting of a model, along with prediction and update functionality.  
+  
+Note that the information collected during the fitting of the model is
+contained within the `modelInfo` key and includes:
+
+name | type | description  
+---|---|---  
+`num` | `long[]` | Number of data points in each cluster.  
+`centroids` | `float[]` | Cluster centers associated with each cluster.  
+`inputs` | dictionary | Configuration inputs used when fitting the model.  
+  
+Prediction functionality is contained within the `predict` key. The function
+takes `X`, the feature data which is to be predicted, as input and returns the
+predicted values. While the update function is stored within the `update` key
+and again takes `X` as input and returns an updated representation of the
+original model.
+
+**Examples:**
+
+**Example 1:** Fit a vanilla sequential K-means algorithm
+
+    
+    
+    // Generate a dataset
+    q)data:([]1000?10f;1000?10f)
+    
+    // Select random sample of points to pass to K-means
+    q)sample:neg[500]?data
+    
+    // Set parameters
+    q)df:`e2dist           // Distance function - Euclidean squared
+    q)k:3                  // Number of clusters
+    q)centers:(::)         // Cluster information
+    q)config :(::)         // Additional parameters
+    
+    // Fit K-means based on sample
+    q)show model:.ml.online.clust.sequentialKMeans.fit[sample;df;k;centers;config]
+    modelInfo| `num`centroids`inputs!(170 180 150;(5.59595 2.110237 6.841375;8.10..
+    predict  | {[returnInfo;data]
+      modelInfo:returnInfo`modelInfo;
+      data:clust...
+    update   | {[returnInfo;data]
+      modelInfo:returnInfo`modelInfo;
+      inputs:mode..
+    
+    // Calculated centroids
+    q)model[`modelInfo]`centroids
+    5.59595  2.110237 6.841375
+    8.104928 4.878808 3.219346
+    
+    // Use the fitted model to predict on new data
+    q)newData:2 50#100?10.
+    q)model.predict newData
+    2 1 1 1 1 1 0 1 0 1 1 0 0 0 2 0 0 0 0 2 1 1 1 2 1 0 0 1 0 1 1 0 0 2 1 1 0 2 1..
+    
+    // Update the fitted model with new data
+    q)show updModel:model.update newData
+    modelInfo| `num`centroids`inputs!(183 199 168;(6.092505 1.509578 6.613747;8.5..
+    predict  | {[returnInfo;data]
+      modelInfo:returnInfo`modelInfo;
+      data:clust...
+    update   | {[returnInfo;data]
+      modelInfo:returnInfo`modelInfo;
+      inputs:mode..
+    
+    // Updated centroids
+    q)updModel[`modelInfo]`centroids
+    6.092505 1.509578 6.613747
+    8.509002 5.429571 2.729484
+    
+
+**Example 2:** Fit a sequential K-means algorithm providing initial cluster
+centers and using the non-forgetful version of the algorithm
+
+    
+    
+    // Generate a dataset
+    q)data:([]1000?10f;1000?10f)
+    
+    // Select random sample of points to pass to K-means
+    q)sample:neg[500]?data
+    
+    // Set parameters
+    q)df:`e2dist                              // Distance function - Euclidean squared
+    q)k:3                                     // Number of clusters
+    q)centers:neg[1]_model[`modelInfo]        // Cluster centers from previous fitting
+    q)config :enlist[`forgetful]!enlist 0b    // Additional parameters
+    
+    // Fit K-means based on sample
+    q)show model1:.ml.online.clust.sequentialKMeans.fit[sample;df;k;centers;config]
+    modelInfo| `num`centroids`inputs!(337 353 310;(5.874493 2.054478 6.938887;8.1..
+    predict  | {[returnInfo;data]
+      modelInfo:returnInfo`modelInfo;
+      data:clust...
+    update   | {[returnInfo;data]
+      modelInfo:returnInfo`modelInfo;
+      inputs:mode..
+    
+    // Calculated centroids
+    q)model1[`modelInfo]`centroids
+    5.874493 2.054478 6.938887
+    8.124769 4.845081 3.034611
+    
+    // Use the fitted model to predict on new data
+    q)newData:2 50#100?10.
+    q)model1.predict newData
+    0 2 2 2 0 2 1 0 1 0 1 1 0 1 2 1 2 0 1 0 2 1 2 1 1 1 1 0 1 1 1 2 1 2 1 1 1 2 2..
+    
+    // Update the fitted model with new data
+    q)show updModel1:model1.update newData
+    modelInfo| `num`centroids`inputs!(350 376 324;(5.896282 2.03924 6.971541;8.14..
+    predict  | {[returnInfo;data]
+      modelInfo:returnInfo`modelInfo;
+      data:clust...
+    update   | {[returnInfo;data]
+      modelInfo:returnInfo`modelInfo;
+      inputs:mode..
+    
+

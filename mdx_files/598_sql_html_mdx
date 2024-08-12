@@ -1,0 +1,217 @@
+https://code.kx.com/insights/enterprise/database/query/sql.html
+
+# SQL - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/database/query/sql.html
+
+# SQL query support
+
+kdb Insights Enterprise allows users to query a unified view of data using
+SQL. Data within all tiers of an assembly can be queried at once.
+
+To facilitate SQL and free-form q queries without impacting resources
+dedicated to servicing critical production API calls, the kdb Insights
+Enterprise isolates them by using **query environments**.
+
+A query environment is a collection _Data Access Processes_ that are launched
+concurrently when deploying an assembly with the `queryEnvironment` setting,
+and requests to them are routed through an isolated resource coordinator and
+gateway, as to not impact the primary set of databases.
+
+For a detailed overview of SQL constraints and advanced features, see the
+[service gateway SQL API](../../../api/database/query/sql.html).
+
+sandboxes
+
+Log statements within a database may refer to themselves as "sandboxes". This
+is synonymous with them being inside query environments.
+
+## Permissions
+
+To use SQL, you require the following roles:
+
+    
+    
+    insights.query.data
+    insights.query.sql
+    
+
+To use qSQL, you require the following roles:
+
+    
+    
+    insights.query.data
+    insights.query.qsql
+    
+
+## Query Environment
+
+When manually authoring an assembly, to enable query environments, set the
+following:
+
+    
+    
+    spec:
+      queryEnvironment:
+        enabled: true
+        size: 1
+    
+
+The size setting allows you to control the amount of databases in a query
+environment, separate from the `dap.instances` size used in the assembly.
+
+All requests pertaining to query environments should be sent to
+`/servicegateway/qe/*` as opposed to `/servicegateway/*`. For example,
+`/servicegateway/qe/meta` may be used to get the replica counts of the query
+environment databases, while `/servicegateway/meta` would return details of
+the _production_ databases.
+
+## SQL and the UI
+
+kdb Insights Enterprise UI can query any assemblies that have been launched
+with the `queryEnvironment` setting.
+
+The SQL functionality is available in the UI under `Query`, then the `SQL`
+tab.
+
+[Query in the UI](../../visualization/query.html)
+
+## qSQL and the UI
+
+kdb Insights Enterprise UI can query any assemblies that have been launched
+with the `queryEnvironment` setting.
+
+The SQL functionality is available in the UI under `Query`, then the `q` tab.
+
+[Query in the UI](../../visualization/query.html)
+
+## RESTfully using SQL
+
+SQL queries are made by submitting POST requests with a JSON query, to the
+`/servicegateway/qe/sql` endpoint in insights.
+
+To download query results as JSON:
+
+    
+    
+        curl -X POST\
+            --header "Content-Type: application/json"\
+            --header "Accept: application/json"\
+            --header "Authorization: Bearer $INSIGHTS_TOKEN"\
+            --data '{"query":"SELECT size FROM trade"}'\
+            -o results.dat\
+            "https://${INSIGHTS_HOSTNAME}/servicegateway/qe/sql"
+    
+
+To download query results as binary:
+
+    
+    
+        curl -X POST\
+            --header "Content-Type: application/json"\
+            --header "Accept: application/octet-stream"\
+            --header "Authorization: Bearer $INSIGHTS_TOKEN"\
+            --data '{"query":"SELECT size FROM trade"}'\
+            -o results.dat\
+            "https://${INSIGHTS_HOSTNAME}/servicegateway/qe/sql"
+    
+
+The SQL query results are saved as IPC binary results and may be compressed.
+You can inspect the downloaded file with q:
+
+If you wish to list what query environments are available, you may do so with
+`/servicegateway/qe/meta` and `jq` to print the results:
+
+    
+    
+        curl --header "Authorization: Bearer $INSIGHTS_TOKEN" "https://${INSIGHTS_HOSTNAME}/servicegateway/qe/meta" | jq .payload.dap
+    [
+      {
+        "assembly": "dev-assembly-qe",
+        "instance": "hb",
+        "startTS": "",
+        "endTS":   ""
+      },
+      {
+        "assembly": "dev-assembly-qe",
+        "instance": "rb",
+        "startTS": "1707-09-22T00:12:43.145224194",
+        "endTS": "2292-04-10T23:47:16.854775807"
+      },
+      {
+        "assembly": "dev-assembly-qe",
+        "instance": "ib",
+        "startTS": "",
+        "endTS":   ""
+      }
+    ]
+    
+
+Querying with empty time values
+
+Empty `startTS` and `endTS` indicate that particular tier does not yet have
+data
+
+## RESTfully using qSQL
+
+qSQL queries are made by submitting POST requests with a JSON query, assembly,
+and target database name to the `/servicegateway/qe/qsql` endpoint in
+insights.
+
+If you wish to list what query environments are available, you may do so with
+`GET /servicegateway/qe/meta` and `jq` to print the results:
+
+    
+    
+        curl --header "Authorization: Bearer $INSIGHTS_TOKEN" "https://${INSIGHTS_HOSTNAME}/servicegateway/qe/meta" | jq .payload.dap
+    [
+      {
+        "assembly": "dev-assembly-qe",
+        "instance": "hb",
+        "startTS": "",
+        "endTS":   ""
+      },
+      {
+        "assembly": "dev-assembly-qe",
+        "instance": "rb",
+        "startTS": "1707-09-22T00:12:43.145224194",
+        "endTS": "2292-04-10T23:47:16.854775807"
+      },
+      {
+        "assembly": "dev-assembly-qe",
+        "instance": "ib",
+        "startTS": "",
+        "endTS":   ""
+      }
+    ]
+    
+
+To download query results as JSON:
+
+    
+    
+        curl -X POST\
+            --header "Content-Type: application/json"\
+            --header "Accept: application/json"\
+            --header "Authorization: Bearer $INSIGHTS_TOKEN"\
+            --data '{"query":"select size from trade", "target": "rb", "assembly": "dev-assembly-qe"}'\
+            -o results.json\
+            "https://${INSIGHTS_HOSTNAME}/servicegateway/qe/qsql"
+    
+
+To download query results as binary:
+
+    
+    
+        curl -X POST\
+            --header "Content-Type: application/json"\
+            --header "Accept: application/octet-stream"\
+            --header "Authorization: Bearer $INSIGHTS_TOKEN"\
+            --data '{"query":"select size from trade", "target": "rb", "assembly": "dev-assembly-qe"}'\
+            -o results.dat\
+            "https://${INSIGHTS_HOSTNAME}/servicegateway/qe/qsql"
+    
+
+The qSQL query results are saved as IPC binary results and may be compressed.
+You can inspect the downloaded file with q:
+

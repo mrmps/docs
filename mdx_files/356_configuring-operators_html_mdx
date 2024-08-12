@@ -1,0 +1,114 @@
+https://code.kx.com/insights/api/stream-processor/q/configuring-operators.html
+
+# Configuring Operators - kdb products
+
+Original URL: https://code.kx.com/insights/api/stream-processor/q/configuring-operators.html
+
+# Configuring operators
+
+## `.qsp.use`
+
+_Modify the behavior of an operator_
+
+**Parameters:**
+
+name | q type | description  
+---|---|---  
+opts | dictionary | Custom configuration options.  
+  
+Returns a dictionary of custom configuration options.
+
+Many operators have options which are not positional arguments. Instead, they
+are included as a dictionary as the last argument, with `.qsp.use` marking it
+as a special parameter. `.qsp.use` can also be used to pass in positional
+arguments.
+
+In the following expressions, `sort` is an options which must be passed in
+using the `.qsp.use` dictionary. `period` and `function` can be positional
+arguments, or passed in as options. As such, the following expressions are
+equivalent.
+
+    
+    
+    .qsp.window.tumbling[00:00:01; `time; .qsp.use ``sort!11b]
+    .qsp.window.tumbling[.qsp.use (!) . flip (
+        (`period;       00:00:01);
+        (`timeColumn;   `time);
+        (`sort;         1b))];
+    
+
+### Common Options
+
+There are three options common to many operators. `name` can be used by all
+operators, and `state` and `params` can be used by any operator referencing
+them in their `options` list.
+
+`state` sets the initial state for stateful operators. This state can be
+retrieved or modified using `.qsp.get` and `.qsp.set`.
+
+`params` is a symbol or list of symbols specifying which parameters are passed
+to an operator's main function, as well as their order. These can be any of
+`operator`, `metadata`, or `data`, and can also include operator specific
+parameters, if they are specified in that operator's documentation. For
+operators where `params` defaults to ``data`, including a `state` option will
+change the default `params` to ``operator`metadata`data`. Note that `metadata`
+cannot currently be used as the sole parameter. A second `data` parameter will
+be implicitly added.
+
+`name` is common to all operators and can be used to set the id of an
+operator.
+
+Create a pipeline that creates a `publish` callback, and sends data to a
+stateful map:
+
+    
+    
+    // Create some example data
+    data: ([] timestamp: .z.p + 00:00:00.1 * til 30; price: 30?100)
+    
+    // The metadata for a node can be retrieved with the `params` option:
+    addWindowStart: {[md; data] update start: md`window from data }
+    
+    // Take a running total of the window and maintain the state
+    aggregate: {[op; md; data] .qsp.set[op; md] .qsp.get[op; md] + sum data`price };
+    
+    // The metadata added by the window operator can be accessed by the map
+    // by specifying the `params` field, adding the `md` (metadata) argument
+    // to the user defined function.
+    stream: .qsp.read.fromCallback[`publish]
+        .qsp.window.tumbling[00:00:01; `timestamp]
+        .qsp.map[addWindowStart; .qsp.use``params!(::; `metadata`data)];
+    
+    // Runs the stream with a split to print the intermediate results as well as an
+    // aggregated result.
+    .qsp.run (
+        stream .qsp.write.toConsole[];
+        stream
+            // When `state` is set, the operator becomes stateful, and its function is automatically
+            // provided the operator and metadata as arguments.
+            .qsp.map[aggregate; .qsp.use `name`state!(`MyAggregator; 0f)]
+            .qsp.write.toConsole["Running total: "]
+            )
+    
+    publish data
+    
+    
+    
+                                 | timestamp                     price    start
+    -----------------------------| --------------------------------------------------------------------
+    2021.10.02D11:54:10.622299200| 2021.10.02D11:54:09.614209300 51.14424 2021.10.02D11:54:09.614209300
+    2021.10.02D11:54:10.622299200| 2021.10.02D11:54:09.614209301 48.9294  2021.10.02D11:54:09.614209300
+    2021.10.02D11:54:10.622299200| 2021.10.02D11:54:09.614209302 78.87772 2021.10.02D11:54:09.614209300
+    2021.10.02D11:54:10.622299200| 2021.10.02D11:54:09.614209303 40.96236 2021.10.02D11:54:09.614209300
+    2021.10.02D11:54:10.622299200| 2021.10.02D11:54:09.614209304 76.77878 2021.10.02D11:54:09.614209300
+    2021.10.02D11:54:10.622299200| 2021.10.02D11:54:09.614209305 16.01048 2021.10.02D11:54:09.614209300
+    2021.10.02D11:54:10.622299200| 2021.10.02D11:54:09.614209306 99.31063 2021.10.02D11:54:09.614209300
+    2021.10.02D11:54:10.622299200| 2021.10.02D11:54:09.614209307 11.61313 2021.10.02D11:54:09.614209300
+    2021.10.02D11:54:10.622299200| 2021.10.02D11:54:09.614209308 37.77495 2021.10.02D11:54:09.614209300
+    2021.10.02D11:54:10.622299200| 2021.10.02D11:54:09.614209309 97.89015 2021.10.02D11:54:09.614209300
+    Running total: 2021.10.02D11:54:10.623336100 | 559.2918
+    
+
+Since the name was set explicitly for the map node, the state held in the node
+can be queried externally:
+

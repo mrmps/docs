@@ -1,0 +1,1610 @@
+https://code.kx.com/platform/api/utils/
+
+# Utils - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/api/utils/
+
+# Utils
+
+This module contains sets of useful utility functions.
+
+**Converters**
+
+  * Environment variables
+  * q object to/from binary
+  * q object to/from string
+
+**Files**
+
+  * Load q files
+  * Read/save csv files
+  * Check file exists
+  * Read text file
+
+**Hosts**
+
+  * Local host & IP
+  * IP of connection (local or remote)
+  * Hostname from IP
+
+## `.pivot.pivotV3`
+
+Pivot a table. Can specify a where clause, the roll-ups, groupings and
+sorting. Used by HTML5 dashboards for OLAP and pivot grids.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+t | table | symbol | Table name or data to pivot  
+w | list | Where clause in format for functional select. Single clauses must be enlisted  
+d | dict|list | Columns to pivot by. See example for different formats and behavior.  
+a | symbol[] | Names of aggregated columns  
+f | list | Aggregation functions to apply to columns  
+n | long | Number of rows to return  
+o | list | Column and direction to order result by  
+  
+**Example:** Group with no labels
+
+    
+    
+     n:10000; 
+     trade:([]date:asc n?.z.d-1+til 3; time:asc n?00:00:00.0; sym:n?`GOOG`YHOO`IBM`FD`KX; price:n?100.; size:n?1000; exch:n?`NY`CHI`LDN)
+     .pivot.pivotV3[trade; enlist (within ;`date;(2000.01.01;.z.d)); `sym`exch; `priceA`sizeS; ((avg;`price); (sum;`size)); 0j; (`sym; 1)]
+     /=> sym  exch priceA sizeS
+     /=> -------------------------
+     /=> FD   CHI  344626 49.62555
+     /=> FD   LDN  313760 52.29153
+     /=> FD   NY   342650 50.42283
+     /=> GOOG CHI  336680 49.26191
+     /=> GOOG LDN  329210 49.87673
+     /=> GOOG NY   308713 49.13837
+     /=> IBM  CHI  300322 48.63386
+     /=> ..
+    
+
+**Example:** Group with labels
+
+    
+    
+     .pivot.pivotV3[trade; enlist (within ;`date;(.z.d-5;.z.d)); `d`g!enlist each (`sym;`exch); `priceA`sizeS; ((sum;`size);(avg;`price)); 0j; (`sym; 1)]
+     /=> sym  CHIsum CHIavg   LDNsum LDNavg   NYsum  NYavg
+     /=> ----------------------------------------------------
+     /=> FD   344626 49.62555 313760 52.29153 342650 50.42283
+     /=> GOOG 336680 49.26191 329210 49.87673 308713 49.13837
+     /=> IBM  300322 48.63386 325252 48.06682 316642 49.71896
+     /=> KX   331474 52.3648  373810 51.32345 318059 50.55239
+     /=> YHOO 347773 49.69757 353849 47.91922 337713 48.88509 
+     /=> ..
+    
+
+## `.pivot.simple`
+
+Simple table pivot. Specify key, pivot and value columns.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+tab | table | symbol | Table name or data to pivot  
+keycol | symbol | Key column  
+pivcol | symbol | Pivot column  
+valcol | symbol | Value column  
+  
+**Example:**
+
+    
+    
+     t:([]k:1 2 3 2 3;p:`xx`yy`zz`xx`yy;v:10 20 30 40 50)
+     .pivot.simple[t; `k; `p; `v]
+     /=> k| xx yy zz
+     /=> -| --------
+     /=> 1| 10      
+     /=> 2| 40 20   
+     /=> 3|    50 30
+    
+
+## `.utils.addWeekdays`
+
+Add a number of weekdays to date
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+dt | date | Start date  
+n | int | Number of days  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+date | Result date  
+  
+**Example:**
+
+    
+    
+     .utils.addWeekdays[2017.01.01; 20]
+     /=> 2017.01.30
+    
+
+## `.utils.applyTableAttrs`
+
+Applies attributes to table schema as defined in dict param
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+name | Symbol | Schema name  
+dict | dict | Dictionary of column name to attribute to be applied  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+Symbol | Name of passed schema  
+  
+**Example:**
+
+    
+    
+     .utils.applyTableAttrs[`tabName; `time`sym!`s`g]
+     /=> `tabName
+    
+
+## `.utils.decode`
+
+Decodes an integer to a string using a base alphabet. Inverse of
+`.utils.encode`
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+alphabet | string | Alphabet  
+id | long | Integer to decode  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+string | Decoded string  
+  
+**Example:**
+
+    
+    
+     alphabet:"23456789bcdfghjkmnpqrstvwxyz"
+     str:"grmz49"
+     0N!id:.utils.encode[alphabet; str];
+     /=> 219189999j
+     .utils.decode[alphabet; id]
+     /=> "grmz49"
+    
+
+## `.utils.encode`
+
+Encodes a string to an integer using a base alphabet.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+alphabet | string | Alphabet  
+str | string | String to encode  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+long | Encoded integer  
+  
+**Example:**
+
+    
+    
+     alphabet:"23456789bcdfghjkmnpqrstvwxyz"
+     str:"grmz49"
+     .utils.encode[alphabet; str]
+     /=> 219189999j
+    
+
+## `.utils.escapeHTML`
+
+Escapes some HTML characters;
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+str | string | symbol | String to be escaped  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+string | Escaped string  
+  
+**Example:**
+
+    
+    
+     .utils.escapeHTML["XSSTest<img><span>Click\"'&</span>"]
+     /=> "XSSTest&lt;img&gt;&lt;span&gt;Click&quot;&#39;&amp;&lt;/span&gt;"
+    
+
+## `.utils.gc`
+
+Runs garbage collection
+
+**Returns:**
+
+Type | Description  
+---|---  
+long | Number of bytes freed  
+  
+**Example:**
+
+    
+    
+     .utils.gc[]
+     /=> <->2017.08.31D10:21:34.305 ### GC           ### normal ### (26668): Starting garbage collection: used=1.227G, heap=2.349G, peak=2.349G, wmax=0.000, symw=1.670M ###
+     /=> <->2017.08.31D10:21:34.570 ### GC           ### normal ### (26668): Finished garbage collection: used=1.227G, heap=1.275G, peak=2.349G, wmax=0.000, symw=1.670M ### "1.074G"
+     /=> 1073741824
+    
+
+## `.utils.getHostPortOnly`
+
+Same as `.utils.getHostPort` without user credentials
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+host | symbol | Host name  
+port | int | Port number  
+mode | symbol | Connection mode - standard TCPIP, UDS or TLS  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol | Connection details  
+  
+**Example:**
+
+    
+    
+     .utils.getHostPortOnly[`coredev1; 3000; `]
+     /=> `:coredev1:3000
+     .utils.getHostPortOnly[`coredev1; 3000; `tls]
+     /=> `:tcps://coredev1:3000
+     .utils.getHostPortOnly[`coredev1; 3000; `uds]
+     /=> `:unix://3000 
+    
+
+## `.utils.getHostPort`
+
+Build `hopen` format for a host & port. Mode determines what protocol is used;
+
+  * `tls` \- TLS/SSL
+  * `uds` \- Unix domain sockets
+  * defaults to TCPIP for anything else
+
+If username not specified, will omit user credentials.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+host | symbol | Host name  
+port | int | Port number  
+user | symbol | Username  
+pass | string | Password  
+mode | symbol | Connection mode - standard TCPIP, UDS or TLS  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol | Connection details  
+  
+**Example:** No credentials
+
+    
+    
+     getHostPort[`coredev1; 3000; `; ""; `]
+     /=> `:coredev1:3000
+     getHostPort[`coredev1; 3000; `; ""; `tls]
+     /=> `:tcps://coredev1:3000
+     getHostPort[`coredev1; 3000; `; ""; `uds]
+     /=> `:unix://3000
+    
+
+**Example:** With credentials
+
+    
+    
+     getHostPort[`coredev1; 3000; `username; "password"; `]
+     /=> `:coredev1:3000:username:password
+     getHostPort[`coredev1; 3000; `username; "password"; `tls]
+     /=> `:tcps://coredev1:3000:username:password
+     getHostPort[`coredev1; 3000; `username; "password"; `uds]
+     /=> `:unix://3000:username:password
+    
+
+## `.utils.getIntRange`
+
+Takes a range string with and expands it to a range of numbers. Expands "1-4"
+to 1 2 3 4
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+range | string | Integer range  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+int[] | Integers within range  
+  
+**Example:** Single integer
+
+    
+    
+     .utils.getIntRange[(),"1"]
+     /=> ,1i
+    
+
+**Example:** Range of integers
+
+    
+    
+     .utils.getIntRange["1-3"]
+     /=> 1 2 3i
+    
+
+## `.utils.getTableAttrs`
+
+Returns dictionary of applied schema attributes
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+name | Symbol | Schema name  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | Dictionary of column name to attribute  
+  
+**Example:**
+
+    
+    
+     .utils.getTableAttrs[`tabName]
+     /=> `time`sym!`s`g
+    
+
+## `.utils.getWeekdayList`
+
+Get a list of weekdays between two dates
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+s | date | Start date  
+e | date | End date  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+date[] | List of dates  
+  
+**Example:**
+
+    
+    
+     .utils.getWeekdayList[2017.01.01; 2017.01.30]
+     /=> 2017.01.02 2017.01.03 2017.01.04 2017.01.05 2017.01.06 2017.01.09 2017.01.10 2017.01.11 2017.01.12 2017.01.13 2017.01.16 2017.01.17
+    
+
+## `.utils.hdb.reload1`
+
+Opens a connection to a HDB and reloads it Assumes target HDB instance is self
+aware of System call restrictions
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+conn | symbol | HDB connection string  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+Boolean | Boolean to indicate successful connection and call to HDB  
+  
+**Example:**
+
+    
+    
+     .utils.hdb.reload1[`::5000]
+     .utils.hdb.reload1[`::5000]
+    
+
+## `.utils.hdb.reload`
+
+**Deprecated**
+
+Opens a connection to a HDB and reloads it
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+conn | symbol | HDB connection string  
+nosystem | boolean | Whether client system calls blocked (-u 1)  
+  
+**Example:**
+
+    
+    
+     .utils.hdb.reload[`::5000; 1b]
+     .utils.hdb.reload[`::5000; 0b]
+    
+
+## `.utils.isfunctionstring`
+
+Checks if a string is a q function. Doesn't check for errors but simply that
+the function is safe to 'value'.
+
+Code must be entirely enclosed in curly brackets {} but can have comments and
+whitespace outside. Ignores curly brackets within strings and comments.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+str | string | Function string  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | Valid flag  
+  
+**Example:** External comments
+
+    
+    
+     str:"/ a comment\n{[] }\n/ second comment"
+     .utils.isfunctionstring str
+     /=> 1b
+    
+
+**Example:** External code
+
+    
+    
+     str:"{[] }\nwhile[1]"
+     .utils.isfunctionstring str
+     /=> 0b
+    
+
+**Example:** Curly brackets
+
+    
+    
+     str:"{[]\n \"}\";\n / }\n }"
+     .utils.isfunctionstring str
+     /=> 1b 
+    
+
+## `.utils.regex`
+
+Filters data using the pattern provided
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+data | symbol[] | Data to filter  
+s | string | Regex pattern  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean[] | List of booleans, true where data matches pattern  
+  
+**Example:**
+
+    
+    
+     data:`abc`def`ghi`abbbc
+     regex:"*a*c*"
+     .utils.regex[data; regex]
+     /=> 1001b
+    
+
+## `.utils.rmdir`
+
+Deletes a directory and the contents of the directory
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+dir | symbol | File path to directory  
+  
+**Example:**
+
+    
+    
+     .utils.rmdir[`:/home/local/install/tmp]
+    
+
+## `.utils.setCompression`
+
+Sets the on-disk compression level `.z.zd`
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+comp | int[] | Compression settings  
+  
+**Example:** Enable
+
+    
+    
+     .utils.setCompression[17 2 6]
+    
+
+**Example:** Disable
+
+    
+    
+     .utils.setCompression[0 0 0]
+    
+
+## `.utils.setJitterRange`
+
+Sets default jitter range from instance config
+
+**Example:**
+
+    
+    
+     .utils.setJitterRange[]
+    
+
+## `.utils.splitConnectionString`
+
+Split a connection string into individual parts. Useful when dealing with
+`tcps://` or `unix://` prefixes. Returns a dictionary.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+hp | symbol | Connection details  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | Dictionary  
+  
+**Example:**
+
+    
+    
+     .utils.splitConnectionString[`$":localhost:6000"]
+     /=> host    | `localhost
+     /=> port    | 6000i
+     /=> user    | `
+     /=> password| ""
+     /=> protocol| `
+    
+     .utils.splitConnectionString[`$":tcps://localhost:6000:user:password"]
+     /=> host    | `localhost
+     /=> port    | 6000i
+     /=> user    | `user
+     /=> password| "password"
+     /=> protocol| `tls
+    
+     .utils.splitConnectionString[`$":unix://6000"]
+     /=> host    | `
+     /=> port    | 6000i
+     /=> user    | `
+     /=> password| ""
+     /=> protocol| `uds
+    
+
+## `.utils.stripCredentials`
+
+Strip credentials from a connection string. Can be used to remove credentials
+from logging.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+conn | symbol | Connection string  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol | Connection without credentials  
+  
+**Example:**
+
+    
+    
+     conns:`:tcps://host:2222:user:pass`:unix://2222:user:pass`:host:2222:user:pass`::2222:user:pass`:host:2222
+     conns!.utils.stripCredentials each conns
+     /=> :tcps://host:2222:user:pass| :tcps://host:2222
+     /=> :unix://2222:user:pass     | :unix://2222
+     /=> :host:2222:user:pass       | :host:2222
+     /=> ::2222:user:pass           | ::2222
+     /=> :host:2222                 | :host:2222
+    
+
+**Example:**
+
+    
+    
+     conn:`::6000:Administrator:password
+     tlsconn:`:tcps://:6000:Administrator:password
+     .log.out[.z.h; "Connected to: "; .utils.stripCredentials conn]
+     /=> <->2018.08.09D14:23:06.927 ### server ### normal ### (5172): Connected to:  ### `:tcps://:6000
+     .log.out[.z.h; "Connected to: "; .utils.stripCredentials tlsconn]
+     /=> <->2018.08.09D14:23:06.927 ### server ### normal ### (5172): Connected to:  ### `:tcps://:6000
+    
+
+## `.utils.validateEmail`
+
+Returns valid email addresses from a list of symbols. Ensures no spaces and
+`@` is present
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+email | symbol | Email address list  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol | Validated email address list  
+  
+**Example:**
+
+    
+    
+     .utils.validateEmail[`$("test  address@kx.com";"  email1@kx.com";"fxeval";"email2@kx.com")]
+     /=>`email1@kx.com`email2@kx.com
+    
+
+## `.utils.vsFirst`
+
+Split on the first delimiter only
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+str | string | String to split  
+delim | char | Delimiter character  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+string[] | List of split strings  
+  
+**Example:**
+
+    
+    
+     0N!.utils.vsFirst["foo/bar/go"; "/"];
+     ("foo";"bar/go")
+     0N!.utils.vsFirst["foo.bar"; "."];
+     /=> ("foo";"bar")
+     0N!.utils.vsFirst["foobar"; "."];
+     /=> ("foobar";"")
+    
+
+## `.utils.vsLast`
+
+Split on the last delimiter only
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+str | string | String to split  
+delim | char | Delimiter character  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+string[] | List of split strings  
+  
+**Example:**
+
+    
+    
+     0N!.utils.vsLast["foo/bar/go"; "/"];
+     ("foo/bar";"go")
+     0N!.utils.vsLast["foo.bar"; "."];
+     /=> ("foo";"bar")
+     0N!.utils.vsLast["foobar"; "."];
+     /=> ("";"foobar")
+    
+
+## `.utils.writeBinFile`
+
+Writes a bytestream to a new file
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+bytes | byte[] | Bytes to write to file  
+file | symbol | Full file path to file that will be created  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol | File name  
+  
+**Example:**
+
+    
+    
+     x:.utils.sd[til 5]
+     .utils.writeBinFile[x;`$":/home/tmp/testfile.txt"]
+     /=> `$":/home/tmp/testfile.txt"
+    
+
+## `.version.getbuilddate`
+
+Gets the _Control_ build timestamp
+
+**Returns:**
+
+Type | Description  
+---|---  
+string | Build timestamp  
+  
+**Example:**
+
+    
+    
+     .version.getbuilddate[]
+     /=> "11:46 20:02:2017"
+    
+
+## `.version.getversion`
+
+Gets the _Control_ release and revision number
+
+**Returns:**
+
+Type | Description  
+---|---  
+string | Version number  
+  
+**Example:**
+
+    
+    
+     .version.getversion[]
+     /=> "4.0.0D2.7315"
+    
+
+## `.xml.p`
+
+Parses XML from a string.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | string | XML  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+list | List of nested tags and payloads  
+  
+**Example:**
+
+    
+    
+     x:"<breakfast_menu><food>\n<name>Belgian Waffles</name>\n<price>$5.95</price>\n<description>\nTwo of our famous Belgian Waffles with plenty of real maple syrup\n</description>\n<calories>650</calories>\n</food>\n<food>\n<name>Strawberry Belgian Waffles</name>\n<price>$7.95</price>\n<description>\nLight Belgian waffles covered with strawberries and whipped cream\n</description>\n<calories>900</calories>\n</food>\n</breakfast_menu>"
+     .xml.p
+     /=> `breakfast_menu (`symbol$())!() ((`food;(`symbol$())!();((`name;(`symbol$())!();"Belgian Waffles");(`price;(`symbol$())!();"$5.95");(`description;(`symbol$())!();"\nTwo of our famou..
+    
+
+## `.utils.checkForEnvVar`
+
+Take a string and resolve any environment variables in the pattern. The input
+string should contain an environment variable enclosed between `ENV=` and `=`.
+Can have text either side of the pattern.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+input | symbol | string | String containing environment variable  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol | Resolved symbol  
+  
+**Example:**
+
+    
+    
+     .utils.checkForEnvVar[`$"ENV=DELTA_HOME=/data"]
+     /=> `/home/dcore/core/install/data
+    
+
+## `.utils.convert`
+
+Resolves a typed value from a string. All standard kdb+ types are supported
+and are parsed using the cast operator `$`. For a complete list of types, see
+`.utils.typeMap`. Multiple values can be specified in the string once they're
+comma-delimited. To parse multiple values, use the upper-case type identifier.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+typ | char | Character type  
+val | string | Value to parse  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+untyped | Resolved kdb+ type  
+  
+**Example:**
+
+    
+    
+     .utils.convert["z"; "2013.02.22D14"]
+     /=> 2013.02.22T14:00:00.000
+     .utils.convert["Z"; "2013.02.22D14,2013.02.22D15"]
+     /=> 2013.02.22T14:00:00.000 2013.02.22T15:00:00.000
+     .utils.convert["Z"; "2013.02.22D14"]
+     /=> ,2013.02.22T14:00:00.000
+     .utils.convert["z"; "2013.02.22D14,2013.02.22D15"]
+     /=> 0Nz
+     .utils.convert["M"; "2013.02.22D14,2013.02.22D15"]
+     /=> 2013.02 2013.02m
+     .utils.convert["s"; "abc"]
+     /=> `abc
+     .utils.convert["S"; "abc"]
+     /=> ,`abc
+     .utils.convert["i"; "123"]
+     /=> 123i
+     .utils.convert["I"; "123"]
+     /=> ,123i
+    
+
+## `.utils.createString`
+
+Takes a string and replaces any tags with values from an optional dictionary.
+Useful for substituting values for emails, filenames etc.
+
+Tag names in the source string should be specified as _$TagName$_. The
+matching is case-insensitive.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+strFormat | string | String to transform  
+dataDict | dict | Dictionary of tag values  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+string | Resolved string  
+  
+**Example:** File
+
+    
+    
+     .utils.createString["file_$DATE$"; `date`tab!(2017.01.01; `dxQuote)]
+     /=> "file_2017.01.01"
+    
+
+**Example:** Email
+
+    
+    
+     .utils.createString["\nA $ALERT$ alert has been triggered on $SYM$.\n\n Please check exposure\n"; `alert`sym!(`credit; `EURUSD)];
+     /=> "\nA credit alert has been triggered on EURUSD.\n\n Please check exposure\n"
+    
+
+## `.utils.dsd`
+
+Decodes a bytestream. Reverse operation for `.utils.sd` Wrapper for -9!
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | byte[] | Object bytestream  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+untyped | Resolved kdb+ type  
+  
+**Example:**
+
+    
+    
+     x:.utils.sd[til 5]
+     .utils.dsd[x]
+     /=> 0 1 2 3 4
+    
+
+## `.utils.formatDateTime`
+
+Format a date type to a string using specified format
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+date | date |   
+format | String[] | Format of Date and time  
+  
+**Example:**
+
+    
+    
+     .utils.i.tsFormats contains a dictionary of date and time formats
+     combine these to create the format input 
+     .utils.formatDateTime[.z.p; ] each .utils.i.tsFormats
+     /=> "06/10/2019 09:39"
+     /=> "10/6/2019 09:39:30"
+     /=> "6/10/2019 09:39:30.061"
+     /=> "10/6/19 09:39:30.061359"
+     /=> "6/10/19 09:39:30.061359000"
+     /=> "2019-Jun-10 39:30"
+     /=> "10 Jun 39:30.061"
+     /=> "10 Jun 2019 39:30.061"
+     /=> "Jun 10 30"
+     /=> "Jun 10, 2019 30.061"
+     /=> "2019-06 09:39:30"
+     /=> "06/2019 09:39:30.061"
+     /=> "39:30"
+     /=> "Jun 2019 39:30"
+    
+
+**Example:**
+
+    
+    
+     .utils.formatDateTime[.z.d;("D-M-YYYY_HH:MM.ss") ]
+     /=> "22-5-2019 00:00:00"
+    
+
+**Example:**
+
+    
+    
+     .utils.formatDateTime[.z.d;("YYYY-MM-DD_hh:mm") ]
+     /=> "2019-05-22 00:00"
+    
+
+**Example:**
+
+    
+    
+     .utils.formatDateTime[.z.p;("MM/DD/YYYY_hh:mm:ss.sss")]
+     /=> "05/22/2019 19:47:47.429"
+    
+
+**Example:**
+
+    
+    
+     .utils.formatDateTime[.z.p;("M-DD-YY_hh:mm:ss.ssssssssss")]
+     /=> "5-22-19 19:48:51"
+    
+
+**Example:**
+
+    
+    
+     .utils.formatDateTime[.z.p;("MMM-DD-YY_mm:ss")]
+     /=> "May-22-19 49:41"
+    
+
+**Example:**
+
+    
+    
+     .utils.formatDateTime[.z.p;("D/M/YY_ss.ss")]
+     /=> "22/5/19 19:50:20"
+    
+
+**Example:**
+
+    
+    
+     Incorrect types defaulted to hh:mm:ss
+     .utils.formatDateTime[.z.p;("D/M/YY_1234")]
+     /=> ""22/5/19 19:50:54""
+    
+
+## `.utils.formatNumber`
+
+Formats and rounds a floating point number to a number of decimals. Can round
+the number using parameters `up`, `down`, `nearest`
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+prec | int | Number of decimal places to round  
+val | float | real | Floating point number to format  
+style | symbol |   
+  
+**Returns:**
+
+Type | Description  
+---|---  
+string | Rounded number  
+  
+**Example:**
+
+    
+    
+     .utils.formatNumber[2; 10.23434534; `up]
+     /=> "10.24"
+     .utils.formatNumber[2; 10.23434534; `down]
+     /=> "10.23"
+     .utils.formatNumber[2; 10.23434534; `nearest]
+     /=> "10.23"
+     .utils.formatNumber[2; 10.23634534; `nearest]
+     /=> "10.24"
+    
+
+## `.utils.formatTemporal`
+
+Format a temporal type to a string. Sample calls show the supported formats.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+fmt | string |   
+val | temporal | Temporal value to format  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+string[] | Formatted temporal value  
+  
+**Example:** Sample Calls
+
+    
+    
+     fmt:("YYYY.MM.DD"; "MM.DD.YYYY"; "MM/DD/YYYY"; "DD/MM/YYYY"; "MM/DD/YY"; "DD/MM/YY"; "HH:MM:SS"; "HH:MM:SS.sss"; "HH:MM:SS.s6"; "HH:MM:SS.s9";
+       "HH"; "HH:MM"; "MM"; "MM:SS"; "MM:SS.sss"; "MM:SS.s6"; "MM:SS.s9"; "SS"; "SS.sss"; "SS.s6"; "SS.s9"; "sss"; "s6"; "s9"; "aaa"; "")
+     fmt!.utils.formatTemporal[; 2010.01.02D12:13:14:15.123456789 2011.02.03D13:14:15:16.234567890 2012.03.04D14:15:16:17.345678901] each fmt
+     fmt!.utils.formatTemporal[; "z"$2010.01.02D12:13:14:15.123456789 2011.02.03D13:14:15:16.234567890 2012.03.04D14:15:16:17.345678901] each fmt
+     fmt!.utils.formatTemporal[; "t"$2010.01.02D12:13:14:15.123456789 2011.02.03D13:14:15:16.234567890 2012.03.04D14:15:16:17.345678901] each fmt
+    
+
+## `.utils.format`
+
+Format a number to a string. Can specify rounding, precision and formats.
+Sample calls provided detail different formatting methods.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+dict | dict | Formatting instructions  
+vals | float | real | Floating point numbers  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+string[] | Rounded numbers  
+  
+**Example:** Sample calls
+
+    
+    
+     .utils.format[`rounding`precision`format!(`up; 2; ""); 10.55 -10.55 1.2349 -1.2349 1.239 -1.2399 0 0n 1 -1]
+     .utils.format[`rounding`precision`format!(`down; 2; ""); 10.55 -10.55 1.2349 -1.2349 1.239 -1.2399 0 0n 1 -1]
+     .utils.format[`rounding`precision`format!(`nearest; 2; ""); 10.55 -10.55 1.2349 -1.2349 1.239 -1.2399 0 0n 1 -1]
+     .utils.format[`rounding`precision`format!(`up; 0; ""); 10 -10 1.49 -1.49 1.51 -1.51 0 0n]
+     .utils.format[`rounding`precision`format!(`down; 0; ""); 10 -10 1.49 -1.49 1.51 -1.51 0 0n]
+     .utils.format[`rounding`precision`format!(`nearest; 0; ""); 10 -10 1.49 -1.49 1.51 -1.51 0 0n]
+     .utils.format[`rounding`precision`format!(`up; 2; "Units - K"); 1234 1234567 1000 1000000 -1234 -1234567 -1000 -1000000 1 -1 0 0n]
+     .utils.format[`rounding`precision`format!(`up; 0; "Units - K"); 1234 1234567 1000 1000000 -1234 -1234567 -1000 -1000000 1 -1 0 0n]
+     .utils.format[`rounding`precision`format!(`up; 0; "Units - M"); 1234 1234567 1000 1000000 -1234 -1234567 -1000 -1000000 1 -1 0 0n]
+     .utils.format[`rounding`precision`format!(`up; 2; "Units - M"); 1234 1234567 1000 1000000 -1234 -1234567 -1000 -1000000 1 -1 0 0n]
+     .utils.format[`rounding`precision`format!(`up; 2; "Units - Smart"); 1234 1234567 1000 1000000 -1234 -1234567 -1000 -1000000 1 -1 0 0n]
+     .utils.format[`rounding`precision`format!(`up; 0; "Units - Smart"); 1234 1234567 1000 1000000 -1234 -1234567 -1000 -1000000 1 -1 0 0n]
+     .utils.format[`rounding`precision`format!(`up; 2; "Percentage"); 10.55 -10.55 1.2349 -1.2349 1.239 -1.2399 0 0n 1 -1]
+     .utils.format[`rounding`precision`format!(`up; 2; enlist"$"); 10.55 -10.55 1.2349 -1.2349 1.239 -1.2399 0 0n 1 -1]
+     .utils.format[`rounding`precision`format!(`up; 2; "Negative"); 10.55 -10.55 1.2349 -1.2349 1.239 -1.2399 0 0n 1 -1]
+    
+
+**Example:** Results
+
+    
+    
+     .utils.format[`rounding`precision`format!(`up; 2; "Thousand"); 1234 1234567 1000 1000000 -1234 -1234567 -1000 -1000000 1 -1 0 0n];
+     /=> ("1,234.00";"1,234,567.00";"1,000.00";"1,000,000.00";"-1,234.00";"-1,234,567.00";"-1,000.00";"-1,000,000.00";"1.00";"-1.00";"0.00";"")
+    
+
+## `.utils.genSHA256Hash`
+
+Generates a SHA256 hash from an input string.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+val | string | symbol | String/symbol to hash  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+byte[] | SHA256 hash  
+  
+**Example:**
+
+    
+    
+     .utils.genSHA256Hash[`ab]
+     /=> 0xfb8e20fc2e4c3f248c60c39bd652f3c1347298bb977b8b4d5903b85055620603
+     .utils.genSHA256Hash["1234"] 
+     /=> 0x03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4
+    
+
+## `.utils.sd`
+
+Encodes an object into a bytestream. Wrapper for `-8!`
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | untyped | kdb+ object  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+byte[] | Object bytestream  
+  
+**Example:**
+
+    
+    
+     .utils.sd[til 5]
+     /=> 0x010000003600000007000500000000000000000000000100000000000000020000000000000003..
+    
+
+## `.utils.toQString`
+
+Generates an executable q string. Can be used to take an existing q object,
+store it as a string and re-create it using `value`.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | atom|list|dict|table | Object to string  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+string | String representation of object  
+  
+**Example:**
+
+    
+    
+     .utils.toQString (1;`sym;"text";0b;2010.01.01)
+     /=> "(1i;`$\"sym\";\"text\";0b;2010.01.01d)"
+     .utils.toQString ([sym:`VOD.L`BP.L`RBS.L]close:167.23 489.22 26.12)
+     /=> "(flip (`$(enlist \"sym\"))!((enlist `$(\"VOD.L\";\"BP.L\";\"RBS.L\"))))!(flip (`$(enlist \"close\"))!((enlist 167.23 489.22 26.12f)))"
+    
+
+## `.utils.toString`
+
+Generates a string representation of the input object. Parses lists as comma-
+delimited. Will parse objects using `string` unless the `typ` parameter is one
+of `String[]`, `Character[]`, `NullType`. If `NullType` used, will call to
+`.utils.toQString`.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+val | untyped | q object to convert  
+typ | symbol | Type to parse as  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+string | String representation of object  
+  
+**Example:**
+
+    
+    
+     .utils.toString[`ab`cd; `]
+     /=> "ab,cd"
+     .utils.toString[1 2 3 4; `]
+     /=> "1,2,3,4"
+     .utils.toString[("ab";"cd"); `$"String[]"]
+     /=> "ab,cd"
+     .utils.toString[("abcd"); `$"Character[]"]
+     /=> "a,b,c,d"
+     .utils.toString[([sym:`VOD.L`BP.L`RBS.L]close:167.23 489.22 26.12); `NullType]
+     /=> "(flip (`$(enlist \"sym\"))!((enlist `$(\"VOD.L\";\"BP.L\";\"RBS.L\"))))!(flip (`$(enlist \"close\"))!((enlist 167.23 489.22 26.12f)))"
+    
+
+## `.utils.fileexists`
+
+Check if a file exists
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | symbol | Full or relative path to a file  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | True if file exists  
+  
+**Example:**
+
+    
+    
+     .utils.fileexists[`$"../shared/q/dmclient.q"]
+     /=> 1b
+    
+
+## `.utils.loadcsv`
+
+Load a CSV file and return parsed table. Parameters are the file path and the
+parsing info. This is the same format as the left argument of `0:` Returns
+`error` and logs if parsing fails.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+fileName | symbol | Full or relative path to CSV file  
+colInfo | untyped | List of column types and delimiter.  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+table | Table of resolved data  
+  
+**Example:**
+
+    
+    
+     .utils.loadcsv[`:trade.csv; ("TSFI"; enlist",")]
+     /=> time         sym  price    size
+     /=> -------------------------------
+     /=> 19:44:11.560 GOOG 49.31835 908
+     /=> 22:21:08.184 GOOG 57.85203 360
+     /=> ..
+    
+
+## `.utils.loadfile`
+
+Loads a q or k file into the process from disk. Will default to look for an
+uncompiled version of the file but if it doesn't exist, will try to load a
+compiled one. If the API is called on a remote box it will download the file
+from _Control_ , temporarily save it to disk and load from there.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | symbol | File path  
+  
+**Example:**
+
+    
+    
+     .utils.loadfile[`:../shared/q/dmclient.q]
+    
+
+## `.utils.logFile`
+
+Returns the process log file
+
+**Returns:**
+
+Type | Description  
+---|---  
+symbol | Full path to process log file  
+  
+**Example:**
+
+    
+    
+     .utils.logFile[]
+     /=> `:/home/install/delta-data/DeltaControlData/logdir/ds_rte_a.1.20200101T101001900.out.log
+    
+
+## `.utils.readfile`
+
+Reads a text file into memory and returns. Can specify a specific number of
+characters from the end of the file to read or take the whole file. Use 0 to
+read the whole file and null will default to the last 5000 chars.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+fileName | symbol | Filepath  
+maxNumChars | long | Number of characters to read from the file  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+string[] | File text  
+  
+**Example:**
+
+    
+    
+     .utils.readfile["/home/dcore/core/install/logs/ds_ms_a.out.log"; 0N]
+     /=> "ONLY READING LAST 5000 CHARS"
+     /=> ".......... for handle 6 ### `process`host`port`pid!(`ds_qp_a.1;`coredev1.firstderivatives.com;6064i;20459i)"
+     /=> "<->2017.02.22D10:26:33.253 ### coredev1.fir ### normal ### (3815): Opened Handle to Delta Control  ###  "
+     /=> "<->2017.02.22D10:26:33.254 ### coredev1.fir ### normal ### (3815): Calling register Function ###  "
+     /=> "<->2017.02.22D10:26:33.256 ### coredev1.fir ### warn.. ### (3815): .ex.getdetails - failed to resolve ENV=ds_ms_a_TASKSET=, using value from DeltaControl ### (`paramvalues`dc_taskset;`)"
+    
+
+**Example:**
+
+    
+    
+     .utils.readfile["/home/dcore/core/install/logs/ds_ms_a.out.log"; 0]
+     /=> "<->2017.01.11D17:59:58.442 ### coredev1.fir ### normal ### (8978): Loading the file ../shared/q/regex.q ###  "
+     /=> "<->2017.01.11D17:59:58.443 ### coredev1.fir ### normal ### (8978): Loading the file ../shared/q/pivot.q ###  "
+     /=> "<->2017.01.11D17:59:58.446 ### coredev1.fir ### normal ### (8978): Loading the file :../centralconfig/q/ts_sched.q ###  "
+    
+
+## `.utils.savecsv`
+
+Save a csv file from a table. Can specify the delimiter and filename. Returns
+either the filepath or `error` if there was an issue saving
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+fileName | symbol | Path of csv file to save  
+tab | table | Table of data to save  
+delimiter | char | Delimiter of saved data  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol | Filepath of csv  
+  
+**Example:** Pipe-delimited trade table
+
+    
+    
+     .utils.savecsv[`:trade.csv; trade; "|"]
+     /=> `:trade.csv
+    
+
+## `.utils.gethost`
+
+Get a fully resolved hostname of the process. On startup, the process will use
+a combination of `.z.h`, `.Q.host` and system calls to `hostname` to get a
+full resolved host name. This is cached as `.utils.host_cache`.
+
+**Returns:**
+
+Type | Description  
+---|---  
+symbol | Fully resolved hostname  
+  
+**Example:**
+
+    
+    
+     .utils.gethost[]
+     /=> `coredev1.firstderivatives.com
+    
+
+## `.utils.getip`
+
+Get the resolved IP from IP `.z.a`. If called inside an IPC call will return
+the IP of the remote process. Otherwise will return the local IP.
+
+**Returns:**
+
+Type | Description  
+---|---  
+symbol | IP address  
+  
+**Example:**
+
+    
+    
+     .utils.getip[]
+     /=> `10.18.1.10
+    
+
+## `.utils.getlocalip`
+
+Get a fully resolved IP of the process host. On startup, the process will use
+a combination of `.z.a` and system calls to `ifconfig` to get a full resolved
+IP. This is cached as `.utils.ip_cache`.
+
+**Returns:**
+
+Type | Description  
+---|---  
+symbol | Fully resolved IP  
+  
+**Example:**
+
+    
+    
+     .utils.getlocalip[]
+     /=> `10.18.1.10
+    
+
+## `.utils.nlookup`
+
+Performs a hostname lookup for an IP. Expects the IP to be in symbol form,
+separated by dots. Uses `.Q.host` to lookup the hostname
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | symbol | IP address  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol | Resolved hostname  
+  
+**Example:**
+
+    
+    
+     .utils.nlookup[`10.18.1.10]
+     /=> `fd02.fd.com
+    
+
+## `.utils.toip`
+
+Returns a symbol representation of an integer IP address.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | int | IP address  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol | Resolved IP  
+  
+**Example:**
+
+    
+    
+     .utils.toip[168952074i]
+     /=> `10.18.1.10
+    
+
+## `.utils.checkTLS`
+
+Called to check if TLS enabled
+
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | TLS enabled flag  
+  
+**Example:**
+
+    
+    
+     .utils.checkTLS[]
+     /=> 1b
+    
+
+## `.utils.getTLS`
+
+Returns TLS settings if enabled. Wrapper for `-26!`
+
+**Returns:**
+
+Type | Description  
+---|---  
+dict | TLS environment variables  
+  
+**Example:**
+
+    
+    
+     .utils.getTLS[]
+     /=> SSLEAY_VERSION   | OpenSSL 1.0.2j  26 Sep 2016
+     /=> SSL_CERT_FILE    | /home/user/certs/server-crt.pem
+     /=> SSL_CA_CERT_FILE | /home/user/certs/ca.pem
+     /=> SSL_CA_CERT_PATH | /home/user/certs/
+     /=> SSL_KEY_FILE     | /home/user/certs/server-key.pem
+     /=> SSL_CIPHER_LIST  | ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:..
+     /=> SSL_VERIFY_CLIENT| NO
+     /=> SSL_VERIFY_SERVER| YES
+    
+
+## Converters
+
+## Files
+
+## Hosts
+
+## TLS
+

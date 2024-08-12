@@ -1,0 +1,66 @@
+https://code.kx.com/insights/core/big-query/queries.html
+
+# Query - kdb products
+
+Original URL: https://code.kx.com/insights/core/big-query/queries.html
+
+# Query
+
+## .com_kx_bq.query
+
+Run query and format the result in to a kdb table
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+query | string | SQL query to run on BigQuery  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+table | Table of the query results  
+  
+**Example:** Running a select all query
+
+    
+    
+     q).com_kx_bq.query "select * from `cloudpak.kx_bma_bigquery_ds.nested_table`"
+     id   first_name last_name dob        addresses                               ..
+     -----------------------------------------------------------------------------..
+     ,"2" "Jane"     "Doe"     1980.10.16 +`status`address`city`state`zip`numberOf..
+     ,"1" "John"     "Doe"     1968.01.22 +`status`address`city`state`zip`numberOf..
+    
+
+## .com_kx_bq.queryRawResp
+
+Run query and return the response from BigQuery as is
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+query | string | SQL query to run on BigQuery  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+dict | Response from BigQuery  
+  
+**Example:** Running a 'select all' query
+
+    
+    
+     q).com_kx_bq.queryRawResp "select * from `cloudpak.kx_bma_bigquery_ds.nested_table`"
+     kind               | "bigquery#queryResponse"
+     schema             | (,`fields)!,(`name`type`mode!("id";"STRING";"NULLABLE");..
+     jobReference       | `projectId`jobId`location!("cloudpak";"job_xtHZM84N-KOUf..
+     totalRows          | ,"2"
+     rows               | +(,`f)!,(+(,`v)!,(,"2";"Jane";"Doe";"1980-10-16";+(,`v)!..
+     totalBytesProcessed| ,"0"
+     jobComplete        | 1b
+     cacheHit           | 1b
+    
+

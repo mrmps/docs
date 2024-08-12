@@ -1,0 +1,283 @@
+https://code.kx.com/insights/enterprise/configuration/base.html
+
+# Setup - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/configuration/base.html
+
+# Base configuration
+
+This page explains the base configuration for a kdb Insights Enterprise
+deployment. This enables you to customize configuration around image
+registries, ingress certs, and licenses.
+
+KX Nexus
+
+The KX Nexus repository will be sunsetted in the future. Nexus links on this
+page are provided as a temporary alternative to the KX Downloads Portal for
+existing users. The KX Downloads Portal is the preferred repository for all
+use cases and KX Nexus links will be removed once the KX Nexus repository is
+decommissioned.
+
+## Image repository
+
+In order to run the application you must configure the image repository. The
+parameters and their descriptions are described below:
+
+Variable | Type | Global | Example | Default  
+---|---|---|---|---  
+`image.pullPolicy` | `string` | Y | `"Always"` | `"IfNotPresent"`  
+`imagePullSecrets` | `list` | Y | `[]` | `["kxi-image-pull-secret"]`  
+  
+Existing users can use the KX Nexus repository to get the pull secret instead,
+until Nexus is remove in the future. To use KX Nexus, replace the
+`imagePullSecrets` value `["kxi-image-pull-secret"]`, in the table above, with
+the value `["kxi-nexus-pull-secret"]`.
+
+Configure the image repository and pull policy at the global level with the
+default being the KX Downloads Portal. If you need to self-host the images,
+the CLI `install` commands support customizing this default repository and
+setting the `global.image.repository` accordingly.
+
+When using a private image registry such as the KX Downloads Portal, login
+credentials are required to pull images. The CLI assists creating this secret
+at the point of deployment.
+
+    
+    
+    global:
+      image:
+        repository: "portal.dl.kx.com"
+      imagePullSecrets:
+      - name: "kxi-image-pull-secret"
+    
+
+The following is the KX Nexus equivalent of the above command:
+
+    
+    
+    global:
+      image:
+        repository: "registry.example.com"
+      imagePullSecrets:
+      - name: "kxi-nexus-pull-secret"
+    
+
+More information on the pull policy and pull secrets are available in the
+Kubernetes docs.
+
+[Image pull
+policy](https://kubernetes.io/docs/concepts/containers/images/#image-pull-
+policy)
+
+[Image pull secrets](https://kubernetes.io/docs/tasks/configure-pod-
+container/pull-image-private-registry/#registry-secret-existing-credentials)
+
+## Data Entitlements
+
+Data Entitlements is turned off by default. To turn this feature on, follow
+the steps shown [here](../entitlements/prerequisites.html).
+
+## Encryption in transit
+
+Everything that is required for [data encryption in
+transit](../security/encryption-in-transit.html#what-is-required-for-
+encryption-of-data-in-transit) is installed by default either when you
+[install](../installation/insights.html) or
+[upgrade](../installation/upgrading.html) _kdb Insights Enterprise_.
+
+For new installs of _kdb Insights Enterprise_ encryption in transit is enabled
+by default.
+
+You can see whether Encryption in Transit is enabled by looking at the
+information menu item in the [ribbon icon menu](../user-interface/ui-
+overview.html#ribbon-icon-menu) of the _kdb Insights Enterprise_ UI.
+
+## Ingress certificates
+
+_kdb Insights Enterprise_ uses Ingress to route external client requests into
+the application. TLS certificates are used to secure this communication, and
+must be provisioned for the application. There are two supported modes to do
+this as part of the [installation](../installation/insights.html).
+
+### Renewals
+
+Ingress certificates may require rotation for various reasons, including
+security concerns and expiration. For self-managed certificates, manual
+renewal is required. This can be accomplished by updating the Kubernetes
+secret with the most updated certificate and key. Cert-manager, on the other
+hand, will automatically handle the renewal of its own certificates.
+
+    
+    
+    kubectl delete secret <SECRET_NAME>
+    kubectl create secret <SECRET_NAME> --cert=<CA_CRT_PATH> --key=<CA_KEY_PATH>
+    
+
+### Certmanager
+
+By default _kdb Insights Enterprise_ uses [cert-manager](https://cert-
+manager.io/docs/usage/ingress/) to issue certificates.
+
+Using this mode produces the configuration below.
+
+    
+    
+    global:
+      ingress:
+        host: "insights.example.com"
+    
+
+### Self-managed
+
+Alternatively you may decide to self-manage certificates, especially if you
+use a cert authority not supported by _cert-manager_ , e.g. DigiCert. The
+certificates must be provisioned outside the application, generating a
+certificate and private key, and then uploaded to the cluster. Within this
+mode there are three available options.
+
+#### CLI secret
+
+In this mode, you provide the certificate and private key to the CLI during
+the installation and it will use them to create a Kubernetes secret.
+
+    
+    
+    kxi install setup --ingress-cert <CA_CRT_PATH> --ingress-key <CA_KEY_PATH>
+    
+
+This produces the following values.
+
+    
+    
+    global:
+      ingress:
+        certmanager: false
+        host: "insights.example.com"
+        tlsSecret: "kxi-ingress-cert"
+    
+
+#### Existing secret
+
+This is similar to the previous mode except you use an existing secret rather
+than having the CLI create one.
+
+    
+    
+    kxi install setup --ingress-cert-secret kxi-ingress-custom
+    
+
+This produces the following values.
+
+    
+    
+    global:
+      ingress:
+        certmanager: false
+        host: "insights.example.com"
+        tlsSecret: "kxi-ingress-custom"
+    
+
+#### Ingress default certificate
+
+In some cases your Kubernetes ingress controller may be configured with a TLS
+certificate. If so you can configure your deployment without an ingress
+certificate and allow it to use the ingress default. To do this, pass the
+`--ingress-certmanager-disabled` flag to the CLI. This disables cert manager
+and does not configure any certificate for the application ingress.
+
+    
+    
+    kxi install setup --ingress-certmanager-disabled
+    
+
+This produces the following values.
+
+    
+    
+    global:
+      ingress:
+        certmanager: false
+        host: "insights.example.com"
+    
+
+### Ingress class
+
+_kdb Insights Enterprise_ defaults to using the `nginx` ingress class. This is
+used to configure the specific ingress controller to use. This can be
+customized if you want to use another ingress controller.
+
+    
+    
+    global:
+      ingress:
+        host: "insights.example.com"
+        class: "nginx-inc"
+    
+
+nginx default
+
+If your cluster does not have an `ngnix` ingress class, you must set this
+value to your deployed ingress class name.
+
+## Licensing
+
+This section deals with the configuration of your _KX_ license.
+
+The self-service licensing model previously in use for KX products has been
+deprecated. Contact your sales representative if you have questions about
+this, and wish to discuss moving to the new model.
+
+### Trial license
+
+    
+    
+    global:
+      license:
+        secretName: "kxi-license"
+        type : kc
+    
+    kxi-acc-svc:
+      enabled: false
+    
+
+### Commercial license
+
+    
+    
+    global:
+      license:
+        secretName: "kxi-license"
+        type : k4
+    
+    kxi-acc-svc:
+      enabled: false
+    
+
+## global.license
+
+### secretName
+
+variable | type | example  
+---|---|---  
+`secretName` | `string` | `"license-secret"`  
+  
+The `secretName` field is required and should point to a secret containing a
+valid kdb+ license file. _kdb Insights Enterprise_ will mount this as a file
+into each pod at `/opt/kx/lic`. The license secret can be automatically
+created as part of the CLI install process.
+
+### type
+
+variable | type | example  
+---|---|---  
+`type` | `string` | `k4`  
+  
+This field configures which type of license will be used by the system.
+Permitted values are `kx`, `kc` and `k4`. It is intended to replace the
+`license.onDemand` field, however the latter has precedence to ensure backward
+compatibility. Setting `license.type: kc` will replicate the behaviour of
+`license.onDemand: true`.
+
+If using the `kc` or `k4` type, then `kxi-acc-svc.enabled` should be set to
+`false`.
+

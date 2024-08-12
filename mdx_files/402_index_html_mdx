@@ -1,0 +1,105 @@
+https://code.kx.com/insights/microservices/database/configuration/index.html
+
+# Overview - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/database/configuration/index.html
+
+# Configuration
+
+A kdb Insights Database's configuration is composed of a schema, a stream, and
+multiple data tiers for real-time and historical data. In kdb Insights
+Enterprise, a database can be configured using the [kdb Insights user
+interface](../../../enterprise/database/configuration/ui/database.html), or
+using a configuration file called an [assembly
+file](assembly/database.html#assembly).
+
+At a minimum, an kdb Insights Database needs:
+
+Once the database has been configured, the database can be
+[deployed](../deploy/index.html).
+
+Configuration methods
+
+In kdb Insights and kdb Insights Enterprise, configuration for a database can
+be submitted through an [assembly file](assembly/database.html). When using
+kdb Insights Enterprise, databases can also be configured using the [Insights
+user interface](../../../enterprise/database/configuration/ui/database.html).
+
+## Example
+
+    
+    
+    labels:
+      region: us-east-1
+    tables:
+      trace:
+        description: Manufacturing trace data
+        type: partitioned
+        blockSize: 10000
+        prtnCol: updateTS
+        sortColsOrd: [sensorID]
+        sortColsDisk: [sensorID]
+        columns:
+          - name: sensorID
+            description: Sensor Identifier
+            type: int
+            attrMem: grouped
+            attrDisk: parted
+            attrOrd: parted
+          - name: readTS
+            description: Reading timestamp
+            type: timestamp
+          - name: captureTS
+            description: Capture timestamp
+            type: timestamp
+          - name: valFloat
+            description: Sensor value
+            type: float
+          - name: qual
+            description: Reading quality
+            type: byte
+          - name: alarm
+            description: Enumerated alarm flag
+            type: byte
+          - name: updateTS
+            description: Ingestion timestamp
+            type: timestamp
+    mounts:
+      rdb:
+        type: stream
+        baseURI: none
+        partition: none
+      idb:
+        type: local
+        partition: ordinal
+      hdb:
+        type: local
+        partition: date
+    elements:
+      sm:
+        size: 1
+        source: south
+        tiers:
+          - name: streaming
+            mount: rdb
+          - name: interval
+            mount: idb
+            schedule:
+              freq: 00:10:00
+          - name: historical
+            mount: hdb
+            schedule:
+              freq: 1D00:00:00
+              snap: 01:35:00
+            retain:
+              time: 3 Months
+      dap:
+        instances:
+          da:
+            source: south
+            mountList:
+            - idb
+            - rdb
+            - hdb
+    
+

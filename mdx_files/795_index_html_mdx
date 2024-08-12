@@ -1,0 +1,182 @@
+https://code.kx.com/insights/enterprise/configuration/index.html
+
+# Overview - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/configuration/index.html
+
+# Install configuration
+
+KX Nexus
+
+The KX Nexus repository will be sunsetted in the future. Nexus links on this
+page are provided as a temporary alternative to the KX Downloads Portal for
+existing users. The KX Downloads Portal is the preferred repository for all
+use cases and KX Nexus links will be removed once the KX Nexus repository is
+decommissioned.
+
+A small amount of configuration is required to deploy kdb Insights Enterprise.
+The [kdb Insights CLI](../installation/insights.html#installation) provides a
+wizard to simplify this process and setup the required parameters. In addition
+you can apply more advanced configurations using the _values_ file it
+produces.
+
+What is a _values_ file?
+
+_kdb Insights Enterprise_ is deployed as a _Helm_ chart and is configured
+using a _values_ file. This is a _YAML_ formatted file used to set chart
+parameters. [Helm
+values](https://helm.sh/docs/chart_template_guide/values_files/)
+
+The required parameters for _kdb Insights Enterprise_ involve setting up chart
+and image repositories, TLS certificates, credentials and similar configs. A
+sample _values_ file looks something like below. The CLI creates some
+resources in _Kubernetes_ and the values below reference those.
+
+    
+    
+    global:
+      image:
+        repository: portal.dl.kx.com
+      imagePullSecrets:
+      - name: kx-image-pull-secret
+      license:
+        secretName: kxi-license
+      caIssuer:
+        name: kxi-certificate
+        secretName: kxi-certificate
+      ingress:
+        host: "sample.kxi.example.com"
+    
+    keycloak:
+      auth:
+        existingSecret: kxi-keycloak
+      postgresql:
+        auth:
+          existingSecret: kxi-postgresql
+    
+
+Existing users can use the KX Nexus repository until Nexus is removed in the
+future. The following is the equivalent command to the above example, using
+the KX Nexus repository instead of the KX Downloads Portal:
+
+    
+    
+    global:
+      image:
+        repository: registry.dl.kx.com
+      imagePullSecrets:
+      - name: kx-insights-nexus
+      license:
+        secretName: kxi-license
+      caIssuer:
+        name: kxi-certificate
+        secretName: kxi-certificate
+      ingress:
+        host: "sample.kxi.example.com"
+    
+    keycloak:
+      auth:
+        existingSecret: kxi-keycloak
+      postgresql:
+        auth:
+          existingSecret: kxi-postgresql
+    
+
+Global values
+
+Some configuration options can be applied globally across all components. Helm
+has special handling for the `global` key. For example the
+`global.image.repository` key in the example above sets the image registry for
+all components of kdb Insights Enterprise. In the following pages, config
+options will be flagged as global as it applies to them.
+
+Conversely, the `keycloak` object defines configuration for the Keycloak
+component of the application.
+
+The following pages cover the available configuration by area, highlighting
+what they are used for, their default values and example usages.
+
+YAML indexing notation
+
+As explained above configuration consists of YAML objects. The documentation
+here will use `.` indexing to indicate values in a nested YAML object. For
+example, the `repository` object in the block below would be represented by
+`global.image.repository`.
+
+    
+    
+    global:
+      image:
+        repository: portal.dl.kx.com
+    
+
+The following is the equivalent command to the above example, using KX Nexus
+instead of the KX Downloads Portal:
+
+    
+    
+    global:
+      image:
+        repository: registry.dl.kx.com
+    
+
+## Applying configuration changes
+
+When you have configuration changes to apply to your deployment, you must
+update your _values_ file with those changes.
+
+  1. Generate a _values_ file.
+
+There are a number of ways to generate a _values_ file:
+
+     * If your system is currently deployed, you can run `kxi install get-values` to output it
+     * If you previously deployed, the CLI would have saved a `values.yaml` file to the machine and directory you installed from
+     * If your system is not yet deployed, you can generate one using `kxi install setup`
+  2. Once you have a _values_ file, **merge** your desired changes into that file.
+
+As an example, assuming you are using the default values from the top of this
+page and you want to increase the resources of the Keycloak component. This
+would require merging the values below with the existing ones.
+
+For existing users, to use the KX Nexus repository in the following examples,
+replace the `global/image/repository` value with `registry.dl.kx.com` and the
+`global/imagePullSecrets` value with `kx-insights-nexus`.
+
+Note how the two top-level `keycloak` objects have been merged together.
+
+  3. You can apply the updated _values_ to the deployment by referencing it as part of the install or upgrade CLI command.
+
+     * If the system is not running, you should install.
+        
+                kxi install run --filepath values.yaml
+        
+
+     * If it is running, you should upgrade.
+        
+                kxi install upgrade --filepath values.yaml --version $INSIGHTS_VERSION
+        
+
+Duplicate keys
+
+Be careful not to introduce duplicate objects in your values as only the last
+one will be actioned and this can result in broken configuration.
+
+In the example below, the first `keycloak:` block containing authentication
+secrets will not be included in the deployment values.
+
+    
+        keycloak:
+      auth:
+        existingSecret: kxi-keycloak
+      postgresql:
+        auth:
+          existingSecret: kxi-postgresql
+    ..
+    keycloak:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 1024Mi
+        ..
+    
+

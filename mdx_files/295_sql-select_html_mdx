@@ -1,0 +1,700 @@
+https://code.kx.com/insights/api/database/query/sql-select.html
+
+# SQL2 Select Statements - kdb products
+
+Original URL: https://code.kx.com/insights/api/database/query/sql-select.html
+
+# SQL2 Select Statements
+
+## Introduction
+
+This page outlines the components of a SQL statement currently supported by
+the new SQL2 implementation. SQL2 currently only supports a specific set of
+SELECT statements.
+
+## Supported Queries
+
+The supported `SELECT` statements are designed to work with the SQL2 API and
+are limited to the following structure:
+
+    
+    
+      SELECT DISTINCT ns FROM t WHERE b GROUP BY f ORDER BY o LIMIT N
+    
+
+Warning
+
+The SQL2 API does not support `INSERT`, `CREATE`, or `DELETE` statements.
+
+## Aggregations and Expressions
+
+When using SQL2 to select data from a table, you can specify specific columns,
+aggregations of column data, and expressions that combine multiple operators
+and columns. Refer to the [SQL2 Functions guide](sql-functions.html) for a
+list of available operators and expressions.
+
+Info
+
+The selection of column and table names are case sensitive.
+
+Warning
+
+You cannot have two aggregate functions in the same expression. For example,
+`SELECT max(avg(price)) FROM trade` fails. A list of currently supported
+aggregate functions can be found in the Aggregations section of the [SQL2
+Functions guide](sql-functions.html#aggregations).
+
+### Example - Calculating Maximum, Minimum, and Average Trade Prices
+
+The following query demonstrates the use of aggregations and expressions in
+SQL2, calculating the maximum, minimum, and average trade prices:
+
+    
+    
+    SELECT max(price), min(price), avg(price)FROM trade
+    
+
+The output of this query is:
+
+    
+    
+    price    price1   price2
+    --------------------------
+    713.8885 71.71424 279.6814
+    
+
+Note
+
+Since the query doesn't rename the aggregations (using the `as` keyword), the
+implementation picks a name based on the column used. Alternatively, you can
+assign custom names to the aggregations for improved clarity.
+
+### Example - Calculating Maximum, Minimum, and Average Trade Prices with
+Renamed Aggregations
+
+The following query demonstrates the use of aggregations and expressions in
+SQL2, calculating the maximum, minimum, and average trade prices with renamed
+aggregations:
+
+    
+    
+    SELECT max(price) as mx, min(price) as mn, avg(price) as ag FROM trade
+    
+
+The output of this query is:
+
+    
+    
+    mx       mn       ag
+    --------------------------
+    713.8885 71.71424 279.6814
+    
+
+## Group By
+
+The `GROUP BY` clause is used to group elements with the same values, often in
+conjunction with some aggregations. When performing a SQL SELECT with a `GROUP
+BY`, all columns in the `SELECT` need to either be in the `GROUP BY` or be
+aggregated.
+
+### Example - Calculating Maximum, Minimum, and Average Trade Prices Grouped
+by Symbol
+
+The following query demonstrates the use of the `GROUP BY` clause in
+combination with aggregations, calculating the maximum, minimum, and average
+trade prices grouped by the _sym_ column:
+
+    
+    
+    SELECT sym, max(price) as mx, min(price) as mn, avg(price) as ag FROM trade GROUP BY sym
+    
+
+The output of this query is:
+
+    
+    
+    sym      mx       mn       ag
+    -----------------------------------
+    BBHB.CAN 264.4558 262.9887 263.7229
+    DNDF.CAN 713.8885 312.4958 341.5133
+    FNLH.CAN 448.8098 400.4496 420.1849
+    GIGE.CAN 403.8341 402.3122 402.9778
+    HEMA.CAN 72.00303 71.71424 71.87358
+    JBMH.CAN 138.2289 125.3691 131.4277
+    JFMB.CAN 445.4615 403.6521 422.6718
+    LATE.CAN 429.8842 87.76916 280.6936
+    MGPJ.CAN 175.5454 78.59578 83.18133
+    UPD.CAN  258.5807 258.5474 258.564
+    
+
+### Example - Calculating Average Trade Prices Grouped by Symbol and Date
+
+In this example, the `GROUP BY` clause is used to group the results by both
+_sym_ and _date_ columns, while calculating the average trade price:
+
+    
+    
+    SELECT sym, date, avg(price) FROM trade GROUP BY sym, date
+    
+
+The output of this query is:
+
+    
+    
+    sym      date   price
+    ----------------------------
+    FNLH.CAN 2024.02.14 128.0927
+    JBMH.CAN 2024.02.14 396.6086
+    MGPJ.CAN 2024.02.14 161.7322
+    
+
+Warning
+
+Positional based grouping is not currently supported. For example, `SELECT
+avg(price) FROM trade GROUP BY 1` is **not** supported.
+
+Warning
+
+Support for the `HAVING` keyword is **not** currently supported.
+
+## Limit
+
+  * You can limit the size of the response table using the `LIMIT` keyword. The number specified after the keyword is the maximum number of records to be returned by the query.
+  * `LIMIT` value must be a non-negative integer, a negative value will result in an error.
+  * Setting `LIMIT` to `0` will return an empty table.
+
+    
+    
+    SELECT * FROM table ... LIMIT N
+    
+
+### Example - Selecting Symbol, Time, and Price from Trade Data (Limited to 5
+Rows)
+
+The following query selects the symbol, time, and price from the _trade_
+table, limiting the result to 5 rows:
+
+    
+    
+    SELECT sym, realTime, price FROM trade LIMIT 5
+    
+
+The output of this query is:
+
+    
+    
+    sym      realTime                      price
+    -----------------------------------------------
+    FNLH.CAN 2024.02.14D15:17:12.903251437 127.9444
+    FNLH.CAN 2024.02.14D15:17:13.403121927 127.9526
+    FNLH.CAN 2024.02.14D15:17:22.406010605 127.9606
+    FNLH.CAN 2024.02.14D15:17:26.408422590 127.9271
+    FNLH.CAN 2024.02.14D15:17:51.421995461 127.9528
+    
+
+## Order By
+
+Using the `ORDER BY` keyword, you can sort the payload in either ascending or
+descending order of the returned columns. This is done by passing a column-
+separated list of columns and the direction in which to sort.
+
+    
+    
+    SELECT * FROM table ORDER BY col1 , col2, ... {asc|desc} ...
+    
+
+### Example - Selecting Symbol, Time, and Price from Trade Data Sorted by Time
+in Descending Order (Limited to 5 Rows)
+
+The following query selects the symbol, time, and price from the _trade_ table
+where the symbol is _FNLH.CAN_ , sorts the result by time in descending order,
+and limits the output to 5 rows:
+
+    
+    
+    SELECT sym,realTime,price FROM trade WHERE sym='FNLH.CAN' ORDER BY realTime desc limit 5
+    
+
+The output of this query is:
+
+    
+    
+    sym      realTime                      price
+    -----------------------------------------------
+    FNLH.CAN 2024.02.14D22:16:11.591376123 126.6398
+    FNLH.CAN 2024.02.14D22:16:07.589039047 126.6394
+    FNLH.CAN 2024.02.14D22:16:03.087055255 126.6601
+    FNLH.CAN 2024.02.14D22:15:59.082678241 126.6472
+    FNLH.CAN 2024.02.14D22:15:51.075511179 126.678
+    
+
+Note
+
+When sorting multiple columns, you cannot use both `ASC` and `DESC` in the
+same query. For example, you cannot have a query with `ORDER BY col1 ASC, col2
+DESC` in the same query. Additionally, sorting must be performed on a column
+included in the selected result.
+
+## Distinct clause
+
+The `DISTINCT` clause removes duplicate rows from a result set. It can be
+applied to all columns or a subset of columns listed in the `SELECT`
+statement.
+
+    
+    
+    SELECT DISTINCT * FROM table ...
+    
+
+### Example - Selecting Distinct Country and Currency from Exchange Data
+
+The following query selects the distinct country and currency combinations
+from the _exchange_ table:
+
+    
+    
+    SELECT DISTINCT country,currency FROM exchange
+    
+
+The output of this query is:
+
+    
+    
+    country currency
+    ----------------
+    canada  CAD     
+    usa     USD     
+    mexico  MXN     
+    
+
+## Where clause
+
+You can use the `WHERE` clause to filter the results returned by the API based
+on arbitrary expressions that return a list of booleans. Common functions and
+operators to used in a `WHERE` clause are the comparison operators defined in
+the [SQL Functions](sql-functions.html#comparison-operators-and-functions)
+section.
+
+### Example - Selecting Symbol, Time, Price, and Size from Trade Data for
+Specific Symbols, Price, and Size Range (Limited to 5 Rows)
+
+The following query is an example of combining multiple `WHERE` clauses:
+
+    
+    
+    SELECT sym, realTime, price, size FROM trade WHERE sym in ('JBMH.CAN','MGPJ.CAN') and price > 127 and size between 400 and 600 LIMIT 5
+    
+
+The output of this query is:
+
+    
+    
+    sym      realTime                      price    size
+    ----------------------------------------------------
+    JBMH.CAN 2024.01.06D00:00:49.500000000 127.975  401
+    JBMH.CAN 2024.01.06D00:02:19.500000000 127.9823 574
+    JBMH.CAN 2024.01.06D00:10:19.500000000 128.1451 558
+    JBMH.CAN 2024.01.06D00:16:44.500000000 128.0778 539
+    JBMH.CAN 2024.01.06D00:20:04.500000000 127.9972 484
+    
+
+Warning
+
+Irreversible operations are not permitted in `WHERE` clauses when restricting
+the date or (partition) time column. For example, the following query is not
+supported:
+
+    
+    
+    SELECT * FROM trade WHERE DATE(realTime) = '2024-01-06'
+    
+    
+    
+    // OK.
+    SELECT * FROM myTable WHERE date+1 = '2024-01-26'
+    
+    // Not supported.
+    SELECT * FROM myTable WHERE date % 2 = 0
+    
+
+## Joins
+
+A `join` clause is used to combine rows from two tables based on a related
+column between them.
+
+Warning
+
+Only a single join clause (one column per table) with two tables using the
+`on` keyword is currently supported.
+
+### Aliases
+
+Aliases are used to give a table, or a column in a table a **temporary** name
+that only exists for the duration of that query. Using aliases with join
+queries allows you to assign identifiers that keep the overall query more
+succinct and readable.
+
+For example, the below query assigns a unique alias to each table. That alias
+is then referenced in the join condition:
+
+    
+    
+    SELECT sym, price, bid, ask FROM 
+    (SELECT sym, price FROM trade WHERE price > 100) t 
+    INNER JOIN 
+    (SELECT sym, bid, ask FROM quote WHERE bid > 100) q
+    ON t.sym=q.sym
+    
+
+The `AS` keyword is optional to target specific fields in a join query:
+
+    
+    
+    SELECT t.sym AS tradeSym, t.price, q.bid, q.ask FROM
+    (SELECT sym, price FROM trade WHERE price > 100) AS t
+    INNER JOIN
+    (SELECT sym, bid, ask FROM quote WHERE bid > 100) AS q
+    ON t.sym=q.sym
+    
+
+### Supported Join Types
+
+**Join Type** | **Description** | **Example Query**  
+---|---|---  
+`INNER` | Selects records that have matching values in both tables. | SELECT ... FROM trade t INNER JOIN quote q ON t.col=q.col  
+`LEFT` | Selects all records from the left-hand table, and matched records from the right-hand table. | SELECT ... FROM trade t LEFT JOIN quote q ON t.col=q.col  
+`RIGHT` | Returns all records from the right-hand table, and the matching records from the left-hand table. | SELECT ... FROM trade t RIGHT JOIN quote q ON t.col=q.col  
+`FULL` | Selects all records from both tables, even if there is no match.  
+For records with a match, the values from both tables are available.  
+If there is no match, empty values contain a null value for that type of column. | SELECT ... FROM trade t FULL JOIN quote q ON t.col=q.col  
+`CROSS` | Selects every possible combination of rows from the left and right table.  
+The result creates a Cartesian Product result with columns from the left and
+right table.  
+This join does not require a join condition. | SELECT ... FROM trade CROSS JOIN quote  
+  
+Note
+
+Join columns between tables must be kdb datatype compatible. For example a
+`string` column joining on a `sym` column is not supported.
+
+### Join Examples
+
+For the following examples queries and results are based on the below tables:
+
+    
+    
+    / trade
+    
+    time sym realTime price size
+    ----------------------------
+    0Np   a   0Np       10    456
+    0Np   b   0Np       20    456
+    0Np   c   0Np       30    456
+    
+    / quote
+    
+    time sym realTime bid  ask
+    ---------------------------
+    0Np   a   0Np       10.1 10.2
+    0Np   a   0Np       20.2 20.3
+    0Np   b   0Np       30.1 30.4
+    0Np   b   0Np       40.1 40.5
+    0Np   d   0Np       50.1 50.6
+    
+
+#### Example - Inner Join Query
+
+The following query joins the two tables based on the matching value in a
+column, only returning records that are in both tables:
+
+    
+    
+    SELECT * FROM 
+    (SELECT sym, price FROM trade) t 
+    INNER JOIN 
+    (SELECT sym, bid, ask FROM quote) q
+    ON t.sym=q.sym
+    
+
+The output of this query is:
+
+    
+    
+    sym price sym1 bid  ask
+    ------------------------
+    a   10    a    10.1 10.2
+    a   10    a    20.2 20.3
+    b   20    b    30.1 30.4
+    b   20    b    40.1 40.5
+    
+
+#### Example - Left Join Query
+
+The following query joins the two tables based on the matching value in a
+column, returning all records from the left-hand table and any matching
+records from the right-hand table:
+
+    
+    
+    SELECT * FROM 
+    (SELECT sym, price FROM trade) t 
+    LEFT JOIN 
+    (SELECT sym, bid, ask FROM quote) q
+    ON t.sym=q.sym
+    
+
+The output of this query is:
+
+    
+    
+    sym price sym1 bid  ask
+    ------------------------
+    a   10    a    10.1 10.2
+    a   10    a    20.2 20.3
+    b   20    b    30.1 30.4
+    b   20    b    40.1 40.5
+    c   30
+    
+
+#### Example - Right Join Query
+
+The following query joins the two tables based on the matching value in a
+column, returning all records from the right hand table and any matching
+records from the left hand table:
+
+    
+    
+    SELECT * FROM 
+    (SELECT sym, price FROM trade) t 
+    RIGHT JOIN 
+    (SELECT sym, bid, ask FROM quote) q
+    ON t.sym=q.sym
+    
+
+The output of this query is:
+
+    
+    
+    sym price sym1 bid  ask
+    ------------------------
+    a   10    a    10.1 10.2
+    a   10    a    20.2 20.3
+    b   20    b    30.1 30.4
+    b   20    b    40.1 40.5
+              d    50.1 50.6
+    
+
+#### Example - Full Join Query
+
+The following query performs a full join on two tables, returning all records
+from both tables:
+
+    
+    
+    SELECT * FROM 
+    (SELECT sym, price FROM trade) t 
+    FULL JOIN 
+    (SELECT sym, bid, ask FROM quote) q
+    ON t.sym=q.sym
+    
+
+The output of this query is:
+
+    
+    
+    sym price sym1 bid  ask
+    ------------------------
+    a   10    a    10.1 10.2
+    a   10    a    20.2 20.3
+    b   20    b    30.1 30.4
+    b   20    b    40.1 40.5
+    c   30
+              d    50.1 50.6
+    
+
+#### Example - Cross Join Query
+
+The following query performs a cross join on two tables, combining each row of
+the first table with each row of the second table:
+
+    
+    
+    SELECT * FROM 
+    trade 
+    CROSS JOIN
+    quote
+    
+
+The output of this query is:
+
+    
+    
+    time sym realTime price size time1 sym1 realTime1 bid  ask
+    -----------------------------------------------------------
+    0Np   a   0Np       10    456  0Np    a    0Np        10.1 10.2
+    0Np   a   0Np       10    456  0Np    a    0Np        20.2 20.3
+    0Np   a   0Np       10    456  0Np    b    0Np        30.1 30.4
+    0Np   a   0Np       10    456  0Np    b    0Np        40.1 40.5
+    0Np   a   0Np       10    456  0Np    d    0Np        50.1 50.6
+    0Np   b   0Np       20    456  0Np    a    0Np        10.1 10.2
+    0Np   b   0Np       20    456  0Np    a    0Np        20.2 20.3
+    0Np   b   0Np       20    456  0Np    b    0Np        30.1 30.4
+    0Np   b   0Np       20    456  0Np    b    0Np        40.1 40.5
+    0Np   b   0Np       20    456  0Np    d    0Np        50.1 50.6
+    0Np   c   0Np       30    456  0Np    a    0Np        10.1 10.2
+    0Np   c   0Np       30    456  0Np    a    0Np        20.2 20.3
+    0Np   c   0Np       30    456  0Np    b    0Np        30.1 30.4
+    0Np   c   0Np       30    456  0Np    b    0Np        40.1 40.5
+    0Np   c   0Np       30    456  0Np    d    0Np        50.1 50.6
+    
+
+### Differences from PostgreSQL
+
+  * In PostgreSQL joins, common column names are duplicated in a join query. In SQL2 we apply [`.Q.id`](https://code.kx.com/q/ref/dotq/#qid-sanitize). For example, a join query that references two `sym` columns returns a result with `sym` and `sym1`. For example: 
+    
+         SELECT * FROM
+    (SELECT sym FROM trade) AS  t
+     INNER JOIN
+    (SELECT sym FROM quote limit 5) AS q
+    ON t.sym=q.sym
+    
+    // Will return the below in SQL2
+    sym      sym1
+    -----------------
+    JBMH.CAN JBMH.CAN
+    FNLH.CAN FNLH.CAN
+    FNLH.CAN FNLH.CAN
+    DNDF.CAN DNDF.CAN
+    JBMH.CAN JBMH.CAN
+    
+
+### Joins known limitations
+
+Note
+
+These restrictions are subject to change and may be removed in future
+releases.
+
+  * Currently only a single join clause between two tables is supported.
+  * Currently only `=` is supported for joining columns.
+  * Join clauses must use `ON` keyword.
+  * The left-hand and right-hand join column must be the same kdb+ datatype.
+
+## Combining Queries
+
+The `UNION`, `INTERSECT` and `EXCEPT` operators are supported to combine the
+results of two queries. When using these operators to combine queries, use
+`ALL` to include duplicated values.
+
+Warning
+
+Set operations are currently only supported between two select statements.
+
+To use these operators, both `SELECT` statements in the query must be
+compatible. They must return the same number of columns of the same data type.
+
+Parentheses should be used to ensure proper order of execution when using
+`UNION`, `INTERSECT` and `EXCEPT` and key words in the `FROM` clause, such as
+`LIMIT`. For example:
+
+    
+    
+    (SELECT sym FROM trade LIMIT 5)
+    UNION
+    (SELECT sym from quote LIMIT 2)
+    
+
+**Operator** | **Description** | **Example Query**  
+---|---|---  
+`UNION` | Combines the result set of two `SELECT` statements. | SELECT sym from trade UNION SELECT sym FROM quote  
+`INTERSECT` | Returns all rows that are in the result of the first `SELECT` and second `SELECT` statement. | SELECT sym from trade INTERSECT SELECT sym FROM quote  
+`EXCEPT` | Returns all rows that are in the result of the first `SELECT` statement but not in the result set of second `SELECT` statement. | SELECT sym from trade EXCEPT SELECT sym FROM quote  
+  
+### Set Operation Examples
+
+The following example queries and results use the `trade` and `quote` tables
+as defined in the Joins section:
+
+#### Example - Union Query
+
+The following query combines distinct values from both `SELECT` statements:
+
+    
+    
+    SELECT sym FROM trade
+    UNION
+    SELECT sym from quote
+    
+
+The output of this query is:
+
+To allow duplicate values, you can include `ALL` in the query:
+
+    
+    
+    SELECT sym FROM trade
+    UNION ALL
+    SELECT sym from quote
+    
+
+The output of this query is:
+
+#### Example - Except Query
+
+The following query returns distinct values from the first `SELECT` statement
+that are not in the second `SELECT` statement:
+
+    
+    
+    SELECT sym FROM trade
+    EXCEPT
+    SELECT sym from quote
+    
+
+The output of this query is:
+
+To allow duplicate values, you can include `ALL` in the query:
+
+    
+    
+    SELECT sym FROM trade
+    EXCEPT ALL
+    SELECT sym from quote
+    
+
+The output of this query is:
+
+#### Example - Intersect Query
+
+The following query returns a result set that appear in both `SELECT`
+statements:
+
+    
+    
+    SELECT sym FROM quote
+    INTERSECT
+    SELECT sym from trade
+    
+
+The output of this query is:
+
+To allow duplicate values, you can include `ALL` in the query:
+
+    
+    
+    SELECT sym FROM quote
+    INTERSECT ALL
+    SELECT sym from trade
+    
+
+The output of this query is:
+
+### Combining queries known limitations
+
+Note
+
+These restrictions are subject to change and may be removed in future
+releases.
+
+  * Currently only `LIMIT` and `ORDER BY` are supported on the result set of a `UNION`, `EXCEPT`, `INTERSECT` query.
+

@@ -1,0 +1,129 @@
+https://code.kx.com/insights/enterprise/azure-marketplace/azure-user-node-pool-sizing-guidance.html
+
+# User Node Pool Sizing - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/azure-marketplace/azure-user-node-pool-sizing-guidance.html
+
+# Sizing Guidance - User Node Pool
+
+The 'User Node Pool' on your Azure AKS cluster is the powerhouse for your data
+capture, processing and querying. The Reference Lookup aims to provide a quick
+guideline on the initial size for systems until their exact usage profile is
+established.
+
+### Use-cases
+
+The following are some specific use cases. For variations see Reference
+Lookup.
+
+persona | description | suggested 'user node pool'  
+---|---|---  
+**Data Scientist** | Expects to work with datasets of up to 10 million records per day (4 GiB / day)   
+using queries of **Moderate** complexity | 3 x Standard_D8s_v5  
+**Data Engineer** | Expects to connect real-time financial datasets of up to 4 billion records per day (600 GiB / day).  
+Streaming logic of **Medium Memory Usage** will compliment **Complex** queries. | 4 x Standard_D64ds_v5  
+  
+## Reference Lookup
+
+With reference to the definitions for **Query Complexity** and **Streaming
+Logic** below, the following table provides guidance on the User Node Pool
+sizes for data volumes up to the X GiB / day listed in the column header
+
+query complexity | streaming logic | 10 GiB / day | 30 GiB / day | 750 GiB / day | 2000 GiB / day | 3000 GiB / day | 4000 GiB / day  
+---|---|---|---|---|---|---|---  
+Simple | Low Memory Usage | 4 x 16 | 3 x 32 | 3 x 128 | 3 x 256 | 3 x 384 | 3 x 512  
+Simple | Medium Memory Usage | 4 x 16 | 3 x 32 | 3 x 128 | 3 x 256 | 3 x 384 | 3 x 512  
+Simple | High Memory Usage | 5 x 16 | 4 x 32 | 4 x 128 | 4 x 256 | 4 x 384 | 4 x 512  
+Moderate | Low Memory Usage | 4 x 16 | 3 x 32 | 3 x 128 | 3 x 256 | 3 x 384 | 3 x 512  
+Moderate | Medium Memory Usage | 4 x 16 | 4 x 32 | 4 x 128 | 4 x 256 | 4 x 384 | 4 x 512  
+Moderate | High Memory Usage | 5 x 16 | 4 x 32 | 4 x 128 | 4 x 256 | 4 x 384 | 4 x 512  
+Complex | Low Memory Usage | 4 x 32 | 3 x 64 | 4 x 256 | 4 x 384 | 4 x 512 | 4 x 672  
+Complex | Medium Memory Usage | 4 x 32 | 4 x 64 | 4 x 256 | 4 x 384 | 4 x 512 | 4 x 672  
+Complex | High Memory Usage | 4 x 32 | 4 x 64 | 4 x 256 | 4 x 384 | 4 x 512 | 4 x 672  
+  
+_Note: A number of Data Access points are deployed by default. To service
+additional concurrent queries these may need to be scaled further_
+
+**Query Complexity**
+
+query complexity | description  
+---|---  
+_Simple_ | Short time windows (e.g. small result sets)  
+Non-complex query logic  
+Quick execution < 10ms  
+_Moderate_ | Large time windows with aggregations (e.g. small result sets)  
+Execution time < 1sec (although <500ms should cover most)  
+_Complex_ | Large time windows and/or large datasets  
+Complex query logic  
+Execution time > 1sec  
+  
+**Streaming Logic**
+
+streaming logic | description  
+---|---  
+_Low Memory Usage_ | In-flight calculations  
+Storage only  
+Decoding of file format for ingestion and storage  
+_Medium Memory Usage_ | Transformations: simple aggregations and time bucketing  
+_High Memory Usage_ | Complex data joins over significant time periods  
+In-flight actions (ML, AI)  
+OR Multiple medium memory pipelines  
+  
+## FAQ
+
+### How much data do I have ?
+
+For the majority of use-cases the amount of data being captured is the biggest
+factor driving the infrastructure sizing.
+
+This table provides guidance on data volumes assuming a 50 column table.
+
+range | rows / day (realtime) | node size for data capture(GiB) | SKU (excluding local storage) | SKU (including local SSD   
+storage for **rook-ceph**)  
+---|---|---|---|---  
+< 30 GiB / day | 90,000,000 | 32 | Standard_D8s_v5 | rook-ceph not recommended given   
+the additional resource requirement  
+< 75 GiB / day | 200,000,000 | 64 | Standard_D16s_v5 | Standard_D16ds_v5  
+75 => 1000 Gi day | 3,000,000,000 | 128 | Standard_D32s_v5 | Standard_D32ds_v5  
+1000 => 2500 GiB day | 7,000,000,000 | 256 | Standard_E32s_v5 /   
+Standard_D64s_v5 | Standard_E32ds_v5 /   
+Standard_D64ds_v5  
+2500 => 3500 GiB day | 10,000,000,000 | 384 | Standard_E48s_v5 /   
+Standard_D96s_v5 | Standard_E48ds_v5 /   
+Standard_D96ds_v5  
+3500 => 5000 GiB day | 14,000,000,000 | 512 | Standard_E64s_v5 | Standard_E64ds_v5  
+  
+Notes:
+
+  * For sizing purposes the concept of **fields** is used. Field entries are based on the multiplication of rows by columns e.g 15 fields could be 5 rows x 3 columns or vice versa. For estimation a field size of 8 bytes is used (for variations see <https://code.kx.com/q/basics/datatypes/>).
+  * SKUs are for guidance only. For performance, cost, quota or configuration preferences these may not be suitable for all use-cases.
+
+### What if my requirements change?
+
+Sizing requirements can be adjusted via configuration changes, often with
+little interruption to your system. Right-sizing and cost optimization are
+easiest with a predictable usage profile.
+
+### What else impacts infrastructure sizing?
+
+#### Late Data
+
+If your use case involves a considerable amount of late data this will impact
+your sizing needs.
+
+#### vCPU
+
+The memory required to capture data often provides ample vCPU for the
+associated processing and query workloads e.g. a 128 GiB server will often
+include 32 vCPU.
+
+Exceptions to this rule would be:
+
+  1. complex data pipelines - for example pipelines leveraging multiple workers may need additional vCPU to maximize throughput
+  2. additional shards - where data is split to reduce the max memory requirement, this does also distribute, and slightly increase, the vCPU burden.
+
+### Why do I need 3 nodes?
+
+The resilience model utilized requires at least 3 nodes in this pool ([see
+docs on RT](../../microservices/rt/index.html#overview)).
+

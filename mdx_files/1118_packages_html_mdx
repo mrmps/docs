@@ -1,0 +1,215 @@
+https://code.kx.com/insights/api/packaging/python/packages.html
+
+# Packages - kdb products
+
+Original URL: https://code.kx.com/insights/api/packaging/python/packages.html
+
+# kxi.packages.packages
+
+Listing and loading Packages.
+
+The `kxi.packages.packages` module provides all the callable functions used
+for listing and loading packages.
+
+All functionality within this module is described below.
+
+#### list
+
+    
+    
+    def list() -> pd.DataFrame
+    
+
+List all packages defined at the path stored under the environment variable
+`KX_PACKAGE_PATH`.
+
+**Returns** :
+
+pd.DataFrame - Table detailing the name and version of all packages defined
+under `KX_PACKAGE_PATH`.
+
+**Examples** :
+
+List the names and versions of the packages defined under `KX_PACKAGE_PATH`.
+
+    
+    
+    >>> # import the necessary modules
+    >>> import kxi.packages as pakx
+    >>> # initialize the package
+    >>> pakx.init()
+    >>> # set the `KX_PACKAGE_PATH` environment variable
+    >>> pakx.setup_env.set_package_path("test/test-packages")
+    >>> # list all packages
+    >>> pakx.packages.list()
+    name        versions
+    0   devpack   1.0.0_DC80D99
+    1   devpack  2.0.0_F32C90C4
+    2        ml           1.0.0
+    3        ml           2.0.0
+    4        ml  2.0.0_F32C80D9
+    .       ...             ...
+    .       ...             ...
+    
+
+#### search
+
+    
+    
+    def search(package_name: Optional[str] = None,
+               version: Optional[str] = None) -> pd.DataFrame
+    
+
+List all packages stored at `KX_PACKAGE_PATH` which meet a presented search
+criteria.
+
+**Arguments** :
+
+  * `package_name` \- Optional[string] - Regex filter string used to search for specific package name patterns. Can also be `None` to include all package names.
+  * `version` \- Optional[string] - Regex filter string used to search for specific package version patterns. Can also be `None` to include all package versions.
+
+**Returns** :
+
+pd.DataFrame - Table detailing the name and version of the packages defined
+under `KX_PACKAGE_PATH` which meet the presented search criteria.
+
+**Examples** :
+
+List the names and versions of all packages defined under `KX_PACKAGE_PATH`
+which match the presented search criteria.
+
+    
+    
+    >>> # import the necessary modules
+    >>> import kxi.packages as pakx
+    >>> # initialize the package
+    >>> pakx.init()
+    >>> # set the `KX_PACKAGE_PATH` environment variable
+    >>> pakx.setup_env.set_package_path("test/test-packages")
+    >>> # list all packages
+    >>> pakx.packages.list()
+    name        versions
+    0   devpack   1.0.0_DC80D99
+    1   devpack  2.0.0_F32C90C4
+    2        ml           1.0.0
+    3        ml           2.0.0
+    4        ml  2.0.0_F32C80D9
+    .       ...             ...
+    .       ...             ...
+    >>> # list all "dev" related packages
+    >>> pakx.packages.search("*dev*")
+    name        versions
+    0  devpack   1.0.0_DC80D99
+    1  devpack  2.0.0_F32C90C4
+    >>> # list all packages that are version 1.x
+    >>> pakx.packages.search(version="1.*")
+    name       versions
+    0  devpack  1.0.0_DC80D99
+    1       ml          1.0.0
+    2     test          1.1.0
+    3     test          1.2.0
+    
+
+#### load
+
+    
+    
+    def load(package_name: str,
+             version: str,
+             *,
+             entry: str = "default",
+             path: Optional[str] = None,
+             force: bool = False) -> Optional[ModuleType]
+    
+
+Load a package into memory.
+
+**Arguments** :
+
+  * `package_name` \- string - Name of the package to be loaded.
+  * `version` \- string - Version of the package to be loaded.
+  * `entry` \- string - Name of the entrypoint used to load the package. Found in `manifest.json` under the entry `entrypoints.<entry>`.
+  * `path` \- Optional[string] - Path to the package to be loaded. Can also be `None` to use the current working directory.
+  * `force` \- boolean - Whether to load a package regardless of whether a package with the same name and entrypoint has already been loaded.
+
+**Returns** :
+
+Optional[ModuleType] - Python module OR None - if q loads it locally.
+
+**Raises** :
+
+ImportError - If a python module could not be loaded from the entry.
+
+**Examples** :
+
+Load various packages.
+
+    
+    
+    >>> # import the necessary modules
+    >>> import kxi.packages as pakx
+    >>> # initialize the package
+    >>> pakx.init()
+    >>> # set the `KX_PACKAGE_PATH` environment variable
+    >>> pakx.setup_env.set_package_path("test/test-packages")
+    >>> # list all packages
+    >>> pakx.packages.list()
+    name        versions
+    0   devpack   1.0.0_DC80D99
+    1   devpack  2.0.0_F32C90C4
+    2        ml           1.0.0
+    3        ml           2.0.0
+    4        ml  2.0.0_F32C80D9
+    .       ...             ...
+    .       ...             ...
+    >>> # load the "ml" package with version 2.0.0
+    >>> pakx.packages.load("ml", "2.0.0")
+    >>> # load the "ml" package with version 1.0.0 forcing load override
+    >>> pakx.packages.load("ml", "1.0.0", force=True)
+    
+
+#### load_file
+
+    
+    
+    def load_file(file_path: str) -> Optional[ModuleType]
+    
+
+Load a file associated with a package into memory.
+
+**Arguments** :
+
+  * `file_path` \- string - Path to the file to be loaded, relative to the package root.
+
+**Returns** :
+
+Optional[ModuleType] - Python module if loading a python file OR None if
+loading a q file.
+
+**Raises** :
+
+ImportError - If the user supplies a python file that cannot be loaded.
+
+**Examples** :
+
+Load a Python file into memory.
+
+  * `Note` \- The python session must be run from the root directory of a package for this to work.
+
+    
+    
+    $ cd test/test-packages/ml/1.0.0
+    $ python
+    
+    
+    
+    >>> # import the necessary modules
+    >>> import kxi.packages as pakx
+    >>> # initialize the package
+    >>> pakx.init()
+    >>> # load a python file 'src/example_udf.py' assigning output to udfs
+    >>> udfs = pakx.packages.load_file("src/example_udfs.py")
+    >>> # load the q file 'ml.q'
+    >>> pakx.packages.load_file("ml.q")
+    
+

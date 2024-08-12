@@ -1,0 +1,147 @@
+https://code.kx.com/insights/microservices/rt/sdks/python-sdk.html
+
+# Using the Python interface - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/rt/sdks/python-sdk.html
+
+# Using the kdb Insights Python interface
+
+The Python interface allows you to publish data to RT in your own Python
+application.
+
+This section details how to get started with the Python interface.
+
+## Downloading the Python interface
+
+You can download the Python interface from the kdb Insights
+[Nexus](https://nexus.dl.kx.com/#browse/browse:kxi-package-public) registry.
+
+## Supported Operating Systems
+
+The Python interface is supported on the following operating systems:
+
+  * CentOS 8 or later
+  * Red Hat Enterprise Linux (RHEL) 8 or later
+  * Ubuntu 18.04 or later
+  * Windows
+
+Note
+
+The interface is only supported on x86 architectures. We currently do not
+support macOS.
+
+## Prerequisites
+
+The Python interface requires the following system packages:
+
+## Installation
+
+Install the Python interface via `pip`.
+
+  1. Ensure you have the latest version of `pip`:
+    
+        pip install --upgrade pip
+    
+
+  2. Install the package:
+    
+        pip install --extra-index-url https://nexus.dl.kx.com/repository/kxi-pypi-public/simple/ kxi-rtpy
+    
+
+The interface uses [PyKX](https://code.kx.com/pykx/)
+
+The `pip install` command will also install PyKX if it is not already present.
+
+## Using the Python interface in your own application
+
+To publish data to _kdb Insights Enterprise_ using the Python interface as
+part of your own application, use the `rtpy` module. This module contains the
+functionality to connect to _kdb Insights Enterprise_ and publish the data
+into the system.
+
+Authentication and Connectivity
+
+_kdb Insights Enterprise_ provides an Information Service which returns a
+client URL (`KXI_CONFIG_URL`). This URL is used to authenticate to the _kdb
+Insights Enterprise_ instance. If you are not using _kdb Insights Enterprise_
+you can populate a local JSON file with the connectivity details. Further
+information on this is available in the [getting started guide](getting-
+started-sdks.html#authentication-and-connectivity).
+
+### Initializing
+
+  1. Start the Python interpreter and import the `rtpy` module:
+    
+        from rtpy import Publisher, RTParams
+    
+
+  2. Create an `RTParams` configuration object:
+    
+        params = RTParams(config_url='file:///tmp/rt_config.json', rt_dir='/tmp/tmprt')
+    
+
+See the Parameters section for the full list of configuration parameters.
+
+`config_url`
+
+The `config_url` can be either a kdb Insights Enterprise client URL or the
+path to a local JSON file (using the file URI scheme) containing the RT
+configuration. See the [getting started guide](getting-started-sdks.html#from-
+outside-the-cluster) for more details.
+
+##### Parameters
+
+The `RTParams` class contains the following RT connection configuration
+parameters.
+
+parameter | required | description  
+---|---|---  
+`config_url` | Yes | The URL/file that is called/read to get the RT endpoint(s)  
+`rt_dir` | Yes | RT directory  
+`query_timeout` | No | Milliseconds to wait for the connection to be established  
+`fetch_config_sleep` | No | Time in ms to sleep between reads of the configuration details  
+`config_max_age` | No | Maximum age of configuration in milliseconds  
+`local_persistence_period` | No | Local persistence period in milliseconds  
+`log_level` | No | Log level: `info`, `warn`, `err`, or `off`  
+`console_log_level` | No | Console log level: `info`, `warn`, `err`, or `off`  
+`ca_info_file` | No | Path to Certificate Authority certificate bundle  
+`dedup_id` | No | ID to dedup multiple publishers  
+  
+See the [C interface documentation](c-sdk.html#parameters) for the list of
+default values.
+
+### Publishing data
+
+The `Publisher` class implements the Python context manager protocol. The
+functions to connect and disconnect from RT are called implicitly when
+entering and exiting the `with` block below.
+
+  1. Create some data and publish it to RT:
+    
+        from rtpy import Publisher, RTParams
+    import pykx as kx
+    from datetime import *
+    import uuid
+    
+    params = RTParams(config_url='file:///tmp/client.json', rt_dir='/tmp/tmprt')
+    
+    with Publisher(params) as pub:
+    
+        now = datetime.utcnow()
+        trade_id = uuid.uuid4()
+    
+        # Send a Python list
+        data = ["hello", 1234, 3.14, now]
+        pub("test", data)
+    
+        # A kdb+ license is required to use the PyKX Table object
+        data = kx.Table([[now, "VOD", "LSE", "buy", 75.90, 100, trade_id]], columns=['time','sym','exch','side','price','size','tradeID'])
+    
+        pub("trade", data)
+    
+
+## Next Steps
+
+Learn how to use our [sample Python program.](python-sdk-samples.html) to
+publish data.
+

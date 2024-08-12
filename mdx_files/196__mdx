@@ -1,0 +1,35 @@
+https://code.kx.com/platform/stream/dw_log_replay/
+
+# Log replay - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/stream/dw_log_replay/
+
+# Log replay
+
+The log replay process is responsible for the intraday writedowns from the
+_RDB_ to the _IHDB_. It also does the EOD writedowns from the _RDB_ and _IHDB_
+to the HDB. Writedown frequency is determined by setting the intraday
+frequency parameters in the _LR_ and the _TP_.
+
+  * To create an _LR_ , right-click on the _Navigation panel_ in the `KxWarehouse` Package and select _New > Service Class_ from the context menu.
+
+[![Screenshot](../img/serviceclass/lr_name.jpg)](../img/serviceclass/lr_name.jpg
+"click to expand")
+
+  * In _Service Details_ , provide a description for the instance.
+
+  * Configure the _Service Parameters_. The tables in the `intradayTableList` should match the ones configured in the _TP_ section.
+
+parameter | value  
+---|---  
+logFileList | ENV=DELTADATA_HOME=/KxWarehouseData/tplog/mon_tp_%DATE%  
+|
+ENV=DELTADATA_HOME=/KxWarehouseData/tplog/mon_tp_*_%DATE%_H_[0-9][0-9][0-9][0-9].[0-9][0-9].[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]  
+logReplayFunct | dxLogReplayRecoveryIntraday  
+finalStateFunct | dxFinalRecoveryIntraday  
+intradayDirectory | ENV=DELTADATA_HOME=/KxWarehouseData/intraday  
+intradayTableList | monCPU, monMem, monDisk  
+hdbServices | kxw_hdb  
+rdbServices | kxw_rdb  
+ihdbServices | kxw_ihdb
+

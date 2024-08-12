@@ -1,0 +1,678 @@
+https://code.kx.com/insights/core/kurl/kurl.html
+
+# Kurl | REST client | kdb Insights Core - kdb products
+
+Original URL: https://code.kx.com/insights/core/kurl/kurl.html
+
+# Kurl
+
+_Kurl is a REST client that lives in a worker thread, and provides sync and
+async methods callable from q_
+
+Kurl provides ease-of-use cloud integration by registering Azure, Amazon, and
+Google Cloud Platform authentication information.
+
+When running
+
+  * on a cloud instance, and a role is available, Kurl will discover and register the instance metadata credentials
+  * outside of the cloud, OAuth2, ENV, and file-based credential methods are supported
+
+[Quick start](quickstart.html)
+
+## Security
+
+Kurl performs automatic registration of Azure, Google Cloud Platform, and
+Amazon instance metadata credentials. These temporary credentials are stored
+in memory, and are never persisted to disk, or otherwise returned to the user.
+Amazon, Azure, and Google Cloud rotate these secrets for you, and the library
+is simply reading them, and replacing its in-memory cache when they expire.
+
+Similarily, OAuth2 SSO is another form of registration the library supports,
+when client specification data is made available. This method uses temporary
+access tokens, generated as part of single sign on. Kurl stores only the
+access tokens; user credentials never make their way into the library.
+
+Using temporary credentials is highly recommended because they are rotatable,
+typically have limitations on the resources they may access, and are not as
+vulnerable to trivial attacks such as copy-paste.
+
+However, support for environment variable, credential file, and Basic Auth are
+available. They are recommended for use only on trusted workstations, e.g.
+development machines.
+
+Basic Auth is insecure and will have the library save your credentials
+directly in memory. They cannot be accessed from q; however we do not encrypt
+them.
+
+## Environment variables
+
+Environment variables that modify the behaviour of Kurl:
+
+`KX_KURL_LOG_LEVEL`
+
+    
+
+Set to "OFF", "ERROR", "INFO", "WARN", "DEBUG", "TRACE". Default is "INFO".
+
+`KX_KURL_DEBUG_LOG`
+
+    
+
+Set to 1 to enable debug logs from Kurl. This var is deprecated, use
+`KX_KURL_LOG_LEVEL` instead, will be ignored if `KX_KURL_LOG_LEVEL` is set.
+
+`KX_KURL_DISABLE_AUTO_REGISTER`
+
+    
+
+Set to 1 to prevent Kurl from automatically registering cloud credentials: see
+Automatic Registration using Credential Discovery
+
+`AWS_STS_REGIONAL_ENDPOINTS`
+
+    
+
+Set to either "regional" or "legacy". If set, `AWS_REGION` will be used for
+picking an STS endpoint, over using the global endpoint. `AWS_REGION` must be
+set if `AWS_STS_REGIONAL_ENDPOINTS=regional` or the setting will be ignored.
+
+`AZURE_STORAGE_ACCOUNT`
+
+    
+
+Set to an Azure Storage Account name, to automatically register OAuth2 access.
+
+`AZURE_STORAGE_SHARED_KEY`
+
+    
+
+Set in combination with `AZURE_STORAGE_ACCOUNT` to use an Azure SharedKey.
+
+`KX_KURL_AZURE_AD_RESOURCES`
+
+    
+
+Set to a space-separated list of resource IDs to register with only a specific
+set of Azure resources instead of all Azure resources
+
+`KX_KURL_AZURE_AD_ALL_RESOURCES`
+
+    
+
+Set to 1 to register each of:
+
+    
+    
+        "https://management.azure.com";
+        "https://vault.azure.net";
+        "https://datalake.azure.net";
+        "https://database.windows.net";
+        "https://eventhubs.azure.net";
+        "https://servicebus.azure.net";
+        "https://*.asazure.windows.net";
+        "https://storage.azure.com"
+    
+
+`KX_KURL_HOME`
+
+    
+
+Set to an absolute path where the Kurl source has been saved
+
+`KX_KURL_NO_BROWSER`
+
+    
+
+Set to 1 to prevent Kurl from automatically opening a browser when using
+OAuth2 login flow
+
+`KX_KURL_AWS_TOKEN_DURATION`
+
+    
+
+Set to a number of seconds to modify the [DurationSeconds used in
+AssumeRoleWithWebIdentity
+requests](https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRoleWithWebIdentity.html).
+Defaults to 3600 (1 hour).
+
+`KX_S3_ENDPOINT`
+
+    
+
+Set to URI, such as `http://127.0.0.1:9000`. Enables the REST Client to
+register Amazon S3 cloud storage credentials, with a service like
+[MinIO](https://docs.min.io/docs/minio-quickstart-guide.html).
+
+:fontawesome-solid-hands-point-right: [Setup for
+MinIO](../objstor/main.html#s3-compatible-object-storage)
+
+`KX_CLIENT_URI`
+
+    
+
+Set to URI of the endpoint you want to query once OAuth2 login completes. Must
+include https:// or http:// protocol.
+
+`INSIGHTS_HOSTNAME`
+
+    
+
+Same as `KX_CLIENT_URI`, but without the protocol. This is an alias for
+compatibility with insights.
+
+`KX_OAUTH2_CLIENT_JSON`
+
+    
+
+Set to path to OAuth2 client.json
+
+`KX_REDIRECT_URI`
+
+    
+
+Set to a redirect URI for acting as an OAuth2 client application.
+
+`CURL_CA_BUNDLE`
+
+    
+
+For transparency with command line curl, kurl allows setting `CURL_CA_BUNDLE`.
+This sets the path for [CURLOPT CAINFO](https://curl.se/docs/sslcerts.html)
+
+`KX_KURL_AWS_REGISTER_TIMEOUT`
+
+    
+
+Set the timeout for internal sync calls made to register AWS tenants with
+kurl. Default 5000
+
+`KX_KURL_AZURE_REGISTER_TIMEOUT`
+
+    
+
+Set the timeout for internal sync calls made to register Azure tenants with
+kurl. Default 5000
+
+`KX_KURL_GCP_REGISTER_TIMEOUT`
+
+    
+
+Set the timeout for internal sync calls made to register GCP tenants with
+kurl. Default 5000
+
+## Requests API
+
+The Kurl API defines two calls for making HTTP/HTTPS requests
+
+    
+    
+    .kurl.sync  (url;method;options)
+    .kurl.async (url;method;options)
+    
+
+where
+
+  * `url` is a string, e.g. `"https://ec2.us-east-2.amazonaws.com?Action=DescribeInstanceStatus&Version=2013-10-15"`
+  * `method` is a string, either `"GET"` or `"POST"`
+  * `options` is a dictionary, e.g.
+
+``body`headers!("{}";("Accept";"Content-Type"))!2#enlist "application/json")`
+
+Possible entries in `options` and their datatypes:
+
+`body`
+
+    
+
+request body (`4 10h`)
+
+    
+
+e.g. `.kurl.sync (url; method;``body!(::;.j.j `a`b`c!1 2 3))`
+
+`callback`
+
+    
+
+async callback( `-11 100 104 105h`)
+
+    
+
+e.g. `.kurl.async (url; method;``callback!(::;{show x}))`
+
+`file`
+
+    
+
+HTTP PUT file (`10h`)
+
+    
+
+e.g. `.kurl.sync (url; method; ``file!(::;"/tmp/file.txt"))`
+
+`follow_redirects`
+
+    
+
+flag to enable following redirect Location (`-1h`)
+
+    
+
+e.g. `.kurl.sync (url; method; ``follow_redirects!(::;1b))`
+
+`no_upload`
+
+    
+
+For HTTP PUT, avoid setting CURLOPT_UPLOAD. This will leave content undefined,
+instead of 0 length (`-1h`)
+
+    
+
+e.g. `.kurl.sync (url; `PUT; ``no_upload!(::;1b))`
+
+`headers`
+
+    
+
+request headers (`99h`)
+
+    
+
+e.g. `.kurl.sync(url;method;``headers!(::;enlist["Content-Type"]!enlist
+"application/json"))`
+
+`binary`
+
+    
+
+Flag to force the response to be type 4h, regardless of Mime type.
+
+    
+
+e.g. `.kurl.sync (url; method; ``binary!(::;1b))`
+
+`insecure`
+
+    
+
+flag to enable `curl --insecure` (`-1h`)
+
+    
+
+e.g. `.kurl.sync (url; method; ``insecure!(::;1b))`
+
+`response_headers`
+
+    
+
+flag to include response headers (`-1h`)
+
+    
+
+e.g. `.kurl.sync (url; method; ``response_headers!(::;1b))`
+
+`max_redirects`
+
+    
+
+max number of redirects (`-6 -7h`)
+
+    
+
+e.g. `.kurl.sync (url; method; ``max_redirects!(::; 5))`
+
+`max_retry_attempts`
+
+    
+
+max attempts for exponential backoff (`-6 -7h`)
+
+    
+
+Kurl retries on 503 errors by default, up to 10 times. Set
+`max_retry_attempts` to 0 to disable, or anything else to set a max other than
+10.
+
+    
+
+When Kurl retries requests, it does _not_ reset any signed headers, or
+temporal headers. If the server refuses requests older than a given time,
+retried requests will still fail. This is intentional. Your application can
+handle longer retries by re-issuing the request.
+
+    
+
+e.g. `.kurl.sync (url; method; ``max_retry_attempts!(::; 5))`
+
+`sign_query`
+
+    
+
+Azure-specific flag (`-1h`). Azure Header Signing V2 has some exclusive
+options to handle inconsistencies between Azure Monitor and Azure Storage.
+
+    
+
+e.g. `.kurl.sync (url; `POST; ``sign_query!(::;1b))`
+
+    
+
+For Azure Authentication, query strings are not signed in the
+`CanonicalizedResource` portion of the signature if the method is POST. (You
+should never need to set this option, however it exists in case we discover an
+edge case.)
+
+`region`
+
+    
+
+Explicitly set AWS signing region. If unspecified, will be parsed from request
+URI (`10 -11h`)
+
+    
+
+e.g. `.kurl.sync (url; method;``region`service!(::;"us-east-1";"s3"))`
+
+`service`
+
+    
+
+Explicitly set AWS signing service. If unspecified, will be parsed from
+request URI (`10 -11h`)
+
+    
+
+e.g. `.kurl.sync (url; method;``region`service!(::;"us-east-1";"s3"))`
+
+`tenant`
+
+    
+
+session name; see tenants (`10 -11h`)
+
+    
+
+e.g. `.kurl.sync (url; method;``tenant!(::;"bob"))`
+
+`timeout`
+
+    
+
+request timeout (milliseconds) (`-6 -7 -12 -16h`). 0 is immediate, 0W is
+infinity
+
+    
+
+e.g. `.kurl.async (url; method; `callback`timeout!(cb; 5000))`
+
+When using HTTP PUT, specify `body` or `file`, not both. Leaving both blank is
+acceptable, if the REST server being queried looks at the querystring.
+
+Backoff time
+
+Backoff time (ms) is calculated with the following C equivalent, where `n` is
+the number of failed attempts – 1:
+
+The first retry would happen in 100ms, then 200, then 400, 800, 1600, etc…
+
+The timeout flag takes precedence over retry attempts remaining, so if a
+timeout of 5000 milliseconds is supplied, a request will time out in 5 seconds
+regardless of how many attempts would be left.
+
+### Responses
+
+By default, responses are a two-item list of `(statusCode; responseBlob)`
+
+Based on the content type of the response, the `responseBlob` will be a string
+(`10h`), or bytes (`4h`)
+
+If the `response_headers` parameter is passed as an option, the response will
+be a three-item list of `(statusCode; responseBlob; responseHeadersText)`
+
+The response header text returned will be the raw text (separated by `\r\n`).
+
+The following headers are reserved. (Kurl sets them automatically.)
+
+    
+    
+    Content-Length
+    Host
+    Authorization           (note 1)
+    x-amz-date              (note 2)
+    x-amz-content-sha256    (note 2)
+    x-amz-security-token    (note 2)
+    x-ms-date               (note 2)
+    
+
+  1. Only set if `.kurl.register` has been called for the given host
+  2. Only set if (1) is true, and if using Azure, or Amazon where applicable
+
+Since Kurl is a general library, you are free to perform authentication
+yourself, as long as you do not also register the host.
+
+    
+    
+    .kurl.sync (url;`GET;``headers!(::;enlist["Authorization"]!enlist "Basic ..."))
+    
+
+## Proxy environment variables
+
+HTTPS/HTTPS requests can go through a proxy by setting the `http_proxy` and
+`https_proxy` environment variables respectively.
+
+Environment variables `http_proxy` and `https_proxy` support the same syntax
+as command-line `curl`.
+
+[Libcurl tutorial](https://curl.se/libcurl/c/libcurl-
+tutorial.html#Environment)
+
+Variable `no_proxy` can be set to a list of domains to ignore.
+
+    
+    
+    # Use a SOCKS5 proxy for outgoing HTTPS requests
+    # Note that https_proxy refers to the request being https,
+    # not the protocol of the proxy itself
+    export https_proxy=socks5://localhost:8443
+    
+
+## Registration API
+
+Registering with Kurl will cause requests made against a given domain wildcard
+to use cached authentication information.
+
+Registration for several services may be done automatically on startup of the
+library. This is described below in Automatic Credential Discovery.
+
+The Kurl API defines one call for registration with authentication endpoints
+and can be used to manually register when the automatic discovery does not
+cover your application.
+
+    
+    
+    .kurl.register (type; domain; tenant; authInfo)
+    
+
+The `tenant` is a session name, username, ID, etc., meaningful to your
+application.
+
+    
+    
+    type       -11h       one of aws_cred, aws_sts, oauth2, oauth2_jwt, azure, basic
+    domain     10h        wildcard for domain
+    tenant     10h/-11h   session key required for sync/async to use authInfo
+    authInfo   0h         authentication info specific to the type
+    
+
+More on domains and tenants
+
+    
+    
+    // Use AWS ENV whenever a request is made with no tenant
+    authInfo:`AccessKeyId`SecretAccessKey!
+      getenv`AWS_ACCESS_KEY_ID`AWS_SECRET_ACCESS_KEY
+    
+    url:"https://ec2.us-east-2.amazonaws.com"
+    url,:"?Action=DescribeInstanceStatus&Version=2013-10-15"
+    
+    .kurl.register (`aws_cred; "*.amazonaws.com"; ""; authInfo)
+    .kurl.sync (url; `GET; ::);
+    
+    // Use AWS ENV whenever a request is made with a tenant "bob"
+    authInfo:`AccessKeyId`SecretAccessKey!
+      getenv`AWS_ACCESS_KEY_ID`AWS_SECRET_ACCESS_KEY
+    .kurl.register (`aws_cred; "*.amazonaws.com"; "bob"; authInfo)
+    .kurl.sync (url; `GET; ``tenant!(::;"bob"));
+    
+
+A deregistration API for cleanup:
+
+    
+    
+    .kurl.deregister (domain; tenant)
+    
+
+### Automatic registration using credential discovery
+
+Registration with Kurl is done automatically for Amazon Web Services, Google
+Cloud Platform, and Azure when the library starts up and it detects those
+vendors.
+
+Credentials are discovered according to a credential provider chain. This is a
+hierarchy of places to look for credentials. The hierarchy can change between
+providers.
+
+When credentials are found they are automatically fed into the registration
+function to authenticate with the cloud provider via `.kurl.register`.
+
+This automatic behaviour can be disabled by setting the environment variable
+`KX_KURL_DISABLE_AUTO_REGISTER` to 1.
+
+The hierarchy of checks is
+
+### Registration inputs
+
+Registration API for common type information
+
+#### Domains
+
+When making calls to a RESTFul API, you supply an HTTP/HTTPS endpoint. An
+endpoint is a URI with the scheme `[protocol://]host[:port]/path?query`.
+
+When registering authentication inputs with the library, domain names may be
+provided as wildcards. This tells the library to apply authentication when
+requests are made that match the domain
+
+    
+    
+    // Register OAUth2 login for googleapis.com domain
+    .kurl.register (`oauth2; "*.googleapis.com"; ...)
+    
+    // When you make requests to the googleapis.com domain,
+    // the supplied info (...) will be used
+    // For example, use the same info for storage and logging
+    .kurl.sync ("storage.googleapis.com"; `POST; ...) // Will match registration
+    .kurl.sync ("logging.googleapis.com"; `POST; ...) // Will match registration
+    
+
+When registering authentication inputs, you may provide an exact match to a
+protocol, host, and port. This tells the library to apply authentication when
+requests are made that exactly match the protocol, host and port.
+
+    
+    
+    // Register OAuth2 login for specifically https logging URI
+    .kurl.register (`oauth2; "https://logging.googleapis.com"; ...)
+    
+    .kurl.sync ("storage.googleapis.com"; `POST; ...) // Will not match registration
+    .kurl.sync ("logging.googleapis.com"; `POST; ...) // Will match registration
+    
+
+When this document refers to the domain parameter of the registration API, it
+is important to remember domains may be taken literally as domain names
+(wildcards) or they may be full URLs to match against, without the path and
+query component.
+
+#### Tenants
+
+When registering with Kurl, an optional tenant key may be provided. Providing
+this key when registering will mean only requests that resupply the tenant
+will use the associated authentication information, along with the matching
+domain.
+
+Tenants can be thought of as an session key. Using tenants, applications can
+be built to support multiple sessions. An application could maintain a mapping
+of tenants to what your application considers session metadata.
+
+For some applications, `.z.u` may be a sensible choice for a tenant.
+
+    
+    
+    // If current connection handle is defined, use existing authenticated username
+    // else use the default service account, no user triggered this call
+    // .e.g the timer triggered
+    tenant:[.z.w = 0i; ""; .z.u]
+    
+
+For simple applications, it may be reasonable to not use tenants and use an
+empty string, because the idea of sessions may not apply.
+
+When registering automatically, Kurl will use an empty string for the tenant.
+This represents a default service account (IAM). If a tenant is not explicitly
+provided when registering, it is the same as explicitly providing an empty
+string.
+
+## Info API
+
+These requests are used to list information. These calls are meant to be
+called outside of async callbacks because Kurl cleans up garbage lazily.
+
+For example, listing ongoing transfers inside a callback will include the
+‘current’ finished connection despite the fact it’s done.
+
+These API calls live in a ‘dot i’ namespace to indicate they are internal and
+subject to change. They are only meant to be used for debugging at this point
+in time, not for maintaining state you rely on.
+
+List the names of ongoing requests.
+
+    
+    
+    show .kurl.i.ongoingRequests[]
+    
+
+Return a table of registered tenants and domains
+
+    
+    
+    show .kurl.i.listRegistered[]
+    
+
+## Setting log level
+
+Log level can be set by setting KX_KURL_LOG_LEVEL to one of: `OFF`, `ERROR`,
+`WARN`, `INFO`, `DEBUG`, `TRACE`.
+
+Log level can be set dynamically at runtime by calling `.kurl.setLogLevel`.
+
+## Considerations
+
+### AWS PUT Request Hop Limit
+
+If you are running applications in containerized environments on Amazon EC2,
+you will need to [increase the hop limit for PUT
+requests](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configuring-
+instance-metadata-options.html).
+
+The default hop limit is 1, and will result in PUT requests to IMDSv2 to
+timeout.
+
+    
+    
+    aws ec2 modify-instance-metadata-options \
+        --instance-id i-1234567898abcdef0 \
+        --http-put-response-hop-limit 3 \
+        --http-endpoint enabled
+    
+

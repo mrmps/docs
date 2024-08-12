@@ -1,0 +1,137 @@
+https://code.kx.com/platform/qr_sharding/
+
+# Sharding - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/qr_sharding/
+
+# Sharding
+
+![Screenshot](../img/qr/shard_disabled.png)
+
+By default, the QR framework is treated as one single cluster of processes.
+All client requests into the system are routed through a single leader QR.
+However having all requests routed through a single process can be a
+scalability concern as this process needs to manage database availability,
+client registrations, request timeouts, in addition to routing requests. At
+some point it won't be able to handle the load and performance will degrade.
+
+The other limitation is around flexibility. The framework allows for
+customization's to multiple areas (routing decisions, request parsing, QP
+dispatch). Customizations for one product will affect all other products on
+that system, i.e. if the routing rules are changed for monitoring, they will
+change for all others because they share the same cluster.
+
+## Sharded framework
+
+Splitting the framework into shards addresses these issues by splitting the
+request load across multiple QR clusters and allowing customization's possible
+to the processes independently.
+
+![Screenshot](../img/qr/shard_enabled.png)
+
+The most important thing to note here is that **each target will be assigned
+to a single QR cluster**. The reason for this is that the QR manages the
+availability of a process and if the database registered with multiple QRs,
+there would be no way to reliably manage that. For this reason routed requests
+(ones which target multiple underlying databases) can only route to databases
+in the same cluster.
+
+### Data sources
+
+Request targets can be;
+
+  * Instances
+  * Connections
+  * Connection groups
+  * Services
+  * Service classes
+
+All of these need to be assigned to a QR cluster. This will be done via
+configuration with a default cluster for unconfigured ones.
+
+### Interfaces
+
+All client interactions with the QR framework are through _KX Delta Platform_
+interfaces. These support sharding so the client does not need to know about
+the sharding setup. These interfaces read the sharding config and can map
+requests to the corresponding _QR_. They connect to each cluster and route to
+the leader QR for each.
+
+## Setup
+
+In order to simplify the setup and support elastic scalability, the QR and QP
+processes will run as services. This makes scaling up and down the cluster
+greatly simplified as it doesn't require any pre-configuration or maintaining
+another instance. The service can be started and stopped as required with the
+cluster and clients reacting appropriately.
+
+[Service classes](../sc_overview/)
+
+To enable QR sharding, firstly set the following environment variable in the
+`delta.profile`. This instructs the environment to use services for the QR and
+QP framework processes.
+
+    
+    
+    DELTACONTROL_QR_USESERVICES=YES
+    
+
+This can be set during installation of KX Delta Platform.
+
+Add `enable-qr-sharding=1` to your `install.config` file.
+
+For more details on the KX Delta Platform deployment process, see the _KX
+Delta Platform_ Deployment guide.
+
+A shard consists of one QR and one QP service class name. All services that
+run under one of the two classes, automatically join that shard. The shards
+are defined using overrides of the `DS_QR_SHARDS` config parameter. In the
+below example, three shards have been configured using six different service
+classes; three QRs and three QPs.
+
+![Screenshot](../img/qr/shard_setup.png)
+
+Targets are mapped to shards using the `DS_QR_SHARD_SETUP` config parameter.
+The override name **should match** the one used for `DS_QR_SHARDS` in order to
+complete the assignment. If a target isn't explicitly assigned to a shard, it
+will use the `DEFAULT`.
+
+![Screenshot](../img/qr/shard_assignment.png)
+
+As discussed, databases are only assigned to a single cluster. They read the
+above config and only register with their assigned cluster. Clients read the
+config in order to route requests to the correct QRs.
+
+## Client examples
+
+Since the interfaces handle the routing to correct clusters, the client can
+remain agnostic of the underlying setup. Some example requests are executed
+below using the kdb+ client APIs.
+
+### Standard request
+
+Assuming the `fx_rdb` target is assigned to the `FX` shard. This request will
+be dispatched to the leader QR for that shard, with the results returned via
+one of the FX QPs.
+
+    
+    
+    .qr.client.sendRequest["select from fxQuote"; `fx_rdb; { show x }; ()!()]
+    
+
+### Routed request
+
+Assuming the `.fx.getQuotes` API is setup as routed, the below API will send a
+request to the `FX` shard.
+
+    
+    
+    .qr.client.sendRequest[(`.fx.getQuotes; .z.d-1; .z.d; `); `fx_rdb; { show x }; ()!()]
+    
+
+Routed request target
+
+Even though the QR process works out the request targets in this case, the
+client still needs to specify one. This value should be a target assigned to
+the correct shard; `FX` in this case.
+

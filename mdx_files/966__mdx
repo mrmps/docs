@@ -1,0 +1,466 @@
+https://code.kx.com/dashboards/map/
+
+# Map - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/map/
+
+# Map
+
+![Screenshot](../img/map/statisticaloverlay.jpg)  
+_A Map with a Statistical Overlay_
+
+Displays geographical data. Unlike other components, different data sources
+can be assigned and overlaid by map type.
+
+## Set up
+
+  1. Select the _map type_ to use.
+
+  2. Define the _bounds_ for the viewable area of the map using a [view state parameter](../viewstateparameters/); centered by _CenterX_ and _CenterY_ , at a defined zoom _scale_ on load. 
+
+  3. Select between points, circles, lines, heatmap, or overlay.
+
+  4. Irrespective of the map selection, ensure the _data source_ has a _longitude_ and _latitude_ reference for mapped elements. 
+
+## Basics
+
+![Screenshot](../img/map/mapbasics.png)
+
+_Name_
+
+    A name for the component provided by the user. 
+_Focus_
+
+    A [View State Parameter](../viewstateparameters/) used for [linking components](../viewstateparameters/#linking-components)
+_Theme_
+
+    Light or Dark
+
+## Map
+
+![Screenshot](../img/map/mapmenu.jpg)
+
+_Map Type_
+
+    
+
+Select from `terrain`, `satellite`, `roadmap` or `hybrid`
+
+![Screenshot](../img/map/maptype.jpg)
+
+_Scale_
+
+    
+
+Zoom level
+
+![Screenshot](../img/map/mapscalehtmllight.jpg)
+
+_Center X/Y_
+
+    Sets map center on dashboard load; define longitude and latitude values.
+_Track Changes_
+
+    
+
+When checked, will update co-ordinates after user interaction.
+
+Saved state
+
+Map will open on updated _Center X/Y_ co-ordinates on next dashboard load.
+
+_Bounds_
+
+    
+
+A [View State Parameter](../viewstateparameters/) which stores the co-
+ordinates for the viewable area of the map
+
+![Screenshot](../img/map/boundshtmllight.jpg)
+
+_Custom point_
+
+    
+
+![Screenshot](../img/map/custompointhtmllight.jpg)
+
+When a [View State Parameter](../viewstateparameters/) is set, right-clicking
+on the map allows the user to create a custom point: its co-ordinates will be
+held in the View State Parameter.
+
+Warning
+
+Without a View State Parameter set, right-clicking on the map will not add a
+custom point.
+
+_Map Key_
+
+    Allows the user to load the map with their Google map ID. 
+_Style JSON_
+
+    
+
+Apply JSON style from
+[Mapstyle.withgoogle.com](https://mapstyle.withgoogle.com/).
+
+![Screenshot](../img/map/selectJSON.jpg)
+
+Cut-and-paste the JSON into the Style property. A [view state
+parameter](../viewstateparameters/) of type _String_ can also be used to store
+the JSON.
+
+## Points
+
+![Screenshot](../img/map/mappoints.jpg)  
+_Map displaying data points_
+
+Plots distinct data points on map
+
+![Screenshot](../img/map/mapointsmenu.jpg)
+
+_Data Source_
+
+    A [data source](../datasources/) that includes geographic coordinates
+_Selected Attribute_
+
+_Selected Value_
+
+    Defined from data source
+     [Selected values](../viewstateparameters/#selected-values)
+_Tracker_
+
+    A View State Parameter for _TrackedItem_
+_TrackedItem_
+
+    
+
+A _Data Source_ column for the _Tracker_ View State Parameter, set when the
+user selects a point on the map
+
+More mapped items
+
+Additional mapped items can be tracked using _Selected Point Viewstate
+Routing_
+
+[Selected values](../viewstateparameters/#selected-values)
+
+_Latitude / Longitude Data_
+
+    
+
+_Data Source_ columns for latitude and longitude
+
+![Screenshot](../img/map/latitudelongitude.jpg)  
+_Latitude and longitude columns in the Data Source_
+
+_Shape_
+
+_Rotate Shape_
+
+_Shape Rotation Degrees_
+
+    
+
+The shape of the map point graphic: dot, pointer, etc.
+
+![Screenshot](../img/map/directionalpoints.jpg)
+
+    
+
+`directional` uses pointer icons, the direction of the point is determined by
+_Shape Rotation Degrees_ (a _Data Source_ column) when enabled by _Rotate
+Shape_.
+
+![Screenshot](../img/map/directionalmap.jpg)
+
+_Shape (From DB)_
+
+    A _Data Source_ column: the shape of the map point graphic (alternative to _Shape_)
+_Shape color_
+
+    Color of the map point graphic
+_Shape color (From DB)_
+
+    A _Data Source_ column: color of the map point graphic (alternative to _Shape Color_)
+_Shape Opacity_
+
+    Opacity of the map point graphic
+_Cluster Size_
+
+    
+
+Size of clusters into which points are aggregated; select from values in
+increments of ten to `70`
+
+![Screenshot](../img/map/mapcluster.jpg) _Map clusters_
+
+_Cluster_
+
+    When checked, replaces grouped individual points with a numeric cluster icon. Points outside cluster remain displayed as individual points.
+_Show Tooltip_
+
+    When checked, displays a tooltip on Point rollover
+_Custom Tooltip_
+
+    
+
+![Screenshot](../img/map/customtooltip.jpg)  
+_Custom tooltip on a Map_
+
+[Custom tooltips](../template/#custom-tooltips)
+
+_Zoom on Select_
+
+    When checked, map will zoom when user selects a point
+_Single Zoom on Cluster_
+
+    
+
+When checked, map will zoom on selected cluster
+
+![Screenshot](../img/map/singlezoomhtmllight.jpg)
+
+_Open Dashboard on Select_
+
+    A dashboard: when user selects a map point, the dashboard will load
+_Points in View_
+
+    
+
+![Screenshot](../img/map/pointsinview.jpg)
+
+When checked, map will auto-zoom to show all available data points
+
+_Label_
+
+    
+
+![Screenshot](../img/map/pointLabels.jpg)
+
+Allows the user add a label to a Point.
+
+_Label Color_
+
+    Allows the user set the Point label color if label is defined
+_Label Size_
+
+    Allows the user set the Point label size if label is defined
+
+### Action
+
+[Actions](../action/)
+
+## Circles
+
+![Screenshot](../img/map/mapcircles.jpg)
+
+_Data Source_
+
+    A [data source](../datasources/) that includes geographic coordinates.
+_Radius_
+
+    _Data source_ column with radius of circle
+_Latitude / Longitude_
+
+    _Data Source_ columns with geographic co-ordinates
+_Circumference Color, Opacity and Width_
+
+    _Data Source_ columns with details on color (hex reference), opacity and width (pixels)
+_Color_
+
+    Circle color
+_Opacity_
+
+    Opacity of circle
+_Show Tooltip_
+
+    Enable Tooltip
+_Custom Tooltip_
+
+    Create a custom tooltip template
+     [Custom Tooltip](../template/#custom-tooltip)
+
+## Lines
+
+![Screenshot](../img/map/linesmap.jpg)  
+_A line on a Map_
+
+![Screenshot](../img/map/maplines.jpg)  
+_Map Lines configuration_
+
+_Data Source_
+
+    A [data source](../datasources/) that includes geographic coordinates
+_Latitude / Longitude Data_
+
+    _Data Source_ columns with geographic co-ordinates
+_Color_
+
+    Color of the line
+_Use Data Color_
+
+    A Data Source column: color of the map line (alternative to Color)
+_Label Size_
+
+    Size of the label
+_Show In View_
+
+    When checked, map will auto-zoom to show all available line points
+_Group by_
+
+    Groups line data by a specific data source column and draws a seperate line for each group
+_Show Tooltip_
+
+    When checked, displays the tooltip
+_Geodesic_
+
+    When enabled, draws a (curved) line connecting the shortest possible distance between two points on a sphere.
+
+### Lines query example
+
+    
+    
+    Stop         long      lat      Line
+    ------------------------------------
+    Tallaght     -6.374589 53.28749 Red
+    Hospital     -6.37885  53.28937 Red
+    Cookstown    -6.384397 53.29351 Red
+    Belgard      -6.374886 53.29929 Red
+    Kingswood    -6.36525  53.30369 Red
+    Red_Cow      -6.369872 53.31683 Red
+    Kylemore     -6.343444 53.32666 Red
+    Bluebell     -6.333792 53.3293  Red
+    Blackhorse   -6.327394 53.33426 Red
+    Drimnagh     -6.318161 53.33536 Red
+    Goldenbridge -6.313569 53.33589 Red
+    Suir_Road    -6.307211 53.33662 Red
+    Rialto       -6.297242 53.33791 Red
+    Fatima       -6.292547 53.33844 Red
+    Jamess       -6.293361 53.34194 Red
+    Heuston      -6.291808 53.34665 Red
+    Museum       -6.286714 53.34787 Red
+    Smithfield   -6.277728 53.34713 Red
+    Four_Courts  -6.273436 53.34686 Red
+    Jervis       -6.265333 53.34769 Red
+    ..
+    
+
+_Example data table_
+
+[linesexample.csv](../assets/linesexample.csv): the above table as a CSV
+
+[linesexample.q](../assets/linesexample.q): a datasource query on the above
+table as a function of the Line, e.g. `Red` or `Green`
+
+## Heat Map
+
+![Screenshot](../img/map/heatmap.jpg)  
+_A traffic heat map_
+
+Dynamic overlays
+
+Can be used for dynamic overlays; e.g. when linked with a
+[Playback](../playback/) component.
+
+![Screenshot](../img/map/heatmapmenu.jpg)
+
+_Data Source_
+
+    A [data source](../datasources/) that includes geographic coordinates
+_Latitude / Longitude Data_
+
+    _Data Source_ columns with geographic co-ordinates
+_Weight_
+
+    A _Data Source_ column with the heat-map weights
+_Opacity_
+
+    
+
+Opacity of the overlay
+
+![Screenshot](../img/map/changeopacity.jpg)
+
+_Gradient_
+
+    Color gradient: red-bllue, blue-red, etc
+_Radius_
+
+    Radius for heat-map spread
+_Show Heatmap_
+
+    When checked, the overlay is visible
+
+## KML Layers
+
+KML Layers specify a set of features (such as place marks, images, polygons,
+3D models, textual descriptions, etc.)
+
+_URL_
+
+    The URL of the KML or KMZ file
+_Enabled_
+
+    When checked, the layer is visible
+
+## Overlay
+
+![Screenshot](../img/map/statisticaloverlay.jpg)
+
+![Screenshot](../img/map/overlaybasics.jpg)
+
+_Custom Tooltip_
+
+     [Custom tooltips](../template/#custom-tooltips)
+_Selected Point Viewstate Routing_
+
+     [Selected values](../viewstateparameters/#selected-values)
+_Choose Layer_
+
+    Select from dropdown; single option `Statistical``
+_Data Source_
+
+    A [data source](../datasources/) that includes geographic coordinates and a column containing the color reference for overlay shading
+_Data Key_
+
+    Column containing an index reference for the overlay data
+_Data Value_
+
+    Overlay day mapped to _Data Key_
+GeoJSON
+
+    Custom _GEOJson url_ overlay and _GeoJSON Key_ reference key
+_Show Legend_
+
+    Display color code legend of overlay
+_Selected Value_
+
+    Map selected overlay key to a [View State Parameter](../viewstateparameters/)
+_Selected Bounds Value_
+
+    Map selected _bounds_ coordinates of the overlay to a [View State Parameter](../viewstateparameters/)
+_Layer Opacity_
+
+    Select overlay transparency; 0 for fully transparent, 100 for opaque. 
+
+## Rectangle Bounds
+
+![Screenshot](../img/map/rectanglebounds.jpg)
+
+A user-defined zone (defined within _bounds_) by longitude and latitude co-
+ordinates. More than one user-set boundary can be set.
+
+_North_
+
+_South_
+
+_East_
+
+_West_
+
+    longitudinal and latitudinal co-ordinates for user-defined boundary. 
+
+## Style, Margins, Format
+
+[Style](../style/#component-style) for common style settings
+

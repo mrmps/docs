@@ -1,0 +1,143 @@
+https://code.kx.com/dashboards/gauge/
+
+# Gauge - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/gauge/
+
+# Gauge
+
+A Gauge chart is used to display a single value of quantitative data.
+
+![Screenshot](../img/gauge/gauge.png)
+
+## Set up
+
+  1. Select a _Data Source_
+  2. Select a _Data Column_
+  3. Set your _Min_ and _Max_
+
+## Basics
+
+![Screenshot](../img/gauge/gaugebasics.png)
+
+_Name_
+
+    A name for the component provided by the user. 
+_Data Source_
+
+     [Data sources](../datasources/)
+_Title_
+
+_Show Title_
+
+    Set a title label which will be displayed on Tooltip. Toggle _Show Title_ to control visibility on Gauge chart type.
+
+### Chart Type
+
+    Toggle between `Gauge` and `Bullet` type chart.
+
+#### Gauge
+
+![Screenshot](../img/gauge/gaugecharttype.png)
+
+_Data Column_
+
+    Select data column to plot from the data source.
+_Min_
+
+_Max_
+
+    Set min and max of the chart.
+_Color_
+
+    Default color used when `Progress` is enabled or when highlight rules not set.
+_Label Font Size_
+
+    Define font size of data label.
+_Show Label_
+
+    Toggle display of data label.
+_Show Progress_
+
+    Show the Progress bar. When enabled, toggles off the highlight rules and uses default color 
+_Show Axis Labels_
+
+    Toggle display of axis labels.
+_Show Axis Ticks_
+
+    Toggle display of axis ticks.
+
+#### Bullet
+
+![Screenshot](../img/gauge/bulletcharttype.png)
+
+_Progress Data_
+
+    Define data column for progress bar
+_Target Data_
+
+    Define data column for target bar
+_Axis Labels Data_
+
+    Define data column for axis labels
+_Progress Color_
+
+_Target Color_
+
+    Define color of progress and target bars.
+_Transposed_
+
+    Toggle between vertical and horizontal chart.
+
+### Highlight Rules
+
+     [Highlight Rules](../highlightrules/)
+
+## Format Data
+
+![Screenshot](../img/gauge/gaugeformat.png)
+
+_Numeric Format_
+
+    Select x-axis format between `Number`, `Smart Number`, `Formatted Number`.
+_Decimal Places_
+
+    Set precision point for x-axis numeric label.
+_Hide Trailing Zeroes_
+
+    Hide display of trailing zeroes in x-axis tick values.
+_Prefix_
+
+_Suffix_
+
+    Add text to the data label; e.g. currency or percentage symbol.
+
+![Screenshot](../img/gauge/gaugetooltip.png)
+
+_Show Tooltip_
+
+    Toggle display of tooltip.
+_Use custom tooltip_
+
+    Enable custom tooltip.
+_Custom tooltip_
+
+    Define tooltip; simple example:
+    
+    
+    <table>
+        {{#if this.0.title}}<thead><tr><th>{{this.0.title}}</thead><th></tr>{{/if}}
+        <tbody>{{#each this}}
+            <tr>
+                <td>{{dataCol}}: </td>
+                <td>{{dataVal}}</td>
+            </tr>
+            {{/each}}
+        </tbody>
+    </table>
+    
+
+## Style, Margins, Format
+
+[Style](../style/#component-style) for common settings
+

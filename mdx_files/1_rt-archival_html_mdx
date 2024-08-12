@@ -1,0 +1,97 @@
+https://code.kx.com/insights/enterprise/configuration/rt-archival.html
+
+# RT archival - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/configuration/rt-archival.html
+
+# RT log file archival
+
+In the _kdb Insights Enterprise_ , the 3-node RT Stream implementation uses a
+RAFT consensus engine which maintains two logs:
+
+  * A RAFT log - contains meta data about the merged stream i.e. all of the header information to allow the node to participate in the RAFT cluster, join and rejoin an already running cluster, call a leader election and to vote in a leader election. Deletion of these logs taken care of by RAFT itself using the RAFT log retention rules.
+
+  * A stream log - contains the messages that where submitted to the RAFT log. This can be thought of very much like a tickerplant log and it is this log which is consumed by subscribers. Deletion of these is taken care of by the RT stream log archival rules and the subscriber options.
+
+Both types of logs are rolled once they reach a certain size. This allows the
+cluster to operate continuously, as rolled logs can be deleted or archived as
+they age and become obsolete over time.
+
+## RT stream log archival
+
+You can set RT stream log archival rules in _kdb Insights Enterprise_ using
+global config values.
+
+This allows you to configure the retention duration, maximum log size and
+maximum disk usage percentage for RT stream log files according to your
+required policies. These settings are nested under the `kxi-
+operator.config.rt` object as follows:
+
+    
+    
+    kxi-operator:
+      config:
+        rt:
+          retentionDuration: 10080
+          maxLogSize: 5Gi
+          maxDiskUsagePercent: 90
+    
+
+parameter | default | details  
+---|---|---  
+`retentionDuration` | 10080 | Retention period for merged RT stream log files in minutes. Rolled merged log files which contain messages older than this (based on the message timestamp) are garbage collected. Set to `0` to disable time-based archival.  
+`maxLogSize` | 5Gi | Maximum size of all log files in RT. Rolled merged log files which push the total size beyond this limit are garbage collected, oldest first. The supported suffixes are `[KMGTP]i` (KB, MB, GB, TB, PB respectively), for example use `5Gi` for 5GB. This parameter is optional, meaning that if it is not defined, then the check of maximum log size is switched off in the RT archiver garbage collection logic.  
+`maxDiskUsagePercent` | 90 | Maximum percentage of the available disk space that will be used by RT. When this percentage is exceeded rolled merged log files are garbage collected, oldest first.  
+  
+The size of the disk associated with each RT pod and each subscriber MUST be
+larger than the `maxLogSize`` defined.
+
+### Sizing PVCs for RT stream log files
+
+RT stream log files are stored in a number of PVCs in _kdb Insights
+Enterprise_. Assuming you are using the sample-sdk-assembly the following set
+of PVCs will be created:
+
+  * 3 x rt-north
+  * 3 x rt-south
+  * spwork (one per pipeline)
+  * 3 x dap-rdb
+  * 3 x dap-idb
+  * 3 x dap-hdb
+  * 1 x sm
+
+Example PVC Sizes
+
+As a rough rule of thumb to size the PVCs (assuming SP is performing a simple
+passthrough):
+
+  * rt-north = rt-south
+  * spwork = rt-north + rt-south
+  * everything else = rt-south
+
+## RAFT log retention
+
+You can set RAFT log retention rules in _kdb Insights Enterprise_ by setting
+**environment variables** in the global config. These settings are nested
+under the `kxi-operator.config.rt.env` object as follows:
+
+    
+    
+    kxi-operator:
+      config:
+        rt:
+          env:
+          - name: RAFT_CHUNK_SIZE
+            value: "1"
+          - name: RAFT_LOG_SIZE
+            value: "10"
+          - name: RAFT_INTERNAL_TIMER
+            value: "10"
+    
+
+variables | default | details  
+---|---|---  
+`RAFT_CHUNK_SIZE` | 10 | The size of RAFT or command log in GiB before it is rolled (or chunked).  
+`RAFT_LOG_SIZE` | 1 | The size of the total RAFT log to keep in GiB. Only completed RAFT logs are discarded, so in this case (RAFT_LOG_SIZE=10 and RAFT_CHUNK_SIZE=1), it is possible that you could use up to 11GiB before it is trimmed back to 10GiB.  
+`RAFT_INTERNAL_TIMER` | 10 | This is the time in milliseconds for an internal batch timer. This publishes a batch of messages every "batch internal time", regardless of how quickly messages are being submitted to the RAFT log. It works the same as tick.q when it is in batched mode. Due to a constraint of RAFT, this must be reasonably larger than the expected round trip time between nodes.
+

@@ -1,0 +1,467 @@
+https://code.kx.com/platform/release_450/
+
+# 4.5.0 - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/release_450/
+
+# Changes in 4.5.0
+
+## Key changes
+
+## Kdb+ 4.0
+
+4.5.0 supports kdb+ 4.0.
+
+[Release notes for V4.0](https://code.kx.com/q/releases/ChangesIn4.0/)
+
+There are areas in kdb+ 4.0 which are [not upwardly
+compatible](https://code.kx.com/q/releases/ChangesIn4.0/#nucs).
+
+### Red Hat Enterprise 8 support
+
+From V4.5.0, KX Delta Platform supports the Red Hat Enterprise Linux 8
+operating system.
+
+### Messaging failover
+
+The _MS_ processes are now configured in a cluster by default. This ensures
+there can only be one leader process under normal conditions. This prevents
+clients registering with the wrong server and not matching topics.
+
+### Cache analytics
+
+Fixed issued related to the `DxCache` group of analytics where incorrect
+results could be returned in certain circumstances when the cache filled.
+
+### Log-forging protection
+
+Protection against log forging has been added to all Java components.
+
+Log scraping
+
+Any existing log-scraping configuration should be reviewed in case it needs
+updating to match changes arising from encoded log statements.
+
+## KX Control
+
+### Secured `deltacomponent` user
+
+The `deltacomponent` user can now be configured as a non-admin. This provides
+further security by restricting the operations this user can perform on the
+system. This is set by adding the following to `delta.profile`
+
+    
+    
+    DELTACONTROL_DELTACOMPONENT_ADMIN=NO
+    
+
+Setting the `deltacomponent` user to be a non-admin user will have
+consequences for
+
+  * Gateway queries
+  * Reports,
+  * Calls to _KX Control_ or between processes
+  * String/lambda queries
+  * Use of `.ex.prh`/`.ex.prhAsync`
+
+[Security and the deltacomponent user](../security/#security-and-the-
+deltacomponent-user)
+
+### Secured clean installs
+
+Upgrades to existing systems will be unaffected.
+
+Clean installs of _KX Control_ will be secured by default. The secure parser
+will be enabled and `deltacomponent` set to non-admin.
+
+Upgrades to existing systems will be unaffected.
+
+To bypass the default secure install, set the following install option in the
+`install.config` file;
+
+    
+    
+    skip-secure-deploy=1
+    
+
+[New install security](../security/#new-install-security)
+
+### Force Control startup
+
+If a process in the _Control_ process cluster joins late and has a higher
+replication UID, by default it will shut down to trigger manual investigation.
+This behavior has been made configurable to let it become the leader and
+demote the rest of the cluster.
+
+This scenario can occur if the cluster is not started up all at once, and a
+leader is elected with a lower UID. There will have been data loss in this
+case so this allows that process to force startup and cause the rest to re-
+sync to it. The following setting should be set in `delta.profile`.
+
+    
+    
+    DELTACONTROL_FOLLOWER_STARTUPOVERWRITE=YES
+    
+
+[Replication](../control_replication/#start-up)
+
+### Query router
+
+#### Performance
+
+Significant work was undertaken around _QR_ performance. The headline changes
+are given below;
+
+  * Improvements of ~30% when processing incoming requests
+  * New faster FIFO mode
+  * De-queue performance improvement of ~70% in FIFO
+
+More detailed information on the test scenarios and improvements are
+available.
+
+[QR performance](../qr_perf/)
+
+#### Sharding
+
+The ability to split the QR framework and underlying datasources into shards
+has been added. This allows for greater request scalability and better
+flexibility when customizing the framework processes.
+
+[QR Sharding](../qr_sharding/)
+
+#### QR security
+
+The default state of the _QR_ framework is now more secure.
+
+  * Permissions enabled on _QR_ and _QP_ instances
+  * Custom instances will need to make the same change manually
+  * Password handler enabled on _QR_ process
+  * Secure parser and async permissions enabled
+
+To revert to the previous behavior, please set the `.qr.pm.secure` instance
+parameter to `false`.
+
+![Screenshot](../img/releasenoteimages/qr_secure_mode.png)
+
+[Instance parameters](../enhanced_instance_configuration/)
+
+Custom process templates
+
+If using custom process templates, it is possible the processes may experience
+issues connecting to the QR process when trying to register as a database or
+client. In this case, please add the template name to the following file and
+restart the process
+
+`${DELTACONTROL_HOME}/api/functions.csv`
+
+#### Optional parameters
+
+The `qp` optional parameter within the Query Router can now support providing
+a list of Query Processors. This will indicate to the Query Router which QPs
+should be considered for servicing the query with.
+
+[QR Send Request](../api/queryrouter/#qrclientsendrequest)
+
+#### QR garbage collection configuration
+
+Additional configuration `.qr.runGC` added to Instance configuration to
+support garbage collection in the Query Router
+
+[Enhanced Configuration](../enhanced_instance_configuration/)
+
+### Write permission now required for Analyst use on permissioned processes
+
+Write permission is now required for an instance when attaching, if that
+instance has been configured with permissions enabled.
+
+### Permissions for creating sandbox processes
+
+Ability for users to launch `ANALYST_` sandbox process may now be controlled
+by granting _read_ permission to the _CxSandbox_ entity group. This group does
+not exist by default and must be created if desired.
+
+[Analyst sandbox permissions](../analyst_sandbox_permissions/)
+
+### Restrict sandbox creation by daemon, port range, and user group
+
+A _Parameter_ entity titled `CxDaemonAccess` may now be used to restrict
+`Analyst_` sandbox user access to particular daemons, within particular port
+ranges.
+
+This parameter does not exist by default and must be created if desired.
+
+[Analyst sandbox restriction](../analyst_sandbox_permissions/#cxdaemonaccess)
+
+### Selective upgrades
+
+_KX Control_ supports dynamic code and schema upgrades to the system. Process
+API allow an operating version to be set for a process, with respect to the
+version number of _KX Control_. This will ensure config, analytics,
+instructions and schema will only load the latest version of the entity up to
+the set version.
+
+[Selective Upgrades](../selective_upgrades/)
+
+### Packaging public API
+
+_KX Delta Platform_ Process API extended to include packaging commands
+
+  * Import packages `.pkg.import`, publish `.pkg.release` and rollback `.pkg.rollback` packages and entity revisions (`.pkg.import` and `.pkg.rollback` require `deltacomponent` to be an Administrator)
+  * View Control `.pkg.getCheckpoints` and Package `.pkg.getPkgVersion` versions
+  * Interrogate for modified entities `.pkg.getModifiedEntities`
+  * Republish config updates `.cfg.republishUpdates`
+
+[Packaging commands](../api/packaging/)
+
+### Command line interface to _KX Control_
+
+There is an option for `run_command.q` to suppress logging of the command to
+`DeltaControl.log`.
+
+To connect to _KX Control_ and run a command from a specific list of allowed
+commands, for example to run a list of workflows, the `control_cli.q` script
+has been provided. The script is invoked with different options to run each of
+the allowed commands.
+
+[Command-line interface](../command_line_interface/)
+
+## KX Control Web UI
+
+### Git compare key change
+
+From 4.5.0 Git functionality within the KX Control UI will compare KX Control
+in memory entities against Git. Previously this compared in-memory entities
+against on-disk.
+
+### Overwrite existing Git repository on import
+
+When importing a new Git repository there may be an existing Git repository
+that already exists, say if the package was all deleted. If this is the case a
+warning dialog will be displayed showing the option to cancel the clone or to
+continue and completely overwrite the existing directory on the file system.
+
+![Screenshot](../img/releasenoteimages/gitoverwriterepository450.png)
+
+### Additional file types in Git commit dialog
+
+The configuration files will now be visible within the Git commit dialog. They
+are automatically staged and cannot be unstaged since they may be required by
+changes being pushed.
+
+![Screenshot](../img/releasenoteimages/gitconfigfiles450.png)
+
+### Git commit a single item from the navigator
+
+The navigator tree, or other lists where entities are displayed, now have a
+shortcut to Git committing that single item. If the menu item is greyed out,
+then the item is not new or has not been changed.
+
+![Screenshot](../img/releasenoteimages/gitcommititem1.png)
+
+All other unrelated entities are moved to the unstaged area of the Git commit
+dialog. The option to stage the other items is still possible.
+
+![Screenshot](../img/releasenoteimages/gitcommititem2.png)
+
+Git dialog now offers tooltips for names which extend beyond the size of the
+dialog.
+
+### Search item from entity tab
+
+The Control Web UI tabs have a new menu item _Search Item in Navigator_ in
+addition to _Copy name_. This menu item populates the search field in the
+Navigator.
+
+![Screenshot](../img/releasenoteimages/searchitem1.png)
+
+![Screenshot](../img/releasenoteimages/searchitem2.png)
+
+### Duplicate entity now opens editor
+
+When an entity is duplicated in the Control Web UI, an editor is now opened on
+the newly created entity. Previously, it was required to find the new entity
+in the navigator and open it manually.
+
+### Config parameter editor export option
+
+New option in Config Parameter editor to allow the user to export a parameter
+to CSV
+
+### Schema column search
+
+Added ability to filter/search for information in the schema editor
+
+### Performance improvements
+
+Several performance improvements have been made to the API populating
+different areas of _KX Control_ Web UI. For an environment with large numbers
+of entities and several hundred packages on disk, example timing improvements
+are:
+
+area | time before changes (ms) | time after changes (ms)  
+---|---|---  
+Navigation tree | 20090 | 97  
+Process status viewer | 20387 | 58  
+Exporting to GIT (exportStatus) | 21135 | 31  
+Deleting an analytic | 20389 | 7  
+  
+## KX Stream
+
+### TP resilience
+
+The tickerplant has been enhanced to be more resilient to disk outages. This
+mode is available by enabling the `retryInterval` instance parameter.
+
+[TP resilience](../stream/tickerplant_template/#resilience-and-retries)
+
+### Messaging per-channel publishes
+
+The [publish APIs](../api/messaging/#publishing) support publishing to all or
+specific channels. The per-channel publish APIs, `.dm.pub*c` versions take an
+extra parameter and only publish to subscribers on that channel. In the
+example below, the second line will only publish to a subset of the
+subscribers whereas the first will publish to all.
+
+    
+    
+    .dm.pub[`trade; data]
+    .dm.pubc[`channel; `trade; data]
+    
+
+There is a quirk in this behavior around the null channel ```. Null is a valid
+channel in its own right, however these APIs treat it as a wildcard for all
+channels. In the example above when using the null channel, both lines would
+be equivalent.
+
+The more intuitive behavior would be for `.dm.pubc` to filter on the null
+channel. To switch to use this behavior, set the following environment
+variable in your `delta.profile`.
+
+    
+    
+    DELTACONTROL_DMS_USENULL=YES
+    
+
+### Reports and `deltacomponent`
+
+It is now possible to configure the `deltacomponent` user to be a non-
+administrator user in _KX Control_. If this is the case there may be actions
+required to grant `deltacomponent` permission to any solution reports. The
+administrator status of the `deltacomponent` user will not change if an
+existing environment is upgraded to 4.5.0.
+
+[Reports and the deltacomponent user](../stream/report-deltacomponent/)
+
+### RDB and HDB end of day with secure parser, `deltacomponent` non-admin
+
+If the `deltacomponent` user is configued to be a non-administrator user in
+_KX Control_ and the secure parser is enabled, there may be issues running
+end-of-day actions on the HDB from the RDB. This could occur if these actions
+are defined using string or lambda queries. For an example of how to resolve
+this see the _KX Control_ documentation.
+
+[RDB and HDB end of day](../security/#rdb-end-of-day)
+
+### KX Monitoring Dashboards queries now Analytics
+
+KX Monitoring Dashboards have moved all string based queries to offical
+Analytic APIs. This ensures the APIs are permissioned appropriately and
+available via secure deploys.
+
+### KX Java Stream API
+
+Extended the configuration of the Java Stream API to support a variety of
+additional configuration options, available via command-line `-D` system
+properties or programmably within the application using the KX Java Stream
+API.
+
+This includes \- Heartbeating and reconnect configurations of Query Router,
+Query Manager and Messaging Services \- Ability to execute queries against
+only connected Query Processors \- Define Messaging Server queue mode and
+timeouts
+
+[Stream API configurations](../stream/java_stream_api/#system-configuration-
+options)
+
+### Heartbeat log info messages visibility within Java Stream API
+
+Added ability to refresh the client facing public API. This option allows
+applications to programmatically update the API.
+
+[Refresh Public API](../stream/java_stream_api/#public-query-api)
+
+Remote subscribers to the the KX Java Stream API will now recover when
+connection is severed to the process on a retry timer configured through the
+system property `messaging.server.reconnectratems`
+
+[Stream API configurations](../stream/java_stream_api/#system-configuration-
+options)
+
+### KX C# Stream API
+
+KX C# Stream API now provides an interface to allow an application to request
+the data be presented as a raw byte stream from the backend KDB+ process. This
+allows the application to deserialize later/off main thread.
+
+[Stream API byte stream support](../stream/csharp/cs_stream_api_460/#query-
+router-service)
+
+KX C# Stream API adds support for certificate authentication and basic
+instructions on how to import and trust certificates.
+
+[Enable TLS certificate
+verification](../stream/csharp/cs_stream_api_460/#enable-tls-server-
+certificate-verification)
+
+### Action tracker
+
+#### Create role
+
+A new role, _create_ , has been added to the role management settings of an
+action tracker definition. This role gives a user the ability to create items
+for that action tracker. For backward compatibility this functionality is
+disabled, so by default this role is ignored and any user can create items.
+The role check can be enabled using an INSTANCE_CONFIG override setting,
+`.at.createRoleCheck`. This needs to be enabled on both the action tracker and
+action tracker GW.
+
+[Enhanced instance
+configuration](../enhanced_instance_configuration/#enhanced-instance-
+configuration)
+
+[Creating action tracker items](../stream/actiontracker/#creating-cases)
+
+#### Case/Alert distinction
+
+It is now possible to designate an action tracker as a _case_. This allows an
+action tracker to be either a _case_ or an _alert_. There is now a case
+true/false check-box as part of the action tracker definition. The Action
+Tracker dashboard will distinguish between _case_ and _alert_ action tracker
+items and allows filtering of items based on this.
+
+[Action Tracker Management](../stream/actiontracker/#action-tracker-
+management)
+
+#### New items
+
+An analytic can be defined that will run whenever a new item for an action
+tracker is created. To be available for selection in the _new item callback_
+drop down as part of an action tracker definition, analytics must be members
+of the `dxATItemCreation` analytic group.
+
+[New item creation](../stream/actiontracker/#new-item-creation-callback)
+
+## KX Connect
+
+### Python script update
+
+The provided example Python script within KX Connect updated to support both
+Python 2 and Python 3.
+
+### Configurable decimal rounding available
+
+New environmental variable `JSON_DECIMAL_FORMAT` available to allow the user
+to configure the JSON format of decimals.
+
+[KX Connect Configuration](../kx_connect/#configuration)
+

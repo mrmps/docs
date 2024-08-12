@@ -1,0 +1,231 @@
+https://code.kx.com/insights/microservices/rt/index.html
+
+# Reliable Transport (RT) Overview - kdb products
+
+Original URL: https://code.kx.com/insights/microservices/rt/index.html
+
+# Reliable Transport (RT) Overview
+
+The _kdb Insights Reliable Transport_ (RT) is a microarchitecture for ensuring
+the reliable streaming of messages. It is designed to satisfy both high
+availability and high performance requirements. It is built upon the Raft
+consensus algorithm.
+
+See [here](sdks/getting-started-sdks.html) for more details on how to publish
+data to an instance of RT, also known as an kdb Insights Stream within _kdb
+Insights Enterprise_.
+
+## Overview
+
+Unlike a 'traditional' messaging system which uses direct IPC (either
+synchronous or asynchronous with an ACK mechanism) to send messages between
+the publishers, broker and subscribers, RT uses log files. Publishers
+asynchronously write their messages to a local log file which is automatically
+replicated to RT and then sequenced and merged. The merged log files are then
+replicated automatically to the subscribers where the messages are read
+asynchronously from the local log file and consumed.
+
+RT uses a sequencer and replication strategy to ensure that messages are moved
+as quickly as possible between publishers and subscribers. Its basic operation
+consists of the following steps:
+
+  1. [Publishers](publishers.html) use a kdb Insights interface to asynchronously write messages to log files in a session directory on local disk (think of writing a tickerplant log).
+
+  2. The session directory is replicated from the publisher to the RT nodes. Raft requires a consensus meaning there will need to be 3,5,7,.. nodes in a RT cluster. The combination of Raft and the sequencer creates a merged log directory, present on each RT node.
+
+  3. If multiple publishers are writing to the same stream, they are merged into a single unified and ordered stream by the sequencer.
+
+  4. [Subscribers](subscribers.html) can use the [Q](sdks/rt-qpk.html) or [C](sdks/c-sdk.html) interface to consume the merged stream. Upon subscribing, the replicator automatically copies the merged log directory to the subscriber node where the messages are read asynchronously from the now local merged logs files using the APIs in the rt-qpk.
+
+Note
+
+Multiple subscribers can consume the merged stream and there is no requirement
+for them to do so within a certain time frame (i.e. they don't have to "keep
+up" with the publisher).
+
+This results in full decoupling of publishers and subscribers (i.e. publishers
+don't have to deal with slow subscribers).
+
+### RT vs tick
+
+RT is similar to tick, but it also provides the following benefits:
+
+  * A fault tolerant system which can sustain a RT node going offline.
+
+  * Since the publisher & subscriber are decoupled from one another and from the RT nodes, there is no concern about a slow subscriber.
+
+### Definitions
+
+  * **stream** \- this is synonymous with an instance of RT, whether it is a 3,5,7,.. node RT implementation. All the messages sent to the stream are replicated, merged and sequenced before being passed to the consumers.
+
+  * **session** \- this is an the identifier for a single publisher which is physically represented as a directory that messages are written to.
+
+  * **stream id** \- applicable to a kdb Insights Enterprise deployment only. Since there can be multiple Streams in a kdb Insights Enterprise, the stream id (currently known in the UI as a Sub Topic) is used by external publishers to identify the stream to send data to.
+
+  * [**publisher**](publishers.html): a publisher writes messages to a session which are pushed to a stream.
+
+Publishers must use unique session names
+
+Each publisher on a given host MUST use a different session name to provide a
+unique directory name for the log files before they are merged.
+
+  * [**subscriber**](subscribers.html): a subscriber consumes the merged messages from a stream. 
+
+  * **sequencer**: the sequencer listens to publishers and sequences the incoming messages into a single message stream, creating a global order of messages. The order of messages from a given publisher will not change after sequencing.
+
+## Interacting with RT
+
+Details on how clients can send and receive messages into the stream are
+available as follows:
+
+## RT Architecture
+
+RT includes a low-level publishing layer, with higher-level components layered
+on top which can be aware of the networking topology needed to stream data.
+
+RT supports a 1 or 3 node cluster:
+
+  * In a **3 node cluster** , RT can offer fault tolerance and high availability (HA). If one of the three nodes were to go offline for a period, the remaining two nodes could continue to send data to downstream subscribers.
+
+This diagram shows RT being used in a 3-node RAFT configuration within the kdb
+Insights Enterprise. ![RT Ingestion](images/rt-ingestion.png)
+
+  * In a **1 node cluster** , fault tolerance is still present, however it is not highly available. If the 1 RT node were to go down, the publisher would continue writing to its local RT log file. Once the RT node has restarted, it would then obtain any data that is present on the publisher node which it has not yet received.
+
+## Components
+
+We will now look at the various components that make up the RT microservice:
+
+  * Replicators: continuously, rapidly, and securely transport a log directory from one machine to another.
+  * Sequencers: read from multiple session directories and produce a single merged log directory that can itself be consumed.
+  * Archiver: drives the garbage collection of all merged logs.
+
+### Replicators
+
+The replicator's job is to transport messages from one machine to another and
+each replicator is made up of a client and a server.
+
+For publishing each of the interfaces include a push_client replicator, which
+sends the messages to the push_server replicator, which receives the messages.
+Similarly for subscribing the interfaces include a pull_client replicator
+which receive the messages from the pull_server replicator.
+
+Replicators have the following characteristics:
+
+  * Keep track of the restart position on the receiving side, not the sending side, for zero data loss/gaps​. The receiver initiates recovery​, i.e. it knows the "position" to restart from​
+  * The client opens the (TCP) connections.
+  * Use inotify() to detect new data with low latency​.
+  * Use mutually authenticated TLS to encrypt traffic across network boundaries.
+  * The replicator is expected to run indefinitely.
+
+### Sequencers
+
+Combining more than one session into a single output is the responsibility of
+a sequencer. The sequencer is entirely deterministic: it chooses a sequence of
+events from any number of input session directories and merges them into a
+plausible order in the output stream.
+
+The sequencer uses RAFT, which is suitable for 3,5,7,.. node topologies, and
+has the advantage that as long as the majority of nodes are up (a quorum) the
+merged output log file can be constructed and delivered to the subscribers.
+This means that RT can continue to run even if up to half the RAFT nodes stop
+running.
+
+The RAFT sequencer nodes work together as follows:
+
+  1. Using the RAFT algorithm, the sequencers form a cluster and elect a leader.
+  2. The cluster nodes communicate with the leader about the log files in each session directory they have available locally (replicated from each publisher)
+  3. Using the above information, the leader determines what new messages can be appended to the merged stream. It publishes this back to the follower nodes as a merge instruction.
+  4. Using the publisher log files (in the session directories) and the merge instruction (supplied by the RAFT leader), messages are merged to the output stream.
+  5. Since all sequencers have the same session log files and merge them using the same instruction set, then all of the merged outputs will be identical on every cluster node.
+  6. Using the rules set out by RAFT, if a leader fails, a new leader will be elected. In this way up to half the nodes can fail before the cluster as a whole stops functioning.
+
+Once a merged file has been appended to, a pull replicator replicates the
+merged file to the subscribers to consume.
+
+In case of _1-node_ sequencer, the **RAFT_HEARTBEAT** input parameter is
+ignored and set in the background to an appropriate value to avoid an
+unnecessary leader election when the sequencer deployed so that to accelerate
+the sequencer start.
+
+### Archiver
+
+The RT Archiver runs as part of the sequencer and drives the garbage
+collection of all merged log files, for those in RT and replicated to other
+subscribers. This is based on a [configurable
+policy](../../enterprise/configuration/rt-archival.html#retentionduration).
+
+Log file rolling
+
+The active log file is never considered for garbage collection, only rolled
+logs.
+
+The active log is rolled every 1GB (or every session, whichever comes first).
+
+The archiver policy is specified as follows:
+
+  * Retention period for merged log files in minutes. The log file age is defined as the time since the log file was rolled.
+  * Maximum size of all log files in RT. Merged log files which push the total size beyond this limit are garbage collected, oldest first.
+  * Maximum percentage of the available disk space that will be used by RT. When this percentage is exceeded merged log files are garbage collected, oldest first. If not configured the default value of 90% is used.
+
+If a merged log file on the sequencer meets one of these criteria it is
+garbage collected. This information is then propagated to the subscribers such
+that the log files are also garbage collected there. Garbage collection has
+the effect of pruning or truncating the log files. The log files still exist
+but they are of size 0.
+
+Minimum disk size
+
+The size of the disk associated with each RT and consumer pod MUST be larger
+than the `limit` defined.
+
+The sample values below would see the merged log files retained for 7 days.
+However, if the total disk space consumed by them goes above 90Gi, or 90% of
+the available space, eligible merged logs files are removed, oldest first.
+
+    
+    
+    {
+     "time": 10080,
+     "limit": "90Gi",
+     "disk": 90
+    }
+    
+
+maxLogSize limits
+
+The `limit` parameter is optional, meaning if it is not defined then the check
+of maximum log size is switched off in the archiver garbage collection logic.
+
+#### RT Majority Archiver
+
+The RT Majority Archiver enhances archival resiliency by using snapshots.
+Previously, an RT instance that experienced a failure could continue running
+for an extended period of time, this led to the disk filling up as no garbage
+collection (GC) or archival could take place. The RT Majority Archiver
+addresses this issue, no action is required to activate the RT Majority
+Archiver feature.
+
+The RT Majority Archiver takes a snapshot every five seconds, capturing the
+state of the machine. This enables the system to continue running even with a
+downed RT instance, as the majority of remaining nodes continue to perform
+garbage collection and archival tasks.
+
+When a downed RT instance comes back online, it performs the following steps:
+
+  1. Restarts from the last local checkpoint, for example the last saved snapshot. It then attempts to sync Raft commands from that point with the Leader. If syncing from the last local checkpoint fails due to commands being unavailable at the Leader, as a result of garbage collection, the node downloads a recent snapshot of the Leader's state machine.
+
+  2. After initialization, the merger executes subsequent merge instructions. If the input files are no longer available, due to the majority archiving them, or the local state machine was initialized from the Leader's state, the merger cannot continue. In this case, the node syncs up subsequent output files from other nodes until it can resume merging.
+
+Info
+
+There is an ingest rate limit. If the sync-up rate is greater than the ingest
+rate, the RT instance may never catch up. This limit varies based on the size
+and speed of resources.
+
+The kdb Insights Reliable Transport (RT) provides a `log-history` API which
+returns meta data about all the RT log files including garbage collected ones.
+This allows you to see a history of the log files that were written to.
+
+Details on this API are available [here](rest/loghistory.html).
+

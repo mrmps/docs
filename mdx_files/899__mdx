@@ -1,0 +1,2834 @@
+https://code.kx.com/developer/libraries/utilities-helpers/
+
+# Casting - KX Developer
+
+Original URL: https://code.kx.com/developer/libraries/utilities-helpers/
+
+# General helper functions (`.axq`)
+
+`.axq` provides a convenient set of helper functions to simplify common q
+tasks. These functions help with casting, parsing and type checking in q. In
+native q, a number of type conversion methods throw type errors when given an
+invalid input. AXQ avoids type errors and instead provides proper conversions
+for all types.
+
+## Casting
+
+Casting in q can be achieved by using a lowercase type specifier and the `$`
+operator. However, there are a lot of unimplemented cast behaviors that will
+throw a `'type` error (e.g. `"s"$"hello"`). The as* functions are intended to
+bridge this gap of behavior with minimal overhead. All as* functions are
+directly substitutable for raw q casting.
+
+    
+    
+    x: 100?100f
+    
+    /=> 32.15703 20.97211 20.16676 29.26194 90.11277 78.29819 28...
+    
+    "j"$x
+    
+    /=> 32 21 20 29 90 78 28 79 22 3 2 79 30 92 43 18 47 24 18 75..
+    
+    .axq.asLong x
+    
+    /=> 32 21 20 29 90 78 28 79 22 3 2 79 30 92 43 18 47 24 18 75..
+    
+    .axq.asLong[x] ~ "j"$x
+    
+    /=> 1b
+    
+
+## Parsing
+
+Parsing in q is very similar to casting except we use the uppercase type
+specifier to perform the cast. Similarly to the casting functions, there are
+holes in the behaviors of the casting functions and `'type` errors are
+commonly thrown. AXQ provides a complete set of parse* functions that bridge
+the gap in the behavior of these functions.
+
+    
+    
+    x: string 100?100f
+    
+    /=> "45.06715"
+    /=> "87.09127"
+    /=> "94.98388"
+    /=> "72.33301"
+    /=> "23.51991"
+    /=> "47.89366"
+    /=> "60.75813"
+    /=> ..
+    
+    "F"$x
+    
+    /=> 45.06715 87.09127 94.98388 72.33301 23.51991 47.89366 60...
+    
+    .axq.parseFloat x
+    
+    /=> 45.06715 87.09127 94.98388 72.33301 23.51991 47.89366 60...
+    
+    .axq.parseFloat[x] ~ "F"$x
+    
+    /=> 1b
+    
+
+## Type checking
+
+kdb+ type checking tends to result in cryptic code that uses data type
+constants to determine the type of an input (e.g. `10h ~ type x`). `.axq`
+provides a set of is* functions to check the type of the input.
+
+    
+    
+    x:"Hello, World!";
+    10h ~ type x
+    
+    /=> 1b
+    
+    .axq.isString x
+    
+    /=> 1b
+    
+
+## Utility functions
+
+### catch
+
+Runs a function in a try-catch block similarly to `@` or `.` but automatically
+determines if the input function is monadic or dyadic.
+
+    
+    
+    foo: { '"ERROR" };
+    .axq.catch[foo; ::; {x}]
+    
+    /=> "ERROR"
+    
+
+### until
+
+Creates a range of long values from a start index (inclusive) until an end
+index (exclusive)
+
+    
+    
+    .axq.until[10; 20]
+    
+    /=> 10 11 12 13 14 15 16 17 18 19
+    
+
+### xor
+
+Returns the exclusive or of two inputs
+
+    
+    
+    .axq.xor[1010b; 1011b]
+    
+    /=> 0001b    
+    
+
+## .axq.INFINITY
+
+A mapping of all atomic data types to their infinity value
+
+## .axq.NULL
+
+A mapping of all atomic data types to their null value
+
+## .axq.asBoolean
+
+Converts the given input to a boolean data type
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Any data to convert to a boolean data type  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | Data with same shape of boolean type  
+  
+**Example:** Number to Boolean
+
+    
+    
+     .axq.asBoolean 10
+     /=> 1b
+    
+
+**Example:** Date to Boolean
+
+    
+    
+     .axq.asBoolean 2000.01.01
+     /=> 0b
+    
+
+**Example:** Time to Boolean
+
+    
+    
+     .axq.asBoolean 12:34:56.789
+     /=> 1b
+    
+
+## .axq.asByte
+
+Converts the given input to a byte data type
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Any data to convert to a byte data type  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+byte | Data with same shape of byte type  
+  
+**Example:** Number to Byte
+
+    
+    
+     .axq.asByte 10
+     /=> 0x0a
+    
+
+**Example:** Date to Byte
+
+    
+    
+     .axq.asByte 2015.05.22
+     /=> 0xf4
+    
+
+**Example:** Time to Byte
+
+    
+    
+     .axq.asByte 12:34:56.789
+     /=> 0x95
+    
+
+## .axq.asChar
+
+Converts the given input to a char data type
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Any data to convert to a char data type  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+char | Data with same shape of char type  
+  
+**Example:** Number to Char
+
+    
+    
+     .axq.asChar 10
+     /=> "\n"
+    
+
+**Example:** Date to Char
+
+    
+    
+     .axq.asChar 2015.05.22
+     /=> "\364"
+    
+
+**Example:** Time to Char
+
+    
+    
+     .axq.asChar 12:34:56.789
+     /=> "\225"
+    
+
+## .axq.asDate
+
+Converts the given input to a date data type
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Any data to convert to a date data type  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+date | Data with same shape of date type  
+  
+**Example:** Number to Date
+
+    
+    
+     .axq.asDate 10
+     /=> 2000.01.11
+    
+
+**Example:** Datetime to Date
+
+    
+    
+     .axq.asDate 2010.05.22T12:34:56.789
+     /=> 2010.05.22
+    
+
+**Example:** Time to Date
+
+    
+    
+     .axq.asDate 12:34:56.789
+     /=> 2000.01.01
+    
+
+## .axq.asDatetime
+
+Converts the given input to a datetime data type
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Any data to convert to a datetime data type  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+datetime | Data with same shape of datetime type  
+  
+**Example:** Number to Datetime
+
+    
+    
+     .axq.asDatetime 10
+     /=> 2000.01.11T00:00:00.000
+    
+
+**Example:** Date to Datetime
+
+    
+    
+     .axq.asDatetime 2010.05.22
+     /=> 2010.05.22T00:00:00.000
+    
+
+**Example:** Time to Datetime
+
+    
+    
+     .axq.asDatetime 12:34:56.789
+     /=> 2000.01.01T12:34:56.789
+    
+
+## .axq.asFloat
+
+Converts the given input to a float data type
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Any data to convert to a float data type  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+float | Data with same shape of float type  
+  
+**Example:** Number to Float
+
+    
+    
+     .axq.asFloat 10
+     /=> 10f
+    
+
+**Example:** Date to Float
+
+    
+    
+     .axq.asFloat 2010.05.22
+     /=> 3794f
+    
+
+**Example:** Time to Float
+
+    
+    
+     .axq.asFloat 12:34:56.789
+     /=> 4.529679e+07
+    
+
+## .axq.asGUID
+
+Casts data from any type into a GUID. This function does not follow the
+convention of the other as functions when given a string. If given a string
+input then asGUID will attempt to parse it into a GUID
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Any data type to convert to a GUID  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+* | Input converted to GUIDs with a preserved shape  
+  
+**Example:** Bytes to GUID
+
+    
+    
+     .axq.asGUID 0x5a580fb6656b5e69d445417ebfe71994
+     /=> 5a580fb6-656b-5e69-d445-417ebfe71994
+    
+
+**Example:** Number to GUID
+
+    
+    
+     .axq.asGUID 1504055322709753856f
+     /=> 00000000-0000-0000-14df-7a58e0a68000
+    
+
+**Example:** Parse String to GUID
+
+    
+    
+     .axq.asGUID "580d8c87-e557-0db1-3a19-cb3a44d623b1"
+     /=> 580d8c87-e557-0db1-3a19-cb3a44d623b1
+    
+
+## .axq.asInt
+
+Converts the given input to an int data type
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Any data to convert to an int data type  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+int | Data with same shape of int type  
+  
+**Example:** Number to Int
+
+    
+    
+     .axq.asInt 10
+     /=> 10i
+    
+
+**Example:** Date to Int
+
+    
+    
+     .axq.asInt 2010.05.22
+     /=> 3794i
+    
+
+**Example:** Time to Int
+
+    
+    
+     .axq.asInt 12:34:56.789
+     /=> 45296789i
+    
+
+## .axq.asList
+
+Converts the given input to a list. Refer to the following chart for behavior
+definitions based on input type
+
+Input Type | Behavior  
+---|---  
+atom | enlist  
+vector | identity  
+table | ((column name; column content); ...)  
+keyed table | ((column name; column content); ...)  
+dictionary | ((key; value); ...)  
+  
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Any input to convert to a list  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+any[] | A list from the given input  
+  
+**Example:** Atom to List
+
+    
+    
+     .axq.asList "a"
+     /=> ,"a"
+    
+
+**Example:** Table to List
+
+    
+    
+     .axq.asList ([] x: til 5; y: "abcde")
+     /=> `x 0 1 2 3 4
+     /=> `y "abcde"  
+    
+
+**Example:** Dictionary to List
+
+    
+    
+     .axq.asList `a`b!(1 2 3; "abc")
+     /=> `a 1 2 3
+     /=> `b "abc"
+    
+
+## .axq.asLong
+
+Converts the given input to a long data type
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Any data to convert to a long data type  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+long | Data with same shape of long type  
+  
+**Example:** Number to Long
+
+    
+    
+     .axq.asLong 10
+     /=> 10
+    
+
+**Example:** Date to Long
+
+    
+    
+     .axq.asLong 2010.05.22
+     /=> 3794
+    
+
+**Example:** Time to Long
+
+    
+    
+     .axq.asLong 12:34:56.789
+     /=> 45296789
+    
+
+## .axq.asMinute
+
+Converts the given input to a minute data type
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Any data to convert to a minute data type  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+minute | Data with same shape of minute type  
+  
+**Example:** Number to Minute
+
+    
+    
+     .axq.asMinute 10
+     /=> 00:10
+    
+
+**Example:** Date to Minute
+
+    
+    
+     .axq.asMinute 2010.05.22
+     /=> 00:00
+    
+
+**Example:** Time to Minute
+
+    
+    
+     .axq.asMinute 12:34:56.789
+     /=> 12:34
+    
+
+## .axq.asMonth
+
+Converts the given input to a month data type
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Any data to convert to a month data type  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+month | Data with same shape of month type  
+  
+**Example:** Number to Month
+
+    
+    
+     .axq.asMonth 10
+     /=> 2000.11m
+    
+
+**Example:** Date to Month
+
+    
+    
+     .axq.asMonth 2010.05.22
+     /=> 2010.05m
+    
+
+**Example:** Time to Minute
+
+    
+    
+     .axq.asMonth 12:34:56.789
+     /=> 2000.01m
+    
+
+## .axq.asReal
+
+Converts the given input to a real data type
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Any data to convert to a real data type  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+real | Data with same shape of real type  
+  
+**Example:** Number to Real
+
+    
+    
+     .axq.asReal 10
+     /=> 10e
+    
+
+**Example:** Date to Real
+
+    
+    
+     .axq.asReal 2010.05.22
+     /=> 3794e
+    
+
+**Example:** Time to Float
+
+    
+    
+     .axq.asReal 12:34:56.789
+     /=> 4.529679e+07e
+    
+
+## .axq.asSecond
+
+Converts the given input to a second data type
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Any data to convert to a second data type  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+second | Data with same shape of second type  
+  
+**Example:** Number to Second
+
+    
+    
+     .axq.asSecond 10
+     /=> 00:00:10
+    
+
+**Example:** Date to Second
+
+    
+    
+     .axq.asSecond 2010.05.22
+     /=> 00:00:00
+    
+
+**Example:** Time to Second
+
+    
+    
+     .axq.asSecond 12:34:56.789
+     /=> 12:34:56
+    
+
+## .axq.asShort
+
+Converts the given input to a short data type
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Any data to convert to a short data type  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+short | Data with same shape of short type  
+  
+**Example:** Number to Short
+
+    
+    
+     .axq.asShort 10
+     /=> 10h
+    
+
+**Example:** Date to Short
+
+    
+    
+     .axq.asShort 2010.05.22
+     /=> 3794h
+    
+
+**Example:** Time to Short
+
+    
+    
+     .axq.asShort 12:34:56.789
+     /=> 32767h
+    
+
+## .axq.asString
+
+Converts the given input to a string. This is similar to the behavior of the
+`string` keyword. .axq.asString differs from `string` when the input is a
+string type. In this case, the input is simply returned.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Data to cast to a string  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+string | String representation of data with same shape  
+  
+**Example:** Number to String
+
+    
+    
+     .axq.asString 10
+     /=> "10"
+    
+
+**Example:** Vector to String
+
+    
+    
+     .axq.asString `AAPL`GOOG`MSFT`AMZN
+     /=> "AAPL"
+     /=> "GOOG"
+     /=> "MSFT"
+     /=> "AMZN"
+    
+
+## .axq.asSymbol
+
+Converts the given input to a symbol
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Data to cast to a symbol  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol | Symbolic data with same shape  
+  
+**Example:** Number to Symbol
+
+    
+    
+     .axq.asSymbol 12
+     /=> `12
+    
+
+**Example:** String to Symbol
+
+    
+    
+     .axq.asSymbol ("AAPL"; "GOOG"; "MSFT"; "AMZN")
+     /=> `AAPL`GOOG`MSFT`AMZN
+    
+
+## .axq.asTime
+
+Converts the given input to a time data type
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Any data to convert to a time data type  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+time | Data with same shape of time type  
+  
+**Example:** Number to Time
+
+    
+    
+     .axq.asTime 10
+     /=> 00:00:00.010
+    
+
+**Example:** Date to Time
+
+    
+    
+     .axq.asTime 2010.05.22
+     /=> 00:00:00.000
+    
+
+**Example:** Time to Time
+
+    
+    
+     asTime 12:34:56.789
+     /=> 12:34:56.789
+    
+
+## .axq.asTimespan
+
+Converts the given input to a timespan data type
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Any data to convert to a timespan data type  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+timespan | Data with same shape of timespan type  
+  
+**Example:** Number to Timespan
+
+    
+    
+     .axq.asTimespan 10
+     /=> 0D00:00:00.000000010
+    
+
+**Example:** Date to Timespan
+
+    
+    
+     .axq.asTimespan 2010.05.22
+     /=> 3794D00:00:00.000000000
+    
+
+**Example:** Time to Timespan
+
+    
+    
+     .axq.asTimespan 12:34:56.789
+     /=> 0D12:34:56.789000000
+    
+
+## .axq.asTimestamp
+
+Converts the given input to a timestamp data type
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Any data to convert to a timestamp data type  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+timestamp | Data with same shape of timestamp type  
+  
+**Example:** Number to Timestamp
+
+    
+    
+     .axq.asTimestamp 10
+     /=> 2000.01.01D00:00:00.000000010
+    
+
+**Example:** Date to Timestamp
+
+    
+    
+     .axq.asTimestamp 2010.05.22
+     /=> 2010.05.22D00:00:00.000000000
+    
+
+**Example:** Time to Timestamp
+
+    
+    
+     .axq.asTimestamp 12:34:56.789
+     /=> 2000.01.01D12:34:56.789000000
+    
+
+## .axq.asType
+
+Dynamically dispatches to the desired as* function and applies the cast
+function to the input data
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Data to cast  
+ty | symbol | Type to cast to  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+* | Data with same shape of desired type  
+  
+**Example:** Number to Time
+
+    
+    
+     .axq.asType[100; `time]
+     /=> 00:00:00.100
+    
+
+**Example:** Symbols to Strings
+
+    
+    
+     .axq.asType[`AAPL`GOOG`MSFT`AMZN; `string]
+     /=> "AAPL"
+     /=> "GOOG"
+     /=> "MSFT"
+     /=> "AMZN"
+    
+
+## .axq.catch
+
+Catch provides protected evaluation. The form is simple:
+
+.axq.catch [fn; args; expression]
+
+where fn is a function, args is the single argument or an argument list for
+the function and expression should be a lambda (i.e., { ... }) to be evaluated
+should function fn fail. If the expression has an error the catch itself will
+fail.
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+fn | fn | Function to run protected  
+args | * | Arguments to pass to function  
+expr | fn | Expression to be executed upon failure  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+* | Return from function upon success or expr upon failure  
+  
+**Example:** Catch an Error in a Lambda
+
+    
+    
+     myFn: {$[x < 0; '"type"; x]};
+     .axq.catch[myFn; -1; {x}]
+     /=> "type"
+    
+    
+
+## .axq.defined
+
+Checks if a qualified variable name is defined. This only works on qualified
+variable names because local vars/params are always defined
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+name | symbol | A qualified variable name  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | 1b if the variable is defined  
+  
+## .axq.isAtom
+
+Returns true if the input is an atom
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | * | Data to type check  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the input is an atom  
+  
+**Example:** Checking isAtom
+
+    
+    
+     .axq.isAtom 1
+     /=> 1b
+    
+     .axq.isAtom til 10
+     /=> 0b
+    
+
+## .axq.isBoolean
+
+Returns true if the input is a boolean atom
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | * | Data to type check  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the input is a boolean atom  
+  
+**Example:** Checking isBoolean
+
+    
+    
+     .axq.isBoolean 0b
+     /=> 1b
+    
+     .axq.isBoolean 1
+     /=> 0b
+    
+
+## .axq.isByte
+
+Returns true if the input is a byte atom
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | * | Data to type check  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the input is a byte atom  
+  
+**Example:** Checking isByte
+
+    
+    
+     .axq.isByte 0x12
+     /=> 1b
+    
+     .axq.isByte 12
+     /=> 0b
+    
+
+## .axq.isChar
+
+Returns true if the input is a char atom
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | * | Data to type check  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the input is a char atom  
+  
+**Example:** Checking isChar
+
+    
+    
+     .axq.isChar "a"
+     /=> 1b
+    
+     .axq.isChar 12
+     /=> 0b
+    
+
+## .axq.isCompound
+
+Returns true if the input is a compound data type
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | * | Data to type check  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the input is compound data  
+  
+**Example:** Checking isCompound
+
+    
+    
+     .axq.isCompound ("abc"; "def")
+     /=> 0b
+    
+     .axq.isCompound get `:v set ("abc"; "def")
+     /=> 1b
+    
+
+## .axq.isDate
+
+Returns true if the input is a date atom
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | * | Data to type check  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the input is a date atom  
+  
+**Example:** Checking isDate
+
+    
+    
+     .axq.isDate 2015.05.22
+     /=> 1b
+    
+     .axq.isDate 12
+     /=> 0b
+    
+
+## .axq.isDatetime
+
+Returns true if the input is a datetime atom
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | * | Data to type check  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the input is a datetime atom  
+  
+**Example:** Checking isDatetime
+
+    
+    
+     .axq.isDatetime 2015.05.22T12:34:56.789
+     /=> 1b
+    
+     .axq.isDatetime 12
+     /=> 0b
+    
+
+## .axq.isDict
+
+Alias to isDictionary
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | * | Data to type check  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the input is a dictionary  
+  
+**See Also:** [ .axq.isDictionary ](./#axqisdictionary)
+
+## .axq.isDictionary
+
+Returns true if the given input is a dictionary
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | * | Data to type check  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the input is a dictionary  
+  
+**Example:** Checking isDictionary
+
+    
+    
+     .axq.isDictionary `a`b!(1 2 3; "abc")
+     /=> 1b
+    
+     .axq.isDictionary flip `a`b!(1 2 3; "abc")
+     /=> 0b
+    
+
+## .axq.isEmpty
+
+Returns true if the given input has a count of 0
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | * | Data to type check  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the input has a count of 0  
+  
+**Example:** Checking isEmpty
+
+    
+    
+     .axq.isEmpty ([] ())
+     /=> 1b
+    
+     .axq.isEmpty 12
+     /=> 0b
+    
+
+## .axq.isEnum
+
+Returns true if the input is an enumeration
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | * | Data to type check  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the input is an enumerated value  
+  
+**Example:** Checking isEnum
+
+    
+    
+     .axq.isEnum 1 2 3 4
+     /=> 0b
+    
+     .axq.isEnum `sym?`a`b`c
+     /=> 1b
+    
+
+## .axq.isFloat
+
+Returns true if the input is a float atom
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | * | Data to type check  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the input is a float atom  
+  
+**Example:** Checking isFloat
+
+    
+    
+     .axq.isFloat 12.0
+     /=> 1b
+    
+     .axq.isFloat 12
+     /=> 0b
+    
+
+## .axq.isFunction
+
+Returns true if the input is a function
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | * | Data to type check  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the input is a function  
+  
+**Example:** Checking isFunction
+
+    
+    
+     .axq.isFunction sum
+     /=> 1b
+    
+     .axq.isFunction 12
+     /=> 0b
+    
+
+## .axq.isGUID
+
+Returns true if the input is a guid atom
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | * | Data to type check  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the input is a GUID atom  
+  
+**Example:** Checking isGUID
+
+    
+    
+     .axq.isGUID first 1?0ng
+     /=> 1b
+    
+     .axq.isGUID 12
+     /=> 0b
+    
+
+## .axq.isGeneral
+
+Returns true if the input is a general type
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | * | Data to type check  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the input is a general type  
+  
+**Example:** Checking isGeneral
+
+    
+    
+     .axq.isGeneral ()
+     /=> 1b
+    
+     .axq.isGeneral 12
+     /=> 0b
+    
+
+## .axq.isInfinity
+
+Returns true if the input value is an atom and is considered to be an infinity
+for its respective type
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | * | Data value to check  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the input is an atom and is infinite  
+  
+**Example:** Checking isInfinity
+
+    
+    
+     .axq.isInfinity 1b
+     /=> 1b
+    
+     .axq.isInfinity 0W
+     /=> 1b
+    
+     .axq.isInfinity 0N
+     /=> 0b
+    
+
+## .axq.isInt
+
+Returns true if the input is an int atom
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | * | Data to type check  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the input is an int atom  
+  
+**Example:** Checking isInt
+
+    
+    
+     .axq.isInt 12i
+     /=> 1b
+    
+     .axq.isInt 12
+     /=> 0b
+    
+
+## .axq.isKeyedTable
+
+Returns true if the input is a dictionary and both the key and the value of
+the dictionary are tables
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | * | Data to type check  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the input is a keyed table  
+  
+**Example:** Checking isKeyedTable
+
+    
+    
+     .axq.isKeyedTable ([x: til 5] y: "abcde")
+     /=> 1b
+    
+     .axq.isKeyedTable ([] x: til 5; y: "abcde")
+     /=> 0b
+    
+
+## .axq.isLinked
+
+Returns true if the input is an enumeration that is not symbolic but is linked
+to another vector.
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | * | Data to type check  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the input is a linked vector  
+  
+**Example:** Checking isLinked
+
+    
+    
+     .axq.isLinked 1 2 3 4
+     /=> 0b
+    
+     v: 100?10;
+     x: `v!v?100?10;
+     .axq.isLinked x
+     /=> 1b
+    
+    
+
+## .axq.isList
+
+Returns true if the given data is a list of data
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | * | Data to type check  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the input is a list  
+  
+**Example:** Checking isList
+
+    
+    
+     .axq.isList "Hello, World!"
+     /=> 1b
+    
+     .axq.isList 1b
+     /=> 0b
+    
+    
+
+## .axq.isLong
+
+Returns true if the input is a long atom
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | * | Data to type check  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the input is a long atom  
+  
+**Example:** Checking isLong
+
+    
+    
+     .axq.isLong 12
+     /=> 1b
+    
+     .axq.isLong 12.0
+     /=> 0b
+    
+
+## .axq.isMinute
+
+Returns true if the input is a minute atom
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | * | Data to type check  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the input is a minute atom  
+  
+**Example:** Checking isMinute
+
+    
+    
+     .axq.isMinute 12:34
+     /=> 1b
+    
+     .axq.isMinute 12
+     /=> 0b
+    
+
+## .axq.isMonth
+
+Returns true if the input is a month atom
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | * | Data to type check  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the input is a month atom  
+  
+**Example:** Checking isMonth
+
+    
+    
+     .axq.isMonth 2015.05m
+     /=> 1b
+    
+     .axq.isMonth 12
+     /=> 0b
+    
+
+## .axq.isNull
+
+Returns true if the input value is an atom and is considered to be null for
+its respective type
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | * | Data value to check  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the input is an atom and is null  
+  
+**Example:** Checking isNull
+
+    
+    
+     .axq.isNull " "
+     /=> 1b
+    
+     .axq.isNull 0N
+     /=> 1b
+    
+     .axq.isNull 0W
+     /=> 0b
+    
+
+## .axq.isNumber
+
+Returns true if the input value is an atom and is numeric. Numeric types
+include the following types:
+
+  * boolean
+  * byte
+  * short
+  * int
+  * long
+  * real
+  * float
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | * | Data value to check  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the input is an atom and is a number  
+  
+**Example:** Checking isNumber
+
+    
+    
+     .axq.isNumber 12
+     /=> 1b
+    
+     .axq.isNumber 0xff
+     /=> 1b
+    
+     .axq.isNumber 2015.05.22
+     /=> 0b
+    
+
+## .axq.isReal
+
+Returns true if the input is a real atom
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | * | Data to type check  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the input is a real atom  
+  
+**Example:** Checking isReal
+
+    
+    
+     .axq.isReal 12.0e
+     /=> 1b
+    
+     .axq.isReal 12
+     /=> 0b
+    
+
+## .axq.isSecond
+
+Returns true if the input is a second atom
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | * | Data to type check  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the input is a second atom  
+  
+**Example:** Checking isSecond
+
+    
+    
+     .axq.isSecond 12:34:56
+     /=> 1b
+    
+     .axq.isSecond 12
+     /=> 0b
+    
+
+## .axq.isShort
+
+Returns true if the input is a short atom
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | * | Data to type check  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the input is a short atom  
+  
+**Example:** Checking isShort
+
+    
+    
+     .axq.isShort 12h
+     /=> 1b
+    
+     .axq.isShort 12
+     /=> 0b
+    
+
+## .axq.isString
+
+Returns true if the input is a char vector
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | * | Data to type check  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the input is a char vector  
+  
+**Example:** Checking isString
+
+    
+    
+     .axq.isString "Hello, World!"
+     /=> 1b
+    
+     .axq.isString `APPL
+     /=> 0b
+    
+
+## .axq.isSymbol
+
+Returns true if the input is a symbol atom
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | * | Data to type check  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the input is a symbol atom  
+  
+**Example:** Checking isSymbol
+
+    
+    
+     .axq.isSymbol `AAPL
+     /=> 1b
+    
+     .axq.isSymbol "Hello, World!"
+     /=> 0b
+    
+
+## .axq.isTable
+
+Returns true if the input is a table
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | * | Data to type check  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the input is a table  
+  
+**Example:** Checking isTable
+
+    
+    
+     .axq.isTable ([] x: til 5; y: "abcde")
+     /=> 1b
+    
+     .axq.isTable `a`b!(1 2 3; "abc")
+     /=> 0b
+    
+
+## .axq.isTime
+
+Returns true if the input is a time atom
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | * | Data to type check  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the input is a time atom  
+  
+**Example:** Checking isTime
+
+    
+    
+     .axq.isTime 12:34:56.789
+     /=> 1b
+    
+     .axq.isTime 12
+     /=> 0b
+    
+
+## .axq.isTimespan
+
+Returns true if the input is a timespan atom
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | * | Data to type check  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the input is a timespan atom  
+  
+**Example:** Checking isTimespan
+
+    
+    
+     .axq.isTimespan 0D12:34:56.789
+     /=> 1b
+    
+     .axq.isTimespan 12
+     /=> 0b
+    
+
+## .axq.isTimestamp
+
+Returns true if the input is a timestamp atom
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | * | Data to type check  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the input is a timestamp atom  
+  
+**Example:** Checking isTimestamp
+
+    
+    
+     .axq.isTimestamp 2015.05.22D12:34:56.789
+     /=> 1b
+    
+     .axq.isTimestamp 12
+     /=> 0b
+    
+
+## .axq.isType
+
+Dynamically dispatches to the desired is* function to check the type
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Data to type check  
+ty | symbol | Type to check  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the input is of the correct type  
+  
+**Example:** Checking isType
+
+    
+    
+     .axq.isType[`APPL; `symbol]
+     /=> 1b
+    
+     .axq.isType[2015.05.22; `date]
+     /=> 1b
+    
+     .axq.isType[12.0; `long]
+     /=> 0b
+    
+
+## .axq.isVector
+
+Returns true if the given data is a simple list of atoms that are all the same
+type
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | * | Data to type check  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | If the input is a vector  
+  
+**Example:** Checking isList
+
+    
+    
+     .axq.isVector "Hello, World!"
+     /=> 1b
+    
+     .axq.isVector (1; `APPL; 2015.05.22)
+     /=> 0b
+    
+    
+
+## .axq.parseBoolean
+
+If the input is a string then parse it to a boolean value. If the input is
+anything else then perform the associated casting operation
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Any data to parse as boolean  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | Boolean representation of input  
+  
+**See Also:** [ .axq.asBoolean ](./#axqasboolean)
+
+**Example:** String to Boolean
+
+    
+    
+     .axq.parseBoolean "1"
+     /=> 1b
+    
+
+**Example:** Number to Boolean
+
+    
+    
+     .axq.parseBoolean 10
+     /=> 1b
+    
+
+## .axq.parseByte
+
+If the input is a string then parse it to a byte value. If the input is
+anything else then perform the associated casting operation
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Any data to parse as byte  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+byte | Byte representation of input  
+  
+**See Also:** [ .axq.asByte ](./#axqasbyte)
+
+**Example:** String to Byte
+
+    
+    
+     .axq.parseByte "a"
+     /=> 0x0a
+    
+
+**Example:** Number to Byte
+
+    
+    
+     .axq.parseByte 10
+     /=> 0x0a
+    
+
+## .axq.parseChar
+
+If the input is a string then parse it to a char value. If the input is
+anything else then perform the associated casting operation
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Any data to parse as char  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+char | Char representation of input  
+  
+**See Also:** [ .axq.asChar ](./#axqaschar)
+
+**Example:** String to Char
+
+    
+    
+     .axq.parseChar "a"
+     /=> "a"
+    
+
+**Example:** Number to Char
+
+    
+    
+     .axq.parseChar 10
+     /=> "\n"
+    
+
+## .axq.parseDate
+
+If the input is a string then parse it to a date value. If the input is
+anything else then perform the associated casting operation
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Any data to parse as date  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+date | Date representation of input  
+  
+**See Also:** [ .axq.asDate ](./#axqasdate)
+
+**Example:** String to Date
+
+    
+    
+     .axq.parseDate "2015.05.22"
+     /=> 2015.05.22
+    
+
+**Example:** Number to Date
+
+    
+    
+     .axq.parseDate 10
+     /=> 2000.01.11
+    
+
+## .axq.parseDatetime
+
+If the input is a string then parse it to a datetime value. If the input is
+anything else then perform the associated casting operation
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Any data to parse as datetime  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+datetime | Datetime representation of input  
+  
+**See Also:** [ .axq.asDatetime ](./#axqasdatetime)
+
+**Example:** String to Datetime
+
+    
+    
+     .axq.parseDatetime "2015.05.22T12:34:56.789"
+     /=> 2015.05.22T12:34:56.789
+    
+
+**Example:** Number to Datetime
+
+    
+    
+     .axq.parseDatetime 10
+     /=> 2000.01.11T00:00:00.000
+    
+
+## .axq.parseFloat
+
+If the input is a string then parse it to a float value. If the input is
+anything else then perform the associated casting operation
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Any data to parse as float  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+float | Float representation of input  
+  
+**See Also:** [ .axq.asFloat ](./#axqasfloat)
+
+**Example:** String to Float
+
+    
+    
+     .axq.parseFloat "12.345"
+     /=> 12.345
+    
+
+**Example:** Number to Float
+
+    
+    
+     .axq.parseFloat 10
+     /=> 10f
+    
+
+## .axq.parseGUID
+
+If the input is a string then parse it to a GUID value. If the input is
+anything else then perform the associated casting operation
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Any data to parse as GUID  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+guid | GUID representation of input  
+  
+**See Also:** [ .axq.asGUID ](./#axqasguid)
+
+**Example:** String to GUID
+
+    
+    
+     .axq.parseGUID "12345678-9abc-def1-2345-6789abcdef12"
+     /=> 12345678-9abc-def1-2345-6789abcdef12
+    
+
+**Example:** Number to GUID
+
+    
+    
+     .axq.parseGUID 10
+     /=> 00000000-0000-0000-0000-00000000000a
+    
+
+## .axq.parseInt
+
+If the input is a string then parse it to a int value. If the input is
+anything else then perform the associated casting operation
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Any data to parse as int  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+int | Int representation of input  
+  
+**See Also:** [ .axq.asInt ](./#axqasint)
+
+**Example:** String to Int
+
+    
+    
+     .axq.parseInt "12"
+     /=> 12i
+    
+
+**Example:** Number to Int
+
+    
+    
+     .axq.parseInt 10
+     /=> 10i
+    
+
+## .axq.parseLong
+
+If the input is a string then parse it to a long value. If the input is
+anything else then perform the associated casting operation
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Any data to parse as long  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+long | Long representation of input  
+  
+**See Also:** [ .axq.asLong ](./#axqaslong)
+
+**Example:** String to Long
+
+    
+    
+     .axq.parseLong "12"
+     /=> 12
+    
+
+**Example:** Number to Long
+
+    
+    
+     .axq.parseLong 10
+     /=> 10
+    
+
+## .axq.parseMinute
+
+If the input is a string then parse it to a minute value. If the input is
+anything else then perform the associated casting operation
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Any data to parse as minute  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+minute | Minute representation of input  
+  
+**See Also:** [ .axq.asMinute ](./#axqasminute)
+
+**Example:** String to Minute
+
+    
+    
+     .axq.parseMinute "12:34"
+     /=> 12:34
+    
+
+**Example:** Number to Minute
+
+    
+    
+     .axq.parseMinute 10
+     /=> 00:10
+    
+
+## .axq.parseMonth
+
+If the input is a string then parse it to a month value. If the input is
+anything else then perform the associated casting operation
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Any data to parse as month  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+month | Month representation of input  
+  
+**See Also:** [ .axq.asMonth ](./#axqasmonth)
+
+**Example:** String to Month
+
+    
+    
+     .axq.parseMonth "2015.05"
+     /=> 2015.05m
+    
+
+**Example:** Number to Month
+
+    
+    
+     .axq.parseMonth 10
+     /=> 2000.11m
+    
+
+## .axq.parseReal
+
+If the input is a string then parse it to a real value. If the input is
+anything else then perform the associated casting operation
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Any data to parse as real  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+real | Real representation of input  
+  
+**See Also:** [ .axq.asReal ](./#axqasreal)
+
+**Example:** String to Real
+
+    
+    
+     .axq.parseReal "12.345"
+     /=> 12.345e
+    
+
+**Example:** Number to Real
+
+    
+    
+     .axq.parseReal 10
+     /=> 10e
+    
+
+## .axq.parseSecond
+
+If the input is a string then parse it to a second value. If the input is
+anything else then perform the associated casting operation
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Any data to parse as second  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+second | Second representation of input  
+  
+**See Also:** [ .axq.asSecond ](./#axqassecond)
+
+**Example:** String to Second
+
+    
+    
+     .axq.parseSecond "12:34:56"
+     /=> 12:34:56
+    
+
+**Example:** Number to Second
+
+    
+    
+     .axq.parseSecond 10
+     /=> 00:00:10
+    
+
+## .axq.parseShort
+
+If the input is a string then parse it to a short value. If the input is
+anything else then perform the associated casting operation
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Any data to parse as short  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+short | Short representation of input  
+  
+**See Also:** [ .axq.asShort ](./#axqasshort)
+
+**Example:** String to Short
+
+    
+    
+     .axq.parseShort "12"
+     /=> 12h
+    
+
+**Example:** Number to Short
+
+    
+    
+     .axq.parseShort 10
+     /=> 10h
+    
+
+## .axq.parseString
+
+If the input is a string then return the input. If the input is anything else
+then return a string representation of of the input
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Any data to convert to string  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+string | String representation of input  
+  
+**See Also:** [ .axq.asString ](./#axqasstring)
+
+**Example:** String to String
+
+    
+    
+     .axq.parseString "Hello, World!"
+     /=> "Hello, World!"
+    
+
+**Example:** Number to String
+
+    
+    
+     .axq.parseString 10
+     /=> "10"
+    
+
+## .axq.parseSymbol
+
+If the input is a string then parse it to a symbol value. If the input is
+anything else then perform the associated casting operation
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Any data to parse as symbol  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol | Symbol representation of input  
+  
+**See Also:** [ .axq.asSymbol ](./#axqassymbol)
+
+**Example:** String to Symbol
+
+    
+    
+     .axq.parseSymbol "APPL"
+     /=> `AAPL
+    
+
+**Example:** Number to Symbol
+
+    
+    
+     .axq.parseSymbol 10
+     /=> `10
+    
+
+## .axq.parseTime
+
+If the input is a string then parse it to a time value. If the input is
+anything else then perform the associated casting operation
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Any data to parse as time  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+time | Time representation of input  
+  
+**See Also:** [ .axq.asTime ](./#axqastime)
+
+**Example:** String to Time
+
+    
+    
+     .axq.parseTime "12:34:56.789"
+     /=> 12
+    
+
+**Example:** Number to Time
+
+    
+    
+     .axq.parseTime 10
+     /=> 00:00:00.010
+    
+
+## .axq.parseTimespan
+
+If the input is a string then parse it to a timespan value. If the input is
+anything else then perform the associated casting operation
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Any data to parse as timespan  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+timespan | Timespan representation of input  
+  
+**See Also:** [ .axq.asTimespan ](./#axqastimespan)
+
+**Example:** String to Timespan
+
+    
+    
+     .axq.parseTimespan "0D12:34:56.789"
+     /=> 0D12:34:56.789000000
+    
+
+**Example:** Number to Timespan
+
+    
+    
+     .axq.parseTimespan 10
+     /=> 0D00:00:00.000000010
+    
+
+## .axq.parseTimestamp
+
+If the input is a string then parse it to a timestamp value. If the input is
+anything else then perform the associated casting operation
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Any data to parse as timestamp  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+timestamp | Timestamp representation of input  
+  
+**See Also:** [ .axq.asTimestamp ](./#axqastimestamp)
+
+**Example:** String to Timestamp
+
+    
+    
+     .axq.parseTimestamp "2015.05.22D12:34:56.789"
+     /=> 2015.05.22D12:34:56.789000000
+    
+
+**Example:** Number to Timestamp
+
+    
+    
+     .axq.parseTimestamp 10
+     /=> 2000.01.01D00:00:00.000000010
+    
+
+## .axq.parseType
+
+Dynamically dispatches to the desired parse* function to parse some data
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+data | * | Data to parse  
+ty | symbol | Type to parse to  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+* | Data with same shape of desired type  
+  
+**Example:** String to Number
+
+    
+    
+     .axq.parseType["100"; `long]
+     /=> 100
+    
+
+**Example:** String to Time
+
+    
+    
+     "12:34:56.789" parseType `time
+     /=> 12:34:56.789
+    
+
+## .axq.typeOf
+
+Returns the name of the type of the input as a symbol
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | * | Data to get type of  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol | Name of type of data  
+  
+**Example:** Checking typeOf
+
+    
+    
+     .axq.typeOf 12
+     /=> `long
+    
+     .axq.typeOf 12:34:56.789
+     /=> `time
+    
+     .axq.typeOf typeOf
+     /=> `lambda
+    
+
+## .axq.typeSymbol
+
+**Deprecated** :
+
+Returns the name of the type of the input as a symbol
+
+**Parameter:**
+
+Name | Type | Description  
+---|---|---  
+x | * | Data to get type of  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+symbol | Name of type of data  
+  
+**See Also:** [ .axq.typeOf ](./#axqtypeof)
+
+## .axq.until
+
+Returns a set of numbers in a range from [x,y)
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+x | number | Base index for list  
+y | number | Upper limit of list  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+long[] | From x inclusive to y exclusive  
+  
+**Example:** Using until
+
+    
+    
+     .axq.until[1; 5]
+     /=> 1 2 3 4
+    
+     .axq.until[5; 10]
+     /=> 5 6 7 8 9
+    
+
+## .axq.xor
+
+Returns the exclusive or of two inputs
+
+**Parameters:**
+
+Name | Type | Description  
+---|---|---  
+x | boolean | boolean[] | Left list to xor with  
+y | boolean | boolean[] | Right list to xor with  
+  
+**Returns:**
+
+Type | Description  
+---|---  
+boolean | boolean[] | Exclusive or of the inputs  
+  
+**Example:** Finding Differences
+
+    
+    
+     .axq.xor[101b; 111b]
+     /=> 010b
+    
+
+**Example:** Inverting Values
+
+    
+    
+     .axq.xor[1b; 0101b]
+     /=> 1010b
+    
+

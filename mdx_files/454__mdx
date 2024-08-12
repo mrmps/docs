@@ -1,0 +1,99 @@
+https://code.kx.com/platform/
+
+# Overview - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/
+
+# KX Delta Platform
+
+_KX Delta Platform_ is a framework that allows you to design, build and deploy
+high-performance, enterprise-grade, data-capture systems. It brings together
+hundreds of man-years of experience in creating enterprise-grade data capture,
+analysis and visualization systems. Built on top of kdb+, the world’s leading
+column-oriented database, _KX Delta Platform_ allows you to capture, store,
+and analyze real-time and historical data.
+
+Systems built using _KX Delta Platform_ handle massive volumes and velocities
+of data using high-performance, in-memory and on-disk historical databases.
+These systems feature extensive redundancy, fault tolerance, query filtering,
+alerting, reporting and visualization capabilities and are used for stock
+market analysis, algorithmic trading, predictive analytics, scientific
+analysis, and embedded-sensor data capture.
+
+![Screenshot](img/control/controlkx.png)
+
+_KX Control_ is a client-server application that allows you to design, build,
+deploy and manage data-capture/streaming systems:
+
+  * Capture, store, and analyze real-time and historical data using kdb+
+  * Supports high-performance and real-time to handle massive volumes and velocities of data
+  * Supports in-memory and historical databases
+  * Enterprise-grade redundancy, load balancing, fault tolerance via multi-process architecture and software
+  * Enterprise-grade data recovery and data audit control via multi-process architecture, logs, and software
+  * Enterprise-grade security via entitlement-permissioning system
+  * Built-in querying, filtering, alerting, monitoring, reporting and visualization capabilities
+  * Flexible configuration capabilities via packages, parameters, and grouping
+  * Complete shared-development environment (code repository, package repository, version control, editor, debugger, TDD testing, etc.)
+  * Libraries for streaming systems (e.g. _KX Stream_)
+  * Libraries for a variety of financial and non-financial applications (_KX for Surveillance_ , _KX for Flow_)
+
+## Generic applications
+
+  * Real-time tick capture and storage
+  * Real-time and historical querying, filtering, analysis
+  * Business visualisation of underlying data
+  * Real-time signal generation and data enrichment
+  * Signal processing and execution
+
+## Specific applications
+
+  * Trade and price analysis
+  * Modelling and back testing
+  * Price aggregation and distribution
+  * Order execution
+  * Algo trading
+  * Market surveillance
+  * Risk analysis and aggregation
+
+## Key concepts
+
+Here are some key practices _KX Control_ supports when developing your system:
+
+  * Use **environmental parameters** throughout the system to make it easier to move the system from one machine to another, for example, parameters for file paths and IP addresses. These parameters are loaded into the system’s configuration profile at start-up.
+  * Build systems with **full version control** and maintain **audit logs** indefinitely. Define checkpoints during development to exploit the version-control system. All entities can be reverted to previous versions and the system as a whole can be reverted to a defined checkpoint.
+  * Give every entity within the system **security entitlements**. Entitlements enforce security constraints and provide different views of the system to different users.
+  * **Group entities** in the system into containers and manage them at the group level.
+  * Employ a **multi-process architecture**. Write each component to ensure that it can restart upon failure. Recovery is possible from a combination of RDB, HDB and Tickerplant log files. In any system, keep the number of critical processes to a minimum. All entities contain descriptive fields which should be populated as the system is developed.
+
+## Typical data-capture system example
+
+This diagram is a simplified view of a data-capture system.
+
+The system consists of a set of processes. Each process plays a specific role
+in the processing of capturing data. All of the processes in the system can be
+replicated for scalability, resilience and fault tolerance. In addition, each
+process can be augmented with a variety of attributes to handle data
+definition, security, exception conditions, configuration flexibility, etc.
+
+![Screenshot](img/control/tickerplantexample.png)
+
+## Architecture
+
+Server
+
+    The _KX Control_ server is responsible for the administration of your system. It offers a single point of access for building, running and managing systems deployed across multiple machines. It also provides run-time management, such as monitoring running processes, restarting processes, alerting if a process fails, and deploying code changes to live environments. The server provides a centralized code-development repository with versioning and rollback support. It also provides a package-management mechanism for importing and exporting code changes across multiple environments.
+HTML5 client
+
+    The HTML5 client is the main method of interaction with the _KX Control_ server. All aspects of your system can be viewed, modified and controlled from here. Each user gets a different view of your system, depending on what they are allowed to view and modify. The client has a built-in IDE for code development.
+
+![Screenshot](img/control/controlforkxarchitecture.png)
+
+## Readers
+
+This documentation is written for developers using _KX Control_ to build
+systems based on KX technology. _Users_ refers to developers, and _admins_ to
+developers with administrative privileges in _KX Control_.
+
+_The system_ and _your system_ refer to the system you build, not to _KX
+Control_.
+

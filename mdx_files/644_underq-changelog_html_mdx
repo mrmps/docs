@@ -1,0 +1,41 @@
+https://code.kx.com/pykx/release-notes/underq-changelog.html
+
+# PyKX under q - PyKX
+
+Original URL: https://code.kx.com/pykx/release-notes/underq-changelog.html
+
+
+    q)\l pykx.q
+    'os
+      [4]  \python3 -c "import pykx; print(pykx.config.pykx_dir)" 2>/dev/null
+           ^
+    
+    
+    q)\l pykx.q
+    Traceback (most recent call last):
+      File "<string>", line 1, in <module>
+      File "/usr/local/anaconda3/lib/python3.8/site-packages/pykx/__init__.py", line 27, in <module>
+        from . import core
+      File "pykx/core.pyx", line 6, in init pykx.core
+        from .util import num_available_cores
+      File "/usr/local/anaconda3/lib/python3.8/site-packages/pykx/util.py", line 8, in <module>
+        import pandas as pd
+      File "/usr/local/anaconda3/lib/python3.8/site-packages/pandas/__init__.py", line 16, in <module>
+        raise ImportError(
+    ImportError: Unable to import required dependencies:
+    numpy: cannot import name 'SystemRandom' from 'random' (/Users/projects/pykx/src/pykx/random.py)
+    Traceback (most recent call last):
+      File "<string>", line 1, in <module>
+      File "/usr/local/anaconda3/lib/python3.8/site-packages/pykx/__init__.py", line 27, in <module>
+        from . import core
+      File "pykx/core.pyx", line 6, in init pykx.core
+        from .util import num_available_cores
+      File "/usr/local/anaconda3/lib/python3.8/site-packages/pykx/util.py", line 8, in <module>
+        import pandas as pd
+      File "/usr/local/anaconda3/lib/python3.8/site-packages/pandas/__init__.py", line 16, in <module>
+        raise ImportError(
+    ImportError: Unable to import required dependencies:
+    numpy: cannot import name 'SystemRandom' from 'random' (/Users/projects/pykx/src/pykx/random.py)
+    'os
+      [4]  \python3 -c "import pykx; print('PYKX_DIR: ' + str(pykx.config.pykx_dir))"
+

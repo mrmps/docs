@@ -1,0 +1,161 @@
+https://code.kx.com/insights/api/machine-learning/q/analytics/api/online/SGD/sgd.html
+
+# Stochastic Gradient Descent - kdb products
+
+Original URL: https://code.kx.com/insights/api/machine-learning/q/analytics/api/online/SGD/sgd.html
+
+# Stochastic Gradient Descent
+
+Stochastic Gradient Descent is an optimization technique used in the iterative
+updating of appropriately formatted machine learning algorithms.
+
+Gradient descent attempts to optimize the parameters of a function by
+traversing in the direction of steepest descent as defined by the negative of
+the gradient of a cost function. This technique is used when optimal
+parameters to a solution cannot be found by setting the functions slope to 0,
+for example in linear regression.
+
+Updates to the parameters at each iteration are defined by the following
+formula:
+
+\\[\theta_{upd} = \theta_{old} - \alpha * \frac{\partial J}{\partial
+\theta}\\]
+
+Where:
+
+Parameter | Description  
+---|---  
+\\(\theta\\) | Parameters/Weights of a function  
+\\(\alpha\\) | The learning rate  
+\\(J\\) | The cost/loss function  
+  
+When using Gradient Descent as described above the entirety of a provided
+dataset is used for each iteration when calculating the minimum of the slope.
+This can often result in a significant number of required computations which
+may have a major impact on the time to train a model.
+
+To offset the cost of these calculations SGD can be used. At each iteration a
+single/batch of random points are chosen from the dataset to update the
+parameters of the function, this decreases the training time and the risk of
+overfitting occuring when applying to new unseen data. Additionally as the
+model can be updated iteratively it allows models which support SGD to be
+trained on data too large to fit in memory or can be updated on streaming
+data.
+
+SGD is often employed in optimizing neural networks along with other machine
+learning algorithms such as logistic/linear regression models, SVM's etc.
+
+SGD forms the basis of the [Linear Regression](linear.html) and [Logistic
+Classification](logistic.html) models provided in this section. The model
+outlined below forms the basis for each of these models and is provided to
+allow users familiar with this technique to use the `.ml.online.sgd.fit`
+function as the basis for their own solutions.
+
+## `.ml.online.sgd.fit`
+
+_Fit a model using stochastic gradient descent_
+
+    
+    
+    .ml.online.sgd.fit[X;y;trend;theta;gradFunc;paramDict]
+    
+
+**Parameters:**
+
+name | type | description  
+---|---|---  
+`X` | `any` | Input/training data of N dimensions.  
+`y` | `any` | Output/target regression data.  
+`trend` | `boolean` | Is a trend to be accounted for?  
+`theta` | `float[]` | The initial weight(s).  
+`gradFunc` | `function` | Gradient function to be applied.  
+`paramDict` | `dictionary` | Any modifications to be applied during the fitting process of SGD (See here for more details).  
+  
+**Returns:**
+
+Returns a `dictionary` containing all information collected during the fitting
+of a model and includes:
+
+name | description  
+---|---  
+`theta` | The weights calculated during the process.  
+`iter` | The number of iterations applied during the process.  
+`diff` | The difference between the final `theta` values and the preceding values.  
+`trend` | Whether or not a trend value was fitted during the process.  
+`paramDict` | The parameter dictionary used during the process.  
+`inputType` | The data type of each column of the input data.  
+  
+**Examples:**
+
+**Example 1:** Fit the default linear gradient function
+
+    
+    
+    // Create data with a strong but noisy correlation
+    q)X:8*100?1f
+    q)y:4+3*X+100?1f
+    
+    // Use the default linear gradient function
+    q)gradFunc:.ml.online.sgd.util.gradFuncLinear
+    
+    // Set the initial model weights to 0
+    q)theta:enlist 0f
+    
+    // Set the maximum iteration and alpha values
+    q)dict:`maxIter`alpha!(50;0.01)
+    q)show paramDict:.ml.online.sgd.util.updDefault[dict;X;0b]
+    alpha      | 0.01
+    maxIter    | 50
+    gTol       | 1e-05
+    theta      | ,0f
+    k          | 100
+    seed       | 38576953
+    batchType  | `shuffle
+    gradArgs   | ()
+    ...
+    
+    q).ml.online.sgd.fit[X;y;0b;theta;gradFunc;paramDict]
+             | theta    iter diff trend paramDict                                ..
+    ---------| ------------------------------------------------------------------..
+    modelInfo| 4.152746 2    0    0     `alpha`maxIter`gTol`theta`k`seed`batchTyp.
+    
+
+## Configurable parameters
+
+In the above function, the following are the optional configurable entries for
+`paramDict`:
+
+name | type | default | description  
+---|---|---|---  
+`alpha` | `float` | Applied learning rate. | `0.01`  
+`maxIter` | `integer` | Max possible number of iterations before the run is terminated, this does not guarantee convergence. | `100`  
+`gTol` | `float` | If the difference in gradient falls below this value the run is terminated. | `1e-5`  
+`theta` | `float` | Initial starting weights. | `0`  
+`k` | `integer` | Number of batches used or random points chosen each iteration. | `*n`  
+`seed` | `integer` | Random seed. | `random`  
+`batchType` | `symbol` | Batch type - ``single`shuffle`shuffleRep`nonShuffle`noBatch`. | `shuffle`  
+`penalty` | `symbol` | Penalty/regularization term - ``l1`l2`elasticNet`. | `l2`  
+`lambda` | `float` | Penalty term coefficient. | `0.001`  
+`l1Ratio` | `float` | Elastic net mixing parameter, only used if penalty type is `ElasticNet`. | `0.5`  
+`decay` | `float` | Decay coefficient. | `0`  
+`p` | `float` | Momentum coefficient. | `0`  
+`verbose` | `boolean` | If information about the fitting process is to be printed after every epoch. | `0b`  
+`accumulation` | `boolean` | If the theta value after each epoch is returned as the output. | `0b`  
+`thresholdFunc` | `list` | Threshold function and value to apply when using [`updateSecure`](secure.html). | `()`  
+  
+In the above table `*n` is the length of the dataset.
+
+A number of `batchTypes` can be applied when fitting a model using SGD, the
+supported types and an explanation of their use of the `k` parameter are
+explained below:
+
+_options:_
+
+name | description  
+---|---  
+`noBatch` | No batching occurs and all data points are used (regular gradient descent)  
+`nonShuffle` | Data split into `k` batches with no shuffling applied.  
+`shuffle` | Data shuffled into `k` batches. Each data point appears once.  
+`shuffleRep` | Data shuffled into `k` batches. Data points can appear more than once and not all data points may be used.  
+`single` | `k` random points are chosen each iteration.
+

@@ -1,0 +1,70 @@
+https://code.kx.com/platform/deployment/install_fail/
+
+# Installation - KX Delta Platform
+
+Original URL: https://code.kx.com/platform/deployment/install_fail/
+
+# Troubleshooting installation
+
+Log file | Location | Description  
+---|---|---  
+install.log | `<bundle directory>` | Output of `install.sh` execution, basic information  
+installKxPlatform.*.log | `<bundle directory>/scripts` | Detailed installation log  
+DeltaControl.log | `<install directory>/delta-data/DeltaControlData/logdir` | Delta Control log  
+*.log | `<install directory>/delta-data/DeltaControlData/logdir` | A log file will be created for each process instance or task executed  
+e.g. `ds_rdb_ops_a.1.20200319T092835083.out.log`  
+catalina.out | `<install directory>/delta-bin/software/Tomcat_*/latest/logs` | Tomcat application log file, redirected console output  
+delta.log | `<install directory>/delta-bin/software/Tomcat_*/latest/logs` | Appserver application log file  
+  
+### Package not being picked up by installer
+
+The installation scripts contain a set of known packages to install (e.g. core
+KX Delta Platform packages), if you have created a custom package, you will be
+required to configure your `install.config` file to tell the installer how to
+handle your package. See [Package List Options](../install_config/#install-
+package-lists) for more details
+
+### Failed to install package
+
+The install configuration profile of each package can define a list of
+packages which the package is dependant on to function. This installation
+script will check that these packages are installed, if this check fails the
+install script will exit with a failure.
+
+    
+    
+    grep DEP install_config/profiles/DeltaStream.install.config
+    DEP|DeltaControl
+    
+
+Above we can see that in order to install the DeltaStream package, the
+DeltaControl package is required to be installed.
+
+If the configuration profile does not contain the correct dependencies, and
+the installer will therefore continue to try and install the packages, it is
+possible to have a failure during the import of the packages to Control.
+
+`auto import failed to start see DeltaControl.log for more info`
+
+This will happen if there are entities that have dependencies on other
+entities which are not available yet. To solve this issue:
+
+  * Add DEP to install config profile to catch possible issues earlier in the installation process.
+  * If you are using [Package List Options](../install_config_options/#install-package-list-options) ensure the package order is correct.
+
+### Port changing during installation
+
+The installation script has in-built logic to prevent an installation trying
+to use a port which is already in use on the server. Due to this, it is
+possible that the install script will not use the port specified during the
+installation or in the install.config file, but the next available free port.
+
+    
+    
+    [TOMCAT_PORT] Port [8080] in use
+    Using port [8082]
+    
+
+If this is not the expected behavior, you should ensure that there is nothing
+running on port `8080` before performing the installation.
+

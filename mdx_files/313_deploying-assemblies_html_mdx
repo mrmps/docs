@@ -1,0 +1,224 @@
+https://code.kx.com/insights/enterprise/assemblies/deploying-assemblies.html
+
+# Deploying - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/assemblies/deploying-assemblies.html
+
+# Deploying assemblies
+
+Deprecation of deployment with assembly yaml files
+
+The deployment of assembly yaml files using the `kxi assembly` command in the
+kdb Insights CLI has been deprecated and may be removed from future releases.
+You should instead use packages, which can be deployed and managed by both the
+UI and the kdb Insights CLI. For more information about packages, refer to
+[Packages](../packaging/index.html).
+
+The [kdb Insights Command Line Interface](../cli/index.html) is used to deploy
+assemblies. Sample assemblies are available to [download](../use-
+cases/overview.html#downloading-assemblies).
+
+To manage assemblies, you must first configure the CLI to authenticate with
+the application. This involves:
+
+To set up the CLI, use the `kxi configure` command.
+
+    
+    
+    $ kxi configure
+    Hostname []: https://my-host.kx.com
+    Namespace []: test
+    Client ID []: my-publisher
+    Client Secret (input hidden):
+    Re-enter to confirm (input hidden):
+    CLI successfully configured, configuration stored in /~/.insights/cli-config
+    
+
+## Deploying an assembly
+
+To deploy an assembly, execute the following command:
+
+    
+    
+    kxi assembly deploy --filepath sdk_sample_assembly.yaml
+    
+    
+    
+    Using assembly.filepath from command line option: sdk_sample_assembly.yaml
+    Submitting assembly from sdk_sample_assembly.yaml
+    Custom assembly resource sdk-sample-assembly created!
+    
+
+To update your assembly:
+
+  1. Update your yaml file
+  2. Teardown the assembly
+  3. Redeploy the assembly
+
+## Teardown
+
+You can stop an assembly using the `teardown` command.
+
+Note
+
+This teardown process _does not_ remove the persisted application data. These
+remain as Persisted Volumes (PVs) within the Kubernetes cluster.
+
+    
+    
+    kxi assembly teardown --name sdk-sample-assembly
+    
+    
+    
+    Tearing down assembly sdk-sample-assembly
+    Are you sure you want to teardown sdk-sample-assembly [y/N]: y
+    
+
+After you have torn down a YAML assembly, it will be removed from the `kxi
+assembly list` response. You can also teardown UI-managed assemblies and this
+will flip their status. The example below shows a YAML assembly being removed
+from the `list` output.
+
+    
+    
+    ASSEMBLY NAME  READY
+    dfx-assembly   True
+    iot-assembly   False
+    
+
+## Redeploy
+
+With the assembly torn down, the YAML file can me modified to reflect your
+desired changes. For instance, reducing the `size` of RDBs deployed from 3
+replicas to 1 and increasing the `RTLogVolume` to 40Gi.
+
+    
+    
+    vi sdk-sample-assembly
+        dap:
+          instances:
+            rdb:
+              mountName: rdb
+              source: south
+              rtLogVolume:
+                size: 40Gi
+              size: 1
+    
+
+Redeploy the new changes to the sdk_sample_assembly
+
+    
+    
+    kxi assembly deploy --filepath sdk_sample_assembly.yaml
+    
+    
+    
+    Using assembly.filepath from command line option: sdk_sample_assembly.yaml
+    Submitting assembly from sdk_sample_assembly.yaml
+    Custom assembly resource sdk-sample-assembly created!
+    
+
+## Assembly List
+
+Once deployed, you may view all assemblies by running:
+
+    
+    
+    ASSEMBLY NAME        READY
+    dfx-assembly         True
+    iot-assembly         False
+    sdk-sample-assembly  True
+    
+
+In addition to running assemblies, the response includes any stopped UI
+assemblies that persist in the application.
+
+## Check assembly status
+
+Assemblies may consist of a number of components. You can use the `kxi
+assembly status` command to check the status of the deployed components.
+
+For a quick view of the created resources, get the assembly status:
+
+    
+    
+    kxi assembly status --name sdk-sample-assembly
+    
+    
+    
+    {
+      "id": "",
+      "name": "sdk-sample-assembly",
+      "editable": false,
+      "running": true,
+      "ready": true,
+      "syncStatus": false,
+      "k8sStatus": [
+        {
+          "status": "True",
+          "type": "MountReady"
+        },
+        {
+          "lastTransitionTime": "2022-12-19T15:06:31Z",
+          "lastUpdateTime": "2022-12-19T15:06:31Z",
+          "status": "True",
+          "type": "StorageManagerReady"
+        },
+        {
+          "lastTransitionTime": "2022-12-19T15:06:24Z",
+          "lastUpdateTime": "2022-12-19T15:06:24Z",
+          "status": "True",
+          "type": "DataAccessReady"
+        },
+        {
+          "lastTransitionTime": "2022-12-19T15:06:52Z",
+          "lastUpdateTime": "2022-12-19T15:06:52Z",
+          "status": "True",
+          "type": "SequencerReady"
+        },
+        {
+          "lastTransitionTime": "2022-12-19T15:06:39Z",
+          "lastUpdateTime": "2022-12-19T15:06:39Z",
+          "status": "True",
+          "type": "PipelineReady"
+        },
+        {
+          "lastTransitionTime": "2022-12-19T15:06:24Z",
+          "lastUpdateTime": "2022-12-19T15:06:24Z",
+          "status": "True",
+          "type": "QueryEnvironmentReady"
+        },
+        {
+          "lastTransitionTime": "2022-12-19T15:06:52Z",
+          "lastUpdateTime": "2022-12-19T15:06:52Z",
+          "status": "True",
+          "type": "AssemblyReady"
+        }
+      ]
+    }
+    
+
+## Deploying assemblies to Kubernetes directly
+
+When you deploy an assembly, the application deploys them to the Kubernetes
+control plane where they are persisted. If there are issues managing
+assemblies through the default _CLI_ mode, you can interact with them directly
+in Kubernetes using the `--use-kubeconfig` option. This will communicate
+directly with the cluster and not via _kdb Insights Enterprise_. with them by
+passing the --use-kubeconfig flag e.g. This mode should only be used as a
+fallback option.
+
+This mode is not available if you deployed a kdb Insights Enterprise KX
+Managed Application from Azure Marketplace but you can contact
+[Support](../azure-marketplace/support.html) for assistance.
+
+    
+    
+    kxi assembly deploy --filepath sdk_sample_assembly.yaml --use-kubeconfig
+    
+
+Kubernetes cluster access
+
+This requires an active Kubernetes config (or _kubeconfig_) setup and
+authenticated.
+

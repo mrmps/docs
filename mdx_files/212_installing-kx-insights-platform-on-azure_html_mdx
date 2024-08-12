@@ -1,0 +1,280 @@
+https://code.kx.com/insights/enterprise/azure-marketplace/installing-kx-insights-platform-on-azure.html
+
+# Installing kdb Insights Enterprise - kdb products
+
+Original URL: https://code.kx.com/insights/enterprise/azure-marketplace/installing-kx-insights-platform-on-azure.html
+
+# Installing kdb Insights Enterprise on Azure
+
+Before starting
+
+Please check the [Install prerequisites](azure-prerequisites.html) before
+starting, to ensure a successful deployment.
+
+## Getting started
+
+  1. Sign into your Azure account.
+
+![azure marketplace](images/kx-azure-marketplace.jpg)
+
+  2. Search for **Managed kdb Insights Enterprise Deployment** in [Azure Marketplace](https://azuremarketplace.microsoft.com) and select **Get it now**.
+
+It can also be found [here](https://azuremarketplace.microsoft.com/en-
+us/marketplace/apps/firstderivativesplc1596469572732.kx-insights-platform).
+
+![Kx Preview](images/kx-product.jpg)
+
+  3. Review the Offer Details.
+
+    1. **Overview:** product summary.
+    2. **Plans + Pricing:** details each Plan type, description, and its [Pricing structure](https://azuremarketplace.microsoft.com/en-us/marketplace/apps/firstderivativesplc1596469572732.kdb-insights-enterprise-billing?tab=PlansAndPrice&exp=ubp8).
+    3. **Usage Information + Support:** useful links to get started, License Agreements, Privacy Policy, and links to our Support site, where you can raise support tickets.
+  4. Select the Plan from the dropdown and click **Create**.
+
+![Offer Overview](images/kx-dropdown.jpg)
+
+The _Basics_ section is displayed.
+
+KX License Agreement
+
+By clicking through the Marketplace and deploying the Software, you have
+Accepted the Terms & Conditions in the KX License Agreement.
+
+## Basics
+
+![Basic Image](images/kx-basic.jpg)
+
+  1. Select the Subscription in which to install the infrastructure and application.
+
+  2. Create a new resource group, or select an existing empty resource group from the dropdown.
+
+Existing resource group must be empty
+
+Do not select an existing resource group which is not empty.
+
+![Create New](images/create_new.PNG)
+
+Deploying multiple instances
+
+If you plan to deploy multiple instances of kdb Insights Enterprise, then each
+deployment from the Azure Marketplace must have a unique resource group name.
+
+  3. Select the Region you wish to to deploy kdb Insights Enterprise into. Remember to select an Azure region that has [availability zones](https://docs.microsoft.com/en-us/azure/availability-zones/az-overview#azure-regions-with-availability-zones).
+
+No valid VM type available
+
+If the selected Region in the Subscription does not have valid VM types for
+the deployment a warning will be displayed and you must select a different
+Region or Subscription if you want your deployment to succeed.
+
+![No valid VM types](images/vmtype-alert1.png)
+
+  4. Click **Next**.
+
+The 'Client information' section is displayed.
+
+## Client information
+
+![Client Info](images/kx-client-info.png)
+
+Enter the information required. This enables us to issue you with a license.
+
+  1. Click **Next** to open the _Credentials_ section.
+
+## Credentials
+
+![General Config](images/kx-credentials.png)
+
+  1. Add a valid email address for license and certificate registration.
+  2. Create a username and password to log in to kdb Insights Enterprise User Interface.
+  3. Create a password to log in to Keycloak. Your username is 'user'.
+
+Passwords must fulfill the minimum requirements.
+
+Password
+
+Ensure your passwords are stored safely. Also note some special characters are
+forbidden.
+
+  4. Click **Next** to open the _Node pools_ section.
+
+## Node pools
+
+![Node pools](images/kx-node-pool.png)
+
+The default values for AKS System and User Node pools are the minimum needed
+for a base deployment and general workload purposes.
+
+  1. The System Node Pool hosts the Azure tools and services with the kdb Insights Enterprise core system services. We don't recommend changing this unless you have special discounts on other options. If you select a different System Node Pool, you must select the same minimum size as the default. 
+
+  2. The User Node Pool hosts the kdb Insights Enterprise [assembly resources](../assemblies/overview.html) and should be sized according to your use case, workloads and performance needs. 
+
+Warning
+
+You should **only** adjust the User Node Pool to a bigger size if you have
+specific workload requirements. Please refer to the [guidance](azure-user-
+node-pool-sizing-guidance.html) section if changing the node pool VM size.
+
+KX doesn't support node pools that are sized smaller than the default
+settings.
+
+Filtering of node pool VM size dropdowns
+
+Both the **AKS System node pool VM size** and the **User System node pool VM
+size** dropdowns only include valid VM types in the chosen Subscription and
+Region.
+
+No valid VM type available
+
+If the default VM size options for the AKS System or AKS User node pools are
+not valid in this Subscription and Region, kdb Insights Enterprise displays
+warnings. You **must** choose VM types for the dropdowns if you want your
+deployment to succeed.
+
+![Advanced option no valid VM types](images/vmtype-alert2.png)
+
+  3. If desired, enable **Use Premium Storage for ReadWriteOnce volumes** to use Azure Premium LRS to create the managed disks. Default storage is backed by Standard SSDs and delivers cost-effective Locally Redundant Storage (LRS) while still delivering reliable performance. You should use the default settings unless you have specific performance requirements.
+
+  4. If desired, enable **Deploy Rook Ceph**. When this is enabled, Rook CephFS is automatically selected in the **ReadWriteMany volumes** dropdown below to ensure optimal performance results. If not enabled, Azure Storage Class defaults to Azure Files NFS for your shared file system. If you choose to deploy Rook Ceph, and have high performance requirements, KX recommends leaving the **ReadWriteMany volumes** dropdown set to Rook CephFS.
+
+Rook Ceph uses local SSD storage
+
+This type of storage provides higher throughput and lower latency for optimal
+performance, but it is not persisted. Your data is stored across three nodes
+for resiliency however if two nodes go offline, data stored on the SSDs is
+lost.
+
+Be aware that when using Rook Ceph, you cannot bring down your nodes to save
+costs without losing data.
+
+Data Encryption
+
+Azure Storage protects your data by automatically encrypting it before
+persisting it to the cloud. If this is important to you then we do not
+recommend selecting Rook Ceph. You should use the default Azure Files NFS
+shared storage option.
+
+For more information, refer to [Microsoft's Azure Storage service-side
+encryption documentation](https://learn.microsoft.com/en-
+us/azure/storage/common/storage-service-encryption#about-azure-storage-
+service-side-encryption).
+
+  5. Click **Next** to open the _Networking_ section.
+
+## Networking
+
+![Networking](images/networking.png)
+
+  1. Select the way you would like to access kdb Insights Enterprise UI and API endpoints.
+
+     * **Private IP address (default)**
+
+Network traffic between the clients and kdb Insights Enterprise is routed on
+the Microsoft backbone network, eliminating exposure from the public internet.
+Follow the instructions [here](security.html#private-ip-address) to allow
+users to connect to the UI or the REST endpoints.
+
+![Private IP address Network Configuration](images/kx-
+generalnetworkprivate.jpg)
+
+     * **Public IP address**
+
+Allows **encrypted** client access over the public internet. If you select
+this option, you can immediately login to the kdb Insights Enterprise UI when
+the deployment has successfully completed without any additional action.
+
+![Public IP address Network Configuration](images/kx-generalnetworkpublic.jpg)
+
+  2. [In-Transit Data Encryption](../security/encryption-in-transit.html) is turned on by default, but can be turned off if not required as part of your deployment.
+
+  3. You can manually set the Networking Model to one of the following:
+
+     * **Traditional**
+
+The traditional Azure Container Networking Interface (CNI) assigns a fixed
+VNet IP address to every pod. It assigns this IP address from a limited and
+prereserved set of IPs on every node or a separate subnet reserved for pods.
+
+This approach requires IP address planning and could lead to address
+exhaustion, which introduces difficulties with scaling your clusters as your
+application demands grow.
+
+     * **Overlay**
+
+Azure CNI Overlay creates a new layer where traffic can be programmatically
+directed through new virtual network routes or paths instead of requiring
+fixed links.
+
+Kubernetes cluster nodes are deployed into an Azure Virtual Network (VNet) and
+assigned IPs from subnets. Pods are given IP addresses from a private CIDR
+provided at the time of cluster creation and logically different from the VNet
+hosting the nodes.
+
+This solution saves a significant amount of VNet IP addresses and enables you
+to scale your cluster to large sizes.
+
+More information can be found [here](https://learn.microsoft.com/en-
+us/azure/aks/azure-cni-overlay?tabs=kubectl).
+
+  4. Click **Next** to open the _Advanced_ section.
+
+## Advanced
+
+![Advanced](images/kx-advanced.png)
+
+  1. [Data Entitlements](../entitlements/index.html) is currently a beta feature and is turned off by default, but it can be turned on if required as part of your deployment.
+
+  2. There are three fields where you can choose to change the log retention policy, depending on your company policy, or cost considerations. This can be changed post-deployment so you can leave the defaults, and change at a later date if needed. 
+
+  3. E-mail notifications are optional. To enable them, select `Turn on client alert notifications` and add an email address.
+
+KX have pre-packaged some useful Alert logic which trigger email notifications
+to the Insights Managed Service (IMS) operational team to assist with
+monitoring the health of the application.
+
+This field is optional and only needs to be populated if you want to add your
+own email distribution list in addition to the KX IMS Support team. Please
+refer to the following [documentation](microsoft-alerts.html).
+
+![Alerts](images/client-alert-notifications.png)
+
+  4. Click **Next**.
+
+## Review + Create
+
+At this stage you should have a _Validation Passed_ message which brings you
+to _Review + Create_ final page.
+
+You must agree to the Terms and Conditions in order to proceed. This is
+required in order to provide the Managed Services.
+
+![Managed App](images/managed-app.png)
+
+Warning
+
+Do not select 'Download a template for automation'. There is no **Back**
+button available if you select this option and you will need to start the
+workflow again. It is possible to download a template post deployment this is
+not recommend because KX only support the Marketplace deployment method on
+Azure in this scenario.
+
+  1. Click **Create** to deploy.
+
+  2. On completion of a successful deployment, the details are viewable as shown below:
+
+![Managed App](images/kx-azure-deployment-complete.jpg)
+
+Deployment Failures
+
+See [potential deployment issues](azure-issues.html#potential-deployment-
+issues) for resolutions to errors that may arise if a deployment fails. Do not
+try the 'Redeploy' button.
+
+  3. Click on **Go to resources** to go to the deployment.
+
+  4. The output of the deployment is available in the _Parameters and Outputs_ tab.
+
+![Managed deployment output](images/managed_output.png)
+
+  5. Follow these steps to give [users access](azure-login.html#create-kdb-insights-enterprise-roles) to the application.
+

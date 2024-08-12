@@ -1,0 +1,384 @@
+https://code.kx.com/dashboards/helper-comparison/
+
+# Comparison - KX Dashboards
+
+Original URL: https://code.kx.com/dashboards/helper-comparison/
+
+# Comparison helpers
+
+## `and`
+
+_Render the block if both of two values are truthy_
+
+Block helper: renders the block if `a` and `b` are both truthy. If an inverse
+block is specified it will be rendered when falsey. Works as a block helper,
+inline helper or subexpression.
+
+Parameters:
+
+  * `a` {any}
+  * `b` {any}
+  * `options` {Object}: Handlebars-provided options object
+
+Returns {String}
+
+Example:
+
+    
+    
+    <!-- {great: true, magnificent: true} -->
+    {{#and great magnificent}}A{{else}}B{{/and}}
+    <!-- results in: 'A' -->
+    
+
+## `compare`
+
+_Render a block when two arguments match_
+
+Block helper: renders a block when a comparison of the first and third
+arguments returns true. The second parameter is the [arithemetic
+operator](https://developer.mozilla.org/en-
+US/docs/Web/JavaScript/Reference/Operators/Arithmetic_Operators) to use. You
+may also optionally specify an inverse block to render when falsey.
+
+Parameters:
+
+  * `a` {}
+  * `operator` {}: The operator to use. Operators must be enclosed in quotes: ">", "=", "<=", and so on.
+  * `b` {}
+  * `options` {Object}: Handlebars-provided options object
+
+Returns {String}: Block, or if specified the inverse block is rendered if
+falsey.
+
+## `contains`
+
+_Render the block if`collection` matches a value_
+
+Block helper: renders the block if `collection` has the given value (using
+strict equality `===` for comparison) otherwise the inverse block is rendered
+(if specified). If `startIndex` is specified and is negative, it is used as
+the offset from the end of the collection._
+
+Parameters:
+
+  * `collection` {Array|Object|String}: The collection to iterate over
+  * `value` {any}: The value to check for
+  * `[startIndex=0]` {Number}: Optionally define the starting index
+  * `options` {Object}: Handlebars-provided options object
+
+Example:
+
+    
+    
+    <!-- array = ['a', 'b', 'c'] -->
+    {{#contains array "d"}}
+      This will not be rendered.
+    {{else}}
+      This will be rendered.
+    {{/contains}}
+    
+
+## `eq`
+
+_Render a block if two values match exactly_
+
+Block helper: renders a block if `a` is equal to `b`. If an inverse block is
+specified it will be rendered when falsey. You may optionally use the
+`compare=""` hash parameter for the second value.
+
+Parameters:
+
+  * `a` {String}
+  * `b` {String}
+  * `options` {Object}: Handlebars-provided options object
+
+Returns {String}: Block, or inverse block if specified and falsey.
+
+`is` for less exact comparison
+
+## `gt`
+
+Render a block if `a` is greater than `b`
+
+Block helper: renders a block if `a` is greater than `b`. If an inverse block
+is specified it will be rendered when falsey. You may optionally use the
+`compare=""`` hash parameter for the second value.
+
+Parameters:
+
+  * `a` {String}
+  * `b` {String}
+  * `options` {Object}: Handlebars-provided options object
+
+Returns {String}: Block, or inverse block if specified and falsey.
+
+## `gte`
+
+_Render a block if`a` is at least `b`_
+
+Block helper: renders a block if `a` is greater than or equal to `b`. If an
+inverse block is specified it will be rendered when falsey. You may optionally
+use the `compare=""` hash parameter for the second value.
+
+Parameters:
+
+  * `a` {String}
+  * `b` {String}
+  * `options` {Object}: Handlebars-provided options object
+
+Returns {String}: Block, or inverse block if specified and falsey.
+
+## `has`
+
+_Renders a block if`value` has `pattern`_
+
+Block helper: renders a block if `value` has `pattern`. If an inverse block is
+specified it will be rendered when falsey.
+
+Parameters:
+
+  * `val` {any}: The value to check
+  * `pattern` {any}: The pattern to check for
+  * `options` {Object}: Handlebars-provided options object
+
+Returns {String}
+
+## `ifEven`
+
+_Return true if a number is even_
+
+Block helper: renders a block if `number` is even.
+
+Parameters:
+
+  * `number` {Number}
+  * `options` {Object}: Handlebars-provided options object
+
+Returns {String}: Block, or inverse block if specified and falsey.
+
+Example:
+
+    
+    
+    {{#ifEven value}}
+      render A
+    {{else}}
+      render B
+    {{/ifEven}}
+    
+
+## `ifNth`
+
+_Render a block if`a` is a multiple of `b`_
+
+Block helper: renders a block if the remainder is zero when `a` is divided by
+`b`. If an inverse block is specified it will be rendered when the remainder
+is not zero.
+
+Parameters:
+
+  * `a`: {Number}
+  * `b`: {Number}
+  * `options` {Object}: Handlebars-provided options object
+
+Returns {String}: Block, or inverse block if specified and falsey.
+
+## `ifOdd`
+
+_Renders a block if a number is odd_
+
+Block helper: renders a block if `value` is an odd number. If an inverse block
+is specified it will be rendered when falsey.
+
+Parameters:
+
+  * `value` {Object}
+  * `options` {Object}: Handlebars-provided options object
+
+Returns {String}: Block, or inverse block if specified and falsey.
+
+Example:
+
+    
+    
+    {{#ifOdd value}}
+      render A
+    {{else}}
+      render B
+    {{/ifOdd}}
+    
+
+## `is`
+
+_Render a block if two values match_
+
+Block helper: renders a block if `a` is equal to `b`. If an inverse block is
+specified it will be rendered when falsey. Similar to eq but does not use
+strict equality.
+
+Parameters:
+
+  * `a` {any}
+  * `b` {any}
+  * `options` {Object}: Handlebars-provided options object
+
+Returns {String}
+
+## `isnt`
+
+_Render a block if two values vary_
+
+Block helper: renders a block if `a` is not equal to `b`. If an inverse block
+is specified it will be rendered when falsey. Similar to unlessEq but does not
+use strict equality for comparisons.
+
+Parameters:
+
+  * `a` {String}
+  * `b` {String}
+  * `options` {Object}: Handlebars-provided options object
+
+Returns {String}
+
+## `lt`
+
+_Render a block if`a` is less than `b`_
+
+Block helper: renders a block if `a` is less than `b`. If an inverse block is
+specified it will be rendered when falsey. You may optionally use the
+`compare=""`` hash parameter for the second value.
+
+Parameters:
+
+  * `context` {Object}
+  * `options` {Object}: Handlebars-provided options object
+
+Returns {String}: Block, or inverse block if specified and falsey.
+
+## `lte`
+
+_Render a block if`a` is no more than `b`_
+
+Block helper: renders a block if `a` is less than or equal to `b`. If an
+inverse block is specified it will be rendered when falsey. You may optionally
+use the `compare=""`` hash parameter for the second value.
+
+Parameters:
+
+  * `a` {Sring}
+  * `b` {Sring}
+  * `options` {Object}: Handlebars-provided options object
+
+Returns {String}: Block, or inverse block if specified and falsey.
+
+## `neither`
+
+_Render a block if neither of two values is truthy_
+
+Block helper: renders a block if neither of the given values are truthy. If an
+inverse block is specified it will be rendered when falsey.
+
+Parameters:
+
+  * `a` {any}
+  * `b` {any}
+  * `options` {}: Handlebars options object
+
+Returns {String}: Block, or inverse block if specified and falsey.
+
+## `or`
+
+_Render a block if any of several values is truthy_
+
+Block helper: renders a block if any of the given values is truthy. If an
+inverse block is specified it will be rendered when falsey.
+
+Parameters:
+
+  * `arguments` {…any}: Variable number of arguments
+  * `options` {Object}: Handlebars options object
+
+Returns {String}: Block, or inverse block if specified and falsey.
+
+Example:
+
+    
+    
+    {{#or a b c}}
+      If any value is true this will be rendered.
+    {{/or}}
+    
+
+## `unlessEq`
+
+_Render the inverse block unless two values match_
+
+Block helper: renders the inverse block unless `a` is equal to `b`.
+
+Parameters:
+
+  * `a` {String}
+  * `b` {String}
+  * `options` {Object}: Handlebars-provided options object
+
+Returns {String}: Inverse block by default, or block if falsey.
+
+## `unlessGt`
+
+_Render the inverse block unless`a` exceeds `b`_
+
+Block helper: renders the inverse block unless `a` is greater than `b`.
+
+Parameters:
+
+  * `a` {Object}: The default value
+  * `b` {Object}: The value to compare
+  * `options` {Object}: Handlebars-provided options object
+
+Returns {String}: Inverse block by default, or block if falsey.
+
+## `unlessGteq`
+
+_Render the inverse block unless`a` is at least `b`_
+
+Block helper: renders the inverse block unless `a` is greater than or equal to
+`b`.
+
+Parameters:
+
+  * `a` {any}
+  * `b` {any}
+  * `options` {Object}: Handlebars-provided options object
+
+Returns {String}: Block, or inverse block if specified and falsey.
+
+## `unlessLt`
+
+_Render the inverse block unless`a` is less than `b`._
+
+Block helper: renders the inverse block unless `a` is less than `b`.
+
+Parameters:
+
+  * `a` {Object}: The default value
+  * `b` {Object}: The value to compare
+  * `options` {Object}: Handlebars-provided options object
+
+Returns {String}: Block, or inverse block if specified and falsey.
+
+## `unlessLteq`
+
+_Render the inverse block unless`a` is no more than `b`_
+
+Block helper: renders the inverse block unless `a` is less than or equal to
+`b`.
+
+Parameters:
+
+  * `a` {any}
+  * `b` {any}
+  * `options` {Object}: Handlebars-provided options object
+
+Returns {String}: Block, or inverse block if specified and falsey.
+
